@@ -3,17 +3,12 @@ import { ref, computed } from "vue";
 import { Button } from "./components/ui/button";
 import KickChat from "./components/KickChat.vue";
 import KickStream from "./components/KickStream.vue";
+import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
 
 const sidebarOpen = ref(true);
-
-const streams = ref([
-  "exort_en",
-  "exort_en",
-  "exort_en",
-  "exort_en",
-  "exort_en",
-]);
+const addStreamDialogOpen = ref(false);
+const streams = ref([]);
 
 const gridClass = computed(() => {
   const count = streams.value.length;
@@ -33,7 +28,7 @@ const gridClass = computed(() => {
   <div class="flex h-screen overflow-hidden bg-background">
     <!-- main -->
     <main class="flex-1 overflow-hidden">
-      <div class="h-full grid" :class="gridClass">
+      <div v-if="streams.length > 0" class="h-full grid" :class="gridClass">
         <KickStream
           v-for="(channel, index) in streams"
           :key="channel"
@@ -43,6 +38,17 @@ const gridClass = computed(() => {
               streams.length === 3 && index === 2,
           }"
         />
+      </div>
+      <div v-else class="flex items-center justify-center h-full">
+        <div class="flex flex-col items-center gap-4">
+          <h2 class="text-2xl">No streams registered</h2>
+          <Button
+            class="cursor-pointer"
+            variant="outline"
+            @click="addStreamDialogOpen = true"
+            >Add Stream</Button
+          >
+        </div>
       </div>
     </main>
 
@@ -55,32 +61,43 @@ const gridClass = computed(() => {
         <KickChat channel="exort_en" />
 
         <div class="flex justify-center items-center gap-4">
-          <Button variant="outline">
-            <UserPlus2 class="size-6" />
+          <Button
+            class="cursor-pointer"
+            variant="outline"
+            @click="addStreamDialogOpen = true"
+          >
+            <UserPlus2 class="size-4" />
           </Button>
 
-          <Button variant="outline">
-            <Settings2 class="size-6" />
+          <Button class="cursor-pointer" variant="outline">
+            <Settings2 class="size-4" />
           </Button>
 
-          <Button variant="outline">
-            <Share2 class="size-6" />
+          <Button class="cursor-pointer" variant="outline">
+            <Share2 class="size-4" />
           </Button>
 
-          <Button variant="outline" @click="sidebarOpen = !sidebarOpen">
-            <LogOutIcon class="size-6" />
+          <Button
+            class="cursor-pointer"
+            variant="outline"
+            @click="sidebarOpen = !sidebarOpen"
+          >
+            <LogOutIcon class="size-4" />
           </Button>
         </div>
       </div>
     </aside>
 
     <!-- toggle button -->
-    <button
+    <Button
       v-if="!sidebarOpen"
       @click="sidebarOpen = true"
       class="fixed right-0 top-1/2 -translate-y-1/2 bg-card border border-r-0 rounded-l-lg px-2 py-8 shadow-lg hover:bg-accent transition-colors"
     >
       ☰
-    </button>
+    </Button>
+
+    <!-- add stream dialog -->
+    <AddStreamDialog v-model:open="addStreamDialogOpen" />
   </div>
 </template>
