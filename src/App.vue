@@ -8,7 +8,7 @@ import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
 
 const sidebarOpen = ref(true);
 const addStreamDialogOpen = ref(false);
-const streams = ref([]);
+const streams = ref<string[]>([]);
 
 const gridClass = computed(() => {
   const count = streams.value.length;
@@ -25,9 +25,9 @@ const gridClass = computed(() => {
 </script>
 
 <template>
-  <div class="flex h-screen overflow-hidden bg-background">
+  <div class="flex h-screen overflow-hidden bg-[#191b1f]">
     <!-- main -->
-    <main class="flex-1 overflow-hidden">
+    <main class="flex-1 overflow-hidden bg-[#1f2227]">
       <div v-if="streams.length > 0" class="h-full grid" :class="gridClass">
         <KickStream
           v-for="(channel, index) in streams"
@@ -41,7 +41,7 @@ const gridClass = computed(() => {
       </div>
       <div v-else class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-4">
-          <h2 class="text-2xl">No streams registered</h2>
+          <h2 class="text-2xl text-white">No streams registered</h2>
           <Button
             class="cursor-pointer"
             variant="outline"
@@ -54,12 +54,36 @@ const gridClass = computed(() => {
 
     <!-- sidebar -->
     <aside
-      class="w-80 border-l bg-card shadow-lg overflow-y-auto transition-all duration-300"
+      class="w-80 shadow-lg transition-all duration-300 flex flex-col"
       :class="{ 'translate-x-full': !sidebarOpen }"
     >
-      <div class="space-y-4">
-        <KickChat channel="exort_en" />
+      <!-- stream selector -->
+      <div class="p-4 border-b border-[#1f2227]">
+        <select
+          class="w-full px-3 py-2 border rounded-md bg-background cursor-pointer"
+        >
+          <option value="">Select stream chat</option>
+          <option v-for="channel in streams" :key="channel" :value="channel">
+            {{ channel }}
+          </option>
+        </select>
+      </div>
 
+      <!-- chat area -->
+      <div class="flex-1 overflow-hidden">
+        <KickChat v-if="streams.length > 0" :channel="streams[0] || ''" />
+        <div
+          v-else
+          class="flex items-center justify-center h-full text-muted-foreground"
+        >
+          <p class="text-center px-4 text-white">
+            No streams available.<br />Add a stream to view chat.
+          </p>
+        </div>
+      </div>
+
+      <!-- action buttons -->
+      <div class="p-4 border-t border-t-[#1f2227]">
         <div class="flex justify-center items-center gap-4">
           <Button
             class="cursor-pointer"
@@ -92,7 +116,7 @@ const gridClass = computed(() => {
     <Button
       v-if="!sidebarOpen"
       @click="sidebarOpen = true"
-      class="fixed right-0 top-1/2 -translate-y-1/2 bg-card border border-r-0 rounded-l-lg px-2 py-8 shadow-lg hover:bg-accent transition-colors"
+      class="fixed text-black right-0 top-1/2 -translate-y-1/2 bg-card border border-r-0 rounded-l-lg px-2 py-8 shadow-lg hover:bg-accent transition-colors"
     >
       ☰
     </Button>
