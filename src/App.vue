@@ -5,10 +5,12 @@ import KickChat from "./components/KickChat.vue";
 import KickStream from "./components/KickStream.vue";
 import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
+import { useStreams } from "./composables/useStreams";
 
 const sidebarOpen = ref(true);
 const addStreamDialogOpen = ref(false);
-const streams = ref<string[]>([]);
+const selectedStream = ref("");
+const { streams, addStream, removeStream } = useStreams();
 
 const gridClass = computed(() => {
   const count = streams.value.length;
@@ -30,9 +32,9 @@ const gridClass = computed(() => {
     <main class="flex-1 overflow-hidden bg-[#1f2227]">
       <div v-if="streams.length > 0" class="h-full grid" :class="gridClass">
         <KickStream
-          v-for="(channel, index) in streams"
-          :key="channel"
-          :channel="channel"
+          v-for="(stream, index) in streams"
+          :key="stream.id"
+          :channel="stream.channel"
           :class="{
             'col-span-2 justify-self-center w-1/2':
               streams.length === 3 && index === 2,
@@ -60,20 +62,33 @@ const gridClass = computed(() => {
       <!-- stream selector -->
       <div class="p-4 border-b border-[#1f2227]">
         <select
+          v-model="selectedStream"
           class="w-full px-3 py-2 border rounded-md bg-background cursor-pointer"
         >
           <option value="">Select stream chat</option>
-          <option v-for="channel in streams" :key="channel" :value="channel">
-            {{ channel }}
+          <option
+            v-for="stream in streams"
+            :key="stream.id"
+            :value="stream.channel"
+          >
+            {{ stream.channel }}
           </option>
         </select>
       </div>
 
       <!-- chat area -->
       <div class="flex-1 overflow-hidden">
-        <KickChat v-if="streams.length > 0" :channel="streams[0] || ''" />
+        <KickChat v-if="selectedStream" :channel="selectedStream" />
         <div
-          v-else
+          v-if="!selectedStream && streams.length > 0"
+          class="flex items-center justify-center h-full text-muted-foreground"
+        >
+          <p class="text-center px-4 text-white">
+            Select a stream to view chat.
+          </p>
+        </div>
+        <div
+          v-else-if="streams.length === 0"
           class="flex items-center justify-center h-full text-muted-foreground"
         >
           <p class="text-center px-4 text-white">
