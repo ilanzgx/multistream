@@ -35,6 +35,7 @@ const gridClass = computed(() => {
           v-for="(stream, index) in streams"
           :key="stream.id"
           :channel="stream.channel"
+          :channelid="stream.id"
           :class="{
             'col-span-2 justify-self-center w-1/2':
               streams.length === 3 && index === 2,
