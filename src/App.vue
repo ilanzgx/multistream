@@ -6,11 +6,17 @@ import KickStream from "./components/KickStream.vue";
 import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "./components/ui/tooltip";
 
 const sidebarOpen = ref(true);
 const addStreamDialogOpen = ref(false);
 const selectedStream = ref("");
-const { streams, addStream, removeStream } = useStreams();
+const { streams } = useStreams();
 
 const gridClass = computed(() => {
   const count = streams.value.length;
@@ -101,29 +107,65 @@ const gridClass = computed(() => {
       <!-- action buttons -->
       <div class="p-4 border-t border-t-[#1f2227]">
         <div class="flex justify-center items-center gap-4">
-          <Button
-            class="cursor-pointer"
-            variant="outline"
-            @click="addStreamDialogOpen = true"
-          >
-            <UserPlus2 class="size-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  class="cursor-pointer"
+                  variant="outline"
+                  @click="addStreamDialogOpen = true"
+                >
+                  <UserPlus2 class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add Stream</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <Button class="cursor-pointer" variant="outline">
-            <Settings2 class="size-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button class="cursor-pointer" variant="outline">
+                  <Settings2 class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Settings</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <Button class="cursor-pointer" variant="outline">
-            <Share2 class="size-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button class="cursor-pointer" variant="outline">
+                  <Share2 class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Share</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-          <Button
-            class="cursor-pointer"
-            variant="outline"
-            @click="sidebarOpen = !sidebarOpen"
-          >
-            <LogOutIcon class="size-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  class="cursor-pointer"
+                  variant="outline"
+                  @click="sidebarOpen = !sidebarOpen"
+                >
+                  <LogOutIcon class="size-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Hide</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </aside>
