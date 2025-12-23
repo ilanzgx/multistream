@@ -60,6 +60,7 @@ const handleAddStream = () => {
           >
             <option value="kick">Kick</option>
             <option value="twitch">Twitch</option>
+            <option value="youtube">Youtube</option>
           </select>
         </div>
 

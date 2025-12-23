@@ -5,6 +5,8 @@ import KickChat from "./components/KickChat.vue";
 import KickStream from "./components/KickStream.vue";
 import TwitchChat from "./components/TwitchChat.vue";
 import TwitchStream from "./components/TwitchStream.vue";
+import YoutubeStream from "./components/YoutubeStream.vue";
+import YoutubeChat from "./components/YoutubeChat.vue";
 import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
@@ -18,20 +20,7 @@ import {
 const sidebarOpen = ref(true);
 const addStreamDialogOpen = ref(false);
 const selectedStream = ref("");
-const { streams } = useStreams();
-
-const gridClass = computed(() => {
-  const count = streams.value.length;
-
-  if (count === 1) return "grid-cols-1 grid-rows-1";
-  if (count === 2) return "grid-cols-1 grid-rows-2";
-  if (count === 3) return "grid-cols-2 grid-rows-2";
-  if (count === 4) return "grid-cols-2 grid-rows-2";
-  if (count <= 6) return "grid-cols-3 grid-rows-2";
-  if (count <= 9) return "grid-cols-3 grid-rows-3";
-
-  return "grid-cols-4 grid-rows-3";
-});
+const { streams, gridClass } = useStreams();
 
 const selectedStreamData = computed(() =>
   streams.value.find((s) => s.channel === selectedStream.value)
@@ -55,6 +44,15 @@ const selectedStreamData = computed(() =>
           />
           <TwitchStream
             v-else-if="stream.platform === 'twitch'"
+            :channel="stream.channel"
+            :channelid="stream.id"
+            :class="{
+              'col-span-2 justify-self-center w-1/2':
+                streams.length === 3 && index === 2,
+            }"
+          />
+          <YoutubeStream
+            v-else-if="stream.platform === 'youtube'"
             :channel="stream.channel"
             :channelid="stream.id"
             :class="{
@@ -107,6 +105,10 @@ const selectedStreamData = computed(() =>
         />
         <TwitchChat
           v-else-if="selectedStreamData?.platform === 'twitch'"
+          :channel="selectedStream"
+        />
+        <YoutubeChat
+          v-else-if="selectedStreamData?.platform === 'youtube'"
           :channel="selectedStream"
         />
         <div
