@@ -3,6 +3,8 @@ import { ref, computed } from "vue";
 import { Button } from "./components/ui/button";
 import KickChat from "./components/KickChat.vue";
 import KickStream from "./components/KickStream.vue";
+import TwitchChat from "./components/TwitchChat.vue";
+import TwitchStream from "./components/TwitchStream.vue";
 import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
@@ -30,6 +32,10 @@ const gridClass = computed(() => {
 
   return "grid-cols-4 grid-rows-3";
 });
+
+const selectedStreamData = computed(() =>
+  streams.value.find((s) => s.channel === selectedStream.value)
+);
 </script>
 
 <template>
@@ -37,16 +43,26 @@ const gridClass = computed(() => {
     <!-- main -->
     <main class="flex-1 overflow-hidden bg-[#1f2227]">
       <div v-if="streams.length > 0" class="h-full grid" :class="gridClass">
-        <KickStream
-          v-for="(stream, index) in streams"
-          :key="stream.id"
-          :channel="stream.channel"
-          :channelid="stream.id"
-          :class="{
-            'col-span-2 justify-self-center w-1/2':
-              streams.length === 3 && index === 2,
-          }"
-        />
+        <template v-for="(stream, index) in streams" :key="stream.id">
+          <KickStream
+            v-if="stream.platform === 'kick'"
+            :channel="stream.channel"
+            :channelid="stream.id"
+            :class="{
+              'col-span-2 justify-self-center w-1/2':
+                streams.length === 3 && index === 2,
+            }"
+          />
+          <TwitchStream
+            v-else-if="stream.platform === 'twitch'"
+            :channel="stream.channel"
+            :channelid="stream.id"
+            :class="{
+              'col-span-2 justify-self-center w-1/2':
+                streams.length === 3 && index === 2,
+            }"
+          />
+        </template>
       </div>
       <div v-else class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-4">
@@ -85,9 +101,16 @@ const gridClass = computed(() => {
 
       <!-- chat area -->
       <div class="flex-1 overflow-hidden">
-        <KickChat v-if="selectedStream" :channel="selectedStream" />
+        <KickChat
+          v-if="selectedStreamData?.platform === 'kick'"
+          :channel="selectedStream"
+        />
+        <TwitchChat
+          v-else-if="selectedStreamData?.platform === 'twitch'"
+          :channel="selectedStream"
+        />
         <div
-          v-if="!selectedStream && streams.length > 0"
+          v-else-if="!selectedStream && streams.length > 0"
           class="flex items-center justify-center h-full text-muted-foreground"
         >
           <p class="text-center px-4 text-white">
