@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { Button } from "./components/ui/button";
-import KickChat from "./components/KickChat.vue";
-import KickStream from "./components/KickStream.vue";
-import TwitchChat from "./components/TwitchChat.vue";
-import TwitchStream from "./components/TwitchStream.vue";
-import YoutubeStream from "./components/YoutubeStream.vue";
-import YoutubeChat from "./components/YoutubeChat.vue";
+import KickChat from "./components/chat/KickChat.vue";
+import KickStream from "./components/stream/KickStream.vue";
+import TwitchChat from "./components/chat/TwitchChat.vue";
+import TwitchStream from "./components/stream/TwitchStream.vue";
+import YoutubeStream from "./components/stream/YoutubeStream.vue";
+import YoutubeChat from "./components/chat/YoutubeChat.vue";
 import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
