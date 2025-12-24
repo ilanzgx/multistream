@@ -28,11 +28,42 @@ const channelName = ref("");
 const selectedPlatform = ref<Platform>("kick");
 
 const handleAddStream = () => {
-  if (!channelName.value.trim()) {
+  let channel = channelName.value.trim();
+
+  // if it's a url
+  if (channel.includes(".com") || channel.includes(".tv")) {
+    try {
+      const url = new URL(channel);
+
+      // youtube
+      if (url.hostname.includes("youtube")) {
+        const videoId = url.searchParams.get("v");
+        // yt video
+        if (videoId) {
+          channel = videoId;
+        } else {
+          // yt live
+          const pathParts = url.pathname.split("/").filter(Boolean);
+          channel = pathParts.pop() || channel;
+        }
+      } else {
+        // kick, twitch, etc
+        const pathParts = url.pathname.split("/").filter(Boolean);
+        channel = pathParts.pop() || channel;
+      }
+    } catch {
+      // if not a url, try to extract manually
+      const parts = channel.split("/").filter(Boolean);
+      channel = parts.pop() || channel;
+      channel = channel.split("?")[0] || channel;
+    }
+  }
+
+  if (!channel) {
     return;
   }
 
-  addStream(channelName.value.trim(), selectedPlatform.value);
+  addStream(channel, selectedPlatform.value);
 
   channelName.value = "";
   selectedPlatform.value = "kick";
