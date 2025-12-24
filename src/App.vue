@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { Button } from "./components/ui/button";
 import KickChat from "./components/KickChat.vue";
 import KickStream from "./components/KickStream.vue";
@@ -25,6 +25,15 @@ const { streams, gridClass } = useStreams();
 const selectedStreamData = computed(() =>
   streams.value.find((s) => s.channel === selectedStream.value)
 );
+
+watch(streams, (newStreams) => {
+  if (
+    selectedStream.value &&
+    !newStreams.some((s) => s.channel === selectedStream.value)
+  ) {
+    selectedStream.value = "";
+  }
+});
 </script>
 
 <template>
