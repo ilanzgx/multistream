@@ -6,7 +6,41 @@ on:
       - "v*"
 
 jobs:
-  publish-tauri:
+  create-release:
+    permissions:
+      contents: write
+    runs-on: ubuntu-22.04
+    outputs:
+      release_id: ${{ steps.create-release.outputs.release_id }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Create Release
+        id: create-release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = context.ref.replace('refs/tags/', '')
+
+            const { data } = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: tag,
+              name: `Multistream ${tag}`,
+              body: 'See the assets below to download and install this version.',
+              draft: true,
+              prerelease: true
+            })
+            core.setOutput('release_id', data.id)
+
+  build-tauri:
+    needs: create-release
     permissions:
       contents: write
     strategy:
@@ -54,9 +88,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v__VERSION__
-          releaseName: "Multistream v__VERSION__"
-          releaseBody: "See the assets below to download and install this version."
-          releaseDraft: true
-          prerelease: true
+          releaseId: ${{ needs.create-release.outputs.release_id }}
           args: ${{ matrix.args }}
