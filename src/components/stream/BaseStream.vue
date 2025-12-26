@@ -1,11 +1,40 @@
 <script setup lang="ts">
 import { useStreams } from "@/composables/useStreams";
-import { X, Heart, Loader2 } from "lucide-vue-next";
-import { ref, onMounted, nextTick } from "vue";
+import { X, Heart } from "lucide-vue-next";
+import { ref, onMounted, nextTick, computed } from "vue";
+
+import YoutubeIcon from "@/components/icons/YoutubeIcon.vue";
+import KickIcon from "@/components/icons/KickIcon.vue";
+import TwitchIcon from "@/components/icons/TwitchIcon.vue";
 
 const { removeStream } = useStreams();
 
-defineProps<{ channelid: string }>();
+const props = defineProps<{
+  channelid: string;
+  channel: string;
+  platform: "twitch" | "kick" | "youtube";
+}>();
+
+const platformConfig = computed(() => {
+  const configs = {
+    twitch: {
+      icon: TwitchIcon,
+      color: "#9146FF",
+      name: "Twitch",
+    },
+    kick: {
+      icon: KickIcon,
+      color: "#53FC18",
+      name: "Kick",
+    },
+    youtube: {
+      icon: YoutubeIcon,
+      color: "#FF0000",
+      name: "YouTube",
+    },
+  };
+  return configs[props.platform];
+});
 
 const buttonVisible = ref(false);
 const isLoading = ref(true);
@@ -35,37 +64,67 @@ onMounted(() => {
     <!-- enhanced skeleton loader -->
     <div
       v-if="isLoading"
-      class="absolute inset-0 w-full h-full bg-linear-to-br from-[#2a2d33] via-[#23262c] to-[#2a2d33] flex flex-col items-center justify-center gap-4 z-50"
+      class="absolute inset-0 w-full h-full bg-linear-to-br from-[#1a1c20] via-[#0f1012] to-[#1a1c20] flex flex-col items-center justify-center gap-6 z-50"
     >
       <div class="relative">
-        <!-- spinner -->
-        <Loader2 class="w-16 h-16 text-gray-600 animate-spin drop-shadow-lg" />
+        <div
+          class="absolute inset-0 rounded-full blur-xl opacity-20 animate-pulse"
+          :style="{ backgroundColor: platformConfig.color }"
+        ></div>
+
+        <div
+          class="relative w-24 h-24 rounded-full flex items-center justify-center border-2 animate-pulse"
+          :style="{
+            borderColor: platformConfig.color,
+            boxShadow: `0 0 30px ${platformConfig.color}40, inset 0 0 20px ${platformConfig.color}20`,
+          }"
+        >
+          <component
+            :is="platformConfig.icon"
+            :size="48"
+            class="drop-shadow-lg"
+            :style="{ color: platformConfig.color }"
+          />
+        </div>
       </div>
 
+      <!-- loading text -->
       <div class="text-center space-y-2">
-        <p class="text-lg font-semibold text-white drop-shadow-md">
-          Loading stream...
+        <p class="text-xl font-bold text-white/90 tracking-wide">
+          {{ channel }}
         </p>
-        <div class="flex gap-1 justify-center">
-          <div
-            class="w-2 h-2 bg-gray-700 rounded-full animate-bounce drop-shadow-lg"
-            style="animation-delay: 0ms"
-          ></div>
-          <div
-            class="w-2 h-2 bg-gray-700 rounded-full animate-bounce drop-shadow-lg"
-            style="animation-delay: 150ms"
-          ></div>
-          <div
-            class="w-2 h-2 bg-gray-700 rounded-full animate-bounce drop-shadow-lg"
-            style="animation-delay: 300ms"
-          ></div>
+        <div class="flex flex-col items-center gap-2">
+          <p class="text-sm text-gray-400">Loading stream</p>
+          <div class="flex gap-1.5">
+            <div
+              class="w-1.5 h-1.5 rounded-full animate-bounce"
+              :style="{
+                backgroundColor: platformConfig.color,
+                animationDelay: '0ms',
+              }"
+            ></div>
+            <div
+              class="w-1.5 h-1.5 rounded-full animate-bounce"
+              :style="{
+                backgroundColor: platformConfig.color,
+                animationDelay: '150ms',
+              }"
+            ></div>
+            <div
+              class="w-1.5 h-1.5 rounded-full animate-bounce"
+              :style="{
+                backgroundColor: platformConfig.color,
+                animationDelay: '300ms',
+              }"
+            ></div>
+          </div>
         </div>
       </div>
 
       <!-- shimmer effect -->
-      <div class="absolute inset-0 opacity-20">
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
         <div
-          class="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent animate-shimmer"
+          class="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent animate-shimmer"
         ></div>
       </div>
     </div>

@@ -5,7 +5,7 @@ defineProps<{ channel: string; channelid: string }>();
 </script>
 
 <template>
-  <BaseStream :channelid="channelid">
+  <BaseStream :channelid="channelid"  :channel="channel" platform="youtube">
     <iframe
       :src="`https://www.youtube.com/embed/${channel}?autoplay=1`"
       frameborder="0"

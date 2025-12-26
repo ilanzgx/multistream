@@ -5,7 +5,7 @@ defineProps<{ channel: string; channelid: string }>();
 </script>
 
 <template>
-  <BaseStream :channelid="channelid">
+  <BaseStream :channelid="channelid" :channel="channel" platform="kick">
     <iframe
       :src="`https://player.kick.com/${channel}`"
       allowfullscreen
