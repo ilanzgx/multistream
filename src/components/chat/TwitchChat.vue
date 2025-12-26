@@ -10,7 +10,7 @@ const parentHost = computed(() => window.location.hostname);
 <template>
   <BaseChat>
     <iframe
-      :src="`https://www.twitch.tv/embed/${channel}/chat?parent=${parentHost}`"
+      :src="`https://www.twitch.tv/embed/${channel}/chat?parent=${parentHost}&darkpopout=true`"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
       frameborder="0"

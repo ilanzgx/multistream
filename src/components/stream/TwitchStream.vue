@@ -10,7 +10,7 @@ const parentHost = computed(() => window.location.hostname);
 <template>
   <BaseStream :channelid="channelid">
     <iframe
-      :src="`https://player.twitch.tv/?channel=${channel}&parent=${parentHost}`"
+      :src="`https://player.twitch.tv/?channel=${channel}&parent=${parentHost}&autoplay=true&muted=true`"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
       frameborder="0"
