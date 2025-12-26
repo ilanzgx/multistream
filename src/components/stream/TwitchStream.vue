@@ -4,7 +4,13 @@ import BaseStream from "./BaseStream.vue";
 
 defineProps<{ channel: string; channelid: string }>();
 
-const parentHost = computed(() => window.location.hostname);
+const parentHost = computed(() => {
+  const hostname = window.location.hostname;
+  if (!hostname || hostname.includes("tauri") || hostname === "") {
+    return "localhost";
+  }
+  return hostname;
+});
 </script>
 
 <template>
