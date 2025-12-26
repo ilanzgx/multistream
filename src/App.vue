@@ -86,119 +86,122 @@ watch(streams, (newStreams) => {
 
     <!-- sidebar -->
     <aside
-      class="w-80 shadow-lg transition-all duration-300 flex flex-col"
-      :class="{ 'translate-x-full': !sidebarOpen }"
+      class="shadow-lg transition-all duration-200 flex flex-col overflow-hidden"
+      :class="sidebarOpen ? 'w-80' : 'w-0'"
     >
-      <!-- stream selector -->
-      <div class="p-4 border-b border-[#1f2227]">
-        <select
-          v-model="selectedStream"
-          class="w-full px-3 py-2 border rounded-md bg-background cursor-pointer"
-        >
-          <option value="">Select stream chat</option>
-          <option
-            v-for="stream in streams"
-            :key="stream.id"
-            :value="stream.channel"
+      <div
+        :key="sidebarOpen ? 'open' : 'closed'"
+        class="flex flex-col h-full min-w-80"
+        :style="{
+          opacity: sidebarOpen ? 1 : 0,
+          transition: sidebarOpen ? 'opacity 150ms' : 'opacity 50ms',
+        }"
+      >
+        <!-- stream selector -->
+        <div class="p-4 border-b border-[#1f2227]">
+          <select
+            v-model="selectedStream"
+            class="w-full px-3 py-2 border rounded-md bg-background cursor-pointer"
           >
-            {{ stream.channel }}
-          </option>
-        </select>
-      </div>
-
-      <!-- chat area -->
-      <div class="flex-1 overflow-hidden">
-        <KickChat
-          v-if="selectedStreamData?.platform === 'kick'"
-          :channel="selectedStream"
-        />
-        <TwitchChat
-          v-else-if="selectedStreamData?.platform === 'twitch'"
-          :channel="selectedStream"
-        />
-        <YoutubeChat
-          v-else-if="selectedStreamData?.platform === 'youtube'"
-          :channel="selectedStream"
-        />
-        <div
-          v-else-if="!selectedStream && streams.length > 0"
-          class="flex items-center justify-center h-full text-muted-foreground"
-        >
-          <p class="text-center px-4 text-white">
-            Select a stream to view chat.
-          </p>
+            <option value="">Select stream chat</option>
+            <option
+              v-for="stream in streams"
+              :key="stream.id"
+              :value="stream.channel"
+            >
+              {{ stream.channel }}
+            </option>
+          </select>
         </div>
-        <div
-          v-else-if="streams.length === 0"
-          class="flex items-center justify-center h-full text-muted-foreground"
-        >
-          <p class="text-center px-4 text-white">
-            No streams available.<br />Add a stream to view chat.
-          </p>
+
+        <!-- chat area -->
+        <div class="flex-1 overflow-hidden">
+          <KickChat
+            v-if="selectedStreamData?.platform === 'kick'"
+            :channel="selectedStream"
+          />
+          <TwitchChat
+            v-else-if="selectedStreamData?.platform === 'twitch'"
+            :channel="selectedStream"
+          />
+          <YoutubeChat
+            v-else-if="selectedStreamData?.platform === 'youtube'"
+            :channel="selectedStream"
+          />
+          <div
+            v-else-if="!selectedStream && streams.length > 0"
+            class="flex items-center justify-center h-full text-muted-foreground"
+          >
+            <p class="text-center px-4 text-white">
+              Select a stream to view chat.
+            </p>
+          </div>
+          <div
+            v-else-if="streams.length === 0"
+            class="flex items-center justify-center h-full text-muted-foreground"
+          >
+            <p class="text-center px-4 text-white">
+              No streams available.<br />Add a stream to view chat.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- action buttons -->
-      <div class="p-4 border-t border-t-[#1f2227]">
-        <div class="flex justify-center items-center gap-4">
+        <!-- action buttons -->
+        <div class="p-4 border-t border-t-[#1f2227]">
           <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button
-                  class="cursor-pointer"
-                  variant="outline"
-                  @click="addStreamDialogOpen = true"
-                >
-                  <UserPlus2 class="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Add Stream</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+            <div class="flex justify-center items-center gap-4">
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    class="cursor-pointer"
+                    variant="outline"
+                    @click="addStreamDialogOpen = true"
+                  >
+                    <UserPlus2 class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Add Stream</p>
+                </TooltipContent>
+              </Tooltip>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button class="cursor-pointer" variant="outline">
-                  <Settings2 class="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Settings</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button class="cursor-pointer" variant="outline">
+                    <Settings2 class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Settings</p>
+                </TooltipContent>
+              </Tooltip>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button class="cursor-pointer" variant="outline">
-                  <Share2 class="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Share</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button class="cursor-pointer" variant="outline">
+                    <Share2 class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Share</p>
+                </TooltipContent>
+              </Tooltip>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Button
-                  class="cursor-pointer"
-                  variant="outline"
-                  @click="sidebarOpen = !sidebarOpen"
-                >
-                  <LogOutIcon class="size-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Hide</p>
-              </TooltipContent>
-            </Tooltip>
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    class="cursor-pointer"
+                    variant="outline"
+                    @click="sidebarOpen = !sidebarOpen"
+                  >
+                    <LogOutIcon class="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Hide</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </TooltipProvider>
         </div>
       </div>
@@ -208,7 +211,7 @@ watch(streams, (newStreams) => {
     <Button
       v-if="!sidebarOpen"
       @click="sidebarOpen = true"
-      class="fixed text-black right-0 top-1/2 -translate-y-1/2 bg-card border border-r-0 rounded-l-lg px-2 py-8 shadow-lg hover:bg-accent transition-colors"
+      class="fixed text-black right-0 top-1/2 -translate-y-1/2 bg-card border border-r-0 rounded-l-lg px-2 py-8 shadow-lg hover:bg-accent transition-colors cursor-pointer"
     >
       ☰
     </Button>
