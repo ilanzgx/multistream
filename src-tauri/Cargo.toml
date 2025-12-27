@@ -1,10 +1,10 @@
 [package]
-name = "app"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
-license = ""
-repository = ""
+name = "multistream"
+version = "0.1.2"
+description = "Watch multiple streams simultaneously on Twitch, YouTube and Kick"
+authors = ["Ilan Fonseca <ilan-_@hotmail.com>"]
+license = "GNU General Public License v3.0"
+repository = "https://github.com/ilanzgx/multistream"
 edition = "2021"
 rust-version = "1.77.2"
 
