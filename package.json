@@ -8,7 +8,8 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "tauri:dev": "bunx tauri dev",
-    "tauri:build": "bunx tauri build"
+    "tauri:build": "bunx tauri build",
+    "version": "bun run scripts/sync-version.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
