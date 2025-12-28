@@ -1,6 +1,6 @@
 [package]
 name = "multistream"
-version = "0.1.2"
+version = "0.1.3"
 description = "Watch multiple streams simultaneously on Twitch, YouTube and Kick"
 authors = ["Ilan Fonseca <ilan-_@hotmail.com>"]
 license = "GNU General Public License v3.0"
@@ -24,4 +24,3 @@ log = "0.4"
 tauri = { version = "2.9.5", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-localhost = "2"
-portpicker = "0.1"

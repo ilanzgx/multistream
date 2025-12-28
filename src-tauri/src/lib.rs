@@ -1,11 +1,12 @@
 use tauri::Manager;
 
+// fixed port
+const LOCALHOST_PORT: u16 = 14831;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  let port = portpicker::pick_unused_port().expect("failed to get unused port");
-
   tauri::Builder::default()
-    .plugin(tauri_plugin_localhost::Builder::new(port).build())
+    .plugin(tauri_plugin_localhost::Builder::new(LOCALHOST_PORT).build())
     .setup(move |app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -13,11 +14,11 @@ pub fn run() {
             .level(log::LevelFilter::Info)
             .build(),
         )?;
+      } else {
+        // redirect to localhost only in production
+        let main_window = app.get_webview_window("main").unwrap();
+        main_window.eval(&format!("window.location.replace('http://localhost:{}')", LOCALHOST_PORT)).unwrap();
       }
-
-      // redirect to localhost in production
-      let main_window = app.get_webview_window("main").unwrap();
-      main_window.eval(&format!("window.location.replace('http://localhost:{}')", port)).unwrap();
 
       Ok(())
     })
