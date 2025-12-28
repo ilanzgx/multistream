@@ -20,7 +20,7 @@
 
 ## About The Project
 
-Multistream is a cross-platform desktop application that lets you watch up to 4 streams from different platforms (Twitch, Kick and YouTube) at the same time, with integrated real-time chat.
+Multistream is a cross-platform desktop application that lets you watch multiple streams from different platforms (Twitch, Kick and YouTube) at the same time, with integrated real-time chat.
 
 ### Built With
 
