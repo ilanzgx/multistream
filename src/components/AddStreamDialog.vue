@@ -73,10 +73,10 @@ const handleAddStream = () => {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent>
+    <DialogContent class="bg-[#191b1f] border-[#2a2d33]">
       <DialogHeader>
-        <DialogTitle>Add New Stream</DialogTitle>
-        <DialogDescription>
+        <DialogTitle class="text-white">Add New Stream</DialogTitle>
+        <DialogDescription class="text-gray-400">
           Enter the channel name to add a new stream to your multistream.
         </DialogDescription>
       </DialogHeader>
@@ -84,10 +84,10 @@ const handleAddStream = () => {
       <div class="space-y-4">
         <!-- platform selector -->
         <div class="space-y-2">
-          <label class="text-sm font-medium">Platform</label>
+          <label class="text-sm font-medium text-gray-300">Platform</label>
           <select
             v-model="selectedPlatform"
-            class="w-full px-3 py-2 border rounded-md bg-background cursor-pointer"
+            class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] cursor-pointer"
           >
             <option value="kick">Kick</option>
             <option value="twitch">Twitch</option>
@@ -97,12 +97,12 @@ const handleAddStream = () => {
 
         <!-- channel name -->
         <div class="space-y-2">
-          <label class="text-sm font-medium">Channel Name</label>
+          <label class="text-sm font-medium text-gray-300">Channel Name</label>
           <input
             v-model="channelName"
             type="text"
-            placeholder="Enter channel name..."
-            class="w-full px-3 py-2 border rounded-md bg-background"
+            placeholder="Enter channel name or URL..."
+            class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
             @keyup.enter="handleAddStream"
           />
         </div>
@@ -110,10 +110,16 @@ const handleAddStream = () => {
 
       <DialogFooter>
         <DialogClose as-child>
-          <Button variant="outline">Cancel</Button>
+          <Button
+            variant="outline"
+            class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+          >
+            Cancel
+          </Button>
         </DialogClose>
         <Button
-          class="cursor-pointer"
+          variant="outline"
+          class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
           @click="handleAddStream"
           :disabled="!channelName.trim()"
         >

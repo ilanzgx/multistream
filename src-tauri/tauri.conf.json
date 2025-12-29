@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "multistream",
-  "version": "0.1.3",
+  "productName": "Multistream",
+  "version": "0.2.0",
   "identifier": "com.ilanzgx.multistream",
   "build": {
     "frontendDist": "../dist",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Multistreams",
+        "title": "Multistream",
         "width": 1280,
         "height": 720,
         "resizable": true,

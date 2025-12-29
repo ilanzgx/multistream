@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { Button } from "./components/ui/button";
 import KickChat from "./components/chat/KickChat.vue";
 import KickStream from "./components/stream/KickStream.vue";
@@ -8,7 +8,7 @@ import TwitchStream from "./components/stream/TwitchStream.vue";
 import YoutubeStream from "./components/stream/YoutubeStream.vue";
 import YoutubeChat from "./components/chat/YoutubeChat.vue";
 import AddStreamDialog from "./components/AddStreamDialog.vue";
-import { UserPlus2, Settings2, Share2, LogOutIcon } from "lucide-vue-next";
+import { UserPlus2, Settings2, Share2, PanelRightClose } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
 import {
   TooltipProvider,
@@ -16,11 +16,21 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "./components/ui/tooltip";
+import { getVersion } from "@tauri-apps/api/app";
 
 const sidebarOpen = ref(true);
 const addStreamDialogOpen = ref(false);
 const selectedStream = ref("");
+const appVersion = ref("");
 const { streams, gridClass } = useStreams();
+
+onMounted(async () => {
+  try {
+    appVersion.value = await getVersion();
+  } catch {
+    appVersion.value = "";
+  }
+});
 
 const selectedStreamData = computed(() =>
   streams.value.find((s) => s.channel === selectedStream.value)
@@ -101,9 +111,9 @@ watch(streams, (newStreams) => {
         <div class="p-4 border-b border-[#1f2227]">
           <select
             v-model="selectedStream"
-            class="w-full px-3 py-2 border rounded-md bg-background cursor-pointer"
+            class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] cursor-pointer"
           >
-            <option value="">Select stream chat</option>
+            <option disabled value="">Select stream chat</option>
             <option
               v-for="stream in streams"
               :key="stream.id"
@@ -153,11 +163,11 @@ watch(streams, (newStreams) => {
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
-                    class="cursor-pointer"
+                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
                     variant="outline"
                     @click="addStreamDialogOpen = true"
                   >
-                    <UserPlus2 class="size-4" />
+                    <UserPlus2 class="size-4 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -167,8 +177,11 @@ watch(streams, (newStreams) => {
 
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <Button class="cursor-pointer" variant="outline">
-                    <Settings2 class="size-4" />
+                  <Button
+                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+                    variant="outline"
+                  >
+                    <Settings2 class="size-4 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -178,8 +191,11 @@ watch(streams, (newStreams) => {
 
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <Button class="cursor-pointer" variant="outline">
-                    <Share2 class="size-4" />
+                  <Button
+                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+                    variant="outline"
+                  >
+                    <Share2 class="size-4 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -190,11 +206,11 @@ watch(streams, (newStreams) => {
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
-                    class="cursor-pointer"
+                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
                     variant="outline"
                     @click="sidebarOpen = !sidebarOpen"
                   >
-                    <LogOutIcon class="size-4" />
+                    <PanelRightClose class="size-4 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -203,6 +219,14 @@ watch(streams, (newStreams) => {
               </Tooltip>
             </div>
           </TooltipProvider>
+
+          <!-- version -->
+          <p
+            v-if="appVersion"
+            class="mt-2 text-center text-xs text-gray-400 select-none"
+          >
+            v{{ appVersion }}
+          </p>
         </div>
       </div>
     </aside>
