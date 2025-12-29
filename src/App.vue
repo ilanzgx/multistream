@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch } from "vue";
 import { Button } from "./components/ui/button";
 import KickChat from "./components/chat/KickChat.vue";
 import KickStream from "./components/stream/KickStream.vue";
@@ -16,21 +16,12 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "./components/ui/tooltip";
-import { getVersion } from "@tauri-apps/api/app";
 
 const sidebarOpen = ref(true);
 const addStreamDialogOpen = ref(false);
 const selectedStream = ref("");
-const appVersion = ref("");
+const appVersion = import.meta.env.VITE_APP_VERSION;
 const { streams, gridClass } = useStreams();
-
-onMounted(async () => {
-  try {
-    appVersion.value = await getVersion();
-  } catch {
-    appVersion.value = "";
-  }
-});
 
 const selectedStreamData = computed(() =>
   streams.value.find((s) => s.channel === selectedStream.value)
