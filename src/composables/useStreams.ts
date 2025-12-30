@@ -24,7 +24,6 @@ const _useStreams = () => {
       return;
     }
 
-    console.log("Adding stream");
     streams.value = [
       ...streams.value,
       {
@@ -36,7 +35,6 @@ const _useStreams = () => {
   };
 
   const removeStream = (id: string) => {
-    console.log("Removing stream");
     streams.value = streams.value.filter((s) => s.id !== id);
   };
 

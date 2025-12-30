@@ -10,6 +10,7 @@ import YoutubeChat from "./components/chat/YoutubeChat.vue";
 import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, PanelRightClose } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
+import { usePreferences } from "./composables/usePreferences";
 import {
   TooltipProvider,
   Tooltip,
@@ -17,22 +18,22 @@ import {
   TooltipContent,
 } from "./components/ui/tooltip";
 
-const sidebarOpen = ref(true);
 const addStreamDialogOpen = ref(false);
-const selectedStream = ref("");
 const appVersion = import.meta.env.VITE_APP_VERSION;
-const { streams, gridClass } = useStreams();
 
-const selectedStreamData = computed(() =>
-  streams.value.find((s) => s.channel === selectedStream.value)
+const { streams, gridClass } = useStreams();
+const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
+
+const selectedChatData = computed(() =>
+  streams.value.find((s) => s.channel === selectedChat.value)
 );
 
 watch(streams, (newStreams) => {
   if (
-    selectedStream.value &&
-    !newStreams.some((s) => s.channel === selectedStream.value)
+    selectedChat.value &&
+    !newStreams.some((s) => s.channel === selectedChat.value)
   ) {
-    selectedStream.value = "";
+    setSelectedChat("");
   }
 });
 </script>
@@ -101,7 +102,7 @@ watch(streams, (newStreams) => {
         <!-- stream selector -->
         <div class="p-4 border-b border-[#1f2227]">
           <select
-            v-model="selectedStream"
+            v-model="selectedChat"
             class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] cursor-pointer"
           >
             <option disabled value="">Select stream chat</option>
@@ -118,19 +119,19 @@ watch(streams, (newStreams) => {
         <!-- chat area -->
         <div class="flex-1 overflow-hidden">
           <KickChat
-            v-if="selectedStreamData?.platform === 'kick'"
-            :channel="selectedStream"
+            v-if="selectedChatData?.platform === 'kick'"
+            :channel="selectedChat"
           />
           <TwitchChat
-            v-else-if="selectedStreamData?.platform === 'twitch'"
-            :channel="selectedStream"
+            v-else-if="selectedChatData?.platform === 'twitch'"
+            :channel="selectedChat"
           />
           <YoutubeChat
-            v-else-if="selectedStreamData?.platform === 'youtube'"
-            :channel="selectedStream"
+            v-else-if="selectedChatData?.platform === 'youtube'"
+            :channel="selectedChat"
           />
           <div
-            v-else-if="!selectedStream && streams.length > 0"
+            v-else-if="!selectedChat && streams.length > 0"
             class="flex items-center justify-center h-full text-muted-foreground"
           >
             <p class="text-center px-4 text-white">
