@@ -35,24 +35,33 @@ const handleAddStream = () => {
     try {
       const url = new URL(channel);
 
-      // youtube
+      // detect platform from URL
       if (url.hostname.includes("youtube")) {
+        selectedPlatform.value = "youtube";
+      } else if (url.hostname.includes("twitch")) {
+        selectedPlatform.value = "twitch";
+      } else if (url.hostname.includes("kick")) {
+        selectedPlatform.value = "kick";
+      }
+
+      // extract channel/video based on platform
+      if (selectedPlatform.value === "youtube") {
         const videoId = url.searchParams.get("v");
-        // yt video
         if (videoId) {
+          // youtube.com/watch?v=VIDEO_ID
           channel = videoId;
         } else {
-          // yt live
+          // youtube.com/live/VIDEO_ID or youtube.com/@channel/live
           const pathParts = url.pathname.split("/").filter(Boolean);
           channel = pathParts.pop() || channel;
         }
       } else {
-        // kick, twitch, etc
+        // kick.com/channel or twitch.tv/channel
         const pathParts = url.pathname.split("/").filter(Boolean);
         channel = pathParts.pop() || channel;
       }
     } catch {
-      // if not a url, try to extract manually
+      // if not a valid URL, try to extract manually
       const parts = channel.split("/").filter(Boolean);
       channel = parts.pop() || channel;
       channel = channel.split("?")[0] || channel;
@@ -77,7 +86,7 @@ const handleAddStream = () => {
       <DialogHeader>
         <DialogTitle class="text-white">Add New Stream</DialogTitle>
         <DialogDescription class="text-gray-400">
-          Enter the channel name to add a new stream to your multistream.
+          Enter the channel name or url to add a new stream to your multistream.
         </DialogDescription>
       </DialogHeader>
 
@@ -97,7 +106,14 @@ const handleAddStream = () => {
 
         <!-- channel name -->
         <div class="space-y-2">
-          <label class="text-sm font-medium text-gray-300">Channel Name</label>
+          <label
+            v-if="selectedPlatform === 'kick' || selectedPlatform === 'twitch'"
+            class="text-sm font-medium text-gray-300"
+            >Channel Name</label
+          >
+          <label v-else class="text-sm font-medium text-gray-300"
+            >Video ID</label
+          >
           <input
             v-model="channelName"
             type="text"
