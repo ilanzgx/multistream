@@ -1,5 +1,6 @@
 import { createSharedComposable, useStorage } from "@vueuse/core";
 import { computed } from "vue";
+import { toast } from "vue-sonner";
 
 export type Platform = "kick" | "twitch" | "youtube";
 
@@ -20,7 +21,7 @@ const _useStreams = () => {
           s.platform === platform
       )
     ) {
-      console.log("Stream already exists");
+      toast.warning("Stream already added");
       return;
     }
 
@@ -32,10 +33,17 @@ const _useStreams = () => {
         platform,
       },
     ];
+
+    toast.success(`${channel} added`);
   };
 
   const removeStream = (id: string) => {
+    const stream = streams.value.find((s) => s.id === id);
     streams.value = streams.value.filter((s) => s.id !== id);
+
+    if (stream) {
+      toast(`${stream.channel} removed`);
+    }
   };
 
   const gridClass = computed(() => {

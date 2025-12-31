@@ -11,6 +11,8 @@ import AddStreamDialog from "./components/AddStreamDialog.vue";
 import { UserPlus2, Settings2, Share2, PanelRightClose } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
+import "vue-sonner/style.css";
+import { Toaster } from "./components/ui/sonner";
 import {
   TooltipProvider,
   Tooltip,
@@ -234,5 +236,15 @@ watch(streams, (newStreams) => {
 
     <!-- add stream dialog -->
     <AddStreamDialog v-model:open="addStreamDialogOpen" />
+
+    <!-- toast notifications -->
+    <Toaster
+      position="bottom-right"
+      theme="light"
+      :duration="2500"
+      :toastOptions="{
+        style: { padding: '12px 16px', fontSize: '13px' },
+      }"
+    />
   </div>
 </template>
