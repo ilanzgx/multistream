@@ -5,61 +5,37 @@ on:
     tags:
       - "v*"
 
+env:
+  CARGO_INCREMENTAL: 0
+  RUST_BACKTRACE: short
+
+permissions:
+  contents: write
+
 jobs:
-  create-release:
-    permissions:
-      contents: write
-    runs-on: ubuntu-22.04
-    outputs:
-      release_id: ${{ steps.create-release.outputs.release_id }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: lts/*
-
-      - name: Create Release
-        id: create-release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const tag = context.ref.replace('refs/tags/', '')
-
-            const { data } = await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: tag,
-              name: `Multistream ${tag}`,
-              body: 'See the assets below to download and install this version.',
-              draft: true,
-              prerelease: true
-            })
-            core.setOutput('release_id', data.id)
-
   build-tauri:
-    needs: create-release
-    permissions:
-      contents: write
     strategy:
       fail-fast: false
       matrix:
         include:
-          - platform: "macos-latest"
-            args: "--target aarch64-apple-darwin"
-          - platform: "macos-latest"
-            args: "--target x86_64-apple-darwin"
-          - platform: "ubuntu-22.04"
-            args: ""
-          - platform: "windows-latest"
-            args: ""
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            name: macos-arm64
+          - platform: macos-latest
+            target: x86_64-apple-darwin
+            name: macos-x64
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            name: linux-x64
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: windows-x64
 
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -69,10 +45,15 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
-      - name: Install Rust stable
+      - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
 
       - name: Install dependencies (Ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -83,33 +64,130 @@ jobs:
       - name: Install frontend dependencies
         run: bun install
 
-      - name: Build Tauri App
+      - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          releaseId: ${{ needs.create-release.outputs.release_id }}
-          tagName: ${{ github.ref_name }}
-          releaseName: "Multistream ${{ github.ref_name }}"
-          args: ${{ matrix.args }}
+          args: --target ${{ matrix.target }}
 
-  publish-release:
-    needs: [create-release, build-tauri]
-    permissions:
-      contents: write
-    runs-on: ubuntu-22.04
+      - name: Rename artifacts
+        shell: bash
+        run: |
+          mkdir -p renamed-artifacts
+          if [ "${{ matrix.platform }}" = "macos-latest" ]; then
+            find target/${{ matrix.target }}/release/bundle -name "*.dmg" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.dmg \; 2>/dev/null || true
+            find target/${{ matrix.target }}/release/bundle -name "*.app.tar.gz" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.app.tar.gz \; 2>/dev/null || true
+          elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            find target/${{ matrix.target }}/release/bundle -name "*.msi" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.msi \; 2>/dev/null || true
+            find target/${{ matrix.target }}/release/bundle -name "*-setup.exe" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}-setup.exe \; 2>/dev/null || true
+          elif [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
+            find target/${{ matrix.target }}/release/bundle -name "*.AppImage" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage \; 2>/dev/null || true
+            find target/${{ matrix.target }}/release/bundle -name "*.deb" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.deb \; 2>/dev/null || true
+          fi
+
+      - name: Collect updater signatures
+        shell: bash
+        run: |
+          mkdir -p renamed-artifacts
+          if [ "${{ matrix.platform }}" = "macos-latest" ]; then
+            find target/${{ matrix.target }}/release/bundle -name "*.app.tar.gz.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.app.tar.gz.sig \; 2>/dev/null || true
+          elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
+            find target/${{ matrix.target }}/release/bundle -name "*.msi.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.msi.sig \; 2>/dev/null || true
+            find target/${{ matrix.target }}/release/bundle -name "*-setup.exe.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}-setup.exe.sig \; 2>/dev/null || true
+          elif [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
+            find target/${{ matrix.target }}/release/bundle -name "*.AppImage.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.sig \; 2>/dev/null || true
+          fi
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.name }}
+          path: renamed-artifacts/*
+          if-no-files-found: ignore
+
+  release:
+    needs: build-tauri
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Publish Release
-        uses: actions/github-script@v7
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-          script: |
-            await github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: ${{ needs.create-release.outputs.release_id }},
-              draft: false,
-              prerelease: false
-            })
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release-files
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.sig" \) -exec cp {} release-files/ \;
+          ls -la release-files/
+
+      - name: Build updater manifest
+        working-directory: release-files
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
+
+          const tag = process.env.TAG;
+          const version = tag.startsWith("v") ? tag.slice(1) : tag;
+          const baseUrl = `https://github.com/ilanzgx/multistream/releases/download/${tag}`;
+
+          const readSig = (file) => {
+            try {
+              return fs.readFileSync(file, "utf8").trim();
+            } catch (e) {
+              console.warn(`Warning: Could not read ${file}`);
+              return "";
+            }
+          };
+
+          const manifest = {
+            version,
+            notes: "",
+            pub_date: new Date().toISOString(),
+            platforms: {
+              "darwin-aarch64": {
+                url: `${baseUrl}/Multistream-macos-arm64.app.tar.gz`,
+                signature: readSig("Multistream-macos-arm64.app.tar.gz.sig")
+              },
+              "darwin-x86_64": {
+                url: `${baseUrl}/Multistream-macos-x64.app.tar.gz`,
+                signature: readSig("Multistream-macos-x64.app.tar.gz.sig")
+              },
+              "linux-x86_64": {
+                url: `${baseUrl}/Multistream-linux-x64.AppImage`,
+                signature: readSig("Multistream-linux-x64.AppImage.sig")
+              },
+              "windows-x86_64": {
+                url: `${baseUrl}/Multistream-windows-x64-setup.exe`,
+                signature: readSig("Multistream-windows-x64-setup.exe.sig")
+              }
+            }
+          };
+
+          fs.writeFileSync("latest.json", JSON.stringify(manifest, null, 2) + "\n");
+          console.log("Generated latest.json:");
+          console.log(fs.readFileSync("latest.json", "utf8"));
+          NODE
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          name: Multistream ${{ github.ref_name }}
+          body: |
+            ## Downloads
+
+            | Platform | Download |
+            |----------|----------|
+            | Windows (installer) | [`Multistream-windows-x64-setup.exe`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-windows-x64-setup.exe) |
+            | Windows (MSI) | [`Multistream-windows-x64.msi`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-windows-x64.msi) |
+            | macOS (Apple Silicon) | [`Multistream-macos-arm64.dmg`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-macos-arm64.dmg) |
+            | macOS (Intel) | [`Multistream-macos-x64.dmg`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-macos-x64.dmg) |
+            | Linux (AppImage) | [`Multistream-linux-x64.AppImage`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-linux-x64.AppImage) |
+            | Linux (Debian) | [`Multistream-linux-x64.deb`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-linux-x64.deb) |
+          files: release-files/*

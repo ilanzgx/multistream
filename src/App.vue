@@ -47,7 +47,9 @@ watch(streams, (newStreams) => {
 
 onMounted(() => {
   // check for updates on startup
-  checkForUpdates();
+  if ("__TAURI__" in window) {
+    checkForUpdates();
+  }
 
   // check for streams on startup
   const urlParams = new URLSearchParams(window.location.search);
