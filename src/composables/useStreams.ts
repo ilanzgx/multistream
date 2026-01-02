@@ -42,7 +42,7 @@ const _useStreams = () => {
     streams.value = streams.value.filter((s) => s.id !== id);
 
     if (stream) {
-      toast(`${stream.channel} removed`);
+      toast.success(`${stream.channel} removed`);
     }
   };
 

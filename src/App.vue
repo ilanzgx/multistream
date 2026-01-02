@@ -239,11 +239,17 @@ watch(streams, (newStreams) => {
 
     <!-- toast notifications -->
     <Toaster
-      position="bottom-right"
-      theme="light"
+      position="bottom-left"
+      theme="dark"
       :duration="2500"
       :toastOptions="{
-        style: { padding: '12px 16px', fontSize: '13px' },
+        style: {
+          padding: '12px 16px',
+          fontSize: '13px',
+          backgroundColor: '#14161a',
+          color: '#fff',
+          borderColor: '#2a2d33',
+        },
       }"
     />
   </div>
