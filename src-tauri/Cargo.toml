@@ -1,6 +1,6 @@
 [package]
 name = "multistream"
-version = "0.4.9"
+version = "0.4.10"
 description = "Watch multiple streams simultaneously on Twitch, YouTube and Kick"
 authors = ["Ilan Fonseca <ilan-_@hotmail.com>"]
 license = "GNU General Public License v3.0"
