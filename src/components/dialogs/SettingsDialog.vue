@@ -9,8 +9,11 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import Button from "../ui/button/Button.vue";
+import { useUpdater } from "@/composables/useUpdater";
+import { RefreshCw } from "lucide-vue-next";
 
-// props
+const { checkForUpdates, isChecking } = useUpdater();
+
 defineProps<{
   open?: boolean;
 }>();
@@ -18,6 +21,10 @@ defineProps<{
 const emit = defineEmits<{
   (e: "update:open", value: boolean): void;
 }>();
+
+const handleCheckUpdates = () => {
+  checkForUpdates(true);
+};
 </script>
 
 <template>
@@ -30,8 +37,26 @@ const emit = defineEmits<{
         </DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-4 text-white">
-        <h1>Soon...</h1>
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-white text-sm font-medium">Updates</p>
+            <p class="text-gray-400 text-xs">Check for new versions</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+            :disabled="isChecking"
+            @click="handleCheckUpdates"
+          >
+            <RefreshCw
+              class="size-4 mr-2"
+              :class="{ 'animate-spin': isChecking }"
+            />
+            {{ isChecking ? "Checking..." : "Check for Updates" }}
+          </Button>
+        </div>
       </div>
 
       <DialogFooter>
@@ -40,15 +65,9 @@ const emit = defineEmits<{
             variant="outline"
             class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
           >
-            Cancel
+            Close
           </Button>
         </DialogClose>
-        <Button
-          variant="outline"
-          class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
-        >
-          Save
-        </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
