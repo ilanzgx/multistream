@@ -73,40 +73,50 @@ jobs:
         with:
           args: --target ${{ matrix.target }}
 
+      - name: Debug - List bundle directory
+        shell: bash
+        run: |
+          echo "=== Listing src-tauri/target ==="
+          find src-tauri/target -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.sig" \) 2>/dev/null || echo "No files found in src-tauri/target"
+          echo "=== Listing target ==="
+          find target -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.sig" \) 2>/dev/null || echo "No files found in target"
+
       - name: Rename artifacts
         shell: bash
         run: |
           mkdir -p renamed-artifacts
-          if [ "${{ matrix.platform }}" = "macos-latest" ]; then
-            find target/${{ matrix.target }}/release/bundle -name "*.dmg" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.dmg \; 2>/dev/null || true
-            find target/${{ matrix.target }}/release/bundle -name "*.app.tar.gz" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.app.tar.gz \; 2>/dev/null || true
-          elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            find target/${{ matrix.target }}/release/bundle -name "*.msi" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.msi \; 2>/dev/null || true
-            find target/${{ matrix.target }}/release/bundle -name "*-setup.exe" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}-setup.exe \; 2>/dev/null || true
-          elif [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
-            find target/${{ matrix.target }}/release/bundle -name "*.AppImage" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage \; 2>/dev/null || true
-            find target/${{ matrix.target }}/release/bundle -name "*.deb" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.deb \; 2>/dev/null || true
+
+          BUNDLE_PATH="src-tauri/target/${{ matrix.target }}/release/bundle"
+          if [ ! -d "$BUNDLE_PATH" ]; then
+            BUNDLE_PATH="target/${{ matrix.target }}/release/bundle"
           fi
 
-      - name: Collect updater signatures
-        shell: bash
-        run: |
-          mkdir -p renamed-artifacts
+          echo "Using bundle path: $BUNDLE_PATH"
+
           if [ "${{ matrix.platform }}" = "macos-latest" ]; then
-            find target/${{ matrix.target }}/release/bundle -name "*.app.tar.gz.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.app.tar.gz.sig \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.dmg" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.dmg \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.app.tar.gz" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.app.tar.gz \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.app.tar.gz.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.app.tar.gz.sig \; 2>/dev/null || true
           elif [ "${{ matrix.platform }}" = "windows-latest" ]; then
-            find target/${{ matrix.target }}/release/bundle -name "*.msi.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.msi.sig \; 2>/dev/null || true
-            find target/${{ matrix.target }}/release/bundle -name "*-setup.exe.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}-setup.exe.sig \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.msi" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.msi \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*-setup.exe" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}-setup.exe \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.msi.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.msi.sig \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*-setup.exe.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}-setup.exe.sig \; 2>/dev/null || true
           elif [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
-            find target/${{ matrix.target }}/release/bundle -name "*.AppImage.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.sig \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.AppImage" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.deb" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.deb \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.AppImage.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.sig \; 2>/dev/null || true
           fi
+
+          echo "=== Renamed artifacts ==="
+          ls -la renamed-artifacts/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{ matrix.name }}
           path: renamed-artifacts/*
-          if-no-files-found: ignore
+          if-no-files-found: warn
 
   release:
     needs: build-tauri
@@ -118,10 +128,16 @@ jobs:
         with:
           path: artifacts
 
+      - name: Debug - List downloaded artifacts
+        run: |
+          echo "=== Downloaded artifacts ==="
+          find artifacts -type f 2>/dev/null || echo "No artifacts found"
+
       - name: Flatten artifacts
         run: |
           mkdir -p release-files
-          find artifacts -type f \( -name "*.tar.gz" -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.sig" \) -exec cp {} release-files/ \;
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.sig" \) -exec cp {} release-files/ \; 2>/dev/null || true
+          echo "=== Release files ==="
           ls -la release-files/
 
       - name: Build updater manifest
