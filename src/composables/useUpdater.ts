@@ -4,24 +4,25 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "vue-sonner";
 
 const updateAvailable = ref(false);
-const updateInfo = ref<Update | null>(null);
+const updateVersion = ref<string | null>(null);
 const isChecking = ref(false);
 const isDownloading = ref(false);
 const downloadProgress = ref(0);
 
-export function useUpdater() {
-  const isTauri = async () => {
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      return typeof invoke === "function";
-    } catch {
-      return false;
-    }
-  };
+let currentUpdate: Update | null = null;
 
+async function isTauri(): Promise<boolean> {
+  try {
+    const { invoke } = await import("@tauri-apps/api/core");
+    return typeof invoke === "function";
+  } catch {
+    return false;
+  }
+}
+
+export function useUpdater() {
   async function checkForUpdates(showNoUpdateToast = false) {
     if (!(await isTauri())) return;
-
     if (isChecking.value) return;
 
     isChecking.value = true;
@@ -31,7 +32,8 @@ export function useUpdater() {
 
       if (update) {
         updateAvailable.value = true;
-        updateInfo.value = update;
+        updateVersion.value = update.version;
+        currentUpdate = update;
 
         toast.info(`New version available: ${update.version}`, {
           action: {
@@ -54,7 +56,7 @@ export function useUpdater() {
   }
 
   async function installUpdate() {
-    if (!updateInfo.value) return;
+    if (!currentUpdate) return;
 
     isDownloading.value = true;
     downloadProgress.value = 0;
@@ -62,7 +64,7 @@ export function useUpdater() {
     try {
       toast.loading("Downloading update...", { id: "update-download" });
 
-      await updateInfo.value.downloadAndInstall((event) => {
+      await currentUpdate.downloadAndInstall((event) => {
         if (event.event === "Started" && event.data.contentLength) {
           console.log(`Download started, size: ${event.data.contentLength}`);
         } else if (event.event === "Progress") {
@@ -89,7 +91,7 @@ export function useUpdater() {
 
   return {
     updateAvailable,
-    updateInfo,
+    updateVersion,
     isChecking,
     isDownloading,
     downloadProgress,
