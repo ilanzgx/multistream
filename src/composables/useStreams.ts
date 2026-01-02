@@ -46,6 +46,10 @@ const _useStreams = () => {
     }
   };
 
+  const clearStreams = () => {
+    streams.value = [];
+  };
+
   const gridClass = computed(() => {
     const count = streams.value.length;
 
@@ -63,6 +67,7 @@ const _useStreams = () => {
     streams,
     addStream,
     removeStream,
+    clearStreams,
     gridClass,
   };
 };

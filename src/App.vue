@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { Button } from "./components/ui/button";
 import KickChat from "./components/chat/KickChat.vue";
 import KickStream from "./components/stream/KickStream.vue";
@@ -11,7 +11,7 @@ import AddDialog from "./components/dialogs/AddDialog.vue";
 import ShareDialog from "./components/dialogs/ShareDialog.vue";
 import SettingsDialog from "./components/dialogs/SettingsDialog.vue";
 import { UserPlus2, Settings2, Share2, PanelRightClose } from "lucide-vue-next";
-import { useStreams } from "./composables/useStreams";
+import { useStreams, type Platform } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
@@ -27,7 +27,7 @@ const shareDialogOpen = ref(false);
 const settingsDialogOpen = ref(false);
 const appVersion = import.meta.env.VITE_APP_VERSION;
 
-const { streams, gridClass } = useStreams();
+const { streams, addStream, clearStreams, gridClass } = useStreams();
 const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
 
 const selectedChatData = computed(() =>
@@ -40,6 +40,25 @@ watch(streams, (newStreams) => {
     !newStreams.some((s) => s.channel === selectedChat.value)
   ) {
     setSelectedChat("");
+  }
+});
+
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const streamsParam = urlParams.get("streams");
+
+  if (streamsParam) {
+    clearStreams();
+
+    const streamList = streamsParam.split(",");
+    streamList.forEach((stream) => {
+      const [platform, channel] = stream.split(":");
+      if (platform && channel) {
+        addStream(channel, platform as Platform);
+      }
+    });
+
+    window.history.replaceState({}, "", window.location.pathname);
   }
 });
 </script>
