@@ -1,6 +1,6 @@
 [package]
 name = "multistream"
-version = "0.4.12"
+version = "0.5.0"
 description = "Watch multiple streams simultaneously on Twitch, YouTube and Kick"
 authors = ["Ilan Fonseca <ilan-_@hotmail.com>"]
 license = "GNU General Public License v3.0"
@@ -21,7 +21,7 @@ tauri-build = { version = "2.5.3", features = [] }
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
-tauri = { version = "2.9.5", features = ["devtools"] }
+tauri = { version = "2.9.5", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-localhost = "2"
 tauri-plugin-updater = "2.9.0"
