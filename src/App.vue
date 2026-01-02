@@ -7,7 +7,9 @@ import TwitchChat from "./components/chat/TwitchChat.vue";
 import TwitchStream from "./components/stream/TwitchStream.vue";
 import YoutubeStream from "./components/stream/YoutubeStream.vue";
 import YoutubeChat from "./components/chat/YoutubeChat.vue";
-import AddStreamDialog from "./components/AddStreamDialog.vue";
+import AddDialog from "./components/dialogs/AddDialog.vue";
+import ShareDialog from "./components/dialogs/ShareDialog.vue";
+import SettingsDialog from "./components/dialogs/SettingsDialog.vue";
 import { UserPlus2, Settings2, Share2, PanelRightClose } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
@@ -20,7 +22,9 @@ import {
   TooltipContent,
 } from "./components/ui/tooltip";
 
-const addStreamDialogOpen = ref(false);
+const addDialogOpen = ref(false);
+const shareDialogOpen = ref(false);
+const settingsDialogOpen = ref(false);
 const appVersion = import.meta.env.VITE_APP_VERSION;
 
 const { streams, gridClass } = useStreams();
@@ -81,7 +85,7 @@ watch(streams, (newStreams) => {
           <Button
             class="cursor-pointer"
             variant="outline"
-            @click="addStreamDialogOpen = true"
+            @click="addDialogOpen = true"
             >Add Stream</Button
           >
         </div>
@@ -159,7 +163,7 @@ watch(streams, (newStreams) => {
                   <Button
                     class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
                     variant="outline"
-                    @click="addStreamDialogOpen = true"
+                    @click="addDialogOpen = true"
                   >
                     <UserPlus2 class="size-4 text-white" />
                   </Button>
@@ -174,6 +178,7 @@ watch(streams, (newStreams) => {
                   <Button
                     class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
                     variant="outline"
+                    @click="settingsDialogOpen = true"
                   >
                     <Settings2 class="size-4 text-white" />
                   </Button>
@@ -188,6 +193,7 @@ watch(streams, (newStreams) => {
                   <Button
                     class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
                     variant="outline"
+                    @click="shareDialogOpen = true"
                   >
                     <Share2 class="size-4 text-white" />
                   </Button>
@@ -234,8 +240,10 @@ watch(streams, (newStreams) => {
       ☰
     </Button>
 
-    <!-- add stream dialog -->
-    <AddStreamDialog v-model:open="addStreamDialogOpen" />
+    <!-- dialogs -->
+    <AddDialog v-model:open="addDialogOpen" />
+    <ShareDialog v-model:open="shareDialogOpen" />
+    <SettingsDialog v-model:open="settingsDialogOpen" />
 
     <!-- toast notifications -->
     <Toaster
