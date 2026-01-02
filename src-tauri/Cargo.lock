@@ -1961,7 +1961,7 @@ dependencies = [
 
 [[package]]
 name = "multistream"
-version = "0.4.11"
+version = "0.4.12"
 dependencies = [
  "log",
  "serde",
