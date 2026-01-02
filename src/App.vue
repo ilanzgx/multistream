@@ -13,6 +13,7 @@ import SettingsDialog from "./components/dialogs/SettingsDialog.vue";
 import { UserPlus2, Settings2, Share2, PanelRightClose } from "lucide-vue-next";
 import { useStreams, type Platform } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
+import { useUpdater } from "./composables/useUpdater";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
 import {
@@ -29,6 +30,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION;
 
 const { streams, addStream, clearStreams, gridClass } = useStreams();
 const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
+const { checkForUpdates } = useUpdater();
 
 const selectedChatData = computed(() =>
   streams.value.find((s) => s.channel === selectedChat.value)
@@ -44,6 +46,10 @@ watch(streams, (newStreams) => {
 });
 
 onMounted(() => {
+  // check for updates on startup
+  checkForUpdates();
+
+  // check for streams on startup
   const urlParams = new URLSearchParams(window.location.search);
   const streamsParam = urlParams.get("streams");
 

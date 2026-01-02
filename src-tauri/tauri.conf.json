@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Multistream",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "identifier": "com.ilanzgx.multistream",
   "build": {
     "frontendDist": "../dist",
@@ -33,5 +33,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/ilanzgx/multistream/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQxMjM4MkE3QUJBNkMzNDAKUldSQXc2YXJwNElqUVRzSEVDUW95NHNsWjB5dFlORGxxTkZVR25mZkV3TkhLYWVubUNOUUhXZ1UK"
+    }
   }
 }
