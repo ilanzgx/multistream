@@ -9,10 +9,12 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import Button from "../ui/button/Button.vue";
-import { useUpdater } from "@/composables/useUpdater";
+import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { RefreshCw } from "lucide-vue-next";
 
 const { checkForUpdates, isChecking } = useUpdater();
+
+const isRunningInTauri = isTauri();
 
 defineProps<{
   open?: boolean;
@@ -38,7 +40,7 @@ const handleCheckUpdates = () => {
       </DialogHeader>
 
       <div class="space-y-4">
-        <div class="flex items-center justify-between">
+        <div v-if="isRunningInTauri" class="flex items-center justify-between">
           <div>
             <p class="text-white text-sm font-medium">Updates</p>
             <p class="text-gray-400 text-xs">Check for new versions</p>

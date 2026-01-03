@@ -11,18 +11,13 @@ const downloadProgress = ref(0);
 
 let currentUpdate: Update | null = null;
 
-async function isTauri(): Promise<boolean> {
-  try {
-    const { invoke } = await import("@tauri-apps/api/core");
-    return typeof invoke === "function";
-  } catch {
-    return false;
-  }
+export function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
 export function useUpdater() {
   async function checkForUpdates(showNoUpdateToast = false) {
-    if (!(await isTauri())) return;
+    if (!isTauri()) return;
     if (isChecking.value) return;
 
     isChecking.value = true;
