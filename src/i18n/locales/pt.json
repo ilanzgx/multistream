@@ -1,0 +1,61 @@
+{
+  "add": {
+    "tooltip": "Adicionar Stream",
+    "title": "Adicionar Nova Stream",
+    "description": "Digite o nome do canal ou URL para adicionar uma nova stream.",
+    "platform": "Plataforma",
+    "channelLabel": "Nome do Canal",
+    "videoIdLabel": "ID do Vídeo",
+    "placeholder": "Digite o nome do canal ou URL...",
+    "cancelButton": "Cancelar",
+    "addButton": "Adicionar Stream",
+    "toast": "adicionado"
+  },
+  "settings": {
+    "tooltip": "Configurações",
+    "title": "Configurações",
+    "description": "Ajuste suas preferências.",
+    "updates": {
+      "title": "Atualizações",
+      "description": "Verifique por novas versões",
+      "checkButton": "Verificar Atualizações",
+      "checking": "Verificando..."
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Selecione seu idioma preferido"
+    }
+  },
+  "share": {
+    "tooltip": "Compartilhar",
+    "title": "Compartilhar Streams",
+    "description": "Compartilhe suas streams com seus amigos.",
+    "noStreams": "Nenhuma stream para compartilhar",
+    "cancelButton": "Cancelar",
+    "copyButton": "Copiar Link",
+    "toast": "Link copiado para a área de transferência"
+  },
+  "hide": {
+    "tooltip": "Ocultar"
+  },
+  "empty": {
+    "title": "Nenhuma stream registrada",
+    "addButton": "Adicionar Stream"
+  },
+  "chat": {
+    "selectPlaceholder": "Selecione o chat da stream",
+    "selectPrompt": "Selecione uma stream para ver o chat.",
+    "noStreams": "Nenhuma stream disponível.",
+    "noStreamsHint": "Adicione uma stream para ver o chat."
+  },
+  "common": {
+    "close": "Fechar"
+  },
+  "toasts": {
+    "add": {
+      "added": "adicionado",
+      "alreadyAdded": "Stream já adicionado"
+    },
+    "remove": "removido"
+  }
+}

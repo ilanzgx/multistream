@@ -1,0 +1,60 @@
+{
+  "add": {
+    "tooltip": "Add Stream",
+    "title": "Add New Stream",
+    "description": "Enter the channel name or url to add a new stream to your multistream.",
+    "platform": "Platform",
+    "channelLabel": "Channel Name",
+    "videoIdLabel": "Video ID",
+    "placeholder": "Enter channel name or URL...",
+    "cancelButton": "Cancel",
+    "addButton": "Add Stream"
+  },
+  "settings": {
+    "tooltip": "Settings",
+    "title": "Settings",
+    "description": "Adjust your preferences.",
+    "updates": {
+      "title": "Updates",
+      "description": "Check for new versions",
+      "checkButton": "Check for Updates",
+      "checking": "Checking..."
+    },
+    "language": {
+      "title": "Language",
+      "description": "Select your preferred language"
+    }
+  },
+  "share": {
+    "tooltip": "Share",
+    "title": "Share Streams",
+    "description": "Share your streams with your friends.",
+    "noStreams": "No streams to share",
+    "cancelButton": "Cancel",
+    "copyButton": "Copy Link",
+    "toast": "Link copied to clipboard"
+  },
+  "hide": {
+    "tooltip": "Hide"
+  },
+  "empty": {
+    "title": "No streams registered",
+    "addButton": "Add Stream"
+  },
+  "chat": {
+    "selectPlaceholder": "Select stream chat",
+    "selectPrompt": "Select a stream to view chat.",
+    "noStreams": "No streams available.",
+    "noStreamsHint": "Add a stream to view chat."
+  },
+  "common": {
+    "close": "Close"
+  },
+  "toasts": {
+    "add": {
+      "added": "added",
+      "alreadyAdded": "Stream already added"
+    },
+    "remove": "removed"
+  }
+}
