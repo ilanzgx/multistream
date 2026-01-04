@@ -8,8 +8,7 @@
     "videoIdLabel": "ID del Video",
     "placeholder": "Ingrese el nombre del canal o URL...",
     "cancelButton": "Cancelar",
-    "addButton": "Agregar Stream",
-    "toast": "agregado"
+    "addButton": "Agregar Stream"
   },
   "settings": {
     "tooltip": "Configuraciones",
@@ -56,7 +55,7 @@
       "added": "agregado",
       "alreadyAdded": "Stream ya agregado"
     },
-    "remove": "removido",
+    "remove": "eliminado",
     "update": {
       "newVersion": "Nueva versión disponible",
       "latestVersion": "¡Estás en la última versión!",

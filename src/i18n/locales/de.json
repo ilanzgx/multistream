@@ -1,0 +1,68 @@
+{
+  "add": {
+    "tooltip": "Stream hinzufügen",
+    "title": "Neuen Stream hinzufügen",
+    "description": "Geben Sie den Kanalnamen oder die URL ein, um einen neuen Stream hinzuzufügen.",
+    "platform": "Plattform",
+    "channelLabel": "Kanalname",
+    "videoIdLabel": "Video-ID",
+    "placeholder": "Kanalname oder URL eingeben...",
+    "cancelButton": "Abbrechen",
+    "addButton": "Stream hinzufügen"
+  },
+  "settings": {
+    "tooltip": "Einstellungen",
+    "title": "Einstellungen",
+    "description": "Passen Sie Ihre Einstellungen an.",
+    "updates": {
+      "title": "Updates",
+      "description": "Nach neuen Versionen suchen",
+      "checkButton": "Nach Updates suchen",
+      "checking": "Überprüfe..."
+    },
+    "language": {
+      "title": "Sprache",
+      "description": "Wählen Sie Ihre bevorzugte Sprache"
+    }
+  },
+  "share": {
+    "tooltip": "Teilen",
+    "title": "Streams teilen",
+    "description": "Teilen Sie Ihre Streams mit Freunden.",
+    "noStreams": "Keine Streams zum Teilen",
+    "cancelButton": "Abbrechen",
+    "copyButton": "Link kopieren",
+    "toast": "Link in die Zwischenablage kopiert"
+  },
+  "hide": {
+    "tooltip": "Ausblenden"
+  },
+  "empty": {
+    "title": "Keine Streams registriert",
+    "addButton": "Stream hinzufügen"
+  },
+  "chat": {
+    "selectPlaceholder": "Stream-Chat auswählen",
+    "selectPrompt": "Wählen Sie einen Stream, um den Chat anzuzeigen.",
+    "noStreams": "Keine Streams verfügbar.",
+    "noStreamsHint": "Fügen Sie einen Stream hinzu, um den Chat anzuzeigen."
+  },
+  "common": {
+    "close": "Schließen"
+  },
+  "toasts": {
+    "add": {
+      "added": "hinzugefügt",
+      "alreadyAdded": "Stream bereits hinzugefügt"
+    },
+    "remove": "entfernt",
+    "update": {
+      "newVersion": "Neue Version verfügbar",
+      "latestVersion": "Sie haben die neueste Version!",
+      "failedCheck": "Fehler beim Prüfen auf Updates",
+      "failedUpdate": "Fehler beim Herunterladen des Updates",
+      "downloading": "Update wird heruntergeladen...",
+      "success": "Update abgeschlossen! Neustart..."
+    }
+  }
+}

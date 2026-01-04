@@ -1,10 +1,8 @@
 import { createI18n } from "vue-i18n";
-import pt from "./locales/pt.json";
-import en from "./locales/en.json";
-import es from "./locales/es.json";
+import { en, pt, es, de, cn, ru } from "@/i18n/locales";
 
 function getDefaultLocale(): string {
-  const supportedLocales = ["en", "pt", "es"];
+  const supportedLocales = ["en", "pt", "es", "de", "cn", "ru"];
 
   const savedLocale = localStorage.getItem("locale");
   if (savedLocale && supportedLocales.includes(savedLocale)) {
@@ -19,5 +17,5 @@ export const i18n = createI18n({
   legacy: false,
   locale: getDefaultLocale(),
   fallbackLocale: "en",
-  messages: { en, pt, es },
+  messages: { en, pt, es, de, cn, ru },
 });

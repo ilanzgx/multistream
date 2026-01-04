@@ -8,8 +8,7 @@
     "videoIdLabel": "ID do Vídeo",
     "placeholder": "Digite o nome do canal ou URL...",
     "cancelButton": "Cancelar",
-    "addButton": "Adicionar Stream",
-    "toast": "adicionado"
+    "addButton": "Adicionar Stream"
   },
   "settings": {
     "tooltip": "Configurações",

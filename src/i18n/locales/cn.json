@@ -1,0 +1,68 @@
+{
+  "add": {
+    "tooltip": "添加直播",
+    "title": "添加新直播",
+    "description": "输入频道名称或链接以添加新直播。",
+    "platform": "平台",
+    "channelLabel": "频道名称",
+    "videoIdLabel": "视频ID",
+    "placeholder": "输入频道名称或链接...",
+    "cancelButton": "取消",
+    "addButton": "添加直播"
+  },
+  "settings": {
+    "tooltip": "设置",
+    "title": "设置",
+    "description": "调整您的偏好设置。",
+    "updates": {
+      "title": "更新",
+      "description": "检查新版本",
+      "checkButton": "检查更新",
+      "checking": "检查中..."
+    },
+    "language": {
+      "title": "语言",
+      "description": "选择您的首选语言"
+    }
+  },
+  "share": {
+    "tooltip": "分享",
+    "title": "分享直播",
+    "description": "与朋友分享您的直播。",
+    "noStreams": "没有可分享的直播",
+    "cancelButton": "取消",
+    "copyButton": "复制链接",
+    "toast": "链接已复制到剪贴板"
+  },
+  "hide": {
+    "tooltip": "隐藏"
+  },
+  "empty": {
+    "title": "没有已注册的直播",
+    "addButton": "添加直播"
+  },
+  "chat": {
+    "selectPlaceholder": "选择直播聊天",
+    "selectPrompt": "选择一个直播以查看聊天。",
+    "noStreams": "没有可用的直播。",
+    "noStreamsHint": "添加一个直播以查看聊天。"
+  },
+  "common": {
+    "close": "关闭"
+  },
+  "toasts": {
+    "add": {
+      "added": "已添加",
+      "alreadyAdded": "直播已添加"
+    },
+    "remove": "已移除",
+    "update": {
+      "newVersion": "有新版本可用",
+      "latestVersion": "您已是最新版本！",
+      "failedCheck": "检查更新失败",
+      "failedUpdate": "下载更新失败",
+      "downloading": "正在下载更新...",
+      "success": "更新完成！正在重启..."
+    }
+  }
+}

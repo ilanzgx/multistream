@@ -12,9 +12,14 @@ import Button from "../ui/button/Button.vue";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { RefreshCw } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
-import BrazilFlagIcon from "@/components/icons/BrazilFlagIcon.vue";
-import SpainFlagIcon from "@/components/icons/SpainFlagIcon.vue";
-import UnitedStatesFlagIcon from "@/components/icons/UnitedStatesFlagIcon.vue";
+import {
+  BrazilFlagIcon,
+  SpainFlagIcon,
+  UnitedStatesFlagIcon,
+  GermanyFlagIcon,
+  ChinaFlagIcon,
+  RussiaFlagIcon,
+} from "@/components/icons/flags";
 
 const { checkForUpdates, isChecking } = useUpdater();
 const { locale } = useI18n();
@@ -25,6 +30,9 @@ const languages = [
   { code: "en", label: "EN" },
   { code: "pt", label: "PT" },
   { code: "es", label: "ES" },
+  { code: "de", label: "DE" },
+  { code: "cn", label: "CN" },
+  { code: "ru", label: "RU" },
 ];
 
 const changeLanguage = (lang: string) => {
@@ -93,7 +101,7 @@ const handleCheckUpdates = () => {
               {{ $t("settings.language.description") }}
             </p>
           </div>
-          <div class="flex gap-1">
+          <div class="grid grid-cols-3 gap-1">
             <button
               v-for="lang in languages"
               :key="lang.code"
@@ -108,6 +116,9 @@ const handleCheckUpdates = () => {
               <UnitedStatesFlagIcon v-if="lang.code === 'en'" :size="16" />
               <BrazilFlagIcon v-else-if="lang.code === 'pt'" :size="16" />
               <SpainFlagIcon v-else-if="lang.code === 'es'" :size="16" />
+              <GermanyFlagIcon v-else-if="lang.code === 'de'" :size="16" />
+              <ChinaFlagIcon v-else-if="lang.code === 'cn'" :size="16" />
+              <RussiaFlagIcon v-else-if="lang.code === 'ru'" :size="16" />
               {{ lang.label }}
             </button>
           </div>
