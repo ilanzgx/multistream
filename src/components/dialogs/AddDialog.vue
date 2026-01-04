@@ -84,16 +84,18 @@ const handleAddStream = () => {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#191b1f] border-[#2a2d33]">
       <DialogHeader>
-        <DialogTitle class="text-white">Add New Stream</DialogTitle>
+        <DialogTitle class="text-white">{{ $t("add.title") }}</DialogTitle>
         <DialogDescription class="text-gray-400">
-          Enter the channel name or url to add a new stream to your multistream.
+          {{ $t("add.description") }}
         </DialogDescription>
       </DialogHeader>
 
       <div class="space-y-4">
         <!-- platform selector -->
         <div class="space-y-2">
-          <label class="text-sm font-medium text-gray-300">Platform</label>
+          <label class="text-sm font-medium text-gray-300">{{
+            $t("add.platform")
+          }}</label>
           <select
             v-model="selectedPlatform"
             class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] cursor-pointer"
@@ -109,15 +111,15 @@ const handleAddStream = () => {
           <label
             v-if="selectedPlatform === 'kick' || selectedPlatform === 'twitch'"
             class="text-sm font-medium text-gray-300"
-            >Channel Name</label
+            >{{ $t("add.channelLabel") }}</label
           >
-          <label v-else class="text-sm font-medium text-gray-300"
-            >Video ID</label
-          >
+          <label v-else class="text-sm font-medium text-gray-300">{{
+            $t("add.videoIdLabel")
+          }}</label>
           <input
             v-model="channelName"
             type="text"
-            placeholder="Enter channel name or URL..."
+            :placeholder="$t('add.placeholder')"
             class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
             @keyup.enter="handleAddStream"
           />
@@ -130,7 +132,7 @@ const handleAddStream = () => {
             variant="outline"
             class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
           >
-            Cancel
+            {{ $t("common.close") }}
           </Button>
         </DialogClose>
         <Button
@@ -139,7 +141,7 @@ const handleAddStream = () => {
           @click="handleAddStream"
           :disabled="!channelName.trim()"
         >
-          Add Stream
+          {{ $t("add.addButton") }}
         </Button>
       </DialogFooter>
     </DialogContent>

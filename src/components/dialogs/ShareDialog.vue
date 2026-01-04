@@ -12,6 +12,9 @@ import {
 import Button from "../ui/button/Button.vue";
 import { useStreams } from "@/composables/useStreams";
 import { toast } from "vue-sonner";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 // props
 const props = defineProps<{
@@ -26,7 +29,7 @@ const { streams } = useStreams();
 
 const shareLink = computed(() => {
   if (!streams.value.length) {
-    return "No streams to share";
+    return t("share.noStreams");
   }
 
   const url = window.location.origin;
@@ -38,12 +41,12 @@ const shareLink = computed(() => {
 
 const copyLink = async () => {
   if (!streams.value.length) {
-    toast.error("No streams to share");
+    toast.error(t("share.noStreams"));
     return;
   }
 
   await navigator.clipboard.writeText(shareLink.value);
-  toast.success("Link copied to clipboard");
+  toast.success(t("share.toast"));
   emit("update:open", false);
 };
 </script>
@@ -52,9 +55,9 @@ const copyLink = async () => {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#191b1f] border-[#2a2d33]">
       <DialogHeader>
-        <DialogTitle class="text-white">Share Streams</DialogTitle>
+        <DialogTitle class="text-white">{{ $t("share.title") }}</DialogTitle>
         <DialogDescription class="text-gray-400">
-          Share your streams with your friends.
+          {{ $t("share.description") }}
         </DialogDescription>
       </DialogHeader>
 
@@ -73,7 +76,7 @@ const copyLink = async () => {
             variant="outline"
             class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
           >
-            Cancel
+            {{ $t("share.cancelButton") }}
           </Button>
         </DialogClose>
         <Button
@@ -81,7 +84,7 @@ const copyLink = async () => {
           variant="outline"
           class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
         >
-          Copy Link
+          {{ $t("share.copyButton") }}
         </Button>
       </DialogFooter>
     </DialogContent>

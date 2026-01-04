@@ -1,6 +1,7 @@
 import { createSharedComposable, useStorage } from "@vueuse/core";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
+import { useI18n } from "vue-i18n";
 
 export type Platform = "kick" | "twitch" | "youtube";
 
@@ -11,6 +12,7 @@ export interface Stream {
 }
 
 const _useStreams = () => {
+  const { t } = useI18n();
   const streams = useStorage<Stream[]>("streams", []);
 
   const addStream = (channel: string, platform: Platform) => {
@@ -21,7 +23,7 @@ const _useStreams = () => {
           s.platform === platform
       )
     ) {
-      toast.warning("Stream already added");
+      toast.warning(t("toasts.add.alreadyAdded"));
       return;
     }
 
@@ -34,7 +36,7 @@ const _useStreams = () => {
       },
     ];
 
-    toast.success(`${channel} added`);
+    toast.success(`${channel} ${t("toasts.add.added")}`);
   };
 
   const removeStream = (id: string) => {
@@ -42,7 +44,7 @@ const _useStreams = () => {
     streams.value = streams.value.filter((s) => s.id !== id);
 
     if (stream) {
-      toast.success(`${stream.channel} removed`);
+      toast.success(`${stream.channel} ${t("toasts.remove")}`);
     }
   };
 

@@ -106,12 +106,12 @@ onMounted(() => {
       </div>
       <div v-else class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-4">
-          <h2 class="text-2xl text-white">No streams registered</h2>
+          <h2 class="text-2xl text-white">{{ $t("empty.title") }}</h2>
           <Button
             class="cursor-pointer"
             variant="outline"
             @click="addDialogOpen = true"
-            >Add Stream</Button
+            >{{ $t("empty.addButton") }}</Button
           >
         </div>
       </div>
@@ -136,7 +136,9 @@ onMounted(() => {
             v-model="selectedChat"
             class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] cursor-pointer"
           >
-            <option disabled value="">Select stream chat</option>
+            <option disabled value="">
+              {{ $t("chat.selectPlaceholder") }}
+            </option>
             <option
               v-for="stream in streams"
               :key="stream.id"
@@ -166,7 +168,7 @@ onMounted(() => {
             class="flex items-center justify-center h-full text-muted-foreground"
           >
             <p class="text-center px-4 text-white">
-              Select a stream to view chat.
+              {{ $t("chat.selectPrompt") }}
             </p>
           </div>
           <div
@@ -174,7 +176,7 @@ onMounted(() => {
             class="flex items-center justify-center h-full text-muted-foreground"
           >
             <p class="text-center px-4 text-white">
-              No streams available.<br />Add a stream to view chat.
+              {{ $t("chat.noStreams") }}<br />{{ $t("chat.noStreamsHint") }}
             </p>
           </div>
         </div>
@@ -194,7 +196,7 @@ onMounted(() => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Add Stream</p>
+                  <p>{{ $t("add.tooltip") }}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -209,7 +211,7 @@ onMounted(() => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Settings</p>
+                  <p>{{ $t("settings.title") }}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -224,7 +226,7 @@ onMounted(() => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Share</p>
+                  <p>{{ $t("share.tooltip") }}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -239,7 +241,7 @@ onMounted(() => {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Hide</p>
+                  <p>{{ $t("hide.tooltip") }}</p>
                 </TooltipContent>
               </Tooltip>
             </div>

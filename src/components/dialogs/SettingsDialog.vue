@@ -11,10 +11,26 @@ import {
 import Button from "../ui/button/Button.vue";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { RefreshCw } from "lucide-vue-next";
+import { useI18n } from "vue-i18n";
+import BrazilFlagIcon from "@/components/icons/BrazilFlagIcon.vue";
+import SpainFlagIcon from "@/components/icons/SpainFlagIcon.vue";
+import UnitedStatesFlagIcon from "@/components/icons/UnitedStatesFlagIcon.vue";
 
 const { checkForUpdates, isChecking } = useUpdater();
+const { locale } = useI18n();
 
 const isRunningInTauri = isTauri();
+
+const languages = [
+  { code: "en", label: "EN" },
+  { code: "pt", label: "PT" },
+  { code: "es", label: "ES" },
+];
+
+const changeLanguage = (lang: string) => {
+  locale.value = lang;
+  localStorage.setItem("locale", lang);
+};
 
 defineProps<{
   open?: boolean;
@@ -33,17 +49,21 @@ const handleCheckUpdates = () => {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#191b1f] border-[#2a2d33]">
       <DialogHeader>
-        <DialogTitle class="text-white">Settings</DialogTitle>
+        <DialogTitle class="text-white">{{ $t("settings.title") }}</DialogTitle>
         <DialogDescription class="text-gray-400">
-          Adjust your preferences.
+          {{ $t("settings.description") }}
         </DialogDescription>
       </DialogHeader>
 
       <div class="space-y-4">
         <div v-if="isRunningInTauri" class="flex items-center justify-between">
           <div>
-            <p class="text-white text-sm font-medium">Updates</p>
-            <p class="text-gray-400 text-xs">Check for new versions</p>
+            <p class="text-white text-sm font-medium">
+              {{ $t("settings.updates.title") }}
+            </p>
+            <p class="text-gray-400 text-xs">
+              {{ $t("settings.updates.description") }}
+            </p>
           </div>
           <Button
             variant="outline"
@@ -56,8 +76,41 @@ const handleCheckUpdates = () => {
               class="size-4 mr-2"
               :class="{ 'animate-spin': isChecking }"
             />
-            {{ isChecking ? "Checking..." : "Check for Updates" }}
+            {{
+              isChecking
+                ? $t("settings.updates.checking")
+                : $t("settings.updates.checkButton")
+            }}
           </Button>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-white text-sm font-medium">
+              {{ $t("settings.language.title") }}
+            </p>
+            <p class="text-gray-400 text-xs">
+              {{ $t("settings.language.description") }}
+            </p>
+          </div>
+          <div class="flex gap-1">
+            <button
+              v-for="lang in languages"
+              :key="lang.code"
+              @click="changeLanguage(lang.code)"
+              class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200"
+              :class="
+                locale === lang.code
+                  ? 'bg-white/10 text-white border border-white/20'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+              "
+            >
+              <UnitedStatesFlagIcon v-if="lang.code === 'en'" :size="16" />
+              <BrazilFlagIcon v-else-if="lang.code === 'pt'" :size="16" />
+              <SpainFlagIcon v-else-if="lang.code === 'es'" :size="16" />
+              {{ lang.label }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -67,7 +120,7 @@ const handleCheckUpdates = () => {
             variant="outline"
             class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
           >
-            Close
+            {{ $t("common.close") }}
           </Button>
         </DialogClose>
       </DialogFooter>
