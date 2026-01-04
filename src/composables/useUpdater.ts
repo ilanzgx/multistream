@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "vue-sonner";
+import { useI18n } from "vue-i18n";
 
 const updateAvailable = ref(false);
 const updateVersion = ref<string | null>(null);
@@ -16,6 +17,8 @@ export function isTauri(): boolean {
 }
 
 export function useUpdater() {
+  const { t } = useI18n();
+
   async function checkForUpdates(showNoUpdateToast = false) {
     if (!isTauri()) return;
     if (isChecking.value) return;
@@ -30,7 +33,7 @@ export function useUpdater() {
         updateVersion.value = update.version;
         currentUpdate = update;
 
-        toast.info(`New version available: ${update.version}`, {
+        toast.info(`${t("toasts.update.newVersion")}: ${update.version}`, {
           action: {
             label: "Update",
             onClick: () => installUpdate(),
@@ -38,12 +41,12 @@ export function useUpdater() {
           duration: 10000,
         });
       } else if (showNoUpdateToast) {
-        toast.success("You're on the latest version!");
+        toast.success(`${t("toasts.update.latestVersion")}`);
       }
     } catch (error) {
       console.error("Failed to check for updates:", error);
       if (showNoUpdateToast) {
-        toast.error("Failed to check for updates");
+        toast.error(`${t("toasts.update.failedCheck")}`);
       }
     } finally {
       isChecking.value = false;
@@ -57,7 +60,9 @@ export function useUpdater() {
     downloadProgress.value = 0;
 
     try {
-      toast.loading("Downloading update...", { id: "update-download" });
+      toast.loading(`${t("toasts.update.downloading")}`, {
+        id: "update-download",
+      });
 
       await currentUpdate.downloadAndInstall((event) => {
         if (event.event === "Started" && event.data.contentLength) {
@@ -69,7 +74,7 @@ export function useUpdater() {
         }
       });
 
-      toast.success("Update complete! Restarting...", {
+      toast.success(`${t("toasts.update.success")}`, {
         id: "update-download",
       });
 
@@ -78,7 +83,9 @@ export function useUpdater() {
       }, 1500);
     } catch (error) {
       console.error("Failed to install update:", error);
-      toast.error("Failed to install update", { id: "update-download" });
+      toast.error(`${t("toasts.update.failedUpdate")}`, {
+        id: "update-download",
+      });
     } finally {
       isDownloading.value = false;
     }

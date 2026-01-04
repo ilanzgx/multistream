@@ -55,6 +55,14 @@
       "added": "added",
       "alreadyAdded": "Stream already added"
     },
-    "remove": "removed"
+    "remove": "removed",
+    "update": {
+      "newVersion": "New version available",
+      "latestVersion": "You're on the latest version!",
+      "failedCheck": "Failed to check for updates",
+      "failedUpdate": "Failed to download update",
+      "downloading": "Downloading update...",
+      "success": "Update complete! Restarting..."
+    }
   }
 }

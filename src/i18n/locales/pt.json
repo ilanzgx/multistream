@@ -56,6 +56,14 @@
       "added": "adicionado",
       "alreadyAdded": "Stream já adicionado"
     },
-    "remove": "removido"
+    "remove": "removido",
+    "update": {
+      "newVersion": "Nova versão disponível",
+      "latestVersion": "Você está na última versão!",
+      "failedCheck": "Falha ao verificar atualizações",
+      "failedUpdate": "Falha ao baixar atualização",
+      "downloading": "Baixando atualização...",
+      "success": "Atualização completa! Reiniciando..."
+    }
   }
 }
