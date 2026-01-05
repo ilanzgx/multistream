@@ -64,5 +64,8 @@
       "downloading": "正在下载更新...",
       "success": "更新完成！正在重启..."
     }
+  },
+  "skeleton": {
+    "loading": "加载直播"
   }
 }

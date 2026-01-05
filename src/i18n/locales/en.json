@@ -64,5 +64,8 @@
       "downloading": "Downloading update...",
       "success": "Update complete! Restarting..."
     }
+  },
+  "skeleton": {
+    "loading": "Loading stream"
   }
 }

@@ -64,5 +64,8 @@
       "downloading": "Baixando atualização...",
       "success": "Atualização completa! Reiniciando..."
     }
+  },
+  "skeleton": {
+    "loading": "Carregando transmissão"
   }
 }

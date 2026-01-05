@@ -7,7 +7,10 @@ import YoutubeIcon from "@/components/icons/YoutubeIcon.vue";
 import KickIcon from "@/components/icons/KickIcon.vue";
 import TwitchIcon from "@/components/icons/TwitchIcon.vue";
 
+import { useI18n } from "vue-i18n";
+
 const { removeStream } = useStreams();
+const { t } = useI18n();
 
 const props = defineProps<{
   channelid: string;
@@ -94,7 +97,7 @@ onMounted(() => {
           {{ channel }}
         </p>
         <div class="flex flex-col items-center gap-2">
-          <p class="text-sm text-gray-400">Loading stream</p>
+          <p class="text-sm text-gray-400">{{ t("skeleton.loading") }}</p>
           <div class="flex gap-1.5">
             <div
               class="w-1.5 h-1.5 rounded-full animate-bounce"
