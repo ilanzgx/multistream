@@ -19,7 +19,7 @@ pub fn run() {
       } else {
         // redirect to localhost only in production
         let main_window = app.get_webview_window("main").unwrap();
-        main_window.eval(&format!("window.location.replace('http://localhost:{}')", LOCALHOST_PORT)).unwrap();
+        main_window.eval(format!("window.location.replace('http://localhost:{}')", LOCALHOST_PORT)).unwrap();
       }
 
       Ok(())
