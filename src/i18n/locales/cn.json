@@ -39,9 +39,11 @@
   },
   "empty": {
     "title": "没有已注册的直播",
+    "description": "首先添加您喜爱的频道以同时观看。",
     "addButton": "添加直播"
   },
   "chat": {
+    "controlTitle": "聊天控制",
     "selectPlaceholder": "选择直播聊天",
     "selectPrompt": "选择一个直播以查看聊天。",
     "noStreams": "没有可用的直播。",

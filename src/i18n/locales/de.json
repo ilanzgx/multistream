@@ -39,9 +39,11 @@
   },
   "empty": {
     "title": "Keine Streams registriert",
+    "description": "Fügen Sie zunächst Ihre Lieblingskanäle hinzu, um sie gleichzeitig anzusehen.",
     "addButton": "Stream hinzufügen"
   },
   "chat": {
+    "controlTitle": "Chat-Steuerung",
     "selectPlaceholder": "Stream-Chat auswählen",
     "selectPrompt": "Wählen Sie einen Stream, um den Chat anzuzeigen.",
     "noStreams": "Keine Streams verfügbar.",

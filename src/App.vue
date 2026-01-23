@@ -22,6 +22,14 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "./components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
 
 const addDialogOpen = ref(false);
 const shareDialogOpen = ref(false);
@@ -33,7 +41,7 @@ const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
 const { checkForUpdates } = useUpdater();
 
 const selectedChatData = computed(() =>
-  streams.value.find((s) => s.channel === selectedChat.value)
+  streams.value.find((s) => s.channel === selectedChat.value),
 );
 
 watch(streams, (newStreams) => {
@@ -107,6 +115,9 @@ onMounted(() => {
       <div v-else class="flex items-center justify-center h-full">
         <div class="flex flex-col items-center gap-4">
           <h2 class="text-2xl text-white">{{ $t("empty.title") }}</h2>
+          <p class="text-gray-400 text-sm text-center max-w-xs">
+            {{ $t("empty.description") }}
+          </p>
           <Button
             class="cursor-pointer"
             variant="outline"
@@ -132,21 +143,30 @@ onMounted(() => {
       >
         <!-- stream selector -->
         <div class="p-4 border-b border-[#1f2227]">
-          <select
-            v-model="selectedChat"
-            class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] cursor-pointer"
+          <p
+            class="text-[10px] font-semibold tracking-widest uppercase text-gray-500 mb-3 text-center"
           >
-            <option disabled value="">
-              {{ $t("chat.selectPlaceholder") }}
-            </option>
-            <option
-              v-for="stream in streams"
-              :key="stream.id"
-              :value="stream.channel"
+            {{ $t("chat.controlTitle") }}
+          </p>
+          <Select v-model="selectedChat">
+            <SelectTrigger
+              class="w-full bg-[#14161a] text-white border-[#2a2d33] hover:border-[#3a3f4b]"
             >
-              {{ stream.channel }}
-            </option>
-          </select>
+              <SelectValue :placeholder="$t('chat.selectPlaceholder')" />
+            </SelectTrigger>
+            <SelectContent class="bg-[#14161a] border-[#2a2d33]">
+              <SelectGroup>
+                <SelectItem
+                  v-for="stream in streams"
+                  :key="stream.id"
+                  :value="stream.channel"
+                  class="text-white focus:bg-[#2a2d33] focus:text-white cursor-pointer"
+                >
+                  {{ stream.channel }}
+                </SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
 
         <!-- chat area -->
@@ -182,17 +202,17 @@ onMounted(() => {
         </div>
 
         <!-- action buttons -->
-        <div class="p-4 border-t border-t-[#1f2227]">
+        <div class="p-5 border-t border-[#1f2227]">
           <TooltipProvider>
-            <div class="flex justify-center items-center gap-4">
+            <div class="grid grid-cols-4 gap-3">
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
-                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+                    class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
                     variant="outline"
                     @click="addDialogOpen = true"
                   >
-                    <UserPlus2 class="size-4 text-white" />
+                    <UserPlus2 class="size-5 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -203,11 +223,11 @@ onMounted(() => {
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
-                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+                    class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
                     variant="outline"
                     @click="settingsDialogOpen = true"
                   >
-                    <Settings2 class="size-4 text-white" />
+                    <Settings2 class="size-5 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -218,11 +238,11 @@ onMounted(() => {
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
-                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+                    class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
                     variant="outline"
                     @click="shareDialogOpen = true"
                   >
-                    <Share2 class="size-4 text-white" />
+                    <Share2 class="size-5 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -233,11 +253,11 @@ onMounted(() => {
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
-                    class="h-9 w-9 rounded-lg border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
+                    class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
                     variant="outline"
                     @click="sidebarOpen = !sidebarOpen"
                   >
-                    <PanelRightClose class="size-4 text-white" />
+                    <PanelRightClose class="size-5 text-white" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -248,12 +268,22 @@ onMounted(() => {
           </TooltipProvider>
 
           <!-- version -->
-          <p
+          <div
             v-if="appVersion"
-            class="mt-2 text-center text-xs text-gray-400 select-none"
+            class="mt-5 flex items-center justify-center gap-3"
           >
-            v{{ appVersion }}
-          </p>
+            <div
+              class="h-px flex-1 bg-linear-to-r from-transparent to-[#2a2d33]"
+            ></div>
+            <span
+              class="text-[10px] font-semibold tracking-widest uppercase text-gray-500 select-none"
+            >
+              v{{ appVersion }}
+            </span>
+            <div
+              class="h-px flex-1 bg-linear-to-l from-transparent to-[#2a2d33]"
+            ></div>
+          </div>
         </div>
       </div>
     </aside>

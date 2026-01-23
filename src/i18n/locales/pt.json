@@ -39,9 +39,11 @@
   },
   "empty": {
     "title": "Nenhuma stream registrada",
+    "description": "Comece adicionando seus canais favoritos para assistir simultaneamente.",
     "addButton": "Adicionar Stream"
   },
   "chat": {
+    "controlTitle": "Controle de Chat",
     "selectPlaceholder": "Selecione o chat da stream",
     "selectPrompt": "Selecione uma stream para ver o chat.",
     "noStreams": "Nenhuma stream disponível.",

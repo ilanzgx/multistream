@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useStreams, type Platform } from "@/composables/useStreams";
+import KickIcon from "@/components/icons/KickIcon.vue";
+import TwitchIcon from "@/components/icons/TwitchIcon.vue";
+import YoutubeIcon from "@/components/icons/YoutubeIcon.vue";
 
 // props
 defineProps<{
@@ -91,19 +94,42 @@ const handleAddStream = () => {
       </DialogHeader>
 
       <div class="space-y-4">
-        <!-- platform selector -->
+        <!-- platform selector with icons -->
         <div class="space-y-2">
           <label class="text-sm font-medium text-gray-300">{{
             $t("add.platform")
           }}</label>
-          <select
-            v-model="selectedPlatform"
-            class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] cursor-pointer"
-          >
-            <option value="kick">Kick</option>
-            <option value="twitch">Twitch</option>
-            <option value="youtube">Youtube</option>
-          </select>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="platform in ['kick', 'twitch', 'youtube'] as Platform[]"
+              :key="platform"
+              type="button"
+              @click="selectedPlatform = platform"
+              class="flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors cursor-pointer"
+              :class="[
+                selectedPlatform === platform
+                  ? 'bg-[#2a2d33] border-primary'
+                  : 'bg-[#14161a] border-[#2a2d33] hover:border-[#3a3f4b]',
+              ]"
+            >
+              <KickIcon
+                v-if="platform === 'kick'"
+                :size="24"
+                class="text-[#53FC18]"
+              />
+              <TwitchIcon
+                v-else-if="platform === 'twitch'"
+                :size="24"
+                class="text-[#9146FF]"
+              />
+              <YoutubeIcon
+                v-else-if="platform === 'youtube'"
+                :size="24"
+                class="text-[#FF0000]"
+              />
+              <span class="text-xs text-white capitalize">{{ platform }}</span>
+            </button>
+          </div>
         </div>
 
         <!-- channel name -->
