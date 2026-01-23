@@ -7,6 +7,10 @@
     "channelLabel": "频道名称",
     "videoIdLabel": "视频ID",
     "placeholder": "输入频道名称或链接...",
+    "iframeUrlLabel": "Iframe链接",
+    "iframeUrlPlaceholder": "粘贴iframe src链接...",
+    "customNameLabel": "显示名称（可选）",
+    "customNamePlaceholder": "我的自定义直播",
     "cancelButton": "取消",
     "addButton": "添加直播"
   },

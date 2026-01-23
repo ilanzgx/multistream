@@ -7,6 +7,7 @@ import TwitchChat from "./components/chat/TwitchChat.vue";
 import TwitchStream from "./components/stream/TwitchStream.vue";
 import YoutubeStream from "./components/stream/YoutubeStream.vue";
 import YoutubeChat from "./components/chat/YoutubeChat.vue";
+import CustomStream from "./components/stream/CustomStream.vue";
 import AddDialog from "./components/dialogs/AddDialog.vue";
 import ShareDialog from "./components/dialogs/ShareDialog.vue";
 import SettingsDialog from "./components/dialogs/SettingsDialog.vue";
@@ -105,6 +106,16 @@ onMounted(() => {
             v-else-if="stream.platform === 'youtube'"
             :channel="stream.channel"
             :channelid="stream.id"
+            :class="{
+              'col-span-2 justify-self-center w-1/2':
+                streams.length === 3 && index === 2,
+            }"
+          />
+          <CustomStream
+            v-else-if="stream.platform === 'custom'"
+            :channel="stream.channel"
+            :channelid="stream.id"
+            :iframeUrl="stream.iframeUrl || ''"
             :class="{
               'col-span-2 justify-self-center w-1/2':
                 streams.length === 3 && index === 2,

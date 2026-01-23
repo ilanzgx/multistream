@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +14,7 @@ import { useStreams, type Platform } from "@/composables/useStreams";
 import KickIcon from "@/components/icons/KickIcon.vue";
 import TwitchIcon from "@/components/icons/TwitchIcon.vue";
 import YoutubeIcon from "@/components/icons/YoutubeIcon.vue";
+import CustomIcon from "@/components/icons/CustomIcon.vue";
 
 // props
 defineProps<{
@@ -28,9 +29,28 @@ const { addStream } = useStreams();
 
 // local state
 const channelName = ref("");
+const iframeUrl = ref("");
 const selectedPlatform = ref<Platform>("kick");
 
+const isCustom = computed(() => selectedPlatform.value === "custom");
+
 const handleAddStream = () => {
+  if (isCustom.value) {
+    const url = iframeUrl.value.trim();
+    const name = channelName.value.trim() || "Custom Stream";
+
+    if (!url) {
+      return;
+    }
+
+    addStream(name, "custom", url);
+    channelName.value = "";
+    iframeUrl.value = "";
+    selectedPlatform.value = "kick";
+    emit("update:open", false);
+    return;
+  }
+
   let channel = channelName.value.trim();
 
   // if it's a url
@@ -81,6 +101,13 @@ const handleAddStream = () => {
   selectedPlatform.value = "kick";
   emit("update:open", false);
 };
+
+const canSubmit = computed(() => {
+  if (isCustom.value) {
+    return iframeUrl.value.trim().length > 0;
+  }
+  return channelName.value.trim().length > 0;
+});
 </script>
 
 <template>
@@ -99,9 +126,14 @@ const handleAddStream = () => {
           <label class="text-sm font-medium text-gray-300">{{
             $t("add.platform")
           }}</label>
-          <div class="grid grid-cols-3 gap-2">
+          <div class="grid grid-cols-4 gap-2">
             <button
-              v-for="platform in ['kick', 'twitch', 'youtube'] as Platform[]"
+              v-for="platform in [
+                'kick',
+                'twitch',
+                'youtube',
+                'custom',
+              ] as Platform[]"
               :key="platform"
               type="button"
               @click="selectedPlatform = platform"
@@ -127,13 +159,45 @@ const handleAddStream = () => {
                 :size="24"
                 class="text-[#FF0000]"
               />
+              <CustomIcon
+                v-else-if="platform === 'custom'"
+                :size="24"
+                class="text-[#6366F1]"
+              />
               <span class="text-xs text-white capitalize">{{ platform }}</span>
             </button>
           </div>
         </div>
 
-        <!-- channel name -->
-        <div class="space-y-2">
+        <!-- custom iframe URL input -->
+        <div v-if="isCustom" class="space-y-4">
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-300">{{
+              $t("add.iframeUrlLabel")
+            }}</label>
+            <input
+              v-model="iframeUrl"
+              type="text"
+              :placeholder="$t('add.iframeUrlPlaceholder')"
+              class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
+              @keyup.enter="handleAddStream"
+            />
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm font-medium text-gray-300">{{
+              $t("add.customNameLabel")
+            }}</label>
+            <input
+              v-model="channelName"
+              type="text"
+              :placeholder="$t('add.customNamePlaceholder')"
+              class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
+            />
+          </div>
+        </div>
+
+        <!-- channel name (for non-custom platforms) -->
+        <div v-else class="space-y-2">
           <label
             v-if="selectedPlatform === 'kick' || selectedPlatform === 'twitch'"
             class="text-sm font-medium text-gray-300"
@@ -165,7 +229,7 @@ const handleAddStream = () => {
           variant="outline"
           class="border-[#2a2d33] bg-[#14161a] text-white hover:text-gray-300 hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-colors"
           @click="handleAddStream"
-          :disabled="!channelName.trim()"
+          :disabled="!canSubmit"
         >
           {{ $t("add.addButton") }}
         </Button>

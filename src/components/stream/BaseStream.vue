@@ -6,6 +6,7 @@ import { ref, onMounted, nextTick, computed } from "vue";
 import YoutubeIcon from "@/components/icons/YoutubeIcon.vue";
 import KickIcon from "@/components/icons/KickIcon.vue";
 import TwitchIcon from "@/components/icons/TwitchIcon.vue";
+import CustomIcon from "@/components/icons/CustomIcon.vue";
 
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,7 +17,7 @@ useI18n();
 const props = defineProps<{
   channelid: string;
   channel: string;
-  platform: "twitch" | "kick" | "youtube";
+  platform: "twitch" | "kick" | "youtube" | "custom";
 }>();
 
 const platformConfig = computed(() => {
@@ -35,6 +36,11 @@ const platformConfig = computed(() => {
       icon: YoutubeIcon,
       color: "#FF0000",
       name: "YouTube",
+    },
+    custom: {
+      icon: CustomIcon,
+      color: "#6366F1",
+      name: "Custom",
     },
   };
   return configs[props.platform];

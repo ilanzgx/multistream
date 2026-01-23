@@ -3,24 +3,29 @@ import { computed } from "vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 
-export type Platform = "kick" | "twitch" | "youtube";
+export type Platform = "kick" | "twitch" | "youtube" | "custom";
 
 export interface Stream {
   id: string;
   channel: string;
   platform: Platform;
+  iframeUrl?: string;
 }
 
 const _useStreams = () => {
   const { t } = useI18n();
   const streams = useStorage<Stream[]>("streams", []);
 
-  const addStream = (channel: string, platform: Platform) => {
+  const addStream = (
+    channel: string,
+    platform: Platform,
+    iframeUrl?: string,
+  ) => {
     if (
       streams.value.some(
         (s) =>
           s.channel.toLowerCase() === channel.toLowerCase() &&
-          s.platform === platform
+          s.platform === platform,
       )
     ) {
       toast.warning(t("toasts.add.alreadyAdded"));
@@ -33,6 +38,7 @@ const _useStreams = () => {
         id: crypto.randomUUID(),
         channel,
         platform,
+        ...(iframeUrl && { iframeUrl }),
       },
     ];
 

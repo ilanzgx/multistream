@@ -7,6 +7,10 @@
     "channelLabel": "Nombre del Canal",
     "videoIdLabel": "ID del Video",
     "placeholder": "Ingrese el nombre del canal o URL...",
+    "iframeUrlLabel": "URL del Iframe",
+    "iframeUrlPlaceholder": "Pegue la URL src del iframe...",
+    "customNameLabel": "Nombre de Pantalla (opcional)",
+    "customNamePlaceholder": "Mi Stream Personalizado",
     "cancelButton": "Cancelar",
     "addButton": "Agregar Stream"
   },

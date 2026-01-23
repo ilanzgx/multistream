@@ -7,6 +7,10 @@
     "channelLabel": "Название канала",
     "videoIdLabel": "ID видео",
     "placeholder": "Введите название канала или URL...",
+    "iframeUrlLabel": "URL Iframe",
+    "iframeUrlPlaceholder": "Вставьте URL src iframe...",
+    "customNameLabel": "Отображаемое имя (необязательно)",
+    "customNamePlaceholder": "Моя пользовательская трансляция",
     "cancelButton": "Отмена",
     "addButton": "Добавить трансляцию"
   },
