@@ -38,6 +38,16 @@
     "copyButton": "Link kopieren",
     "toast": "Link in die Zwischenablage kopiert"
   },
+  "import": {
+    "tooltip": "Importieren",
+    "title": "Streams importieren",
+    "description": "Fügen Sie einen Freigabelink ein, um Streams zu importieren.",
+    "placeholder": "Freigabelink hier einfügen...",
+    "importButton": "Importieren",
+    "invalidLink": "Ungültiger Freigabelink",
+    "invalidCustom": "Benutzerdefinierte Streams konnten nicht verarbeitet werden",
+    "success": "Streams erfolgreich importiert"
+  },
   "hide": {
     "tooltip": "Ausblenden"
   },

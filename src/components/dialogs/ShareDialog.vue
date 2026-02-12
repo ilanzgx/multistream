@@ -33,10 +33,28 @@ const shareLink = computed(() => {
   }
 
   const url = window.location.origin;
-  const streamsParam = streams.value
-    .map((s) => `${s.platform}:${s.channel}`)
-    .join(",");
-  return `${url}?streams=${streamsParam}`;
+  const params: string[] = [];
+
+  // regular streams (kick, twitch, youtube)
+  const regularStreams = streams.value.filter((s) => s.platform !== "custom");
+  if (regularStreams.length) {
+    const streamsParam = regularStreams
+      .map((s) => `${s.platform}:${s.channel}`)
+      .join(",");
+    params.push(`streams=${streamsParam}`);
+  }
+
+  // custom streams - Base64 encoded
+  const customStreams = streams.value.filter((s) => s.platform === "custom");
+  if (customStreams.length) {
+    const customData = customStreams.map((s) => ({
+      n: s.channel,
+      u: s.iframeUrl || "",
+    }));
+    params.push(`c=${btoa(JSON.stringify(customData))}`);
+  }
+
+  return `${url}?${params.join("&")}`;
 });
 
 const copyLink = async () => {

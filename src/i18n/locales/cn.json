@@ -38,6 +38,16 @@
     "copyButton": "复制链接",
     "toast": "链接已复制到剪贴板"
   },
+  "import": {
+    "tooltip": "导入",
+    "title": "导入直播",
+    "description": "粘贴分享链接以导入直播。",
+    "placeholder": "在此粘贴分享链接...",
+    "importButton": "导入",
+    "invalidLink": "无效的分享链接",
+    "invalidCustom": "无法解析自定义直播",
+    "success": "直播导入成功"
+  },
   "hide": {
     "tooltip": "隐藏"
   },

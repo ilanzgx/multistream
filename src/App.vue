@@ -10,8 +10,15 @@ import YoutubeChat from "./components/chat/YoutubeChat.vue";
 import CustomStream from "./components/stream/CustomStream.vue";
 import AddDialog from "./components/dialogs/AddDialog.vue";
 import ShareDialog from "./components/dialogs/ShareDialog.vue";
+import ImportDialog from "./components/dialogs/ImportDialog.vue";
 import SettingsDialog from "./components/dialogs/SettingsDialog.vue";
-import { UserPlus2, Settings2, Share2, PanelRightClose } from "lucide-vue-next";
+import {
+  UserPlus2,
+  Settings2,
+  Share2,
+  ImportIcon as Import,
+  PanelRightClose,
+} from "lucide-vue-next";
 import { useStreams, type Platform } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater } from "./composables/useUpdater";
@@ -31,9 +38,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
+import { toast } from "vue-sonner";
 
 const addDialogOpen = ref(false);
 const shareDialogOpen = ref(false);
+const importDialogOpen = ref(false);
 const settingsDialogOpen = ref(false);
 const appVersion = import.meta.env.VITE_APP_VERSION;
 
@@ -61,17 +70,38 @@ onMounted(() => {
   // check for streams on startup
   const urlParams = new URLSearchParams(window.location.search);
   const streamsParam = urlParams.get("streams");
+  const customParam = urlParams.get("c");
 
-  if (streamsParam) {
+  if (streamsParam || customParam) {
     clearStreams();
 
-    const streamList = streamsParam.split(",");
-    streamList.forEach((stream) => {
-      const [platform, channel] = stream.split(":");
-      if (platform && channel) {
-        addStream(channel, platform as Platform);
+    // parse regular streams (kick, twitch, youtube)
+    if (streamsParam) {
+      const streamList = streamsParam.split(",");
+      streamList.forEach((stream) => {
+        const [platform, channel] = stream.split(":");
+        if (platform && channel) {
+          addStream(channel, platform as Platform);
+        }
+      });
+    }
+
+    // parse custom streams (Base64 encoded)
+    if (customParam) {
+      try {
+        const customStreams = JSON.parse(atob(customParam)) as {
+          n: string;
+          u: string;
+        }[];
+        customStreams.forEach((s) => {
+          if (s.u) {
+            addStream(s.n || "Custom Stream", "custom", s.u);
+          }
+        });
+      } catch {
+        toast.error("Failed to parse custom streams");
       }
-    });
+    }
 
     window.history.replaceState({}, "", window.location.pathname);
   }
@@ -215,7 +245,7 @@ onMounted(() => {
         <!-- action buttons -->
         <div class="p-5 border-t border-[#1f2227]">
           <TooltipProvider>
-            <div class="grid grid-cols-4 gap-3">
+            <div class="grid grid-cols-5 gap-3">
               <Tooltip>
                 <TooltipTrigger as-child>
                   <Button
@@ -258,6 +288,21 @@ onMounted(() => {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{{ $t("share.tooltip") }}</p>
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger as-child>
+                  <Button
+                    class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
+                    variant="outline"
+                    @click="importDialogOpen = true"
+                  >
+                    <Import class="size-5 text-white" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{{ $t("import.tooltip") }}</p>
                 </TooltipContent>
               </Tooltip>
 
@@ -311,6 +356,7 @@ onMounted(() => {
     <!-- dialogs -->
     <AddDialog v-model:open="addDialogOpen" />
     <ShareDialog v-model:open="shareDialogOpen" />
+    <ImportDialog v-model:open="importDialogOpen" />
     <SettingsDialog v-model:open="settingsDialogOpen" />
 
     <!-- toast notifications -->

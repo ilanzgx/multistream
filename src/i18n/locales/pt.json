@@ -38,6 +38,16 @@
     "copyButton": "Copiar Link",
     "toast": "Link copiado para a área de transferência"
   },
+  "import": {
+    "tooltip": "Importar",
+    "title": "Importar Streams",
+    "description": "Cole um link de compartilhamento para importar streams.",
+    "placeholder": "Cole o link de compartilhamento aqui...",
+    "importButton": "Importar",
+    "invalidLink": "Link de compartilhamento inválido",
+    "invalidCustom": "Falha ao processar streams customizadas",
+    "success": "Streams importadas com sucesso"
+  },
   "hide": {
     "tooltip": "Ocultar"
   },
