@@ -32,7 +32,10 @@ const shareLink = computed(() => {
     return t("share.noStreams");
   }
 
-  const url = window.location.origin;
+  const url =
+    window.location.hostname === "localhost"
+      ? "https://multistreams-pi.vercel.app"
+      : window.location.origin;
   const params: string[] = [];
 
   // regular streams (kick, twitch, youtube)
