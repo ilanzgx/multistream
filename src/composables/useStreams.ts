@@ -2,6 +2,7 @@ import { createSharedComposable, useStorage } from "@vueuse/core";
 import { computed } from "vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
+import { useRecents } from "./useRecents";
 
 export type Platform = "kick" | "twitch" | "youtube" | "custom";
 
@@ -15,6 +16,7 @@ export interface Stream {
 const _useStreams = () => {
   const { t } = useI18n();
   const streams = useStorage<Stream[]>("streams", []);
+  const { addRecent } = useRecents();
 
   const addStream = (
     channel: string,
@@ -43,6 +45,8 @@ const _useStreams = () => {
     ];
 
     toast.success(`${channel} ${t("toasts.add.added")}`);
+
+    addRecent(channel, platform, iframeUrl);
   };
 
   const removeStream = (id: string) => {

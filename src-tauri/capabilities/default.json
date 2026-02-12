@@ -12,6 +12,16 @@
     "updater:allow-check",
     "updater:allow-download",
     "updater:allow-install",
-    "process:allow-restart"
+    "process:allow-restart",
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
+        { "url": "https://api.twitch.tv/**" },
+        { "url": "https://gql.twitch.tv/**" },
+        { "url": "https://id.twitch.tv/**" },
+        { "url": "https://kick.com/api/**" }
+      ]
+    }
   ]
 }

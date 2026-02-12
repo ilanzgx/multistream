@@ -12,7 +12,8 @@
     "customNameLabel": "Nombre de Pantalla (opcional)",
     "customNamePlaceholder": "Mi Stream Personalizado",
     "cancelButton": "Cancelar",
-    "addButton": "Agregar Stream"
+    "addButton": "Agregar Stream",
+    "recents": "Recientes"
   },
   "settings": {
     "tooltip": "Configuraciones",

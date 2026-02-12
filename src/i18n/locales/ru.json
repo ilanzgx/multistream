@@ -12,7 +12,8 @@
     "customNameLabel": "Отображаемое имя (необязательно)",
     "customNamePlaceholder": "Моя пользовательская трансляция",
     "cancelButton": "Отмена",
-    "addButton": "Добавить трансляцию"
+    "addButton": "Добавить трансляцию",
+    "recents": "Недавние"
   },
   "settings": {
     "tooltip": "Настройки",

@@ -12,7 +12,8 @@
     "customNameLabel": "显示名称（可选）",
     "customNamePlaceholder": "我的自定义直播",
     "cancelButton": "取消",
-    "addButton": "添加直播"
+    "addButton": "添加直播",
+    "recents": "最近"
   },
   "settings": {
     "tooltip": "设置",

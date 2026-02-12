@@ -12,7 +12,8 @@
     "customNameLabel": "Anzeigename (optional)",
     "customNamePlaceholder": "Mein benutzerdefinierter Stream",
     "cancelButton": "Abbrechen",
-    "addButton": "Stream hinzufügen"
+    "addButton": "Stream hinzufügen",
+    "recents": "Zuletzt verwendet"
   },
   "settings": {
     "tooltip": "Einstellungen",
