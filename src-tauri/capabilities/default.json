@@ -20,7 +20,8 @@
         { "url": "https://api.twitch.tv/**" },
         { "url": "https://gql.twitch.tv/**" },
         { "url": "https://id.twitch.tv/**" },
-        { "url": "https://kick.com/api/**" }
+        { "url": "https://kick.com/api/**" },
+        { "url": "https://kick.com/stream/**" }
       ]
     }
   ]

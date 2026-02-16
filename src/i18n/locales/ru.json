@@ -13,7 +13,8 @@
     "customNamePlaceholder": "Моя пользовательская трансляция",
     "cancelButton": "Отмена",
     "addButton": "Добавить трансляцию",
-    "recents": "Недавние"
+    "recents": "Недавние",
+    "suggestions": "Популярные трансляции"
   },
   "settings": {
     "tooltip": "Настройки",

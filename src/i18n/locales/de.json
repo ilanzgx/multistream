@@ -13,7 +13,8 @@
     "customNamePlaceholder": "Mein benutzerdefinierter Stream",
     "cancelButton": "Abbrechen",
     "addButton": "Stream hinzufügen",
-    "recents": "Zuletzt verwendet"
+    "recents": "Zuletzt verwendet",
+    "suggestions": "Top Live-Kanäle"
   },
   "settings": {
     "tooltip": "Einstellungen",

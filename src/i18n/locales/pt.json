@@ -13,7 +13,8 @@
     "customNamePlaceholder": "Minha Stream Personalizada",
     "cancelButton": "Cancelar",
     "addButton": "Adicionar Stream",
-    "recents": "Recentes"
+    "recents": "Recentes",
+    "suggestions": "Canais em Alta"
   },
   "settings": {
     "tooltip": "Configurações",
