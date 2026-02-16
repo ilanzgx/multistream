@@ -194,7 +194,6 @@ async function fetchTwitchSuggestions(
 
     if (!response.ok) return [];
     const data = await response.json();
-    console.log(data);
 
     const allStreams =
       data.data?.streams?.edges?.map((edge: any) => ({
@@ -211,16 +210,12 @@ async function fetchTwitchSuggestions(
       (s: any) => s.language === twitchLanguage,
     );
 
-    console.log(filtered);
-
     const result = [
       ...filtered,
       ...allStreams.filter((s: any) => s.language !== twitchLanguage),
     ]
       .slice(0, limit)
       .map(({ language, ...s }: any) => s);
-
-    console.log(result);
 
     return result.slice(0, limit).map(({ language, ...s }: any) => s);
   } catch {
@@ -278,7 +273,6 @@ async function fetchKickSuggestions(
 ): Promise<SuggestedStream[]> {
   try {
     const allStreams = await fetchAllKickStreams();
-    console.log(allStreams);
 
     return allStreams
       .sort(

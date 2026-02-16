@@ -42,6 +42,7 @@ import {
   SelectValue,
 } from "./components/ui/select";
 import { toast } from "vue-sonner";
+import { useI18n } from "vue-i18n";
 
 const addDialogOpen = ref(false);
 const shareDialogOpen = ref(false);
@@ -54,6 +55,7 @@ const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
 const { checkForUpdates } = useUpdater();
 const { suggestedStreams, refreshSuggestions, isLoadingSuggestions } =
   useLiveStatus();
+const { locale } = useI18n();
 
 const platformColors: Record<Platform, string> = {
   kick: "#53FC18",
@@ -81,6 +83,12 @@ watch(streams, (newStreams) => {
   }
 
   if (newStreams.length === 0) {
+    refreshSuggestions();
+  }
+});
+
+watch(locale, () => {
+  if (streams.value.length === 0) {
     refreshSuggestions();
   }
 });
