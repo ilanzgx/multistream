@@ -198,31 +198,23 @@ async function fetchTwitchSuggestions(
   }
 }
 
-// async function fetchAllKickStreams(): Promise<any[]> {
-//   const allStreams: any[] = [];
-//   let page = 1;
-
-//   while (page <= MAX_KICK_PAGES) {
-//     const res = await httpGet(
-//       `https://kick.com/stream/featured-livestreams/en?page=${page}`,
-//     );
-//     if (!res.ok) break;
-
-//     const data = await res.json();
-//     console.log(data);
-//     allStreams.push(...(data.data ?? []));
-
-//     if (!data.next_page_url) break;
-
-//     page++;
-//   }
-
-//   return allStreams;
-// }
+const KICK_LANGUAGE_MAP: Record<string, string> = {
+  en: "en",
+  pt: "pt",
+  es: "es",
+  de: "de",
+  cn: "zh",
+  ru: "ru",
+};
 
 async function fetchAllKickStreams(): Promise<any[]> {
+  const locale = localStorage.getItem("locale") ?? "en";
+  const kickLanguage = KICK_LANGUAGE_MAP[locale] ?? "en";
+
   const requests = Array.from({ length: MAX_KICK_PAGES }, (_, i) =>
-    httpGet(`https://kick.com/stream/featured-livestreams/en?page=${i + 1}`),
+    httpGet(
+      `https://kick.com/stream/featured-livestreams/${kickLanguage}?page=${i + 1}`,
+    ),
   );
 
   const responses = await Promise.all(requests);
