@@ -151,16 +151,28 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap> {
   return result;
 }
 
+const TWITCH_LANGUAGE_MAP: Record<string, string> = {
+  en: "EN",
+  pt: "PT",
+  es: "ES",
+  de: "DE",
+  cn: "ZH",
+  ru: "RU",
+};
+
 async function fetchTwitchSuggestions(
   limit: number = 6,
 ): Promise<SuggestedStream[]> {
   try {
+    const locale = localStorage.getItem("locale") ?? "en";
+    const twitchLanguage = TWITCH_LANGUAGE_MAP[locale] ?? "EN";
+
     const query = `
       query {
-        streams(first: ${limit}, options: {sort: VIEWER_COUNT}) {
+        streams(first: 30, options: {sort: VIEWER_COUNT}) {
           edges {
             node {
-              broadcaster { login }
+              broadcaster { login, broadcastSettings { language } }
               title
               viewersCount
               game { displayName }
@@ -182,53 +194,78 @@ async function fetchTwitchSuggestions(
 
     if (!response.ok) return [];
     const data = await response.json();
+    console.log(data);
 
-    return (
+    const allStreams =
       data.data?.streams?.edges?.map((edge: any) => ({
         channel: edge.node.broadcaster.login,
         platform: "twitch" as Platform,
         title: edge.node.title,
         category: edge.node.game?.displayName || "Just Chatting",
         viewerCount: edge.node.viewersCount,
+        language: edge.node.broadcaster.broadcastSettings?.language ?? "en",
         thumbnail: edge.node.previewImageURL,
-      })) || []
+      })) ?? [];
+
+    const filtered = allStreams.filter(
+      (s: any) => s.language === twitchLanguage,
     );
+
+    console.log(filtered);
+
+    const result = [
+      ...filtered,
+      ...allStreams.filter((s: any) => s.language !== twitchLanguage),
+    ]
+      .slice(0, limit)
+      .map(({ language, ...s }: any) => s);
+
+    console.log(result);
+
+    return result.slice(0, limit).map(({ language, ...s }: any) => s);
   } catch {
     return [];
   }
 }
 
-const KICK_LANGUAGE_MAP: Record<string, string> = {
-  en: "en",
-  pt: "pt",
-  es: "es",
-  de: "de",
-  cn: "zh",
-  ru: "ru",
+const KICK_LANGUAGE_MAP: Record<string, { code: string; name: string }> = {
+  en: { code: "en", name: "English" },
+  pt: { code: "pt", name: "Portuguese" },
+  es: { code: "es", name: "Spanish" },
+  de: { code: "de", name: "German" },
+  cn: { code: "zh", name: "Chinese" },
+  ru: { code: "ru", name: "Russian" },
 };
 
 async function fetchAllKickStreams(): Promise<any[]> {
   const locale = localStorage.getItem("locale") ?? "en";
-  const kickLanguage = KICK_LANGUAGE_MAP[locale] ?? "en";
+  const kickLanguage = KICK_LANGUAGE_MAP[locale] ?? KICK_LANGUAGE_MAP.en;
 
   const requests = Array.from({ length: MAX_KICK_PAGES }, (_, i) =>
     httpGet(
-      `https://kick.com/stream/featured-livestreams/${kickLanguage}?page=${i + 1}`,
+      `https://kick.com/stream/featured-livestreams/${kickLanguage?.code}?page=${i + 1}`,
     ),
   );
 
   const responses = await Promise.all(requests);
-
   const allStreams: any[] = [];
+
   for (const res of responses) {
     if (!res.ok) continue;
     const data = await res.json();
     allStreams.push(...(data.data ?? []));
   }
 
+  const filtered = allStreams.filter(
+    (s) => s.language?.toLowerCase() === kickLanguage?.name.toLowerCase(),
+  );
+
+  // if there are not enough streams in the language, use all streams
+  const streams = filtered.length >= 4 ? filtered : allStreams;
+
   // check if have duplicate streams
   const seen = new Set<string>();
-  return allStreams.filter((s) => {
+  return streams.filter((s) => {
     const key = s.channel?.slug ?? s.slug;
     if (seen.has(key)) return false;
     seen.add(key);
