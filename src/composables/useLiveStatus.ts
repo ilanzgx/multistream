@@ -4,8 +4,8 @@ import { useRecents } from "./useRecents";
 import type { Platform } from "./useStreams";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
-const POLL_INTERVAL = 30000; // 30s
-const MAX_KICK_PAGES = 3;
+import { API_CONFIG, REFRESH_CONFIG } from "@/config/api";
+import { SUPPORTED_LANGUAGES, DEFAULT_LOCALE } from "@/config/i18n";
 
 export interface LiveStatus {
   isLive: boolean;
@@ -76,14 +76,14 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap> {
 
   try {
     const response = await httpPost(
-      "https://gql.twitch.tv/gql",
+      API_CONFIG.twitch.gqlUrl,
       JSON.stringify({
         query: `{ ${query} }`,
       }),
       {
         // Public client ID used by the Twitch website
         // Not official, but works for years
-        "Client-Id": "kimne78kx3ncx6brgo4mv6wki5h1ko",
+        "Client-Id": API_CONFIG.twitch.clientId,
         "Content-Type": "application/json",
       },
     );
@@ -126,7 +126,7 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap> {
   const promises = channels.map(async (channel) => {
     try {
       const response = await httpGet(
-        `https://kick.com/api/v2/channels/${encodeURIComponent(channel)}`,
+        `${API_CONFIG.kick.apiBaseUrl}/${encodeURIComponent(channel)}`,
       );
 
       if (!response.ok) return;
@@ -151,21 +151,14 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap> {
   return result;
 }
 
-const TWITCH_LANGUAGE_MAP: Record<string, string> = {
-  en: "EN",
-  pt: "PT",
-  es: "ES",
-  de: "DE",
-  cn: "ZH",
-  ru: "RU",
-};
-
 async function fetchTwitchSuggestions(
-  limit: number = 6,
+  limit: number = REFRESH_CONFIG.suggestionsLimit,
 ): Promise<SuggestedStream[]> {
   try {
-    const locale = localStorage.getItem("locale") ?? "en";
-    const twitchLanguage = TWITCH_LANGUAGE_MAP[locale] ?? "EN";
+    const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
+    const twitchLanguage =
+      SUPPORTED_LANGUAGES[locale]?.apiCodes.twitch ??
+      SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.twitch;
 
     const query = `
       query {
@@ -184,10 +177,10 @@ async function fetchTwitchSuggestions(
     `;
 
     const response = await httpPost(
-      "https://gql.twitch.tv/gql",
+      API_CONFIG.twitch.gqlUrl,
       JSON.stringify({ query }),
       {
-        "Client-Id": "kimne78kx3ncx6brgo4mv6wki5h1ko",
+        "Client-Id": API_CONFIG.twitch.clientId,
         "Content-Type": "application/json",
       },
     );
@@ -223,22 +216,15 @@ async function fetchTwitchSuggestions(
   }
 }
 
-const KICK_LANGUAGE_MAP: Record<string, { code: string; name: string }> = {
-  en: { code: "en", name: "English" },
-  pt: { code: "pt", name: "Portuguese" },
-  es: { code: "es", name: "Spanish" },
-  de: { code: "de", name: "German" },
-  cn: { code: "zh", name: "Chinese" },
-  ru: { code: "ru", name: "Russian" },
-};
-
 async function fetchAllKickStreams(): Promise<any[]> {
-  const locale = localStorage.getItem("locale") ?? "en";
-  const kickLanguage = KICK_LANGUAGE_MAP[locale] ?? KICK_LANGUAGE_MAP.en;
+  const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
+  const kickLanguage =
+    SUPPORTED_LANGUAGES[locale]?.apiCodes.kick ??
+    SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.kick;
 
-  const requests = Array.from({ length: MAX_KICK_PAGES }, (_, i) =>
+  const requests = Array.from({ length: REFRESH_CONFIG.maxKickPages }, (_, i) =>
     httpGet(
-      `https://kick.com/stream/featured-livestreams/${kickLanguage?.code}?page=${i + 1}`,
+      `${API_CONFIG.kick.featuredUrl}/${kickLanguage?.code}?page=${i + 1}`,
     ),
   );
 
@@ -269,7 +255,7 @@ async function fetchAllKickStreams(): Promise<any[]> {
 }
 
 async function fetchKickSuggestions(
-  limit: number = 6,
+  limit: number = REFRESH_CONFIG.suggestionsLimit,
 ): Promise<SuggestedStream[]> {
   try {
     const allStreams = await fetchAllKickStreams();
@@ -358,7 +344,7 @@ const _useLiveStatus = () => {
   const startPolling = () => {
     if (intervalId) return;
     checkAll();
-    intervalId = setInterval(checkAll, POLL_INTERVAL);
+    intervalId = setInterval(checkAll, REFRESH_CONFIG.interval);
   };
 
   const stopPolling = () => {
@@ -380,8 +366,8 @@ const _useLiveStatus = () => {
 
     try {
       const [twitch, kick] = await Promise.all([
-        fetchTwitchSuggestions(6),
-        fetchKickSuggestions(6),
+        fetchTwitchSuggestions(REFRESH_CONFIG.suggestionsLimit),
+        fetchKickSuggestions(REFRESH_CONFIG.suggestionsLimit),
       ]);
 
       const combined: SuggestedStream[] = [];

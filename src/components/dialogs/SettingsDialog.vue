@@ -12,28 +12,14 @@ import Button from "../ui/button/Button.vue";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { RefreshCw } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
-import {
-  BrazilFlagIcon,
-  SpainFlagIcon,
-  UnitedStatesFlagIcon,
-  GermanyFlagIcon,
-  ChinaFlagIcon,
-  RussiaFlagIcon,
-} from "@/components/icons/flags";
+import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 
 const { checkForUpdates, isChecking } = useUpdater();
 const { locale } = useI18n();
 
 const isRunningInTauri = isTauri();
 
-const languages = [
-  { code: "en", label: "EN" },
-  { code: "pt", label: "PT" },
-  { code: "es", label: "ES" },
-  { code: "de", label: "DE" },
-  { code: "cn", label: "CN" },
-  { code: "ru", label: "RU" },
-];
+const languages = Object.values(SUPPORTED_LANGUAGES);
 
 const changeLanguage = (lang: string) => {
   locale.value = lang;
@@ -113,13 +99,8 @@ const handleCheckUpdates = () => {
                   : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
               "
             >
-              <UnitedStatesFlagIcon v-if="lang.code === 'en'" :size="16" />
-              <BrazilFlagIcon v-else-if="lang.code === 'pt'" :size="16" />
-              <SpainFlagIcon v-else-if="lang.code === 'es'" :size="16" />
-              <GermanyFlagIcon v-else-if="lang.code === 'de'" :size="16" />
-              <ChinaFlagIcon v-else-if="lang.code === 'cn'" :size="16" />
-              <RussiaFlagIcon v-else-if="lang.code === 'ru'" :size="16" />
-              {{ lang.label }}
+              <component :is="lang.flag" :size="16" />
+              <span class="hidden md:block">{{ lang.label }}</span>
             </button>
           </div>
         </div>
