@@ -13,10 +13,7 @@ import { Button } from "@/components/ui/button";
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useRecents } from "@/composables/useRecents";
 import { useLiveStatus } from "@/composables/useLiveStatus";
-import KickIcon from "@/components/icons/KickIcon.vue";
-import TwitchIcon from "@/components/icons/TwitchIcon.vue";
-import YoutubeIcon from "@/components/icons/YoutubeIcon.vue";
-import CustomIcon from "@/components/icons/CustomIcon.vue";
+import { PLATFORMS } from "@/config/platforms";
 import { X } from "lucide-vue-next";
 
 // props
@@ -44,13 +41,6 @@ watch(
   },
 );
 
-const platformColors: Record<Platform, string> = {
-  kick: "#53FC18",
-  twitch: "#9146FF",
-  youtube: "#FF0000",
-  custom: "#6366F1",
-};
-
 const formatViewers = (count?: number) => {
   if (!count) return "";
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
@@ -69,7 +59,7 @@ const handleQuickAdd = (
 // local state
 const channelName = ref("");
 const iframeUrl = ref("");
-const selectedPlatform = ref<Platform>("kick");
+const selectedPlatform = ref<Platform>(PLATFORMS.kick!.id as Platform);
 
 const isCustom = computed(() => selectedPlatform.value === "custom");
 
@@ -85,7 +75,7 @@ const handleAddStream = () => {
     addStream(name, "custom", url);
     channelName.value = "";
     iframeUrl.value = "";
-    selectedPlatform.value = "kick";
+    selectedPlatform.value = PLATFORMS.kick!.id as Platform;
     emit("update:open", false);
     return;
   }
@@ -98,16 +88,15 @@ const handleAddStream = () => {
       const url = new URL(channel);
 
       // detect platform from URL
-      if (url.hostname.includes("youtube")) {
-        selectedPlatform.value = "youtube";
-      } else if (url.hostname.includes("twitch")) {
-        selectedPlatform.value = "twitch";
-      } else if (url.hostname.includes("kick")) {
-        selectedPlatform.value = "kick";
+      for (const platform of Object.values(PLATFORMS)) {
+        if (platform.domains.some((domain) => url.hostname.includes(domain))) {
+          selectedPlatform.value = platform.id as Platform;
+          break;
+        }
       }
 
       // extract channel/video based on platform
-      if (selectedPlatform.value === "youtube") {
+      if (selectedPlatform.value === PLATFORMS.youtube!.id) {
         const videoId = url.searchParams.get("v");
         if (videoId) {
           // youtube.com/watch?v=VIDEO_ID
@@ -137,7 +126,7 @@ const handleAddStream = () => {
   addStream(channel, selectedPlatform.value);
 
   channelName.value = "";
-  selectedPlatform.value = "kick";
+  selectedPlatform.value = PLATFORMS.kick!.id as Platform;
   emit("update:open", false);
 };
 
@@ -208,25 +197,10 @@ const canSubmit = computed(() => {
                 class="h-2 w-2 shrink-0 rounded-full bg-gray-600"
               />
 
-              <KickIcon
-                v-if="recent.platform === 'kick'"
+              <component
+                :is="PLATFORMS[recent.platform]?.icon"
                 :size="14"
-                :style="{ color: platformColors.kick }"
-              />
-              <TwitchIcon
-                v-else-if="recent.platform === 'twitch'"
-                :size="14"
-                :style="{ color: platformColors.twitch }"
-              />
-              <YoutubeIcon
-                v-else-if="recent.platform === 'youtube'"
-                :size="14"
-                :style="{ color: platformColors.youtube }"
-              />
-              <CustomIcon
-                v-else-if="recent.platform === 'custom'"
-                :size="14"
-                :style="{ color: platformColors.custom }"
+                :style="{ color: PLATFORMS[recent.platform]?.color }"
               />
               <span class="truncate max-w-30">{{ recent.channel }}</span>
 
@@ -259,43 +233,25 @@ const canSubmit = computed(() => {
           }}</label>
           <div class="grid grid-cols-4 gap-2">
             <button
-              v-for="platform in [
-                'kick',
-                'twitch',
-                'youtube',
-                'custom',
-              ] as Platform[]"
-              :key="platform"
+              v-for="platform in PLATFORMS"
+              :key="platform.id"
               type="button"
-              @click="selectedPlatform = platform"
+              @click="selectedPlatform = platform.id as Platform"
               class="flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors cursor-pointer"
               :class="[
-                selectedPlatform === platform
+                selectedPlatform === platform.id
                   ? 'bg-[#2a2d33] border-primary'
                   : 'bg-[#14161a] border-[#2a2d33] hover:border-[#3a3f4b]',
               ]"
             >
-              <KickIcon
-                v-if="platform === 'kick'"
+              <component
+                :is="platform.icon"
                 :size="24"
-                class="text-[#53FC18]"
+                :style="{ color: platform.color }"
               />
-              <TwitchIcon
-                v-else-if="platform === 'twitch'"
-                :size="24"
-                class="text-[#9146FF]"
-              />
-              <YoutubeIcon
-                v-else-if="platform === 'youtube'"
-                :size="24"
-                class="text-[#FF0000]"
-              />
-              <CustomIcon
-                v-else-if="platform === 'custom'"
-                :size="24"
-                class="text-[#6366F1]"
-              />
-              <span class="text-xs text-white capitalize">{{ platform }}</span>
+              <span class="text-xs text-white capitalize">{{
+                platform.name
+              }}</span>
             </button>
           </div>
         </div>

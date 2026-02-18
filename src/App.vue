@@ -23,8 +23,6 @@ import { useStreams, type Platform } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
-import KickIcon from "./components/icons/KickIcon.vue";
-import TwitchIcon from "./components/icons/TwitchIcon.vue";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
 import {
@@ -43,6 +41,7 @@ import {
 } from "./components/ui/select";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
+import { PLATFORMS } from "./config/platforms";
 
 const addDialogOpen = ref(false);
 const shareDialogOpen = ref(false);
@@ -56,13 +55,6 @@ const { checkForUpdates } = useUpdater();
 const { suggestedStreams, refreshSuggestions, isLoadingSuggestions } =
   useLiveStatus();
 const { locale } = useI18n();
-
-const platformColors: Record<Platform, string> = {
-  kick: "#53FC18",
-  twitch: "#9146FF",
-  youtube: "#FF0000",
-  custom: "#6366F1",
-};
 
 const formatViewers = (count?: number) => {
   if (!count) return "";
@@ -271,15 +263,11 @@ onMounted(() => {
                       :title="stream.channel"
                       >{{ stream.channel }}</span
                     >
-                    <KickIcon
-                      v-if="stream.platform === 'kick'"
+                    <component
+                      v-if="PLATFORMS[stream.platform]"
+                      :is="PLATFORMS[stream.platform]?.icon"
                       :size="16"
-                      :style="{ color: platformColors.kick }"
-                    />
-                    <TwitchIcon
-                      v-else-if="stream.platform === 'twitch'"
-                      :size="16"
-                      :style="{ color: platformColors.twitch }"
+                      :style="{ color: PLATFORMS[stream.platform]?.color }"
                     />
                   </div>
                   <p

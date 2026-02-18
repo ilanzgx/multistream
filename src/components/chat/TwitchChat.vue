@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import BaseChat from "./BaseChat.vue";
+import { PLATFORMS } from "@/config/platforms";
 
 defineProps<{ channel: string }>();
 
@@ -16,7 +17,7 @@ const parentHost = computed(() => {
 <template>
   <BaseChat>
     <iframe
-      :src="`https://www.twitch.tv/embed/${channel}/chat?parent=${parentHost}&darkpopout=true`"
+      :src="`${PLATFORMS.twitch?.chatUrl}/${channel}/chat?parent=${parentHost}&darkpopout=true`"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
       frameborder="0"

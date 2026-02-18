@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseChat from "./BaseChat.vue";
+import { PLATFORMS } from "@/config/platforms";
 
 defineProps<{ channel: string }>();
 </script>
@@ -7,7 +8,7 @@ defineProps<{ channel: string }>();
 <template>
   <BaseChat>
     <iframe
-      :src="`https://www.youtube.com/live_chat?v=${channel}&embed_domain=localhost`"
+      :src="`${PLATFORMS.youtube?.chatUrl}?v=${channel}&embed_domain=localhost`"
       frameborder="0"
     />
   </BaseChat>

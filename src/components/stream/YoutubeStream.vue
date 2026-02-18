@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseStream from "./BaseStream.vue";
+import { PLATFORMS } from "@/config/platforms";
 
 defineProps<{ channel: string; channelid: string }>();
 </script>
@@ -7,10 +8,17 @@ defineProps<{ channel: string; channelid: string }>();
 <template>
   <BaseStream :channelid="channelid" :channel="channel" platform="youtube">
     <iframe
-      :src="`https://www.youtube-nocookie.com/embed/${channel}?autoplay=1&origin=http://localhost`"
+      :src="`${PLATFORMS.youtube?.embedUrl}/${channel}?autoplay=1&origin=http://localhost`"
       frameborder="0"
       allowfullscreen
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allow="
+        accelerometer;
+        autoplay;
+        clipboard-write;
+        encrypted-media;
+        gyroscope;
+        picture-in-picture;
+      "
     />
   </BaseStream>
 </template>

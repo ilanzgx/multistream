@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseStream from "./BaseStream.vue";
+import { PLATFORMS } from "@/config/platforms";
 
 defineProps<{ channel: string; channelid: string }>();
 </script>
@@ -7,7 +8,7 @@ defineProps<{ channel: string; channelid: string }>();
 <template>
   <BaseStream :channelid="channelid" :channel="channel" platform="kick">
     <iframe
-      :src="`https://player.kick.com/${channel}`"
+      :src="`${PLATFORMS.kick?.embedUrl}/${channel}`"
       allowfullscreen
       frameborder="0"
     />

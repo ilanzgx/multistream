@@ -3,16 +3,13 @@ import { useStreams } from "@/composables/useStreams";
 import { X, Heart } from "lucide-vue-next";
 import { ref, onMounted, nextTick, computed } from "vue";
 
-import YoutubeIcon from "@/components/icons/YoutubeIcon.vue";
-import KickIcon from "@/components/icons/KickIcon.vue";
-import TwitchIcon from "@/components/icons/TwitchIcon.vue";
-import CustomIcon from "@/components/icons/CustomIcon.vue";
-
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const { removeStream } = useStreams();
 useI18n();
+
+import { PLATFORMS } from "@/config/platforms";
 
 const props = defineProps<{
   channelid: string;
@@ -21,29 +18,7 @@ const props = defineProps<{
 }>();
 
 const platformConfig = computed(() => {
-  const configs = {
-    twitch: {
-      icon: TwitchIcon,
-      color: "#9146FF",
-      name: "Twitch",
-    },
-    kick: {
-      icon: KickIcon,
-      color: "#53FC18",
-      name: "Kick",
-    },
-    youtube: {
-      icon: YoutubeIcon,
-      color: "#FF0000",
-      name: "YouTube",
-    },
-    custom: {
-      icon: CustomIcon,
-      color: "#6366F1",
-      name: "Custom",
-    },
-  };
-  return configs[props.platform];
+  return PLATFORMS[props.platform];
 });
 
 const isLoading = ref(true);
@@ -89,9 +64,9 @@ onMounted(() => {
         class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"
       >
         <component
-          :is="platformConfig.icon"
+          :is="platformConfig?.icon"
           :size="80"
-          :style="{ color: platformConfig.color }"
+          :style="{ color: platformConfig?.color }"
         />
       </div>
     </div>
