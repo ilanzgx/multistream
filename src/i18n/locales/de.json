@@ -13,7 +13,8 @@
     "customNamePlaceholder": "Mein benutzerdefinierter Stream",
     "cancelButton": "Abbrechen",
     "addButton": "Stream hinzufügen",
-    "recents": "Zuletzt verwendet",
+    "recents": "Deine zuletzt geöffneten Streams",
+    "historyLabel": "Verlauf",
     "suggestions": "Top Deutsche Kanäle"
   },
   "settings": {

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import Button from "../ui/button/Button.vue";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
-import { RefreshCw } from "lucide-vue-next";
+import { RefreshCw, Download, Globe } from "lucide-vue-next";
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 
@@ -50,14 +50,24 @@ const handleCheckUpdates = () => {
       </DialogHeader>
 
       <div class="space-y-4">
-        <div v-if="isRunningInTauri" class="flex items-center justify-between">
-          <div>
-            <p class="text-white text-sm font-medium">
-              {{ $t("settings.updates.title") }}
-            </p>
-            <p class="text-gray-400 text-xs">
-              {{ $t("settings.updates.description") }}
-            </p>
+        <div
+          v-if="isRunningInTauri"
+          class="flex items-center justify-between border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center justify-center size-10 rounded-lg bg-[#1a1d21] border border-[#2a2d33]"
+            >
+              <Download class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("settings.updates.title") }}
+              </p>
+              <p class="text-gray-400 text-xs">
+                {{ $t("settings.updates.description") }}
+              </p>
+            </div>
           </div>
           <Button
             variant="outline"
@@ -78,24 +88,33 @@ const handleCheckUpdates = () => {
           </Button>
         </div>
 
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-white text-sm font-medium">
-              {{ $t("settings.language.title") }}
-            </p>
-            <p class="text-gray-400 text-xs">
-              {{ $t("settings.language.description") }}
-            </p>
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center justify-center size-10 rounded-lg bg-[#1a1d21] border border-[#2a2d33]"
+            >
+              <Globe class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("settings.language.title") }}
+              </p>
+              <p class="text-gray-400 text-xs">
+                {{ $t("settings.language.description") }}
+              </p>
+            </div>
           </div>
-          <div class="grid grid-cols-3 gap-1">
+          <div class="grid grid-cols-3 gap-1 w-full sm:w-auto">
             <button
               v-for="lang in languages"
               :key="lang.code"
               @click="changeLanguage(lang.code)"
-              class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200"
+              class="flex items-center justify-center sm:justify-start gap-2 px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200"
               :class="
                 locale === lang.code
-                  ? 'bg-white/10 text-white border border-white/20'
+                  ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
                   : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
               "
             >

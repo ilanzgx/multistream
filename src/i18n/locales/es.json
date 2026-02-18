@@ -13,7 +13,8 @@
     "customNamePlaceholder": "Mi Stream Personalizado",
     "cancelButton": "Cancelar",
     "addButton": "Agregar Stream",
-    "recents": "Recientes",
+    "recents": "Tus últimas transmisiones abiertas",
+    "historyLabel": "Historial",
     "suggestions": "Tendencias en Español"
   },
   "settings": {

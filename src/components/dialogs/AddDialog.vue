@@ -14,7 +14,7 @@ import { useStreams, type Platform } from "@/composables/useStreams";
 import { useRecents } from "@/composables/useRecents";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { PLATFORMS } from "@/config/platforms";
-import { X } from "lucide-vue-next";
+import { X, History } from "lucide-vue-next";
 
 // props
 const props = defineProps<{
@@ -150,10 +150,25 @@ const canSubmit = computed(() => {
 
       <div class="space-y-4">
         <!-- recent channels -->
-        <div v-if="recents.length" class="space-y-2">
-          <label class="text-sm font-medium text-gray-300">{{
-            $t("add.recents")
-          }}</label>
+        <div
+          v-if="recents.length"
+          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center justify-center size-10 rounded-lg bg-[#1a1d21] border border-[#2a2d33]"
+            >
+              <History class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("add.historyLabel") }}
+              </p>
+              <p class="text-xs text-gray-400">
+                {{ $t("add.recents") }}
+              </p>
+            </div>
+          </div>
           <div class="flex flex-wrap gap-2">
             <button
               v-for="recent in recents"
@@ -163,7 +178,7 @@ const canSubmit = computed(() => {
               :class="[
                 getStatus(recent.channel, recent.platform)?.isLive
                   ? 'border-green-500/40 bg-green-500/10 hover:bg-green-500/15 hover:border-green-500/60'
-                  : 'border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b]',
+                  : 'border-[#2a2d33] bg-[#0f1115] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
               ]"
               :title="
                 getStatus(recent.channel, recent.platform)?.isLive
@@ -226,80 +241,86 @@ const canSubmit = computed(() => {
           </div>
         </div>
 
-        <!-- platform selector with icons -->
-        <div class="space-y-2">
-          <label class="text-sm font-medium text-gray-300">{{
-            $t("add.platform")
-          }}</label>
-          <div class="grid grid-cols-4 gap-2">
-            <button
-              v-for="platform in PLATFORMS"
-              :key="platform.id"
-              type="button"
-              @click="selectedPlatform = platform.id as Platform"
-              class="flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors cursor-pointer"
-              :class="[
-                selectedPlatform === platform.id
-                  ? 'bg-[#2a2d33] border-primary'
-                  : 'bg-[#14161a] border-[#2a2d33] hover:border-[#3a3f4b]',
-              ]"
-            >
-              <component
-                :is="platform.icon"
-                :size="24"
-                :style="{ color: platform.color }"
-              />
-              <span class="text-xs text-white capitalize">{{
-                platform.name
-              }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- custom iframe URL input -->
-        <div v-if="isCustom" class="space-y-4">
+        <div
+          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <!-- platform selector with icons -->
           <div class="space-y-2">
             <label class="text-sm font-medium text-gray-300">{{
-              $t("add.iframeUrlLabel")
+              $t("add.platform")
             }}</label>
-            <input
-              v-model="iframeUrl"
-              type="text"
-              :placeholder="$t('add.iframeUrlPlaceholder')"
-              class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
-              @keyup.enter="handleAddStream"
-            />
+            <div class="grid grid-cols-4 gap-2">
+              <button
+                v-for="platform in PLATFORMS"
+                :key="platform.id"
+                type="button"
+                @click="selectedPlatform = platform.id as Platform"
+                class="flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors cursor-pointer"
+                :class="[
+                  selectedPlatform === platform.id
+                    ? 'bg-[#2a2d33] border-primary'
+                    : 'bg-[#0f1115] border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
+                ]"
+              >
+                <component
+                  :is="platform.icon"
+                  :size="24"
+                  :style="{ color: platform.color }"
+                />
+                <span class="text-xs text-white capitalize">{{
+                  platform.name
+                }}</span>
+              </button>
+            </div>
           </div>
-          <div class="space-y-2">
-            <label class="text-sm font-medium text-gray-300">{{
-              $t("add.customNameLabel")
+
+          <!-- custom iframe URL input -->
+          <div v-if="isCustom" class="space-y-4">
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-300">{{
+                $t("add.iframeUrlLabel")
+              }}</label>
+              <input
+                v-model="iframeUrl"
+                type="text"
+                :placeholder="$t('add.iframeUrlPlaceholder')"
+                class="w-full px-3 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
+                @keyup.enter="handleAddStream"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="text-sm font-medium text-gray-300">{{
+                $t("add.customNameLabel")
+              }}</label>
+              <input
+                v-model="channelName"
+                type="text"
+                :placeholder="$t('add.customNamePlaceholder')"
+                class="w-full px-3 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
+              />
+            </div>
+          </div>
+
+          <!-- channel name (for non-custom platforms) -->
+          <div v-else class="space-y-2">
+            <label
+              v-if="
+                selectedPlatform === 'kick' || selectedPlatform === 'twitch'
+              "
+              class="text-sm font-medium text-gray-300"
+              >{{ $t("add.channelLabel") }}</label
+            >
+            <label v-else class="text-sm font-medium text-gray-300">{{
+              $t("add.videoIdLabel")
             }}</label>
             <input
               v-model="channelName"
               type="text"
-              :placeholder="$t('add.customNamePlaceholder')"
-              class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
+              :placeholder="$t('add.placeholder')"
+              class="w-full px-3 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
+              @keyup.enter="handleAddStream"
             />
           </div>
-        </div>
-
-        <!-- channel name (for non-custom platforms) -->
-        <div v-else class="space-y-2">
-          <label
-            v-if="selectedPlatform === 'kick' || selectedPlatform === 'twitch'"
-            class="text-sm font-medium text-gray-300"
-            >{{ $t("add.channelLabel") }}</label
-          >
-          <label v-else class="text-sm font-medium text-gray-300">{{
-            $t("add.videoIdLabel")
-          }}</label>
-          <input
-            v-model="channelName"
-            type="text"
-            :placeholder="$t('add.placeholder')"
-            class="w-full px-3 py-2.5 rounded-lg bg-[#14161a] text-white border border-[#2a2d33] text-sm transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/50 hover:border-[#3a3f4b] placeholder:text-gray-500"
-            @keyup.enter="handleAddStream"
-          />
         </div>
       </div>
 
