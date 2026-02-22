@@ -194,10 +194,18 @@ jobs:
             echo "Maintenance release." > changelog.md
           fi
 
-          # append downloads table header
-          printf '\n## 📦 Downloads\n\n' >> changelog.md
+          # append downloads table
+          TAG="$GITHUB_REF_NAME"
+          BASE="https://github.com/ilanzgx/multistream/releases/download/${TAG}"
+          printf '\n## \U0001F4E6 Downloads\n\n' >> changelog.md
           printf '| Platform | Download |\n' >> changelog.md
           printf '|----------|----------|\n' >> changelog.md
+          printf '| Windows (installer) | [`Multistream-windows-x64-setup.exe`](%s/Multistream-windows-x64-setup.exe) |\n' "$BASE" >> changelog.md
+          printf '| Windows (MSI) | [`Multistream-windows-x64.msi`](%s/Multistream-windows-x64.msi) |\n' "$BASE" >> changelog.md
+          printf '| macOS (Apple Silicon) | [`Multistream-macos-arm64.dmg`](%s/Multistream-macos-arm64.dmg) |\n' "$BASE" >> changelog.md
+          printf '| macOS (Intel) | [`Multistream-macos-x64.dmg`](%s/Multistream-macos-x64.dmg) |\n' "$BASE" >> changelog.md
+          printf '| Linux (AppImage) | [`Multistream-linux-x64.AppImage`](%s/Multistream-linux-x64.AppImage) |\n' "$BASE" >> changelog.md
+          printf '| Linux (Debian) | [`Multistream-linux-x64.deb`](%s/Multistream-linux-x64.deb) |\n' "$BASE" >> changelog.md
 
           echo "Generated changelog:"
           cat changelog.md
@@ -270,13 +278,4 @@ jobs:
           draft: false
           name: Multistream ${{ github.ref_name }}
           body_path: changelog.md
-          append_body: true
-          body: |
-
-            | Windows (installer) | [`Multistream-windows-x64-setup.exe`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-windows-x64-setup.exe) |
-            | Windows (MSI) | [`Multistream-windows-x64.msi`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-windows-x64.msi) |
-            | macOS (Apple Silicon) | [`Multistream-macos-arm64.dmg`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-macos-arm64.dmg) |
-            | macOS (Intel) | [`Multistream-macos-x64.dmg`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-macos-x64.dmg) |
-            | Linux (AppImage) | [`Multistream-linux-x64.AppImage`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-linux-x64.AppImage) |
-            | Linux (Debian) | [`Multistream-linux-x64.deb`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-linux-x64.deb) |
           files: release-files/*
