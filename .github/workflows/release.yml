@@ -123,15 +123,89 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        run: |
+          TAG="$GITHUB_REF_NAME"
+          PREV_TAG=$(git tag --sort=-v:refname | grep -A1 "^${TAG}$" | tail -1)
+
+          if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$TAG" ]; then
+            RANGE="$TAG"
+          else
+            RANGE="${PREV_TAG}..${TAG}"
+          fi
+
+          echo "Generating changelog for range: $RANGE"
+
+          FEATURES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^feat(\(.*\))?:" | sed -E 's/^feat(\([^)]*\))?: //' || true)
+          FIXES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^fix(\(.*\))?:" | sed -E 's/^fix(\([^)]*\))?: //' || true)
+          REFACTORS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^refactor(\(.*\))?:" | sed -E 's/^refactor(\([^)]*\))?: //' || true)
+          STYLES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^style(\(.*\))?:" | sed -E 's/^style(\([^)]*\))?: //' || true)
+          PERFS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^perf(\(.*\))?:" | sed -E 's/^perf(\([^)]*\))?: //' || true)
+
+          > changelog.md
+
+          if [ -n "$FEATURES" ]; then
+            printf '### ✨ Features\n' >> changelog.md
+            echo "$FEATURES" | while IFS= read -r line; do
+              printf -- '- %s\n' "$line" >> changelog.md
+            done
+            printf '\n' >> changelog.md
+          fi
+
+          if [ -n "$FIXES" ]; then
+            printf '### 🐛 Bug Fixes\n' >> changelog.md
+            echo "$FIXES" | while IFS= read -r line; do
+              printf -- '- %s\n' "$line" >> changelog.md
+            done
+            printf '\n' >> changelog.md
+          fi
+
+          if [ -n "$REFACTORS" ]; then
+            printf '### ♻️ Refactors\n' >> changelog.md
+            echo "$REFACTORS" | while IFS= read -r line; do
+              printf -- '- %s\n' "$line" >> changelog.md
+            done
+            printf '\n' >> changelog.md
+          fi
+
+          if [ -n "$STYLES" ]; then
+            printf '### 🎨 Style\n' >> changelog.md
+            echo "$STYLES" | while IFS= read -r line; do
+              printf -- '- %s\n' "$line" >> changelog.md
+            done
+            printf '\n' >> changelog.md
+          fi
+
+          if [ -n "$PERFS" ]; then
+            printf '### ⚡️ Performance\n' >> changelog.md
+            echo "$PERFS" | while IFS= read -r line; do
+              printf -- '- %s\n' "$line" >> changelog.md
+            done
+            printf '\n' >> changelog.md
+          fi
+
+
+          if [ ! -s changelog.md ]; then
+            echo "Maintenance release." > changelog.md
+          fi
+
+          # append downloads table header
+          printf '\n## 📦 Downloads\n\n' >> changelog.md
+          printf '| Platform | Download |\n' >> changelog.md
+          printf '|----------|----------|\n' >> changelog.md
+
+          echo "Generated changelog:"
+          cat changelog.md
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
-
-      - name: Debug - List downloaded artifacts
-        run: |
-          echo "=== Downloaded artifacts ==="
-          find artifacts -type f 2>/dev/null || echo "No artifacts found"
 
       - name: Flatten artifacts
         run: |
@@ -195,11 +269,10 @@ jobs:
         with:
           draft: false
           name: Multistream ${{ github.ref_name }}
+          body_path: changelog.md
+          append_body: true
           body: |
-            ## Downloads
 
-            | Platform | Download |
-            |----------|----------|
             | Windows (installer) | [`Multistream-windows-x64-setup.exe`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-windows-x64-setup.exe) |
             | Windows (MSI) | [`Multistream-windows-x64.msi`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-windows-x64.msi) |
             | macOS (Apple Silicon) | [`Multistream-macos-arm64.dmg`](https://github.com/ilanzgx/multistream/releases/download/${{ github.ref_name }}/Multistream-macos-arm64.dmg) |
