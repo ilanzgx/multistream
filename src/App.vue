@@ -56,6 +56,8 @@ const { suggestedStreams, refreshSuggestions, isLoadingSuggestions } =
   useLiveStatus();
 const { locale } = useI18n();
 
+// format views for more than 3 digits
+// this maybe should be in the some utils folder
 const formatViewers = (count?: number) => {
   if (!count) return "";
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
@@ -66,12 +68,18 @@ const selectedChatData = computed(() =>
   streams.value.find((s) => s.channel === selectedChat.value),
 );
 
-watch(streams, (newStreams) => {
+watch(streams, (newStreams, oldStreams) => {
   if (
     selectedChat.value &&
     !newStreams.some((s) => s.channel === selectedChat.value)
   ) {
     setSelectedChat("");
+  }
+
+  // when none streams are selected, auto load the chat of the first stream
+  // if something wrong happens, falls on fallback
+  if (oldStreams.length === 0 && newStreams.length === 1) {
+    setSelectedChat(newStreams[0]?.channel || "");
   }
 
   if (newStreams.length === 0) {
