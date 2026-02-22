@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { useStreams } from "@/composables/useStreams";
+import { useStreams, type Platform } from "@/composables/useStreams";
 import { X, Heart } from "lucide-vue-next";
 import { ref, onMounted, nextTick, computed } from "vue";
-
+import { useFavorites } from "@/composables/useFavorites";
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "vue-sonner";
 
 const { removeStream } = useStreams();
-useI18n();
+const { addFavorite, removeFavorite, favorites } = useFavorites();
+const { t } = useI18n();
 
 import { PLATFORMS } from "@/config/platforms";
 
@@ -23,6 +25,13 @@ const platformConfig = computed(() => {
 
 const isLoading = ref(true);
 const containerRef = ref<HTMLElement>();
+const isFavorite = computed(() => {
+  return favorites.value.find(
+    (f) =>
+      f.channel.toLowerCase() === props.channel.toLowerCase() &&
+      f.platform === props.platform,
+  );
+});
 
 onMounted(() => {
   nextTick(() => {
@@ -36,6 +45,16 @@ onMounted(() => {
     }
   });
 });
+
+const handleFavoriteStream = (channel: string, platform: Platform) => {
+  if (isFavorite.value) {
+    removeFavorite(channel, platform);
+    toast.success(`${channel} ${t("toasts.favorite.removed")}`);
+  } else {
+    addFavorite(channel, platform);
+    toast.success(`${channel} ${t("toasts.favorite.added")}`);
+  }
+};
 </script>
 
 <template>
@@ -78,15 +97,17 @@ onMounted(() => {
       <button
         @click="removeStream(channelid)"
         class="flex items-center justify-center size-8 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer"
-        title="Remover stream"
       >
         <X class="size-4" />
       </button>
       <button
+        @click="handleFavoriteStream(channel, platform)"
         class="flex items-center justify-center size-8 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-pink-500/80 hover:text-white hover:border-pink-400/50 transition-all duration-200 hover:scale-110 cursor-pointer"
-        title="Favoritar"
       >
-        <Heart class="size-4" />
+        <Heart
+          class="size-4 transition-colors"
+          :fill="isFavorite ? 'currentColor' : 'none'"
+        />
       </button>
     </div>
 

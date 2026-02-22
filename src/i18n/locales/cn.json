@@ -15,6 +15,8 @@
     "addButton": "添加直播",
     "recents": "最近打开的直播",
     "historyLabel": "历史",
+    "favoritesLabel": "收藏",
+    "favoritesDescription": "当前正在直播的收藏频道",
     "suggestions": "热门中文频道"
   },
   "settings": {
@@ -73,6 +75,10 @@
     "add": {
       "added": "已添加",
       "alreadyAdded": "直播已添加"
+    },
+    "favorite": {
+      "added": "已添加到收藏",
+      "removed": "已从收藏中移除"
     },
     "remove": "已移除",
     "update": {
