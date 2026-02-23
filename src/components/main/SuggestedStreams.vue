@@ -18,7 +18,7 @@ const formatViewers = (count?: number) => {
 <template>
   <div
     v-if="suggestedStreams.length && !isLoadingSuggestions"
-    class="mt-8 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-4xl px-4"
+    class="mt-6 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-5xl md:max-w-6xl lg:max-w-8xl"
   >
     <div
       class="flex items-center gap-2 text-gray-500 text-xs font-medium uppercase tracking-widest select-none"

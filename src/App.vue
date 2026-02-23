@@ -97,7 +97,7 @@ onMounted(() => {
 <template>
   <div class="flex h-screen overflow-hidden bg-[#191b1f]">
     <!-- main -->
-    <main class="flex-1 overflow-hidden bg-[#1f2227]">
+    <main class="flex-1 overflow-y-auto bg-[#1f2227]">
       <!-- stream grid -->
       <StreamGrid v-if="streams.length > 0" />
 
