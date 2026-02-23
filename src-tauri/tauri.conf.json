@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Multistream",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "identifier": "com.ilanzgx.multistream",
   "build": {
     "frontendDist": "../dist",
@@ -10,16 +10,7 @@
     "beforeBuildCommand": "bun run build"
   },
   "app": {
-    "windows": [
-      {
-        "title": "Multistream",
-        "width": 1280,
-        "height": 720,
-        "resizable": true,
-        "fullscreen": false,
-        "maximized": true
-      }
-    ],
+    "windows": [],
     "security": {
       "csp": "default-src 'self' http://ipc.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://player.kick.com https://kick.com https:; connect-src 'self' http://ipc.localhost http://localhost https:;"
     }

@@ -1,7 +1,9 @@
-use tauri::Manager;
 
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
+
+// realistic Chrome user-agent to avoid Cloudflare WebView fingerprint detection
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,16 +19,27 @@ pub fn run() {
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
-            } else {
-                // redirect to localhost only in production
-                let main_window = app.get_webview_window("main").unwrap();
-                main_window
-                    .eval(format!(
-                        "window.location.replace('http://localhost:{}')",
-                        LOCALHOST_PORT
-                    ))
-                    .unwrap();
             }
+
+            // create the window manually so can set user_agent
+            let url = if cfg!(debug_assertions) {
+                tauri::WebviewUrl::External("http://localhost:5173".parse().unwrap())
+            } else {
+                tauri::WebviewUrl::External(
+                    format!("http://localhost:{}", LOCALHOST_PORT)
+                        .parse()
+                        .unwrap(),
+                )
+            };
+
+            tauri::WebviewWindowBuilder::new(app, "main", url)
+                .title("Multistream")
+                .inner_size(1280.0, 720.0)
+                .resizable(true)
+                .fullscreen(false)
+                .maximized(true)
+                .user_agent(USER_AGENT)
+                .build()?;
 
             Ok(())
         })
