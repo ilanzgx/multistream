@@ -110,6 +110,13 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+body {
+  -webkit-user-select: none; /* Safari, Chrome, Opera */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* Internet Explorer/Edge */
+  user-select: none;         /* Default */
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
