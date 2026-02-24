@@ -1,6 +1,7 @@
 import { ref, watch } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { useRecents } from "./useRecents";
+import { useFavorites } from "./useFavorites";
 import type { Platform } from "./useStreams";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 
@@ -284,6 +285,7 @@ async function fetchKickSuggestions(
 // --- Composable ---
 const _useLiveStatus = () => {
   const { recents } = useRecents();
+  const { favorites } = useFavorites();
   const statuses = ref<StatusMap>({});
   const suggestedStreams = ref<SuggestedStream[]>([]);
   const isChecking = ref(false);
@@ -293,16 +295,22 @@ const _useLiveStatus = () => {
   const checkAll = async () => {
     if (isChecking.value) return;
 
-    const twitchChannels: string[] = [];
-    const kickChannels: string[] = [];
+    const twitchSet = new Set<string>();
+    const kickSet = new Set<string>();
 
-    for (const recent of recents.value) {
-      if (recent.platform === "twitch") {
-        twitchChannels.push(recent.channel);
-      } else if (recent.platform === "kick") {
-        kickChannels.push(recent.channel);
+    // Collect channels from both recents and favorites
+    const allChannels = [...recents.value, ...favorites.value];
+
+    for (const entry of allChannels) {
+      if (entry.platform === "twitch") {
+        twitchSet.add(entry.channel);
+      } else if (entry.platform === "kick") {
+        kickSet.add(entry.channel);
       }
     }
+
+    const twitchChannels = [...twitchSet];
+    const kickChannels = [...kickSet];
 
     if (twitchChannels.length === 0 && kickChannels.length === 0) {
       statuses.value = {};
@@ -354,9 +362,9 @@ const _useLiveStatus = () => {
     }
   };
 
-  // Re-check when recents change
+  // Re-check when recents or favorites change
   watch(
-    () => recents.value.length,
+    () => recents.value.length + favorites.value.length,
     () => checkAll(),
   );
 

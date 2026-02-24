@@ -29,7 +29,13 @@ const emit = defineEmits<{
 const { addStream } = useStreams();
 const { recents, removeRecent } = useRecents();
 const { getStatus, startPolling, stopPolling } = useLiveStatus();
-const { removeFavorite, liveFavorites } = useFavorites();
+const { favorites, removeFavorite } = useFavorites();
+
+const liveFavorites = computed(() => {
+  return favorites.value.filter(
+    (f) => getStatus(f.channel, f.platform)?.isLive,
+  );
+});
 
 // Start/stop polling based on dialog visibility
 watch(
