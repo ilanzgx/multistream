@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from "vue";
+import { Menu } from "lucide-vue-next";
 import { useStreams, type Platform } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater } from "./composables/useUpdater";
@@ -109,13 +110,15 @@ onMounted(() => {
     <SidebarPanel ref="sidebarRef" />
 
     <!-- toggle button -->
-    <Button
+    <button
       v-if="!sidebarOpen"
       @click="sidebarOpen = true"
-      class="fixed text-black right-0 top-1/2 -translate-y-1/2 bg-card border border-r-0 rounded-l-lg px-2 py-8 shadow-lg hover:bg-accent transition-colors cursor-pointer"
+      class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2"
     >
-      ☰
-    </Button>
+      <Menu
+        class="size-4 text-gray-500 group-hover:text-white transition-colors duration-200"
+      />
+    </button>
 
     <!-- toast notifications -->
     <Toaster
