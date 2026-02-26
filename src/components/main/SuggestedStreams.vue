@@ -32,7 +32,7 @@ const formatViewers = (count?: number) => {
       <button
         v-for="stream in suggestedStreams"
         :key="`${stream.platform}:${stream.channel}`"
-        class="group relative flex flex-col w-44 overflow-hidden rounded-xl bg-[#14161a] border border-[#2a2d33] transition-all duration-300 hover:border-[#3a3f4b] hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 cursor-pointer text-left"
+        class="group relative flex flex-col w-40 overflow-hidden rounded-xl bg-[#14161a] border border-[#2a2d33] transition-all duration-300 hover:border-[#3a3f4b] hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 cursor-pointer text-left"
         @click="addStream(stream.channel, stream.platform)"
       >
         <!-- Thumbnail -->
@@ -78,10 +78,10 @@ const formatViewers = (count?: number) => {
         </div>
 
         <!-- Info -->
-        <div class="p-4 pt-3 flex flex-col gap-1 relative z-10">
+        <div class="p-3 pt-2 flex flex-col gap-0.5 relative z-10">
           <div class="flex items-center justify-between gap-2">
             <span
-              class="text-sm font-bold text-white truncate max-w-35"
+              class="text-xs font-bold text-white truncate max-w-28"
               :title="stream.channel"
               >{{ stream.channel }}</span
             >
