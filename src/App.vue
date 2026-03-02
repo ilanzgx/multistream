@@ -30,8 +30,12 @@ watch(streams, (newStreams, oldStreams) => {
   }
 
   // when none streams are selected, auto load the chat of the first stream
+  // if have more than 1 stream and remove one, auto load the chat of the first stream
   // if something wrong happens, falls on fallback
-  if (oldStreams.length === 0 && newStreams.length === 1) {
+  if (
+    (oldStreams.length === 0 && newStreams.length === 1) ||
+    (oldStreams.length > 1 && newStreams.length === 1)
+  ) {
     setSelectedChat(newStreams[0]?.channel || "");
   }
 

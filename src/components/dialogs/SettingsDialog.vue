@@ -11,8 +11,10 @@ import {
 import Button from "../ui/button/Button.vue";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { RefreshCw, Download, Globe } from "lucide-vue-next";
+
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
+import { PLATFORMS } from "@/config/platforms";
 
 const { checkForUpdates, isChecking } = useUpdater();
 const { locale } = useI18n();
@@ -37,11 +39,16 @@ const emit = defineEmits<{
 const handleCheckUpdates = () => {
   checkForUpdates(true);
 };
+
+// all platforms except custom
+const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 </script>
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="bg-[#191b1f] border-[#2a2d33]">
+    <DialogContent
+      class="bg-[#191b1f] border-[#2a2d33] sm:max-w-xl md:max-w-2xl"
+    >
       <DialogHeader>
         <DialogTitle class="text-white">{{ $t("settings.title") }}</DialogTitle>
         <DialogDescription class="text-gray-400">
@@ -120,6 +127,29 @@ const handleCheckUpdates = () => {
             >
               <component :is="lang.flag" :size="16" />
               <span class="hidden md:block">{{ lang.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="platform in authPlatforms"
+              :key="platform.id"
+              class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1a1d21] text-sm font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-50"
+              disabled
+            >
+              <span :style="{ color: platform.color }" class="shrink-0">
+                <component :is="platform.icon" :size="16" />
+              </span>
+              <span class="text-white">{{ platform.name }}</span>
+              <span
+                class="ml-auto text-[10px] font-medium px-1.5 py-0.5 rounded-full text-gray-500 bg-white/5"
+              >
+                {{ $t("settings.auth.disconnected") }}
+              </span>
             </button>
           </div>
         </div>

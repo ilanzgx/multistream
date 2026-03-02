@@ -32,6 +32,14 @@
     "language": {
       "title": "Idioma",
       "description": "Seleccione su idioma preferido"
+    },
+    "auth": {
+      "title": "Cuentas",
+      "description": "Conecta tus cuentas de streaming",
+      "connect": "Conectar",
+      "connected": "Conectado",
+      "disconnect": "Desconectar",
+      "disconnected": "Desconectado"
     }
   },
   "share": {

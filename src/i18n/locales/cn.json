@@ -32,6 +32,14 @@
     "language": {
       "title": "语言",
       "description": "选择您的首选语言"
+    },
+    "auth": {
+      "title": "账户",
+      "description": "连接您的直播账户",
+      "connect": "连接",
+      "connected": "已连接",
+      "disconnect": "断开连接",
+      "disconnected": "未连接"
     }
   },
   "share": {
