@@ -18,7 +18,7 @@ const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const { streams, addStream, clearStreams } = useStreams();
 const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
 const { checkForUpdates } = useUpdater();
-const { refreshSuggestions } = useLiveStatus();
+const { refreshSuggestions, startPolling } = useLiveStatus();
 const { locale } = useI18n();
 
 watch(streams, (newStreams, oldStreams) => {
@@ -53,6 +53,9 @@ watch(locale, () => {
 onMounted(() => {
   // check for updates on startup
   checkForUpdates();
+
+  // start polling favorites live status (every 30s)
+  startPolling();
 
   // check for streams on startup
   const urlParams = new URLSearchParams(window.location.search);

@@ -13,6 +13,10 @@
     "updater:allow-download",
     "updater:allow-install",
     "process:allow-restart",
+    "notification:default",
+    "notification:allow-is-permission-granted",
+    "notification:allow-request-permission",
+    "notification:allow-notify",
     "http:default",
     {
       "identifier": "http:allow-fetch",

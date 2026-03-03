@@ -4,6 +4,7 @@ import { useRecents } from "./useRecents";
 import { useFavorites } from "./useFavorites";
 import type { Platform } from "./useStreams";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
+import { invoke } from "@tauri-apps/api/core";
 
 import { API_CONFIG, REFRESH_CONFIG } from "@/config/api";
 import { SUPPORTED_LANGUAGES, DEFAULT_LOCALE } from "@/config/i18n";
@@ -26,7 +27,9 @@ export interface SuggestedStream {
 
 type StatusMap = Record<string, LiveStatus>;
 
-const isTauri = () => "__TAURI__" in window;
+export function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 async function httpGet(
   url: string,
@@ -287,6 +290,7 @@ const _useLiveStatus = () => {
   const { recents } = useRecents();
   const { favorites } = useFavorites();
   const statuses = ref<StatusMap>({});
+  const previousStatuses = ref<StatusMap>({});
   const suggestedStreams = ref<SuggestedStream[]>([]);
   const isChecking = ref(false);
   const isLoadingSuggestions = ref(false);
@@ -334,6 +338,28 @@ const _useLiveStatus = () => {
         Object.assign(newStatuses, kickResults.value);
       }
 
+      // detect offline -> online transitions for favorites
+      if (isTauri()) {
+        for (const fav of favorites.value) {
+          if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
+
+          const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
+          const wasLive = previousStatuses.value[key]?.isLive ?? false;
+          const isNowLive = newStatuses[key]?.isLive ?? false;
+
+          if (!wasLive && isNowLive) {
+            const status = newStatuses[key];
+            invoke("send_live_notification", {
+              channel: fav.channel,
+              platform: fav.platform,
+              title: status?.title ?? "",
+              category: status?.category ?? "",
+            }).catch(() => {});
+          }
+        }
+      }
+
+      previousStatuses.value = { ...newStatuses };
       statuses.value = newStatuses;
     } finally {
       isChecking.value = false;
