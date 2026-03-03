@@ -28,7 +28,7 @@ const emit = defineEmits<{
 
 const { addStream } = useStreams();
 const { recents, removeRecent } = useRecents();
-const { getStatus, startPolling, stopPolling } = useLiveStatus();
+const { getStatus, checkAll } = useLiveStatus();
 const { favorites, removeFavorite } = useFavorites();
 
 const liveFavorites = computed(() => {
@@ -37,14 +37,12 @@ const liveFavorites = computed(() => {
   );
 });
 
-// Start/stop polling based on dialog visibility
+// Refresh statuses when dialog opens
 watch(
   () => props.open,
   (isOpen) => {
     if (isOpen) {
-      startPolling();
-    } else {
-      stopPolling();
+      checkAll();
     }
   },
 );

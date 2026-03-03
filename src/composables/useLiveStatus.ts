@@ -318,6 +318,7 @@ const _useLiveStatus = () => {
 
     if (twitchChannels.length === 0 && kickChannels.length === 0) {
       statuses.value = {};
+      previousStatuses.value = {};
       return;
     }
 
