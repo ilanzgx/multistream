@@ -105,8 +105,11 @@ pub fn run() {
             }
 
             // create system tray
-            TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
+            let mut tray_builder = TrayIconBuilder::new();
+            if let Some(icon) = app.default_window_icon() {
+                tray_builder = tray_builder.icon(icon.clone());
+            }
+            tray_builder
                 .tooltip("Multistream")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
