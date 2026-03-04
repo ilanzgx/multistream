@@ -100,5 +100,14 @@
   },
   "skeleton": {
     "loading": "加载直播"
+  },
+  "notifications": {
+    "welcome": "🔴 收藏主播正在直播",
+    "welcomeBody": "{channels} 正在直播！",
+    "welcomeBodySingle": "{channel} 正在直播！",
+    "live": "🔴 {channel} 开始直播了！",
+    "liveBody": "{title} • {category}",
+    "liveBodyTitleOnly": "{title}",
+    "liveBodyFallback": "{channel} 在 {platform}"
   }
 }

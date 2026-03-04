@@ -5,6 +5,7 @@ import { useFavorites } from "./useFavorites";
 import type { Platform } from "./useStreams";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
+import { i18n } from "@/i18n";
 
 import { API_CONFIG, REFRESH_CONFIG } from "@/config/api";
 import { SUPPORTED_LANGUAGES, DEFAULT_LOCALE } from "@/config/i18n";
@@ -340,22 +341,69 @@ const _useLiveStatus = () => {
       }
 
       // detect offline -> online transitions for favorites
+      // when app is first opened, send a single welcome notification with all live favorites
+      // when app is already open, send individual notifications for offline -> online transitions
+      // TODO: maybe try to implement youtube live notifications? idk
       if (isTauri()) {
-        for (const fav of favorites.value) {
-          if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
+        const t = i18n.global.t;
+        const isFirstCheck = Object.keys(previousStatuses.value).length === 0;
 
-          const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
-          const wasLive = previousStatuses.value[key]?.isLive ?? false;
-          const isNowLive = newStatuses[key]?.isLive ?? false;
+        if (isFirstCheck) {
+          // first check: send a single welcome notification with all live favorites
+          const liveChannels = favorites.value.filter((fav) => {
+            if (fav.platform !== "twitch" && fav.platform !== "kick")
+              return false;
+            const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
+            return newStatuses[key]?.isLive;
+          });
 
-          if (!wasLive && isNowLive) {
-            const status = newStatuses[key];
-            invoke("send_live_notification", {
-              channel: fav.channel,
-              platform: fav.platform,
-              title: status?.title ?? "",
-              category: status?.category ?? "",
+          if (liveChannels.length === 1) {
+            const fav = liveChannels[0]!;
+            invoke("send_notification", {
+              title: t("notifications.welcome"),
+              body: t("notifications.welcomeBodySingle", {
+                channel: fav.channel,
+              }),
             }).catch(() => {});
+          } else if (liveChannels.length > 1) {
+            const names = liveChannels.map((f) => f.channel).join(", ");
+            invoke("send_notification", {
+              title: t("notifications.welcome"),
+              body: t("notifications.welcomeBody", { channels: names }),
+            }).catch(() => {});
+          }
+        } else {
+          // subsequent checks: individual notifications for offline -> online transitions
+          for (const fav of favorites.value) {
+            if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
+
+            const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
+            const wasLive = previousStatuses.value[key]?.isLive ?? false;
+            const isNowLive = newStatuses[key]?.isLive ?? false;
+
+            if (!wasLive && isNowLive) {
+              const status = newStatuses[key];
+              const title = t("notifications.live", { channel: fav.channel });
+
+              let body: string;
+              if (status?.title && status?.category) {
+                body = t("notifications.liveBody", {
+                  title: status.title,
+                  category: status.category,
+                });
+              } else if (status?.title) {
+                body = t("notifications.liveBodyTitleOnly", {
+                  title: status.title,
+                });
+              } else {
+                body = t("notifications.liveBodyFallback", {
+                  channel: fav.channel,
+                  platform: fav.platform,
+                });
+              }
+
+              invoke("send_notification", { title, body }).catch(() => {});
+            }
           }
         }
       }

@@ -8,29 +8,19 @@ const LOCALHOST_PORT: u16 = 14831;
 // realistic Chrome user-agent to avoid Cloudflare WebView fingerprint detection
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
-// invokable function to send live notification to the user
-// called by the frontend when a stream goes live
+// invokable function to send a native OS notification
+// title and body are pre-built by the frontend (with i18n support)
 #[tauri::command]
-async fn send_live_notification(
+async fn send_notification(
     app: tauri::AppHandle,
-    channel: String,
-    platform: String,
     title: String,
-    category: String,
+    body: String,
 ) -> Result<(), String> {
     use tauri_plugin_notification::NotificationExt;
 
-    let body = if !title.is_empty() && !category.is_empty() {
-        format!("{} • {}", title, category)
-    } else if !title.is_empty() {
-        title
-    } else {
-        format!("{} on {}", channel, platform)
-    };
-
     app.notification()
         .builder()
-        .title(format!("🔴 {} is live!", channel))
+        .title(title)
         .body(body)
         .show()
         .map_err(|e| format!("Notification failed: {}", e))?;
@@ -60,7 +50,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_localhost::Builder::new(LOCALHOST_PORT).build())
         .plugin(tauri_plugin_notification::init())
-        .invoke_handler(tauri::generate_handler![send_live_notification])
+        .invoke_handler(tauri::generate_handler![send_notification])
         .setup(move |app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

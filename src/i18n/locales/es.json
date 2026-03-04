@@ -100,5 +100,14 @@
   },
   "skeleton": {
     "loading": "Cargando transmisión"
+  },
+  "notifications": {
+    "welcome": "🔴 Favoritos en vivo",
+    "welcomeBody": "¡{channels} están en vivo ahora!",
+    "welcomeBodySingle": "¡{channel} está en vivo ahora!",
+    "live": "🔴 ¡{channel} está en vivo!",
+    "liveBody": "{title} • {category}",
+    "liveBodyTitleOnly": "{title}",
+    "liveBodyFallback": "{channel} en {platform}"
   }
 }

@@ -100,5 +100,14 @@
   },
   "skeleton": {
     "loading": "Загрузка трансляции"
+  },
+  "notifications": {
+    "welcome": "🔴 Избранные стримеры онлайн",
+    "welcomeBody": "{channels} сейчас в эфире!",
+    "welcomeBodySingle": "{channel} сейчас в эфире!",
+    "live": "🔴 {channel} начал трансляцию!",
+    "liveBody": "{title} • {category}",
+    "liveBodyTitleOnly": "{title}",
+    "liveBodyFallback": "{channel} на {platform}"
   }
 }
