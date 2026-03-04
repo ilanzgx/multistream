@@ -2,6 +2,7 @@ import { ref, watch } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { useRecents } from "./useRecents";
 import { useFavorites } from "./useFavorites";
+import { usePreferences } from "./usePreferences";
 import type { Platform } from "./useStreams";
 import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
@@ -290,6 +291,7 @@ async function fetchKickSuggestions(
 const _useLiveStatus = () => {
   const { recents } = useRecents();
   const { favorites } = useFavorites();
+  const { notificationsEnabled } = usePreferences();
   const statuses = ref<StatusMap>({});
   const previousStatuses = ref<StatusMap>({});
   const suggestedStreams = ref<SuggestedStream[]>([]);
@@ -344,7 +346,7 @@ const _useLiveStatus = () => {
       // when app is first opened, send a single welcome notification with all live favorites
       // when app is already open, send individual notifications for offline -> online transitions
       // TODO: maybe try to implement youtube live notifications? idk
-      if (isTauri()) {
+      if (isTauri() && notificationsEnabled.value) {
         const t = i18n.global.t;
         const isFirstCheck = Object.keys(previousStatuses.value).length === 0;
 

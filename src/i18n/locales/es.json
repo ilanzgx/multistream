@@ -33,6 +33,12 @@
       "title": "Idioma",
       "description": "Seleccione su idioma preferido"
     },
+    "notifications": {
+      "title": "Notificaciones",
+      "description": "Recibe alertas cuando tus favoritos estén en vivo",
+      "enabled": "Notificaciones activadas",
+      "disabled": "Notificaciones desactivadas"
+    },
     "auth": {
       "title": "Cuentas",
       "description": "Conecta tus cuentas de streaming",

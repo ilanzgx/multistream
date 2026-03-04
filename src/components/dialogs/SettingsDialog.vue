@@ -9,15 +9,20 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import Button from "../ui/button/Button.vue";
+import { Switch } from "@/components/ui/switch";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
-import { RefreshCw, Download, Globe } from "lucide-vue-next";
+import { usePreferences } from "@/composables/usePreferences";
+import { RefreshCw, Download, Globe, Bell } from "lucide-vue-next";
+import { toast } from "vue-sonner";
+import { watch } from "vue";
 
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 import { PLATFORMS } from "@/config/platforms";
 
 const { checkForUpdates, isChecking } = useUpdater();
-const { locale } = useI18n();
+const { notificationsEnabled } = usePreferences();
+const { locale, t } = useI18n();
 
 const isRunningInTauri = isTauri();
 
@@ -39,6 +44,18 @@ const emit = defineEmits<{
 const handleCheckUpdates = () => {
   checkForUpdates(true);
 };
+
+watch(notificationsEnabled, (enabled) => {
+  if (enabled) {
+    toast.success(t("settings.notifications.enabled"), {
+      duration: 2000,
+    });
+  } else {
+    toast.info(t("settings.notifications.disabled"), {
+      duration: 2000,
+    });
+  }
+});
 
 // all platforms except custom
 const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
@@ -129,6 +146,28 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
               <span class="hidden md:block">{{ lang.label }}</span>
             </button>
           </div>
+        </div>
+
+        <div
+          v-if="isRunningInTauri"
+          class="flex items-center justify-between border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center justify-center size-10 rounded-lg bg-[#1a1d21] border border-[#2a2d33]"
+            >
+              <Bell class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("settings.notifications.title") }}
+              </p>
+              <p class="text-gray-400 text-xs">
+                {{ $t("settings.notifications.description") }}
+              </p>
+            </div>
+          </div>
+          <Switch v-model="notificationsEnabled" />
         </div>
 
         <div

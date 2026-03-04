@@ -3,22 +3,29 @@ import { createSharedComposable, useStorage } from "@vueuse/core";
 export interface Preferences {
   selectedChat: string;
   sidebarOpen: boolean;
+  notificationsEnabled: boolean;
 }
 
 const defaultPreferences: Preferences = {
   selectedChat: "",
   sidebarOpen: true,
+  notificationsEnabled: true,
 };
 
 const _usePreferences = () => {
   const selectedChat = useStorage<string>(
     "preferences.selectedChat",
-    defaultPreferences.selectedChat
+    defaultPreferences.selectedChat,
   );
 
   const sidebarOpen = useStorage<boolean>(
     "preferences.sidebarOpen",
-    defaultPreferences.sidebarOpen
+    defaultPreferences.sidebarOpen,
+  );
+
+  const notificationsEnabled = useStorage<boolean>(
+    "preferences.notificationsEnabled",
+    defaultPreferences.notificationsEnabled,
   );
 
   const setSelectedChat = (chatId: string) => {
@@ -36,12 +43,14 @@ const _usePreferences = () => {
   const resetPreferences = () => {
     selectedChat.value = defaultPreferences.selectedChat;
     sidebarOpen.value = defaultPreferences.sidebarOpen;
+    notificationsEnabled.value = defaultPreferences.notificationsEnabled;
   };
 
   return {
     // state
     selectedChat,
     sidebarOpen,
+    notificationsEnabled,
 
     // actions
     setSelectedChat,
