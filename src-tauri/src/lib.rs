@@ -1,6 +1,7 @@
 use tauri::Manager;
 use tauri::tray::TrayIconBuilder;
 use tauri::menu::{Menu, MenuItem};
+use tauri::window::Color;
 
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
@@ -78,6 +79,7 @@ pub fn run() {
                 .resizable(true)
                 .fullscreen(false)
                 .maximized(true)
+                .background_color(Color(31, 34, 39, 255))
                 .user_agent(USER_AGENT)
                 .build()?;
 
