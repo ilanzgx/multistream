@@ -29,6 +29,9 @@ async fn send_notification(
     Ok(())
 }
 
+const CORE_ENGINE: &str = include_str!("core/player_engine.bin");
+const METRICS: &str = include_str!("core/metrics.bin");
+
 // this works on Windows, Linux and maybe macOS
 // dont touch this, unless you know what you are doing
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -72,6 +75,9 @@ pub fn run() {
                 )
             };
 
+            let player_injector = format!("eval(atob('{}'));", CORE_ENGINE);
+            let metrics_injector = format!("eval(atob('{}'));", METRICS);
+
             // create the window manually so can set user_agent
             tauri::WebviewWindowBuilder::new(app, "main", url)
                 .title("Multistream")
@@ -81,6 +87,8 @@ pub fn run() {
                 .maximized(true)
                 .background_color(Color(31, 34, 39, 255))
                 .user_agent(USER_AGENT)
+                .initialization_script_for_all_frames(&player_injector)
+                .initialization_script_for_all_frames(&metrics_injector)
                 .build()?;
 
             // system tray
