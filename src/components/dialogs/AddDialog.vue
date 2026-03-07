@@ -70,12 +70,14 @@ const selectedPlatform = ref<Platform>(PLATFORMS.kick!.id as Platform);
 const isCustom = computed(() => selectedPlatform.value === "custom");
 
 const handleAddStream = () => {
+  if (!canSubmit.value) return;
+
   if (isCustom.value) {
-    const url = iframeUrl.value.trim();
+    let url = iframeUrl.value.trim();
     const name = channelName.value.trim() || "Custom Stream";
 
-    if (!url) {
-      return;
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = `https://${url}`;
     }
 
     addStream(name, "custom", url);
@@ -136,9 +138,24 @@ const handleAddStream = () => {
   emit("update:open", false);
 };
 
+const isValidCustomUrl = computed(() => {
+  const url = iframeUrl.value.trim();
+  if (!url) return false;
+
+  try {
+    const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+    return (
+      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+      parsed.hostname.includes(".")
+    );
+  } catch {
+    return false;
+  }
+});
+
 const canSubmit = computed(() => {
   if (isCustom.value) {
-    return iframeUrl.value.trim().length > 0;
+    return isValidCustomUrl.value && channelName.value.trim().length > 0;
   }
   return channelName.value.trim().length > 0;
 });
