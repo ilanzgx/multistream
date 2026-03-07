@@ -24,6 +24,21 @@ jobs:
       - name: Build
         run: bun run build
 
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Unit Tests
+        run: bun run test
+
   rust:
     runs-on: ubuntu-latest
     steps:
