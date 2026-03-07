@@ -10,7 +10,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import Button from "../ui/button/Button.vue";
-import { useStreams, type Platform } from "@/composables/useStreams";
+import { useStreams } from "@/composables/useStreams";
+import { parseUrlOptions } from "@/lib/parseUrlOptions";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 
@@ -34,44 +35,15 @@ const handleImport = () => {
 
   try {
     const url = new URL(link);
-    const streamsParam = url.searchParams.get("streams");
-    const customParam = url.searchParams.get("c");
+    const parsedStreams = parseUrlOptions(url.search);
 
-    if (!streamsParam && !customParam) {
+    if (parsedStreams === null) {
       toast.error(t("import.invalidLink"));
       return;
     }
 
     clearStreams();
-
-    // parse regular streams (kick, twitch, youtube)
-    if (streamsParam) {
-      const streamList = streamsParam.split(",");
-      streamList.forEach((stream) => {
-        const [platform, channel] = stream.split(":");
-        if (platform && channel) {
-          addStream(channel, platform as Platform);
-        }
-      });
-    }
-
-    // parse custom streams (Base64 encoded)
-    if (customParam) {
-      try {
-        const customStreams = JSON.parse(atob(customParam)) as {
-          n: string;
-          u: string;
-        }[];
-        customStreams.forEach((s) => {
-          if (s.u) {
-            addStream(s.n || "Custom Stream", "custom", s.u);
-          }
-        });
-      } catch {
-        toast.error(t("import.invalidCustom"));
-        return;
-      }
-    }
+    parsedStreams.forEach((s) => addStream(s.channel, s.platform, s.iframeUrl));
 
     toast.success(t("import.success"));
     importLink.value = "";
