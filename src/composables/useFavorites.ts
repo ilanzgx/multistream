@@ -1,7 +1,7 @@
 import type { Platform } from "./useStreams";
 import { createSharedComposable, useStorage } from "@vueuse/core";
 
-const MAX_FAVORITES = 30;
+export const MAX_FAVORITES = 30;
 
 export interface FavoriteChannel {
   channel: string;
