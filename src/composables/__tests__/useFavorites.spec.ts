@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { useFavorites, MAX_FAVORITES } from "../useFavorites";
+import { useFavorites } from "../useFavorites";
 
 describe("useFavorites composable unit tests", () => {
   let sut: ReturnType<typeof useFavorites>;
@@ -93,21 +93,6 @@ describe("useFavorites composable unit tests", () => {
 
     // Assert
     expect(favorites.value.length).toBe(2);
-  });
-
-  it(`should respect the MAX_FAVORITES limit of ${MAX_FAVORITES} items`, () => {
-    // Arrange
-    const { addFavorite, favorites } = sut;
-
-    // Act
-    for (let i = 1; i <= MAX_FAVORITES + 5; i++) {
-      addFavorite(`favorito${i}`, "twitch");
-    }
-
-    // Assert (must hold at 30, discarding old ones)
-    expect(favorites.value.length).toBe(MAX_FAVORITES);
-    expect(favorites.value[0]?.channel).toBe(`favorito${MAX_FAVORITES + 5}`); // Latest added is top
-    expect(favorites.value[MAX_FAVORITES - 1]?.channel).toBe("favorito6"); // 30th item
   });
 
   it("should remove a favorite channel properly", () => {

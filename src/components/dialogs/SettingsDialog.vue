@@ -63,9 +63,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent
-      class="bg-[#191b1f] border-[#2a2d33] sm:max-w-xl md:max-w-2xl"
-    >
+    <DialogContent class="bg-[#191b1f] border-[#2a2d33] max-w-xl md:max-w-2xl">
       <DialogHeader>
         <DialogTitle class="text-white">{{ $t("settings.title") }}</DialogTitle>
         <DialogDescription class="text-gray-400">

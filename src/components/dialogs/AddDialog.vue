@@ -10,12 +10,13 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import StreamChip from "./_components/StreamChip.vue";
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useRecents } from "@/composables/useRecents";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useFavorites } from "@/composables/useFavorites";
 import { PLATFORMS } from "@/config/platforms";
-import { X, History, Heart } from "lucide-vue-next";
+import { History, Heart } from "lucide-vue-next";
 
 // props
 const props = defineProps<{
@@ -31,10 +32,14 @@ const { recents, removeRecent } = useRecents();
 const { getStatus, checkAll } = useLiveStatus();
 const { favorites, removeFavorite } = useFavorites();
 
-const liveFavorites = computed(() => {
-  return favorites.value.filter(
-    (f) => getStatus(f.channel, f.platform)?.isLive,
-  );
+const sortedFavorites = computed(() => {
+  return [...favorites.value].sort((a, b) => {
+    const aLive = getStatus(a.channel, a.platform)?.isLive;
+    const bLive = getStatus(b.channel, b.platform)?.isLive;
+    if (aLive && !bLive) return -1;
+    if (!aLive && bLive) return 1;
+    return 0;
+  });
 });
 
 // Refresh statuses when dialog opens
@@ -46,12 +51,6 @@ watch(
     }
   },
 );
-
-const formatViewers = (count?: number) => {
-  if (!count) return "";
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-  return String(count);
-};
 
 const handleQuickAdd = (
   channel: string,
@@ -163,7 +162,9 @@ const canSubmit = computed(() => {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="bg-[#191b1f] border-[#2a2d33]">
+    <DialogContent
+      class="bg-[#191b1f] border-[#2a2d33] max-w-xl md:max-w-2xl lg:max-w-3xl"
+    >
       <DialogHeader>
         <DialogTitle class="text-white">{{ $t("add.title") }}</DialogTitle>
         <DialogDescription class="text-gray-400">
@@ -194,21 +195,11 @@ const canSubmit = computed(() => {
             </div>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button
+            <StreamChip
               v-for="recent in recents"
               :key="`${recent.platform}:${recent.channel}`"
-              type="button"
-              class="group relative flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-sm text-white transition-all duration-200 hover:scale-105 cursor-pointer"
-              :class="[
-                getStatus(recent.channel, recent.platform)?.isLive
-                  ? 'border-green-500/40 bg-green-500/10 hover:bg-green-500/15 hover:border-green-500/60'
-                  : 'border-[#2a2d33] bg-[#0f1115] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
-              ]"
-              :title="
-                getStatus(recent.channel, recent.platform)?.isLive
-                  ? `🔴 LIVE — ${getStatus(recent.channel, recent.platform)?.viewerCount?.toLocaleString() ?? '?'} viewers${getStatus(recent.channel, recent.platform)?.category ? ` • ${getStatus(recent.channel, recent.platform)?.category}` : ''}`
-                  : undefined
-              "
+              :channel="recent.channel"
+              :platform="recent.platform"
               @click="
                 handleQuickAdd(
                   recent.channel,
@@ -216,58 +207,14 @@ const canSubmit = computed(() => {
                   recent.iframeUrl,
                 )
               "
-            >
-              <!-- live indicator dot -->
-              <span
-                v-if="getStatus(recent.channel, recent.platform)?.isLive"
-                class="relative flex h-2 w-2 shrink-0"
-              >
-                <span
-                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"
-                />
-                <span
-                  class="relative inline-flex rounded-full h-2 w-2 bg-red-500"
-                />
-              </span>
-              <span
-                v-else-if="
-                  recent.platform === 'twitch' || recent.platform === 'kick'
-                "
-                class="h-2 w-2 shrink-0 rounded-full bg-gray-600"
-              />
-
-              <component
-                :is="PLATFORMS[recent.platform]?.icon"
-                :size="14"
-                :style="{ color: PLATFORMS[recent.platform]?.color }"
-              />
-              <span class="truncate max-w-30">{{ recent.channel }}</span>
-
-              <!-- viewer count badge -->
-              <span
-                v-if="getStatus(recent.channel, recent.platform)?.isLive"
-                class="text-[10px] text-red-400 font-medium tabular-nums"
-              >
-                {{
-                  formatViewers(
-                    getStatus(recent.channel, recent.platform)?.viewerCount,
-                  )
-                }}
-              </span>
-
-              <span
-                class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-[#2a2d33] border border-[#3a3f4b] transition-colors hover:bg-red-500/80 hover:border-red-400"
-                @click.stop="removeRecent(recent.channel, recent.platform)"
-              >
-                <X :size="8" class="text-white" />
-              </span>
-            </button>
+              @remove="removeRecent(recent.channel, recent.platform)"
+            />
           </div>
         </section>
 
         <!-- favorites -->
         <section
-          v-if="liveFavorites.length"
+          v-if="sortedFavorites.length"
           class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
         >
           <div class="flex items-center gap-3">
@@ -285,54 +232,17 @@ const canSubmit = computed(() => {
               </p>
             </div>
           </div>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="favorite in liveFavorites"
+          <div
+            class="flex flex-wrap gap-2 overflow-y-auto max-h-[25vh] pr-1 py-1 overflow-x-hidden"
+          >
+            <StreamChip
+              v-for="favorite in sortedFavorites"
               :key="`${favorite.platform}:${favorite.channel}`"
-              type="button"
-              class="group relative flex items-center gap-1.5 px-3 py-0.5 rounded-full border text-sm text-white transition-all duration-200 hover:scale-105 cursor-pointer"
-              :class="[
-                getStatus(favorite.channel, favorite.platform)?.isLive
-                  ? 'border-green-500/40 bg-green-500/10 hover:bg-green-500/15 hover:border-green-500/60'
-                  : 'border-[#2a2d33] bg-[#0f1115] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
-              ]"
-              :title="
-                getStatus(favorite.channel, favorite.platform)?.isLive
-                  ? `🔴 LIVE — ${getStatus(favorite.channel, favorite.platform)?.viewerCount?.toLocaleString() ?? '?'} viewers${getStatus(favorite.channel, favorite.platform)?.category ? ` • ${getStatus(favorite.channel, favorite.platform)?.category}` : ''}`
-                  : undefined
-              "
+              :channel="favorite.channel"
+              :platform="favorite.platform"
               @click="handleQuickAdd(favorite.channel, favorite.platform)"
-            >
-              <component
-                :is="PLATFORMS[favorite.platform]?.icon"
-                :size="14"
-                :style="{
-                  color: PLATFORMS[favorite.platform]?.color,
-                }"
-              />
-              <span class="truncate max-w-30">{{ favorite.channel }}</span>
-
-              <!-- viewer count badge -->
-              <span
-                v-if="getStatus(favorite.channel, favorite.platform)?.isLive"
-                class="text-[10px] text-red-400 font-medium tabular-nums"
-              >
-                {{
-                  formatViewers(
-                    getStatus(favorite.channel, favorite.platform)?.viewerCount,
-                  )
-                }}
-              </span>
-
-              <span
-                class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-[#2a2d33] border border-[#3a3f4b] transition-colors hover:bg-red-500/80 hover:border-red-400"
-                @click.stop="
-                  removeFavorite(favorite.channel, favorite.platform)
-                "
-              >
-                <X :size="8" class="text-white" />
-              </span>
-            </button>
+              @remove="removeFavorite(favorite.channel, favorite.platform)"
+            />
           </div>
         </section>
 
