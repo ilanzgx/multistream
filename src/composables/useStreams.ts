@@ -18,6 +18,18 @@ const _useStreams = () => {
   const streams = useStorage<Stream[]>("streams", []);
   const { addRecent } = useRecents();
 
+  /**
+   * @brief Add a stream
+   *
+   * Checks if the stream is already added, showing a warning toast if so.
+   * Otherwise, the new entry is appended to the bottom of the list,
+   * a success toast is displayed, and it is added to the recent channels list.
+   *
+   * @param channel The channel name
+   * @param platform The platform
+   * @param iframeUrl The iframe URL (optional)
+   * @return void
+   */
   const addStream = (
     channel: string,
     platform: Platform,
@@ -49,6 +61,14 @@ const _useStreams = () => {
     addRecent(channel, platform, iframeUrl);
   };
 
+  /**
+   * @brief Remove a stream
+   *
+   * Removes a stream from the list of streams.
+   *
+   * @param id The stream ID
+   * @return void
+   */
   const removeStream = (id: string) => {
     const stream = streams.value.find((s) => s.id === id);
     streams.value = streams.value.filter((s) => s.id !== id);
@@ -58,10 +78,24 @@ const _useStreams = () => {
     }
   };
 
+  /**
+   * @brief Clear all streams
+   *
+   * Clears all streams from the list.
+   *
+   * @return void
+   */
   const clearStreams = () => {
     streams.value = [];
   };
 
+  /**
+   * @brief Grid class
+   *
+   * Returns the grid class based on the number of streams.
+   *
+   * @return string
+   */
   const gridClass = computed(() => {
     const count = streams.value.length;
 

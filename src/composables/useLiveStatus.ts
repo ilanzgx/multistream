@@ -29,10 +29,24 @@ export interface SuggestedStream {
 
 type StatusMap = Record<string, LiveStatus>;
 
+/**
+ * @brief Check if the app is running in Tauri
+ *
+ * @return true if the app is running in Tauri, false otherwise
+ */
 export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
+/**
+ * @brief HTTP GET request
+ *
+ * Sends an HTTP GET request to the given URL.
+ *
+ * @param url The URL to send the request to
+ * @param headers The headers to send with the request
+ * @return The response
+ */
 async function httpGet(
   url: string,
   headers?: Record<string, string>,
@@ -43,6 +57,16 @@ async function httpGet(
   return fetch(url, { headers });
 }
 
+/**
+ * @brief HTTP POST request
+ *
+ * Sends an HTTP POST request to the given URL.
+ *
+ * @param url The URL to send the request to
+ * @param body The body of the request
+ * @param headers The headers to send with the request
+ * @return The response
+ */
 async function httpPost(
   url: string,
   body: string,
@@ -54,7 +78,16 @@ async function httpPost(
   return fetch(url, { method: "POST", body, headers });
 }
 
-// Twitch
+/**
+ * @brief Check Twitch streams
+ *
+ * Checks if the given channels are live on Twitch.
+ * This function uses the Twitch GraphQL API to check if the given channels are live.
+ * If the channel is live, it returns the viewer count, title, and category.
+ *
+ * @param channels The channels to check
+ * @return The status of the channels
+ */
 async function checkTwitchStreams(channels: string[]): Promise<StatusMap> {
   const result: StatusMap = {};
   if (channels.length === 0) return result;
@@ -120,43 +153,16 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap> {
   return result;
 }
 
-// Kick
-async function checkKickStreams(channels: string[]): Promise<StatusMap> {
-  const result: StatusMap = {};
-  if (channels.length === 0) return result;
-
-  for (const ch of channels) {
-    result[`kick:${ch.toLowerCase()}`] = { isLive: false };
-  }
-
-  const promises = channels.map(async (channel) => {
-    try {
-      const response = await httpGet(
-        `${API_CONFIG.kick.apiBaseUrl}/${encodeURIComponent(channel)}`,
-      );
-
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const key = `kick:${channel.toLowerCase()}`;
-
-      if (data?.livestream) {
-        result[key] = {
-          isLive: true,
-          viewerCount: data.livestream.viewer_count,
-          title: data.livestream.session_title,
-          category: data.livestream.categories?.[0]?.name,
-        };
-      }
-    } catch {
-      // silently fail
-    }
-  });
-
-  await Promise.allSettled(promises);
-  return result;
-}
-
+/**
+ * @brief Fetch Twitch suggestions
+ *
+ * Fetches the top limit streams from Twitch.
+ * If there are not enough streams in the language, it uses all streams.
+ * @info The limit is set to 30 streams, but it will return all streams if there are not enough streams in the language.
+ *
+ * @param limit The number of suggestions to fetch
+ * @return The suggestions
+ */
 async function fetchTwitchSuggestions(
   limit: number = REFRESH_CONFIG.suggestionsLimit,
 ): Promise<SuggestedStream[]> {
@@ -222,6 +228,60 @@ async function fetchTwitchSuggestions(
   }
 }
 
+/**
+ * @brief Check Kick streams
+ *
+ * Checks if the given channels are live on Kick.
+ *
+ * @param channels The channels to check
+ * @return The status of the channels
+ */
+async function checkKickStreams(channels: string[]): Promise<StatusMap> {
+  const result: StatusMap = {};
+  if (channels.length === 0) return result;
+
+  for (const ch of channels) {
+    result[`kick:${ch.toLowerCase()}`] = { isLive: false };
+  }
+
+  const promises = channels.map(async (channel) => {
+    try {
+      const response = await httpGet(
+        `${API_CONFIG.kick.apiBaseUrl}/${encodeURIComponent(channel)}`,
+      );
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const key = `kick:${channel.toLowerCase()}`;
+
+      if (data?.livestream) {
+        result[key] = {
+          isLive: true,
+          viewerCount: data.livestream.viewer_count,
+          title: data.livestream.session_title,
+          category: data.livestream.categories?.[0]?.name,
+        };
+      }
+    } catch {
+      // silently fail
+    }
+  });
+
+  await Promise.allSettled(promises);
+  return result;
+}
+
+/**
+ * @brief Fetch all Kick streams
+ *
+ * Fetches all Kick streams.
+ * This function fetches all Kick streams and returns them.
+ * If there are not enough streams in the language, it uses all streams.
+ * This for now gets only REFRESH_CONFIG.maxKickPages (3) pages. (08/03/2026)
+ *
+ * @return The streams
+ */
 async function fetchAllKickStreams(): Promise<any[]> {
   const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
   const kickLanguage =
@@ -260,6 +320,16 @@ async function fetchAllKickStreams(): Promise<any[]> {
   });
 }
 
+/**
+ * @brief Fetch Kick suggestions
+ *
+ * Fetches Kick suggestions.
+ * Get the response from fetchAllKickStreams and returns the top limit streams.
+ * If there are not enough streams in the language, it uses all streams.
+ *
+ * @param limit The number of suggestions to fetch
+ * @return The suggestions
+ */
 async function fetchKickSuggestions(
   limit: number = REFRESH_CONFIG.suggestionsLimit,
 ): Promise<SuggestedStream[]> {
@@ -299,6 +369,13 @@ const _useLiveStatus = () => {
   const isLoadingSuggestions = ref(false);
   let intervalId: ReturnType<typeof setInterval> | null = null;
 
+  /**
+   * @brief Check all streams
+   *
+   * Checks all streams and updates their statuses.
+   *
+   * @return void
+   */
   const checkAll = async () => {
     if (isChecking.value) return;
 
@@ -417,6 +494,15 @@ const _useLiveStatus = () => {
     }
   };
 
+  /**
+   * @brief Get status
+   *
+   * Gets the status of a stream.
+   *
+   * @param channel The channel to get the status of
+   * @param platform The platform of the channel
+   * @return The status of the stream
+   */
   const getStatus = (
     channel: string,
     platform: Platform,
@@ -426,12 +512,28 @@ const _useLiveStatus = () => {
     return statuses.value[key] ?? null;
   };
 
+  /**
+   * @brief Start polling
+   *
+   * Starts the polling interval.
+   * This makes the app check for new streams every REFRESH_CONFIG.interval milliseconds.
+   *
+   * @return void
+   */
   const startPolling = () => {
     if (intervalId) return;
     checkAll();
     intervalId = setInterval(checkAll, REFRESH_CONFIG.interval);
   };
 
+  /**
+   * @brief Stop polling
+   *
+   * Stops the polling interval.
+   * This makes the app stop checking for new streams.
+   *
+   * @return void
+   */
   const stopPolling = () => {
     if (intervalId) {
       clearInterval(intervalId);
@@ -445,6 +547,13 @@ const _useLiveStatus = () => {
     () => checkAll(),
   );
 
+  /**
+   * @brief Refresh suggestions
+   *
+   * Refreshes the suggestions list.
+   *
+   * @return void
+   */
   const refreshSuggestions = async () => {
     if (isLoadingSuggestions.value) return;
     isLoadingSuggestions.value = true;

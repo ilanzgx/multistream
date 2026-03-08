@@ -11,6 +11,17 @@ export interface FavoriteChannel {
 const _useFavorites = () => {
   const favorites = useStorage<FavoriteChannel[]>("favorites", []);
 
+  /**
+   * @brief Add a favorite channel
+   *
+   * @details
+   * If the channel already exists, it will not be added again.
+   *
+   * @param channel The channel name
+   * @param platform The platform
+   * @param iframeUrl The iframe URL (optional)
+   * @return void
+   */
   const addFavorite = (
     channel: string,
     platform: Platform,
@@ -34,6 +45,13 @@ const _useFavorites = () => {
     ];
   };
 
+  /**
+   * @brief Remove a favorite channel
+   *
+   * @param channel The channel name
+   * @param platform The platform
+   * @return void
+   */
   const removeFavorite = (channel: string, platform: Platform) => {
     favorites.value = favorites.value.filter(
       (f) =>
@@ -44,6 +62,11 @@ const _useFavorites = () => {
     );
   };
 
+  /**
+   * @brief Clear all favorites
+   *
+   * @return void
+   */
   const clearFavorites = () => {
     favorites.value = [];
   };

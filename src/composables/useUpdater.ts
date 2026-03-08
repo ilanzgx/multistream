@@ -19,6 +19,14 @@ export function isTauri(): boolean {
 export function useUpdater() {
   const { t } = useI18n();
 
+  /**
+   * @brief Check for updates
+   *
+   * Checks for updates and shows a toast if an update is available.
+   *
+   * @param showNoUpdateToast Whether to show a toast if no update is available
+   * @return void
+   */
   async function checkForUpdates(showNoUpdateToast = false) {
     if (!isTauri()) return;
     if (isChecking.value) return;
@@ -53,6 +61,13 @@ export function useUpdater() {
     }
   }
 
+  /**
+   * @brief Install update
+   *
+   * Installs the update and shows a toast if the update is installed.
+   *
+   * @return void
+   */
   async function installUpdate() {
     if (!currentUpdate) return;
 
