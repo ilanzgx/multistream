@@ -28,11 +28,11 @@ const formatViewers = (count?: number): string => {
 <template>
   <button
     type="button"
-    class="group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer"
+    class="group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer border"
     :class="[
       status?.isLive
-        ? 'bg-[#1a1d21] text-white hover:bg-[#2a2d33]'
-        : 'text-gray-400 hover:text-white hover:bg-[#1a1d21]',
+        ? 'bg-[#1a1d21] text-white border-transparent hover:bg-[#2a2d33]'
+        : 'text-gray-400 hover:text-white hover:bg-[#1a1d21] border-[#2a2d33] bg-[#14161a] hover:border-[#3a3f4b]',
     ]"
     :title="
       status?.isLive
@@ -56,6 +56,11 @@ const formatViewers = (count?: number): string => {
     <component
       :is="PLATFORMS[props.platform]?.icon"
       :size="14"
+      :class="[
+        !status?.isLive
+          ? 'opacity-50 saturate-50 group-hover:opacity-100 group-hover:saturate-100 transition-all duration-200'
+          : '',
+      ]"
       :style="{ color: PLATFORMS[props.platform]?.color }"
     />
     <span class="truncate max-w-30">{{ props.channel }}</span>

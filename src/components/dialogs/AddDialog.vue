@@ -233,7 +233,7 @@ const canSubmit = computed(() => {
             </div>
           </div>
           <div
-            class="flex flex-wrap gap-2 overflow-y-auto max-h-[25vh] pr-1 py-1 overflow-x-hidden"
+            class="flex flex-wrap gap-2 overflow-y-auto max-h-[20vh] md:max-h-[25vh] pr-1 py-1 overflow-x-hidden"
           >
             <StreamChip
               v-for="favorite in sortedFavorites"
