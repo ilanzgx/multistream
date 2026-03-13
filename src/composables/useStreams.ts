@@ -46,6 +46,11 @@ const _useStreams = () => {
       return;
     }
 
+    if(streams.value.length >= 12) {
+      toast.warning(t("toasts.add.maxStreams"));
+      return;
+    }
+
     streams.value = [
       ...streams.value,
       {

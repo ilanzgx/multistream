@@ -88,7 +88,8 @@
   "toasts": {
     "add": {
       "added": "已添加",
-      "alreadyAdded": "直播已添加"
+      "alreadyAdded": "直播已添加",
+      "maxStreams": "已达到 12 个流的最大限制"
     },
     "favorite": {
       "added": "已添加到收藏",

@@ -88,7 +88,8 @@
   "toasts": {
     "add": {
       "added": "agregado",
-      "alreadyAdded": "Stream ya agregado"
+      "alreadyAdded": "Stream ya agregado",
+      "maxStreams": "Límite máximo de 12 streams alcanzado"
     },
     "favorite": {
       "added": "añadido a favoritos",

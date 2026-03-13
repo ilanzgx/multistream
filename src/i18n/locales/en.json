@@ -88,7 +88,8 @@
   "toasts": {
     "add": {
       "added": "added",
-      "alreadyAdded": "Stream already added"
+      "alreadyAdded": "Stream already added",
+      "maxStreams": "Maximum of 12 streams reached"
     },
     "favorite": {
       "added": "added to favorites",
