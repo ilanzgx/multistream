@@ -88,13 +88,11 @@ async function httpPost(
  * @param channels The channels to check
  * @return The status of the channels
  */
-async function checkTwitchStreams(channels: string[]): Promise<StatusMap> {
+async function checkTwitchStreams(
+  channels: string[],
+): Promise<StatusMap | null> {
   const result: StatusMap = {};
   if (channels.length === 0) return result;
-
-  for (const ch of channels) {
-    result[`twitch:${ch.toLowerCase()}`] = { isLive: false };
-  }
 
   // Build a single request with multiple queries
   const query = channels
@@ -127,30 +125,34 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap> {
       },
     );
 
-    if (!response.ok) return result;
+    if (!response.ok) return null;
 
     const data = await response.json();
 
-    if (data?.data) {
-      channels.forEach((ch, i) => {
-        const key = `twitch:${ch.toLowerCase()}`;
-        const userData = data.data[`c${i}`];
+    if (!data?.data) return null;
 
-        if (userData?.stream) {
-          result[key] = {
-            isLive: true,
-            viewerCount: userData.stream.viewersCount,
-            title: userData.stream.title,
-            category: userData.stream.game?.displayName,
-          };
-        }
-      });
+    for (const ch of channels) {
+      result[`twitch:${ch.toLowerCase()}`] = { isLive: false };
     }
-  } catch {
-    // silently fail
-  }
 
-  return result;
+    channels.forEach((ch, i) => {
+      const key = `twitch:${ch.toLowerCase()}`;
+      const userData = data.data[`c${i}`];
+
+      if (userData?.stream) {
+        result[key] = {
+          isLive: true,
+          viewerCount: userData.stream.viewersCount,
+          title: userData.stream.title,
+          category: userData.stream.game?.displayName,
+        };
+      }
+    });
+
+    return result;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -236,21 +238,26 @@ async function fetchTwitchSuggestions(
  * @param channels The channels to check
  * @return The status of the channels
  */
-async function checkKickStreams(channels: string[]): Promise<StatusMap> {
+async function checkKickStreams(channels: string[]): Promise<StatusMap | null> {
   const result: StatusMap = {};
   if (channels.length === 0) return result;
 
-  for (const ch of channels) {
-    result[`kick:${ch.toLowerCase()}`] = { isLive: false };
-  }
-
+  let failedCount = 0;
   const promises = channels.map(async (channel) => {
     try {
       const response = await httpGet(
         `${API_CONFIG.kick.apiBaseUrl}/${encodeURIComponent(channel)}`,
       );
 
-      if (!response.ok) return;
+      if (!response.ok) {
+        if (response.status !== 404) {
+          failedCount++;
+        } else {
+          // 404 means offline/not found, which is a valid result
+          result[`kick:${channel.toLowerCase()}`] = { isLive: false };
+        }
+        return;
+      }
 
       const data = await response.json();
       const key = `kick:${channel.toLowerCase()}`;
@@ -262,13 +269,21 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap> {
           title: data.livestream.session_title,
           category: data.livestream.categories?.[0]?.name,
         };
+      } else {
+        result[key] = { isLive: false };
       }
     } catch {
-      // silently fail
+      failedCount++;
     }
   });
 
   await Promise.allSettled(promises);
+
+  // If all requests failed (and not due to 404), return null to indicate a network issue
+  if (failedCount === channels.length && channels.length > 0) {
+    return null;
+  }
+
   return result;
 }
 
@@ -370,11 +385,22 @@ const _useLiveStatus = () => {
   let intervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
-   * @brief Check all streams
+   * @brief Fetches and updates the live status for all tracked streams.
    *
-   * Checks all streams and updates their statuses.
+   * The function aggregates channels from both `recents` and `favorites`,
+   * deduplicates them by platform, and performs parallel requests to
+   * the supported streaming services (Twitch and Kick).
    *
-   * @return void
+   * After retrieving the results, the internal `statuses` map is updated.
+   * The previous state is compared with the new state to detect
+   * offline → online transitions for favorite channels.
+   *
+   * When running inside a Tauri environment and notifications are enabled,
+   * desktop notifications are triggered for streams that have just gone live.
+   *
+   * Re-entrant execution is prevented by the `isChecking` flag.
+   *
+   * @returns Promise<void>
    */
   const checkAll = async () => {
     if (isChecking.value) return;
@@ -410,61 +436,70 @@ const _useLiveStatus = () => {
         checkKickStreams(kickChannels),
       ]);
 
-      const newStatuses: StatusMap = {};
+      const newStatuses: StatusMap = { ...statuses.value };
 
-      if (twitchResults.status === "fulfilled") {
+      if (
+        twitchResults.status === "fulfilled" &&
+        twitchResults.value !== null
+      ) {
         Object.assign(newStatuses, twitchResults.value);
       }
-      if (kickResults.status === "fulfilled") {
+      if (kickResults.status === "fulfilled" && kickResults.value !== null) {
         Object.assign(newStatuses, kickResults.value);
       }
 
       // detect offline -> online transitions for favorites
-      // when app is first opened, send a single welcome notification with all live favorites
-      // when app is already open, send individual notifications for offline -> online transitions
-      // TODO: maybe try to implement youtube live notifications? idk
       if (isTauri() && notificationsEnabled.value) {
         const t = i18n.global.t;
         const isFirstCheck = Object.keys(previousStatuses.value).length === 0;
+        const newLiveChannels: { fav: any; status: any }[] = [];
 
-        if (isFirstCheck) {
-          // first check: send a single welcome notification with all live favorites
-          const liveChannels = favorites.value.filter((fav) => {
-            if (fav.platform !== "twitch" && fav.platform !== "kick")
-              return false;
-            const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
-            return newStatuses[key]?.isLive;
-          });
+        for (const fav of favorites.value) {
+          if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
 
-          if (liveChannels.length === 1) {
-            const fav = liveChannels[0]!;
-            invoke("send_notification", {
-              title: t("notifications.welcome"),
-              body: t("notifications.welcomeBodySingle", {
-                channel: fav.channel,
-              }),
-            }).catch(() => {});
-          } else if (liveChannels.length > 1) {
-            const names = liveChannels.map((f) => f.channel).join(", ");
-            invoke("send_notification", {
-              title: t("notifications.welcome"),
-              body: t("notifications.welcomeBody", { channels: names }),
-            }).catch(() => {});
+          const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
+          const hadPreviousStatus = key in previousStatuses.value;
+          const wasLive = previousStatuses.value[key]?.isLive ?? false;
+          const isNowLive = newStatuses[key]?.isLive ?? false;
+
+          // Only notify if:
+          // 1. It's the first check (welcome notification)
+          // 2. OR it was already being tracked and changed from offline to online
+          if (isFirstCheck) {
+            if (isNowLive) {
+              newLiveChannels.push({ fav, status: newStatuses[key] });
+            }
+          } else if (hadPreviousStatus && !wasLive && isNowLive) {
+            newLiveChannels.push({ fav, status: newStatuses[key] });
           }
-        } else {
-          // subsequent checks: individual notifications for offline -> online transitions
-          for (const fav of favorites.value) {
-            if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
+        }
 
-            const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
-            const wasLive = previousStatuses.value[key]?.isLive ?? false;
-            const isNowLive = newStatuses[key]?.isLive ?? false;
-
-            if (!wasLive && isNowLive) {
-              const status = newStatuses[key];
+        if (newLiveChannels.length > 0) {
+          // If many channels went live at once or it's the first check, consolidate notifications
+          if (isFirstCheck || newLiveChannels.length > 3) {
+            if (newLiveChannels.length === 1) {
+              const { fav } = newLiveChannels[0]!;
+              invoke("send_notification", {
+                title: t("notifications.welcome"),
+                body: t("notifications.welcomeBodySingle", {
+                  channel: fav.channel,
+                }),
+              }).catch(() => {});
+            } else {
+              const names = newLiveChannels
+                .map((c) => c.fav.channel)
+                .join(", ");
+              invoke("send_notification", {
+                title: t("notifications.welcome"),
+                body: t("notifications.welcomeBody", { channels: names }),
+              }).catch(() => {});
+            }
+          } else {
+            // Individual notifications for small number of updates
+            for (const { fav, status } of newLiveChannels) {
               const title = t("notifications.live", { channel: fav.channel });
-
               let body: string;
+
               if (status?.title && status?.category) {
                 body = t("notifications.liveBody", {
                   title: status.title,
