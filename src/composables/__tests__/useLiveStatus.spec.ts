@@ -2,10 +2,12 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useLiveStatus } from "../useLiveStatus";
 import { ref } from "vue";
 
-// essential mocks to isolate the environment and focus only on the composable
+// module-level refs so tests can populate them before startPolling
+const mockRecents = ref<any[]>([]);
+
 vi.mock("../useRecents", () => ({
   useRecents: () => ({
-    recents: ref([]),
+    recents: mockRecents,
   }),
 }));
 
@@ -39,6 +41,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    mockRecents.value = [];
 
     sut = useLiveStatus();
     sut.stopPolling();
@@ -87,13 +90,27 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
     it("should return null for non-existent channels or unsupported platforms", () => {
       // Assert
       expect(sut.getStatus("unknown", "twitch")).toBeNull();
-      expect(sut.getStatus("gaules", "youtube" as any)).toBeNull(); // Ignoring TS type checks locally to simulate malicious/runtime edge-cases
+      expect(sut.getStatus("gaules", "youtube" as any)).toBeNull();
     });
   });
 
   describe("Polling Controls", () => {
-    it("should start interval polling without duplicating existing ones", () => {
+    it("should not start polling when there are no channels to track", () => {
       // Arrange
+      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+
+      // Act
+      sut.startPolling();
+
+      // Assert - should skip because no channels
+      expect(setIntervalSpy).toHaveBeenCalledTimes(0);
+    });
+
+    it("should start interval polling without duplicating existing ones", () => {
+      // Arrange - add a channel so startPolling actually starts
+      mockRecents.value = [
+        { channel: "gaules", platform: "twitch", addedAt: Date.now() },
+      ];
       const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
 
       // Act
@@ -106,7 +123,10 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
     });
 
     it("should safely stop polling and clear the interval id", () => {
-      // Arrange
+      // Arrange - add a channel so startPolling actually starts
+      mockRecents.value = [
+        { channel: "gaules", platform: "twitch", addedAt: Date.now() },
+      ];
       const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
 
       // Arrange (start first)
@@ -132,7 +152,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
       // Assert
       expect(sut.isChecking.value).toBe(false);
-      expect(Object.keys(sut.statuses.value).length).toBe(0); // Since recents and favorites are empty from the mocks, it must wipe old statuses
+      expect(Object.keys(sut.statuses.value).length).toBe(0);
     });
   });
 });

@@ -548,15 +548,27 @@ const _useLiveStatus = () => {
   };
 
   /**
+   * @brief Check if there are channels to track
+   */
+  const hasChannels = () =>
+    recents.value.some(
+      (r) => r.platform === "twitch" || r.platform === "kick",
+    ) ||
+    favorites.value.some(
+      (f) => f.platform === "twitch" || f.platform === "kick",
+    );
+
+  /**
    * @brief Start polling
    *
-   * Starts the polling interval.
+   * Starts the polling interval only if there are channels to track.
    * This makes the app check for new streams every REFRESH_CONFIG.interval milliseconds.
    *
    * @return void
    */
   const startPolling = () => {
     if (intervalId) return;
+    if (!hasChannels()) return;
     checkAll();
     intervalId = setInterval(checkAll, REFRESH_CONFIG.interval);
   };
@@ -576,10 +588,21 @@ const _useLiveStatus = () => {
     }
   };
 
-  // Re-check when recents or favorites change
+  // Debounced re-check: auto-start/stop polling when channels change
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   watch(
     () => recents.value.length + favorites.value.length,
-    () => checkAll(),
+    () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        if (hasChannels()) {
+          if (!intervalId) startPolling();
+          else checkAll();
+        } else {
+          stopPolling();
+        }
+      }, 1000);
+    },
   );
 
   /**
