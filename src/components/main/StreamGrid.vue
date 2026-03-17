@@ -5,10 +5,12 @@ import YoutubeStream from "@/components/stream/YoutubeStream.vue";
 import CustomStream from "@/components/stream/CustomStream.vue";
 import { useStreams } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
-import { computed, watch } from "vue";
+import { usePreferences } from "@/composables/usePreferences";
+import { computed, watch, nextTick } from "vue";
 
 const { streams, gridClass } = useStreams();
 const { focusedStreamId, isFocused, clearFocus } = useFocusedStream();
+const { setSelectedChat } = usePreferences();
 
 // if the focused stream is removed, clear focus
 watch(streams, (newStreams) => {
@@ -18,6 +20,61 @@ watch(streams, (newStreams) => {
   ) {
     clearFocus();
   }
+});
+
+// auto-select the chat of the focused stream
+watch(focusedStreamId, async (newId) => {
+  if (!newId) return;
+  const stream = streams.value.find((s) => s.id === newId);
+  if (stream) setSelectedChat(stream.channel);
+});
+
+// FLIP animation: streams physically slide to their new focus positions
+watch(focusedStreamId, async () => {
+  // 1. FIRST: capture current bounding rect of every stream element
+  const elements = document.querySelectorAll<HTMLElement>("[data-stream-id]");
+  const prevRects = new Map<string, DOMRect>();
+  elements.forEach((el) => {
+    prevRects.set(el.dataset.streamId!, el.getBoundingClientRect());
+  });
+
+  // 2. Let Vue apply the new grid layout
+  await nextTick();
+
+  // 3. LAST + INVERT + PLAY
+  elements.forEach((el) => {
+    const id = el.dataset.streamId!;
+    const prev = prevRects.get(id);
+    if (!prev) return;
+
+    const next = el.getBoundingClientRect();
+    const dx = prev.left - next.left;
+    const dy = prev.top - next.top;
+    const scaleX = prev.width / (next.width || 1);
+    const scaleY = prev.height / (next.height || 1);
+
+    // Nothing moved — skip
+    if (
+      Math.abs(dx) < 1 &&
+      Math.abs(dy) < 1 &&
+      Math.abs(scaleX - 1) < 0.01 &&
+      Math.abs(scaleY - 1) < 0.01
+    )
+      return;
+
+    // Snap element back to its OLD position via inverse transform
+    el.style.transition = "none";
+    el.style.transformOrigin = "top left";
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(${scaleX}, ${scaleY})`;
+
+    // Force paint, then animate to the new (real) position
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        el.style.transition = "transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)";
+        el.style.transform = "";
+      });
+    });
+  });
 });
 
 /**
@@ -77,38 +134,73 @@ const getStreamClass = (index: number) => {
 </script>
 
 <template>
-  <div
+  <TransitionGroup
+    tag="div"
+    name="stream"
     class="h-full"
     :class="!focusedStreamId ? ['grid', gridClass] : ''"
     :style="containerStyle"
   >
-    <template v-for="(stream, index) in streams" :key="stream.id">
-      <div
-        :style="getStreamStyle(stream.id)"
-        :class="[getStreamClass(index), 'min-h-0 min-w-0']"
-      >
-        <KickStream
-          v-if="stream.platform === 'kick'"
-          :channel="stream.channel"
-          :channelid="stream.id"
-        />
-        <TwitchStream
-          v-else-if="stream.platform === 'twitch'"
-          :channel="stream.channel"
-          :channelid="stream.id"
-        />
-        <YoutubeStream
-          v-else-if="stream.platform === 'youtube'"
-          :channel="stream.channel"
-          :channelid="stream.id"
-        />
-        <CustomStream
-          v-else-if="stream.platform === 'custom'"
-          :channel="stream.channel"
-          :channelid="stream.id"
-          :iframeUrl="stream.iframeUrl || ''"
-        />
-      </div>
-    </template>
-  </div>
+    <div
+      v-for="(stream, index) in streams"
+      :key="stream.id"
+      :data-stream-id="stream.id"
+      :style="getStreamStyle(stream.id)"
+      :class="[getStreamClass(index), 'min-h-0 min-w-0 stream-item']"
+    >
+      <KickStream
+        v-if="stream.platform === 'kick'"
+        :channel="stream.channel"
+        :channelid="stream.id"
+      />
+      <TwitchStream
+        v-else-if="stream.platform === 'twitch'"
+        :channel="stream.channel"
+        :channelid="stream.id"
+      />
+      <YoutubeStream
+        v-else-if="stream.platform === 'youtube'"
+        :channel="stream.channel"
+        :channelid="stream.id"
+      />
+      <CustomStream
+        v-else-if="stream.platform === 'custom'"
+        :channel="stream.channel"
+        :channelid="stream.id"
+        :iframeUrl="stream.iframeUrl || ''"
+      />
+    </div>
+  </TransitionGroup>
 </template>
+
+<style scoped>
+/* Stream add/remove animations */
+.stream-enter-active {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+.stream-leave-active {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+.stream-enter-from {
+  opacity: 0;
+  transform: scale(0.95);
+}
+.stream-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Focus mode layout transition */
+:deep(.stream-item) {
+  transition:
+    grid-column 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
+    grid-row 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+</style>

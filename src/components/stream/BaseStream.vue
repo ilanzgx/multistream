@@ -71,36 +71,38 @@ const handleFocusStream = (channelId: string) => {
 
 <template>
   <div ref="containerRef" class="relative h-full group">
-    <!-- clean shadcn skeleton loader -->
-    <div
-      v-if="isLoading"
-      class="absolute inset-0 w-full h-full bg-[#0f1115] flex flex-col items-center justify-center z-50"
-    >
-      <div class="w-full h-full p-8 flex flex-col gap-4">
-        <!-- video area skeleton -->
-        <Skeleton class="flex-1 w-full rounded-xl bg-white/5" />
+    <!-- skeleton loader with smooth fade-out -->
+    <Transition name="fade">
+      <div
+        v-if="isLoading"
+        class="absolute inset-0 w-full h-full bg-[#0f1115] flex flex-col items-center justify-center z-50"
+      >
+        <div class="w-full h-full p-8 flex flex-col gap-4">
+          <!-- video area skeleton -->
+          <Skeleton class="flex-1 w-full rounded-xl bg-white/5" />
 
-        <!-- info area skeleton -->
-        <div class="flex items-center gap-3">
-          <Skeleton class="h-12 w-12 rounded-full bg-white/5" />
-          <div class="space-y-2">
-            <Skeleton class="h-4 w-32 bg-white/5" />
-            <Skeleton class="h-3 w-24 bg-white/5" />
+          <!-- info area skeleton -->
+          <div class="flex items-center gap-3">
+            <Skeleton class="h-12 w-12 rounded-full bg-white/5" />
+            <div class="space-y-2">
+              <Skeleton class="h-4 w-32 bg-white/5" />
+              <Skeleton class="h-3 w-24 bg-white/5" />
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- centered platform icon (subtle) -->
-      <div
-        class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"
-      >
-        <component
-          :is="platformConfig?.icon"
-          :size="80"
-          :style="{ color: platformConfig?.color }"
-        />
+        <!-- centered platform icon (subtle) -->
+        <div
+          class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"
+        >
+          <component
+            :is="platformConfig?.icon"
+            :size="80"
+            :style="{ color: platformConfig?.color }"
+          />
+        </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- stream controls - appears on hover -->
     <div
@@ -143,5 +145,13 @@ const handleFocusStream = (channelId: string) => {
 :slotted(iframe) {
   width: 100%;
   height: 100%;
+}
+
+/* Skeleton fade-out */
+.fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
