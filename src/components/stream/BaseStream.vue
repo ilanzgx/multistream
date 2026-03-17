@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useStreams, type Platform } from "@/composables/useStreams";
-import { X, Heart } from "lucide-vue-next";
+import { useFocusedStream } from "@/composables/useFocusedStream";
+import { X, Heart, Maximize2 } from "lucide-vue-next";
 import { ref, onMounted, nextTick, computed } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useI18n } from "vue-i18n";
@@ -9,6 +10,7 @@ import { toast } from "vue-sonner";
 
 const { removeStream } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
+const { toggleFocus, isFocused, clearFocus } = useFocusedStream();
 const { t } = useI18n();
 
 import { PLATFORMS } from "@/config/platforms";
@@ -33,6 +35,8 @@ const isFavorite = computed(() => {
   );
 });
 
+const isStreamFocused = computed(() => isFocused(props.channelid));
+
 onMounted(() => {
   nextTick(() => {
     const iframe = containerRef.value?.querySelector("iframe");
@@ -53,6 +57,14 @@ const handleFavoriteStream = (channel: string, platform: Platform) => {
   } else {
     addFavorite(channel, platform);
     toast.success(`${channel} ${t("toasts.favorite.added")}`);
+  }
+};
+
+const handleFocusStream = (channelId: string) => {
+  if (isFocused(channelId)) {
+    clearFocus();
+  } else {
+    toggleFocus(channelId);
   }
 };
 </script>
@@ -108,6 +120,18 @@ const handleFavoriteStream = (channel: string, platform: Platform) => {
           class="size-4 transition-colors"
           :fill="isFavorite ? 'currentColor' : 'none'"
         />
+      </button>
+      <!-- focus mode button -->
+      <button
+        @click="handleFocusStream(channelid)"
+        :class="[
+          'flex items-center justify-center size-8 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
+          isStreamFocused
+            ? 'bg-yellow-500/80 text-white border-yellow-400/50 hover:bg-yellow-600/80'
+            : 'bg-black/60 text-white/80 border-white/10 hover:bg-yellow-500/80 hover:text-white hover:border-yellow-400/50',
+        ]"
+      >
+        <Maximize2 class="size-4" />
       </button>
     </div>
 
