@@ -15,7 +15,7 @@ const parentHost = computed(() => {
 </script>
 
 <template>
-  <BaseChat>
+  <BaseChat platform="twitch">
     <iframe
       :src="`${PLATFORMS.twitch?.chatUrl}/${channel}/chat?parent=${parentHost}&darkpopout=true`"
       allowfullscreen

@@ -6,7 +6,7 @@ defineProps<{ channel: string }>();
 </script>
 
 <template>
-  <BaseChat>
+  <BaseChat platform="youtube">
     <iframe
       :src="`${PLATFORMS.youtube?.chatUrl}?v=${channel}&embed_domain=localhost`"
       frameborder="0"

@@ -1,0 +1,6 @@
+#!/bin/sh
+echo "Building frontend..."
+bun run build
+
+echo "Running cargo clippy..."
+cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
