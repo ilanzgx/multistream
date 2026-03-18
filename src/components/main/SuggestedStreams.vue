@@ -1,13 +1,36 @@
 <script lang="ts" setup>
+import { ref, computed, watch } from "vue";
 import { useStreams } from "@/composables/useStreams";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { PLATFORMS } from "@/config/platforms";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 
 const { addStream } = useStreams();
 const { suggestedStreams, isLoadingSuggestions } = useLiveStatus();
 
-// format views for more than 3 digits
-// this maybe should be in the some utils folder
+const PAGE_SIZE = 18;
+const currentPage = ref(1);
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(suggestedStreams.value.length / PAGE_SIZE)),
+);
+
+const paginatedStreams = computed(() => {
+  const start = (currentPage.value - 1) * PAGE_SIZE;
+  return suggestedStreams.value.slice(start, start + PAGE_SIZE);
+});
+
+// Reset to page 1 when suggestions reload
+watch(suggestedStreams, () => {
+  currentPage.value = 1;
+});
+
 const formatViewers = (count?: number) => {
   if (!count) return "";
   if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
@@ -30,7 +53,7 @@ const formatViewers = (count?: number) => {
 
     <div class="flex flex-wrap justify-center gap-4 w-full">
       <button
-        v-for="stream in suggestedStreams"
+        v-for="stream in paginatedStreams"
         :key="`${stream.platform}:${stream.channel}`"
         class="group relative flex flex-col w-40 overflow-hidden rounded-xl bg-[#14161a] border border-[#2a2d33] transition-all duration-300 hover:border-[#3a3f4b] hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 cursor-pointer text-left"
         @click="addStream(stream.channel, stream.platform)"
@@ -104,5 +127,43 @@ const formatViewers = (count?: number) => {
         </div>
       </button>
     </div>
+
+    <!-- Pagination -->
+    <Pagination
+      v-if="totalPages > 1"
+      v-model:page="currentPage"
+      :total="suggestedStreams.length"
+      :items-per-page="PAGE_SIZE"
+      :sibling-count="1"
+      class="mt-2"
+    >
+      <PaginationContent class="flex items-center gap-1">
+        <PaginationPrevious
+          class="size-8 p-0 flex items-center justify-center text-gray-400 hover:text-white bg-[#14161a] border border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b] rounded-lg transition-colors cursor-pointer"
+        >
+          <ChevronLeft class="size-4" />
+        </PaginationPrevious>
+
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          class="size-8 flex items-center justify-center rounded-lg text-xs font-medium transition-colors border cursor-pointer"
+          :class="[
+            page === currentPage
+              ? 'bg-white/10 text-white border-white/20'
+              : 'text-gray-500 hover:text-white bg-[#14161a] border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
+          ]"
+          @click="currentPage = page"
+        >
+          {{ page }}
+        </button>
+
+        <PaginationNext
+          class="size-8 p-0 flex items-center justify-center text-gray-400 hover:text-white bg-[#14161a] border border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b] rounded-lg transition-colors cursor-pointer"
+        >
+          <ChevronRight class="size-4" />
+        </PaginationNext>
+      </PaginationContent>
+    </Pagination>
   </div>
 </template>
