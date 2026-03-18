@@ -14,10 +14,12 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
   <div class="flex items-center justify-center min-h-full py-12 px-4">
     <div class="flex flex-col items-center gap-5 w-full">
       <!-- title & description -->
-      <h2 class="text-2xl font-bold text-white">
+      <h2 class="text-2xl lg:text-3xl font-bold text-white">
         {{ $t("empty.title") }}
       </h2>
-      <p class="text-gray-500 text-sm text-center max-w-xs">
+      <p
+        class="text-gray-400 text-sm lg:text-base text-center max-w-sm lg:max-w-md"
+      >
         {{ $t("empty.description") }}
       </p>
 
