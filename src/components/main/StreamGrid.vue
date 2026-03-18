@@ -98,6 +98,7 @@ const containerStyle = computed(() => {
   const rows = nonFocusedCount.value || 1;
   return {
     display: "grid",
+    gap: "2px",
     gridTemplateColumns: "40% 60%",
     gridTemplateRows: `repeat(${rows}, 1fr)`,
   };
@@ -137,8 +138,8 @@ const getStreamClass = (index: number) => {
   <TransitionGroup
     tag="div"
     name="stream"
-    class="h-full"
-    :class="!focusedStreamId ? ['grid', gridClass] : ''"
+    class="h-full overflow-hidden"
+    :class="!focusedStreamId ? ['grid', gridClass, 'gap-0.5'] : ''"
     :style="containerStyle"
   >
     <div
@@ -146,7 +147,10 @@ const getStreamClass = (index: number) => {
       :key="stream.id"
       :data-stream-id="stream.id"
       :style="getStreamStyle(stream.id)"
-      :class="[getStreamClass(index), 'min-h-0 min-w-0 stream-item']"
+      :class="[
+        getStreamClass(index),
+        'min-h-0 min-w-0 stream-item overflow-hidden rounded-sm',
+      ]"
     >
       <KickStream
         v-if="stream.platform === 'kick'"
@@ -202,5 +206,10 @@ const getStreamClass = (index: number) => {
   transition:
     grid-column 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
     grid-row 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Gap between streams in focus mode */
+.stream-gap {
+  gap: 2px;
 }
 </style>

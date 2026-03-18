@@ -194,12 +194,13 @@ const canSubmit = computed(() => {
               </p>
             </div>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
             <StreamChip
               v-for="recent in recents"
               :key="`${recent.platform}:${recent.channel}`"
               :channel="recent.channel"
               :platform="recent.platform"
+              class="w-full"
               @click="
                 handleQuickAdd(
                   recent.channel,
@@ -233,13 +234,14 @@ const canSubmit = computed(() => {
             </div>
           </div>
           <div
-            class="flex flex-wrap gap-2 overflow-y-auto max-h-[20vh] md:max-h-[25vh] pr-1 py-1 overflow-x-hidden"
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 overflow-y-auto max-h-[20vh] md:max-h-[25vh] pr-1 py-1 overflow-x-hidden"
           >
             <StreamChip
               v-for="favorite in sortedFavorites"
               :key="`${favorite.platform}:${favorite.channel}`"
               :channel="favorite.channel"
               :platform="favorite.platform"
+              class="w-full"
               @click="handleQuickAdd(favorite.channel, favorite.platform)"
               @remove="removeFavorite(favorite.channel, favorite.platform)"
             />
