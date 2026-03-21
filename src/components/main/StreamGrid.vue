@@ -9,18 +9,8 @@ import { usePreferences } from "@/composables/usePreferences";
 import { computed, watch, nextTick } from "vue";
 
 const { streams, gridClass } = useStreams();
-const { focusedStreamId, isFocused, clearFocus } = useFocusedStream();
+const { focusedStreamId, isFocused } = useFocusedStream();
 const { setSelectedChat } = usePreferences();
-
-// if the focused stream is removed, clear focus
-watch(streams, (newStreams) => {
-  if (
-    focusedStreamId.value &&
-    !newStreams.some((s) => s.id === focusedStreamId.value)
-  ) {
-    clearFocus();
-  }
-});
 
 // auto-select the chat of the focused stream
 watch(focusedStreamId, async (newId) => {

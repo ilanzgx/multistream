@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { useRecents } from "./useRecents";
+import { useFocusedStream } from "./useFocusedStream";
 
 export type Platform = "kick" | "twitch" | "youtube" | "custom";
 
@@ -46,7 +47,7 @@ const _useStreams = () => {
       return;
     }
 
-    if(streams.value.length >= 12) {
+    if (streams.value.length >= 12) {
       toast.warning(t("toasts.add.maxStreams"));
       return;
     }
@@ -78,6 +79,11 @@ const _useStreams = () => {
     const stream = streams.value.find((s) => s.id === id);
     streams.value = streams.value.filter((s) => s.id !== id);
 
+    const { focusedStreamId, clearFocus } = useFocusedStream();
+    if (focusedStreamId.value === id) {
+      clearFocus();
+    }
+
     if (stream) {
       toast.success(`${stream.channel} ${t("toasts.remove")}`);
     }
@@ -92,6 +98,8 @@ const _useStreams = () => {
    */
   const clearStreams = () => {
     streams.value = [];
+    const { clearFocus } = useFocusedStream();
+    clearFocus();
   };
 
   /**
