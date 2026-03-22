@@ -155,4 +155,158 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(Object.keys(sut.statuses.value).length).toBe(0);
     });
   });
+
+  describe("Fetching Behavior", () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(globalThis, "fetch");
+    });
+
+    afterEach(() => {
+      fetchSpy.mockRestore();
+    });
+
+    it("should call twitch and kick APIs and update statuses", async () => {
+      mockRecents.value = [
+        { channel: "gaules", platform: "twitch" },
+        { channel: "alanzoka", platform: "kick" },
+        { channel: "offline_kick", platform: "kick" },
+      ];
+
+      fetchSpy.mockImplementation(async (url: string | Request | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("twitch.tv/gql")) {
+          return {
+            ok: true,
+            json: async () => ({
+              data: {
+                c0: {
+                  stream: {
+                    title: "TRIBOMINERA",
+                    viewersCount: 50000,
+                    game: { displayName: "CS:GO" },
+                  },
+                },
+              },
+            }),
+          };
+        }
+        if (urlStr.includes("kick.com/api/v2/channels/alanzoka")) {
+          return {
+            ok: true,
+            json: async () => ({
+              livestream: {
+                session_title: "Jogando",
+                viewer_count: 30000,
+                categories: [{ name: "Horror" }],
+              },
+            }),
+          };
+        }
+        if (urlStr.includes("offline_kick")) {
+          return { ok: false, status: 404 };
+        }
+        return { ok: false };
+      });
+
+      await sut.checkAll();
+
+      expect(sut.statuses.value["twitch:gaules"]).toEqual({
+        isLive: true,
+        title: "TRIBOMINERA",
+        viewerCount: 50000,
+        category: "CS:GO",
+      });
+
+      expect(sut.statuses.value["kick:alanzoka"]).toEqual({
+        isLive: true,
+        title: "Jogando",
+        viewerCount: 30000,
+        category: "Horror",
+      });
+
+      expect(sut.statuses.value["kick:offline_kick"]).toEqual({
+        isLive: false,
+      });
+    });
+
+    it("should gracefully handle API failures", async () => {
+      mockRecents.value = [
+        { channel: "mch", platform: "twitch" },
+        { channel: "coringa", platform: "kick" },
+      ];
+
+      fetchSpy.mockImplementation(async () => {
+        return { ok: false, status: 500 };
+      });
+
+      await sut.checkAll();
+
+      expect(Object.keys(sut.statuses.value).length).toBe(0);
+    });
+  });
+
+  describe("refreshSuggestions", () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(globalThis, "fetch");
+    });
+
+    afterEach(() => {
+      fetchSpy.mockRestore();
+    });
+
+    it("should fetch suggestions from both platforms and interleave them", async () => {
+      fetchSpy.mockImplementation(async (url: string | Request | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("twitch.tv")) {
+          return {
+            ok: true,
+            json: async () => ({
+              data: {
+                streams: {
+                  edges: [
+                    {
+                      node: {
+                        broadcaster: { login: "shroud" },
+                        title: "Valo",
+                        viewersCount: 10000,
+                        game: { displayName: "Valorant" },
+                      },
+                    },
+                  ],
+                },
+              },
+            }),
+          };
+        }
+        if (urlStr.includes("featured-livestreams")) {
+          return {
+            ok: true,
+            json: async () => ({
+              data: [
+                {
+                  slug: "xqc",
+                  session_title: "Reacts",
+                  viewers: 15000,
+                  categories: [{ name: "Just Chatting" }],
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: false };
+      });
+
+      await sut.refreshSuggestions();
+
+      expect(sut.suggestedStreams.value.length).toBeGreaterThan(0);
+      expect(sut.suggestedStreams.value[0]?.platform).toBe("twitch");
+      expect(sut.suggestedStreams.value[0]?.channel).toBe("shroud");
+      expect(sut.suggestedStreams.value[1]?.platform).toBe("kick");
+      expect(sut.suggestedStreams.value[1]?.channel).toBe("xqc");
+    });
+  });
 });
