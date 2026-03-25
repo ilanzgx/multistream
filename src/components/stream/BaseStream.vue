@@ -10,7 +10,8 @@ import { toast } from "vue-sonner";
 
 const { removeStream } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
-const { toggleFocus, isFocused, clearFocus } = useFocusedStream();
+const { toggleFocus, isFocused, clearFocus, focusedStreamId } =
+  useFocusedStream();
 const { t } = useI18n();
 
 import { PLATFORMS } from "@/config/platforms";
@@ -36,6 +37,11 @@ const isFavorite = computed(() => {
 });
 
 const isStreamFocused = computed(() => isFocused(props.channelid));
+
+// true when another stream is focused and this one is miniaturized in the sidebar
+const isMiniaturized = computed(
+  () => !!focusedStreamId.value && !isFocused(props.channelid),
+);
 
 onMounted(() => {
   nextTick(() => {
@@ -77,14 +83,26 @@ const handleFocusStream = (channelId: string) => {
         v-if="isLoading"
         class="absolute inset-0 w-full h-full bg-[#0f1115] flex flex-col items-center justify-center z-50"
       >
-        <div class="w-full h-full p-8 flex flex-col gap-4">
+        <div
+          :class="[
+            'w-full h-full flex flex-col',
+            isMiniaturized ? 'p-2 gap-2' : 'p-8 gap-4',
+          ]"
+        >
           <!-- video area skeleton -->
           <Skeleton class="flex-1 w-full rounded-xl bg-white/5" />
 
           <!-- info area skeleton -->
-          <div class="flex items-center gap-3">
-            <Skeleton class="h-12 w-12 rounded-full bg-white/5" />
-            <div class="space-y-2">
+          <div
+            :class="['flex items-center', isMiniaturized ? 'gap-2' : 'gap-3']"
+          >
+            <Skeleton
+              :class="[
+                'rounded-full bg-white/5',
+                isMiniaturized ? 'size-6' : 'size-12',
+              ]"
+            />
+            <div v-if="!isMiniaturized" class="space-y-2">
               <Skeleton class="h-4 w-32 bg-white/5" />
               <Skeleton class="h-3 w-24 bg-white/5" />
             </div>
@@ -97,7 +115,7 @@ const handleFocusStream = (channelId: string) => {
         >
           <component
             :is="platformConfig?.icon"
-            :size="80"
+            :size="isMiniaturized ? 32 : 80"
             :style="{ color: platformConfig?.color }"
           />
         </div>
@@ -106,20 +124,29 @@ const handleFocusStream = (channelId: string) => {
 
     <!-- stream controls - appears on hover -->
     <div
-      class="absolute top-2 right-2 z-10 flex flex-col gap-2 opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0"
+      :class="[
+        'absolute z-10 flex flex-col opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0',
+        isMiniaturized ? 'top-1 right-1 gap-1' : 'top-2 right-2 gap-2',
+      ]"
     >
       <button
         @click="removeStream(channelid)"
-        class="flex items-center justify-center size-8 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer"
+        :class="[
+          'flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
+          isMiniaturized ? 'size-5' : 'size-8',
+        ]"
       >
-        <X class="size-4" />
+        <X :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <button
         @click="handleFavoriteStream(channel, platform)"
-        class="flex items-center justify-center size-8 rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-pink-500/80 hover:text-white hover:border-pink-400/50 transition-all duration-200 hover:scale-110 cursor-pointer"
+        :class="[
+          'flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-pink-500/80 hover:text-white hover:border-pink-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
+          isMiniaturized ? 'size-5' : 'size-8',
+        ]"
       >
         <Heart
-          class="size-4 transition-colors"
+          :class="[isMiniaturized ? 'size-3' : 'size-4', 'transition-colors']"
           :fill="isFavorite ? 'currentColor' : 'none'"
         />
       </button>
@@ -127,13 +154,14 @@ const handleFocusStream = (channelId: string) => {
       <button
         @click="handleFocusStream(channelid)"
         :class="[
-          'flex items-center justify-center size-8 rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
+          'flex items-center justify-center rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
+          isMiniaturized ? 'size-5' : 'size-8',
           isStreamFocused
             ? 'bg-yellow-500/80 text-white border-yellow-400/50 hover:bg-yellow-600/80'
             : 'bg-black/60 text-white/80 border-white/10 hover:bg-yellow-500/80 hover:text-white hover:border-yellow-400/50',
         ]"
       >
-        <Maximize2 class="size-4" />
+        <Maximize2 :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
     </div>
 
@@ -143,8 +171,10 @@ const handleFocusStream = (channelId: string) => {
 
 <style scoped>
 :slotted(iframe) {
+  display: block;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 }
 
 /* Skeleton fade-out */

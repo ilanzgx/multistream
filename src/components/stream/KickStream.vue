@@ -11,6 +11,7 @@ defineProps<{ channel: string; channelid: string }>();
       :src="`${PLATFORMS.kick?.embedUrl}/${channel}`"
       allowfullscreen
       frameborder="0"
+      scrolling="no"
     />
   </BaseStream>
 </template>

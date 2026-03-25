@@ -77,7 +77,7 @@ const nonFocusedCount = computed(
 /**
  * Dynamic inline style for the grid container.
  *
- * In focus mode: CSS Grid with two columns (60% / 40%) and N rows for the
+ * In focus mode: CSS Grid with two columns (25% / 75%) and N rows for the
  * side column (one row per non-focused stream). The focused stream spans
  * all rows in column 1.
  *
@@ -89,7 +89,7 @@ const containerStyle = computed(() => {
   return {
     display: "grid",
     gap: "2px",
-    gridTemplateColumns: "40% 60%",
+    gridTemplateColumns: "25% 75%",
     gridTemplateRows: `repeat(${rows}, 1fr)`,
   };
 });
