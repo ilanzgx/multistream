@@ -158,11 +158,11 @@ async function checkTwitchStreams(
 /**
  * @brief Fetch Twitch suggestions
  *
- * Fetches the top limit streams from Twitch.
- * If there are not enough streams in the language, it uses all streams.
- * @info The limit is set to 30 streams, but it will return all streams if there are not enough streams in the language.
+ * Fetches the top streams from Twitch using cursor-based pagination.
+ * Pages of 30 streams are fetched until the desired limit is reached.
+ * Results are sorted with the user's language first.
  *
- * @param limit The number of suggestions to fetch
+ * @param limit The maximum number of suggestions to return
  * @return The suggestions
  */
 async function fetchTwitchSuggestions(
@@ -174,57 +174,72 @@ async function fetchTwitchSuggestions(
       SUPPORTED_LANGUAGES[locale]?.apiCodes.twitch ??
       SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.twitch;
 
-    const query = `
-      query {
-        streams(first: 30, options: {sort: VIEWER_COUNT}) {
-          edges {
-            node {
-              broadcaster { login, broadcastSettings { language } }
-              title
-              viewersCount
-              game { displayName }
-              previewImageURL(width: 640, height: 360)
+    const PAGE_SIZE = 30;
+    const allStreams: any[] = [];
+    let cursor: string | null = null;
+
+    // fetch pages until we have enough streams or run out of results
+    while (allStreams.length < limit) {
+      const afterClause = cursor ? `, after: "${cursor}"` : "";
+      const query = `
+        query {
+          streams(first: ${PAGE_SIZE}${afterClause}, options: {sort: VIEWER_COUNT}) {
+            edges {
+              cursor
+              node {
+                broadcaster { login, broadcastSettings { language } }
+                title
+                viewersCount
+                game { displayName }
+                previewImageURL(width: 640, height: 360)
+              }
             }
           }
         }
+      `;
+
+      const response = await httpPost(
+        API_CONFIG.twitch.gqlUrl,
+        JSON.stringify({ query }),
+        {
+          "Client-Id": API_CONFIG.twitch.clientId,
+          "Content-Type": "application/json",
+        },
+      );
+
+      if (!response.ok) break;
+      const data = await response.json();
+
+      const edges = data.data?.streams?.edges ?? [];
+      if (edges.length === 0) break;
+
+      for (const edge of edges) {
+        allStreams.push({
+          channel: edge.node.broadcaster.login,
+          platform: "twitch" as Platform,
+          title: edge.node.title,
+          category: edge.node.game?.displayName || "Just Chatting",
+          viewerCount: edge.node.viewersCount,
+          language: edge.node.broadcaster.broadcastSettings?.language ?? "en",
+          thumbnail: edge.node.previewImageURL,
+        });
       }
-    `;
 
-    const response = await httpPost(
-      API_CONFIG.twitch.gqlUrl,
-      JSON.stringify({ query }),
-      {
-        "Client-Id": API_CONFIG.twitch.clientId,
-        "Content-Type": "application/json",
-      },
-    );
+      cursor = edges[edges.length - 1]?.cursor ?? null;
 
-    if (!response.ok) return [];
-    const data = await response.json();
-
-    const allStreams =
-      data.data?.streams?.edges?.map((edge: any) => ({
-        channel: edge.node.broadcaster.login,
-        platform: "twitch" as Platform,
-        title: edge.node.title,
-        category: edge.node.game?.displayName || "Just Chatting",
-        viewerCount: edge.node.viewersCount,
-        language: edge.node.broadcaster.broadcastSettings?.language ?? "en",
-        thumbnail: edge.node.previewImageURL,
-      })) ?? [];
+      if (edges.length < PAGE_SIZE) break;
+    }
 
     const filtered = allStreams.filter(
       (s: any) => s.language === twitchLanguage,
     );
 
-    const result = [
+    return [
       ...filtered,
       ...allStreams.filter((s: any) => s.language !== twitchLanguage),
     ]
       .slice(0, limit)
       .map(({ language, ...s }: any) => s);
-
-    return result.slice(0, limit).map(({ language, ...s }: any) => s);
   } catch {
     return [];
   }
