@@ -34,11 +34,27 @@ const { favorites, removeFavorite } = useFavorites();
 
 const sortedFavorites = computed(() => {
   return [...favorites.value].sort((a, b) => {
-    const aLive = getStatus(a.channel, a.platform)?.isLive;
-    const bLive = getStatus(b.channel, b.platform)?.isLive;
+    const statusA = getStatus(a.channel, a.platform);
+    const statusB = getStatus(b.channel, b.platform);
+
+    const aLive = statusA?.isLive;
+    const bLive = statusB?.isLive;
+
+    // sort by live status
     if (aLive && !bLive) return -1;
     if (!aLive && bLive) return 1;
-    return 0;
+
+    // sort by viewers count
+    if (aLive && bLive) {
+      const viewersA = statusA?.viewerCount ?? 0;
+      const viewersB = statusB?.viewerCount ?? 0;
+      if (viewersA !== viewersB) {
+        return viewersB - viewersA;
+      }
+    }
+
+    // fallback to alphabetical sort
+    return a.channel.localeCompare(b.channel);
   });
 });
 
