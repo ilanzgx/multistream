@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
-import { X, Heart, Maximize2 } from "lucide-vue-next";
+import { X, Heart, Maximize2, Camera } from "lucide-vue-next";
 import { ref, onMounted, nextTick, computed } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
+import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "vue-sonner";
@@ -12,6 +13,7 @@ const { removeStream } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
 const { toggleFocus, isFocused, clearFocus, focusedStreamId } =
   useFocusedStream();
+const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
 
 import { PLATFORMS } from "@/config/platforms";
@@ -71,6 +73,12 @@ const handleFocusStream = (channelId: string) => {
     clearFocus();
   } else {
     toggleFocus(channelId);
+  }
+};
+
+const handleScreenshot = () => {
+  if (containerRef.value) {
+    captureStream(containerRef.value, props.channel, props.platform);
   }
 };
 </script>
@@ -149,6 +157,18 @@ const handleFocusStream = (channelId: string) => {
           :class="[isMiniaturized ? 'size-3' : 'size-4', 'transition-colors']"
           :fill="isFavorite ? 'currentColor' : 'none'"
         />
+      </button>
+      <!-- screenshot button -->
+      <button
+        @click="handleScreenshot"
+        :disabled="isCapturing"
+        :class="[
+          'flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-blue-500/80 hover:text-white hover:border-blue-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
+          isMiniaturized ? 'size-5' : 'size-8',
+          isCapturing ? 'opacity-50 pointer-events-none' : '',
+        ]"
+      >
+        <Camera :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <!-- focus mode button -->
       <button

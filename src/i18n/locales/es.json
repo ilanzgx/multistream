@@ -103,6 +103,13 @@
       "failedUpdate": "Error al descargar actualización",
       "downloading": "Descargando actualización...",
       "success": "Actualización completa! Reiniciando..."
+    },
+    "screenshot": {
+      "saved": "¡Captura guardada!",
+      "failed": "Error al capturar la pantalla",
+      "noStream": "No se encontró stream de video",
+      "blocked": "Captura bloqueada por DRM de la plataforma",
+      "timeout": "Tiempo agotado para capturar"
     }
   },
   "skeleton": {

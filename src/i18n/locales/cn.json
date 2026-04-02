@@ -103,6 +103,13 @@
       "failedUpdate": "下载更新失败",
       "downloading": "正在下载更新...",
       "success": "更新完成！正在重启..."
+    },
+    "screenshot": {
+      "saved": "截图已保存！",
+      "failed": "截图失败",
+      "noStream": "未找到视频流",
+      "blocked": "截图被平台DRM阻止",
+      "timeout": "截图超时"
     }
   },
   "skeleton": {

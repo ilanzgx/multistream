@@ -2294,6 +2294,8 @@ dependencies = [
 name = "multistream"
 version = "0.10.1"
 dependencies = [
+ "base64 0.22.1",
+ "dirs",
  "log",
  "serde",
  "serde_json",

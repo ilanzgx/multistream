@@ -103,6 +103,13 @@
       "failedUpdate": "Failed to download update",
       "downloading": "Downloading update...",
       "success": "Update complete! Restarting..."
+    },
+    "screenshot": {
+      "saved": "Screenshot saved!",
+      "failed": "Failed to capture screenshot",
+      "noStream": "No video stream found",
+      "blocked": "Screenshot blocked by platform DRM",
+      "timeout": "Screenshot timed out"
     }
   },
   "skeleton": {
