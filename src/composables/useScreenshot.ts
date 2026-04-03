@@ -89,9 +89,15 @@ export function useScreenshot() {
         return;
       }
 
-      // build filename: channel_platform_2026-04-02_13-42-16.png
+      // build filename: channel_platform_YYYY-MM-DD_HH-mm-ss.png
       const now = new Date();
-      const timestamp = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const YYYY = now.getFullYear();
+      const MM = (now.getMonth() + 1).toString().padStart(2, "0");
+      const DD = now.getDate().toString().padStart(2, "0");
+      const hh = now.getHours().toString().padStart(2, "0");
+      const mm = now.getMinutes().toString().padStart(2, "0");
+      const ss = now.getSeconds().toString().padStart(2, "0");
+      const timestamp = `${YYYY}-${MM}-${DD}_${hh}-${mm}-${ss}`;
       const filename = `${channel}_${platform}_${timestamp}.png`;
 
       if (isTauri()) {

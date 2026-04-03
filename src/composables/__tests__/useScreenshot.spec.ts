@@ -161,7 +161,7 @@ describe("useScreenshot composable unit tests", () => {
     // Assert
     expect(tauriCore.invoke).toHaveBeenCalledWith("save_screenshot", {
       dataUrl: "data:image/png;base64,mockdata",
-      filename: "gaules_twitch_2026-04-02T13-42-16.png",
+      filename: expect.stringMatching(/^gaules_twitch_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png$/),
     });
     expect(toast.success).toHaveBeenCalledWith("toasts.screenshot.saved", expect.any(Object));
   });
