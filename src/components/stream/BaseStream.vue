@@ -2,7 +2,7 @@
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { X, Heart, Maximize2, Camera } from "lucide-vue-next";
-import { ref, onMounted, nextTick, computed } from "vue";
+import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
@@ -56,7 +56,18 @@ onMounted(() => {
       });
     }
   });
+
+  window.addEventListener("multistream-screenshot", onScreenshotEvent);
 });
+
+onUnmounted(() => {
+  window.removeEventListener("multistream-screenshot", onScreenshotEvent);
+});
+
+function onScreenshotEvent() {
+  if (!isFocused(props.channelid)) return;
+  handleScreenshot();
+}
 
 const handleFavoriteStream = (channel: string, platform: Platform) => {
   if (isFavorite.value) {

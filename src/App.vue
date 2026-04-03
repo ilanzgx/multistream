@@ -38,17 +38,31 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
     if (stream) {
       setSelectedChat(stream.channel);
     }
+    return;
+  }
+
+  // S: screenshot focused stream
+  if (e.key.toLowerCase() === "s") {
+    window.dispatchEvent(new CustomEvent("multistream-screenshot"));
   }
 }
 
 function handleFrameShortcuts(e: MessageEvent) {
   if (e.data?.type !== "SHORTCUT") return;
+
+  // 1-9: quick select chat
   const num = parseInt(e.data.key, 10);
   if (num >= 1 && num <= 9) {
     const stream = streams.value[num - 1];
     if (stream) {
       setSelectedChat(stream.channel);
     }
+    return;
+  }
+
+  // S: screenshot focused stream
+  if (e.data?.key?.toLowerCase() === "s") {
+    window.dispatchEvent(new CustomEvent("multistream-screenshot"));
   }
 }
 

@@ -4,18 +4,18 @@
 
   // intercept keydown events inside the iframe and forward to parent
   window.addEventListener("keydown", function (e) {
-    // allow platform players to handle their own shortcuts first
-    // only forward 1-9 keys to parent so the parent can select chats
-    if (e.key >= "1" && e.key <= "9") {
-      if (
-        document.activeElement &&
-        (document.activeElement.tagName === "INPUT" ||
-          document.activeElement.tagName === "TEXTAREA" ||
-          document.activeElement.isContentEditable)
-      )
-        return;
+    if (
+      document.activeElement &&
+      (document.activeElement.tagName === "INPUT" ||
+        document.activeElement.tagName === "TEXTAREA" ||
+        document.activeElement.isContentEditable)
+    )
+      return;
 
-      window.parent.postMessage({ type: "SHORTCUT", key: e.key }, "*");
+    var key = e.key;
+    // forward 1-9 (select chat) and S (screenshot)
+    if ((key >= "1" && key <= "9") || key === "s" || key === "S") {
+      window.parent.postMessage({ type: "SHORTCUT", key: key }, "*");
 
       e.preventDefault();
       e.stopPropagation();
