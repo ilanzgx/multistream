@@ -94,33 +94,39 @@ defineExpose({ openAddDialog });
       </div>
 
       <!-- chat area -->
-      <div class="flex-1 overflow-hidden">
+      <div class="relative flex-1 overflow-hidden">
         <KickChat
-          v-if="selectedChatData?.platform === 'kick'"
-          :channel="selectedChat"
+          v-for="stream in streams.filter((s) => s.platform === 'kick')"
+          :key="`chat-${stream.id}`"
+          v-show="selectedChat === stream.channel"
+          :channel="stream.channel"
         />
         <TwitchChat
-          v-else-if="selectedChatData?.platform === 'twitch'"
-          :channel="selectedChat"
+          v-for="stream in streams.filter((s) => s.platform === 'twitch')"
+          :key="`chat-${stream.id}`"
+          v-show="selectedChat === stream.channel"
+          :channel="stream.channel"
         />
         <YoutubeChat
-          v-else-if="selectedChatData?.platform === 'youtube'"
-          :channel="selectedChat"
+          v-for="stream in streams.filter((s) => s.platform === 'youtube')"
+          :key="`chat-${stream.id}`"
+          v-show="selectedChat === stream.channel"
+          :channel="stream.channel"
         />
         <div
-          v-else-if="!selectedChat && streams.length > 0"
-          class="flex items-center justify-center h-full text-muted-foreground"
-        >
-          <p class="text-center px-4 text-white">
-            {{ $t("chat.selectPrompt") }}
-          </p>
-        </div>
-        <div
-          v-else-if="streams.length === 0"
-          class="flex items-center justify-center h-full text-muted-foreground"
+          v-if="streams.length === 0"
+          class="absolute inset-0 flex items-center justify-center text-muted-foreground"
         >
           <p class="text-center px-4 text-white">
             {{ $t("chat.noStreams") }}<br />{{ $t("chat.noStreamsHint") }}
+          </p>
+        </div>
+        <div
+          v-else-if="!selectedChat"
+          class="absolute inset-0 flex items-center justify-center text-muted-foreground"
+        >
+          <p class="text-center px-4 text-white">
+            {{ $t("chat.selectPrompt") }}
           </p>
         </div>
       </div>
