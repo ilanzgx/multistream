@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import { Menu } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
@@ -21,6 +21,36 @@ const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
 const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
 const { locale } = useI18n();
+
+function handleGlobalKeyDown(e: KeyboardEvent) {
+  const target = e.target as HTMLElement;
+  if (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.isContentEditable
+  ) {
+    return;
+  }
+
+  const num = parseInt(e.key, 10);
+  if (num >= 1 && num <= 9) {
+    const stream = streams.value[num - 1];
+    if (stream) {
+      setSelectedChat(stream.channel);
+    }
+  }
+}
+
+function handleFrameShortcuts(e: MessageEvent) {
+  if (e.data?.type !== "SHORTCUT") return;
+  const num = parseInt(e.data.key, 10);
+  if (num >= 1 && num <= 9) {
+    const stream = streams.value[num - 1];
+    if (stream) {
+      setSelectedChat(stream.channel);
+    }
+  }
+}
 
 watch(streams, (newStreams, oldStreams) => {
   if (
@@ -52,6 +82,8 @@ watch(locale, () => {
 });
 
 onMounted(() => {
+  window.addEventListener("keydown", handleGlobalKeyDown);
+  window.addEventListener("message", handleFrameShortcuts);
   // dismiss splash screen after a brief moment so user sees the loading state
   const splash = document.getElementById("splash");
   if (splash) {
@@ -86,6 +118,11 @@ onMounted(() => {
     toast.error("Failed to parse custom streams");
     window.history.replaceState({}, "", window.location.pathname);
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", handleGlobalKeyDown);
+  window.removeEventListener("message", handleFrameShortcuts);
 });
 </script>
 

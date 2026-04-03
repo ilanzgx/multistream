@@ -10,6 +10,7 @@ const LOCALHOST_PORT: u16 = 14831;
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 const SCREENSHOT_SCRIPT: &str = include_str!("core/screenshot_capture.js");
+const KEYBOARD_SCRIPT: &str = include_str!("core/keyboard_shortcuts.js");
 
 // invokable function to send a native OS notification
 // title and body are pre-built by the frontend (with i18n support)
@@ -118,6 +119,7 @@ pub fn run() {
             let metrics_injector = format!("eval(atob('{}'));", METRICS);
 
             // create the window manually so can set user_agent
+            // And inject scripts to global window
             tauri::WebviewWindowBuilder::new(app, "main", url)
                 .title("Multistream")
                 .inner_size(1280.0, 720.0)
@@ -129,6 +131,7 @@ pub fn run() {
                 .initialization_script_for_all_frames(&player_injector)
                 .initialization_script_for_all_frames(&metrics_injector)
                 .initialization_script_for_all_frames(SCREENSHOT_SCRIPT)
+                .initialization_script_for_all_frames(KEYBOARD_SCRIPT)
                 .build()?;
 
             // system tray
