@@ -13,8 +13,8 @@
       return;
 
     var key = e.key;
-    // forward 1-9 (select chat) and S (screenshot)
-    if ((key >= "1" && key <= "9") || key === "s" || key === "S") {
+    // forward 1-9 (select chat), S (screenshot), D (add dialog)
+    if ((key >= "1" && key <= "9") || key === "s" || key === "S" || key === "d" || key === "D") {
       window.parent.postMessage({ type: "SHORTCUT", key: key }, "*");
 
       e.preventDefault();

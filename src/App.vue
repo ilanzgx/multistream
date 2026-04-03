@@ -44,6 +44,14 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
   // S: screenshot focused stream
   if (e.key.toLowerCase() === "s") {
     window.dispatchEvent(new CustomEvent("multistream-screenshot"));
+    return;
+  }
+
+  // D: open add stream dialog
+  if (e.key.toLowerCase() === "d") {
+    window.dispatchEvent(new CustomEvent("multistream-show-dialog", {
+      detail: "add-stream",
+    }));
   }
 }
 
@@ -63,6 +71,14 @@ function handleFrameShortcuts(e: MessageEvent) {
   // S: screenshot focused stream
   if (e.data?.key?.toLowerCase() === "s") {
     window.dispatchEvent(new CustomEvent("multistream-screenshot"));
+    return;
+  }
+
+  // D: open add stream dialog
+  if (e.data?.key?.toLowerCase() === "d") {
+    window.dispatchEvent(new CustomEvent("multistream-show-dialog", {
+      detail: "add-stream",
+    }));
   }
 }
 
