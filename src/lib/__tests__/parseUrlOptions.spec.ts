@@ -116,17 +116,62 @@ describe("parseUrlOptions util unit tests", () => {
     }).toThrow("Invalid custom streams payload");
   });
 
-  it("should ignore customParam if it parses to a valid JSON Object instead of an Array", () => {
+  it("should throw an error if the base64 parses to a JSON Object instead of an Array", () => {
     // Arrange
     const jsonObject = { n: "Stream", u: "https://iframe.url" };
     const base64Param = btoa(JSON.stringify(jsonObject));
+
+    // Act & Assert
+    expect(() => {
+      sut(`?c=${encodeURIComponent(base64Param)}`);
+    }).toThrow("Invalid custom streams payload");
+  });
+
+  it("should throw an error if a custom stream URL uses javascript: protocol", () => {
+    // Arrange
+    const maliciousPayload = [{ n: "Evil", u: "javascript:alert('xss')" }];
+    const base64Param = btoa(JSON.stringify(maliciousPayload));
+
+    // Act & Assert
+    expect(() => {
+      sut(`?c=${encodeURIComponent(base64Param)}`);
+    }).toThrow("Invalid custom stream URL");
+  });
+
+  it("should throw an error if a custom stream URL uses data: protocol", () => {
+    // Arrange
+    const maliciousPayload = [{ n: "Evil", u: "data:text/html,<h1>evil</h1>" }];
+    const base64Param = btoa(JSON.stringify(maliciousPayload));
+
+    // Act & Assert
+    expect(() => {
+      sut(`?c=${encodeURIComponent(base64Param)}`);
+    }).toThrow("Invalid custom stream URL");
+  });
+
+  it("should throw an error if a custom stream URL uses about: protocol", () => {
+    // Arrange
+    const maliciousPayload = [{ n: "Evil", u: "about:blank" }];
+    const base64Param = btoa(JSON.stringify(maliciousPayload));
+
+    // Act & Assert
+    expect(() => {
+      sut(`?c=${encodeURIComponent(base64Param)}`);
+    }).toThrow("Invalid custom stream URL");
+  });
+
+  it("should accept http:// URLs as valid custom streams", () => {
+    // Arrange
+    const payload = [{ n: "Local Dev", u: "http://localhost:3000" }];
+    const base64Param = btoa(JSON.stringify(payload));
 
     // Act
     const result = sut(`?c=${encodeURIComponent(base64Param)}`);
 
     // Assert
     expect(result).not.toBeNull();
-    expect(result?.length).toBe(0); // Ignored because it's not an array
+    expect(result?.length).toBe(1);
+    expect(result?.[0]?.iframeUrl).toBe("http://localhost:3000");
   });
 
   it("should safely ignore malformed items in 'streams' parameter", () => {

@@ -10,13 +10,20 @@ const props = defineProps<{
 
 const safeUrl = computed(() => {
   if (!props.iframeUrl) return "";
-  if (
-    !props.iframeUrl.startsWith("http://") &&
-    !props.iframeUrl.startsWith("https://")
-  ) {
-    return `https://${props.iframeUrl}`;
+  let url = props.iframeUrl;
+  if (!url.startsWith("http://") && !url.startsWith("https://")) {
+    url = `https://${url}`;
   }
-  return props.iframeUrl;
+  // reject non-HTTP(S) protocols
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return "";
+    }
+  } catch {
+    return "";
+  }
+  return url;
 });
 </script>
 
