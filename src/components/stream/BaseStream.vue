@@ -2,7 +2,7 @@
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { X, Heart, Maximize2, Camera } from "lucide-vue-next";
-import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
@@ -46,16 +46,14 @@ const isMiniaturized = computed(
 );
 
 onMounted(() => {
-  nextTick(() => {
-    const iframe = containerRef.value?.querySelector("iframe");
-    if (iframe) {
-      iframe.addEventListener("load", () => {
-        setTimeout(() => {
-          isLoading.value = false;
-        }, 2000);
-      });
-    }
-  });
+  const iframe = containerRef.value?.querySelector("iframe");
+  if (iframe) {
+    iframe.addEventListener("load", () => {
+      setTimeout(() => {
+        isLoading.value = false;
+      }, 2000);
+    });
+  }
 
   window.addEventListener("multistream-screenshot", onScreenshotEvent);
 });

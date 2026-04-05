@@ -18,6 +18,7 @@ const _useStreams = () => {
   const { t } = useI18n();
   const streams = useStorage<Stream[]>("streams", []);
   const { addRecent } = useRecents();
+  const { clearFocus, focusedStreamId } = useFocusedStream();
 
   /**
    * @brief Add a stream
@@ -79,7 +80,6 @@ const _useStreams = () => {
     const stream = streams.value.find((s) => s.id === id);
     streams.value = streams.value.filter((s) => s.id !== id);
 
-    const { focusedStreamId, clearFocus } = useFocusedStream();
     if (focusedStreamId.value === id) {
       clearFocus();
     }
@@ -98,7 +98,6 @@ const _useStreams = () => {
    */
   const clearStreams = () => {
     streams.value = [];
-    const { clearFocus } = useFocusedStream();
     clearFocus();
   };
 

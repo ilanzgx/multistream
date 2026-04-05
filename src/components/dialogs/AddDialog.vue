@@ -112,7 +112,12 @@ const handleAddStream = () => {
 
       // detect platform from URL
       for (const platform of Object.values(PLATFORMS)) {
-        if (platform.domains.some((domain) => url.hostname.includes(domain))) {
+        if (
+          platform.domains.some(
+            (domain) =>
+              url.hostname === domain || url.hostname.endsWith("." + domain),
+          )
+        ) {
           selectedPlatform.value = platform.id as Platform;
           break;
         }

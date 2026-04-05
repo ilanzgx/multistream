@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { usePreferences } from "@/composables/usePreferences";
 import { useStreams } from "@/composables/useStreams";
 import { Button } from "@/components/ui/button";
@@ -41,18 +41,12 @@ const appVersion = import.meta.env.VITE_APP_VERSION;
 const { streams } = useStreams();
 const { selectedChat, sidebarOpen } = usePreferences();
 
-/*
-const selectedChatData = computed(() => {
-  return streams.value.find((s) => s.channel === selectedChat.value);
-});*/
-
 function openAddDialog() {
   addDialogOpen.value = true;
 }
 
 defineExpose({ openAddDialog });
 
-// listen for shortcut events dispatched from App.vue
 function handleShortcutEvent(e: Event) {
   const evt = e as CustomEvent;
   if (evt.detail === "add-stream") {
@@ -60,7 +54,13 @@ function handleShortcutEvent(e: Event) {
   }
 }
 
-window.addEventListener("multistream-show-dialog", handleShortcutEvent);
+onMounted(() => {
+  window.addEventListener("multistream-show-dialog", handleShortcutEvent);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("multistream-show-dialog", handleShortcutEvent);
+});
 </script>
 
 <template>
