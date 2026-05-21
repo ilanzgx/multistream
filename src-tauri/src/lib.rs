@@ -128,6 +128,13 @@ pub fn run() {
                 .maximized(true)
                 .background_color(Color(31, 34, 39, 255))
                 .user_agent(USER_AGENT)
+                .additional_browser_args(
+                    "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection \
+                     --disable-background-timer-throttling \
+                     --disable-backgrounding-occluded-windows \
+                     --disable-renderer-backgrounding \
+                     --autoplay-policy=no-user-gesture-required"
+                )
                 .initialization_script_for_all_frames(&player_injector)
                 .initialization_script_for_all_frames(&metrics_injector)
                 .initialization_script_for_all_frames(SCREENSHOT_SCRIPT)

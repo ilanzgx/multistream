@@ -142,14 +142,14 @@ const handleScreenshot = () => {
     <!-- stream controls - appears on hover -->
     <div
       :class="[
-        'absolute z-10 flex flex-col opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0',
+        'absolute z-10 flex flex-col opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none',
         isMiniaturized ? 'top-1 right-1 gap-1' : 'top-2 right-2 gap-2',
       ]"
     >
       <button
         @click="requestRemoveStream(channelid)"
         :class="[
-          'flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
+          'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
         ]"
       >
@@ -158,7 +158,7 @@ const handleScreenshot = () => {
       <button
         @click="handleFavoriteStream(channel, platform)"
         :class="[
-          'flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-pink-500/80 hover:text-white hover:border-pink-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
+          'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-pink-500/80 hover:text-white hover:border-pink-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
         ]"
       >
@@ -172,7 +172,7 @@ const handleScreenshot = () => {
         @click="handleScreenshot"
         :disabled="isCapturing"
         :class="[
-          'flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-blue-500/80 hover:text-white hover:border-blue-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
+          'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-blue-500/80 hover:text-white hover:border-blue-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
           isCapturing ? 'opacity-50 pointer-events-none' : '',
         ]"
@@ -183,7 +183,7 @@ const handleScreenshot = () => {
       <button
         @click="handleFocusStream(channelid)"
         :class="[
-          'flex items-center justify-center rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
+          'pointer-events-auto flex items-center justify-center rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
           isStreamFocused
             ? 'bg-yellow-500/80 text-white border-yellow-400/50 hover:bg-yellow-600/80'
