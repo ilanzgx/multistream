@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useStreams } from "../useStreams";
 import { toast } from "vue-sonner";
 
@@ -101,7 +101,7 @@ describe("useStreams composable unit tests", () => {
 
   it("should clear all streams", () => {
     // Arrange
-    const { addStream, clearStreams, streams } = sut;
+    const { addStream, clearStreams, streams, requestRemoveStream, isLeaving } = sut;
 
     addStream("s1", "twitch");
     addStream("s2", "kick");
@@ -109,11 +109,63 @@ describe("useStreams composable unit tests", () => {
     // Assert (check if streams were added)
     expect(streams.value.length).toBe(2);
 
+    const s1Id = streams.value[0]!.id;
+    requestRemoveStream(s1Id);
+    expect(isLeaving(s1Id)).toBe(true);
+
     // Act
     clearStreams();
 
-    // Assert (check if streams were cleared)
+    // Assert (check if streams were cleared and leaving is cleared)
     expect(streams.value.length).toBe(0);
+    expect(isLeaving(s1Id)).toBe(false);
+  });
+
+  describe("two-phase removal (requestRemoveStream)", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("should mark a stream as leaving and then remove it after delay", () => {
+      const { addStream, requestRemoveStream, isLeaving, streams } = sut;
+
+      addStream("testStream", "twitch");
+      const id = streams.value[0]!.id;
+
+      expect(isLeaving(id)).toBe(false);
+
+      // Act: request removal
+      requestRemoveStream(id);
+
+      // Assert phase 1: marked as leaving, but still in streams
+      expect(isLeaving(id)).toBe(true);
+      expect(streams.value.length).toBe(1);
+
+      // Act: advance time by 250ms
+      vi.advanceTimersByTime(250);
+
+      // Assert phase 2: stream is fully removed
+      expect(isLeaving(id)).toBe(false);
+      expect(streams.value.length).toBe(0);
+    });
+
+    it("should ignore duplicate requestRemoveStream calls for same stream ID", () => {
+      const { addStream, requestRemoveStream, isLeaving, streams } = sut;
+
+      addStream("testStream", "twitch");
+      const id = streams.value[0]!.id;
+
+      requestRemoveStream(id);
+      expect(isLeaving(id)).toBe(true);
+
+      // Call again - should do nothing
+      requestRemoveStream(id);
+      expect(isLeaving(id)).toBe(true);
+    });
   });
 
   describe("Grid classes", () => {
@@ -166,4 +218,65 @@ describe("useStreams composable unit tests", () => {
       expect(gridClass.value).toBe("grid-cols-4 grid-rows-3");
     });
   });
+
+  describe("Kick Stream Reload Counters Workaround", () => {
+    it("should generate standard keys for non-Kick streams and dynamic keys for Kick streams", () => {
+      const { addStream, getStreamKey, streams } = sut;
+
+      addStream("gaules", "twitch");
+      addStream("kick1", "kick");
+
+      const twitchStream = streams.value.find((s) => s.platform === "twitch")!;
+      const kickStream = streams.value.find((s) => s.platform === "kick")!;
+
+      expect(getStreamKey(twitchStream)).toBe(twitchStream.id);
+      expect(getStreamKey(kickStream)).toBe(`${kickStream.id}-kick-0`);
+    });
+
+    it("should increment reload counter of remaining Kick streams when a Kick stream is removed", () => {
+      const { addStream, removeStream, getStreamKey, streams } = sut;
+
+      addStream("kick1", "kick");
+      addStream("kick2", "kick");
+      addStream("gaules", "twitch");
+
+      const k1 = streams.value.find((s) => s.channel === "kick1")!;
+      const k2 = streams.value.find((s) => s.channel === "kick2")!;
+      const t1 = streams.value.find((s) => s.channel === "gaules")!;
+
+      expect(getStreamKey(k1)).toBe(`${k1.id}-kick-0`);
+      expect(getStreamKey(k2)).toBe(`${k2.id}-kick-0`);
+      expect(getStreamKey(t1)).toBe(t1.id);
+
+      // Act: Remove kick1
+      removeStream(k1.id);
+
+      // Assert: k2 should now have counter 1, t1 should still have standard id
+      const updatedK2 = streams.value.find((s) => s.channel === "kick2")!;
+      const updatedT1 = streams.value.find((s) => s.channel === "gaules")!;
+
+      expect(getStreamKey(updatedK2)).toBe(`${k2.id}-kick-1`);
+      expect(getStreamKey(updatedT1)).toBe(t1.id);
+    });
+
+    it("should not increment reload counters when a non-Kick stream is removed", () => {
+      const { addStream, removeStream, getStreamKey, streams } = sut;
+
+      addStream("kick1", "kick");
+      addStream("gaules", "twitch");
+
+      const k1 = streams.value.find((s) => s.channel === "kick1")!;
+      const t1 = streams.value.find((s) => s.channel === "gaules")!;
+
+      expect(getStreamKey(k1)).toBe(`${k1.id}-kick-0`);
+
+      // Act: Remove gaules (twitch)
+      removeStream(t1.id);
+
+      // Assert: k1 should still have counter 0
+      const updatedK1 = streams.value.find((s) => s.channel === "kick1")!;
+      expect(getStreamKey(updatedK1)).toBe(`${k1.id}-kick-0`);
+    });
+  });
 });
+

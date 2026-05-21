@@ -33,7 +33,7 @@ const safeUrl = computed(() => {
       :src="safeUrl"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
-      frameborder="0"
+      sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox allow-forms"
     />
   </BaseStream>
 </template>

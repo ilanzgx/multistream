@@ -8,7 +8,7 @@ import { useFocusedStream } from "@/composables/useFocusedStream";
 import { usePreferences } from "@/composables/usePreferences";
 import { computed, watch, nextTick } from "vue";
 
-const { streams, gridClass } = useStreams();
+const { streams, gridClass, isLeaving, getStreamKey } = useStreams();
 const { focusedStreamId, isFocused } = useFocusedStream();
 const { setSelectedChat } = usePreferences();
 
@@ -125,21 +125,20 @@ const getStreamClass = (index: number) => {
 </script>
 
 <template>
-  <TransitionGroup
-    tag="div"
-    name="stream"
+  <div
     class="h-full overflow-hidden"
     :class="!focusedStreamId ? ['grid', gridClass, 'gap-0.5'] : ''"
     :style="containerStyle"
   >
     <div
       v-for="(stream, index) in streams"
-      :key="stream.id"
+      :key="getStreamKey(stream)"
       :data-stream-id="stream.id"
       :style="getStreamStyle(stream.id)"
       :class="[
         getStreamClass(index),
         'min-h-0 min-w-0 stream-item overflow-hidden rounded-sm',
+        isLeaving(stream.id) ? 'stream-leaving' : '',
       ]"
     >
       <KickStream
@@ -164,42 +163,31 @@ const getStreamClass = (index: number) => {
         :iframeUrl="stream.iframeUrl || ''"
       />
     </div>
-  </TransitionGroup>
+  </div>
 </template>
-
 <style scoped>
-/* Stream add/remove animations */
-.stream-enter-active {
-  transition:
-    opacity 0.35s ease,
-    transform 0.35s ease;
-}
-.stream-leave-active {
-  transition:
-    opacity 0.25s ease,
-    transform 0.25s ease;
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
-.stream-enter-from {
-  opacity: 0;
-  transform: scale(0.95);
-}
-.stream-leave-to {
-  opacity: 0;
-  transform: scale(0.95);
-}
-
-/* Focus mode layout transition */
-:deep(.stream-item) {
+/* Stream enter animation — plays once when the element is inserted */
+.stream-item {
+  animation: stream-enter 0.35s ease;
   transition:
     grid-column 0.45s cubic-bezier(0.25, 0.8, 0.25, 1),
     grid-row 0.45s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* Gap between streams in focus mode */
-.stream-gap {
-  gap: 2px;
+/* Stream leave animation — two-phase: fade out in place, then remove from DOM */
+.stream-leaving {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+@keyframes stream-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
 }
 </style>

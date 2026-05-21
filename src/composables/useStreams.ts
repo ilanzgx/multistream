@@ -1,11 +1,13 @@
 import { createSharedComposable, useStorage } from "@vueuse/core";
-import { computed } from "vue";
+import { computed, reactive } from "vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { useRecents } from "./useRecents";
 import { useFocusedStream } from "./useFocusedStream";
 
 export type Platform = "kick" | "twitch" | "youtube" | "custom";
+
+const LEAVE_ANIMATION_MS = 250;
 
 export interface Stream {
   id: string;
@@ -19,6 +21,14 @@ const _useStreams = () => {
   const streams = useStorage<Stream[]>("streams", []);
   const { addRecent } = useRecents();
   const { clearFocus, focusedStreamId } = useFocusedStream();
+
+  // tracks streams currently animating out (two-phase removal)
+  // prevents iframe destruction caused by immediate DOM removal/reflow
+  const leavingIds = reactive(new Set<string>());
+
+  // tracks reload key suffixes for Kick streams to force re-render/reload when another Kick stream is removed
+  const kickReloadCounters = reactive<Record<string, number>>({});
+
 
   /**
    * @brief Add a stream
@@ -86,7 +96,54 @@ const _useStreams = () => {
 
     if (stream) {
       toast.success(`${stream.channel} ${t("toasts.remove")}`);
+
+      // If a Kick stream was removed, increment reload counters of remaining Kick streams
+      // to trigger an automatic reload of their iframes, restoring audio and process stability.
+      if (stream.platform === "kick") {
+        streams.value.forEach((s) => {
+          if (s.platform === "kick") {
+            kickReloadCounters[s.id] = (kickReloadCounters[s.id] || 0) + 1;
+          }
+        });
+      }
     }
+  };
+
+  /**
+   * @brief Request stream removal with animation
+   *
+   * Two-phase removal: first marks the stream as "leaving" to trigger
+   * a CSS fade-out animation, then removes it from the array after
+   * the animation completes. This prevents cross-origin iframes from
+   * being destroyed by TransitionGroup DOM manipulation / grid reflow.
+   *
+   * @param id The stream ID
+   * @return void
+   */
+  const requestRemoveStream = (id: string) => {
+    if (leavingIds.has(id)) return;
+    leavingIds.add(id);
+
+    setTimeout(() => {
+      leavingIds.delete(id);
+      removeStream(id);
+    }, LEAVE_ANIMATION_MS);
+  };
+
+  const isLeaving = (id: string) => leavingIds.has(id);
+
+  /**
+   * @brief Get unique Vue render key for a stream
+   *
+   * For Kick streams, appends a reload counter suffix to force re-rendering/reloading
+   * the iframe when another Kick stream has been removed.
+   */
+  const getStreamKey = (stream: Stream) => {
+    if (stream.platform === "kick") {
+      const counter = kickReloadCounters[stream.id] || 0;
+      return `${stream.id}-kick-${counter}`;
+    }
+    return stream.id;
   };
 
   /**
@@ -98,6 +155,7 @@ const _useStreams = () => {
    */
   const clearStreams = () => {
     streams.value = [];
+    leavingIds.clear();
     clearFocus();
   };
 
@@ -125,6 +183,9 @@ const _useStreams = () => {
     streams,
     addStream,
     removeStream,
+    requestRemoveStream,
+    isLeaving,
+    getStreamKey,
     clearStreams,
     gridClass,
   };

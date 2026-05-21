@@ -9,7 +9,7 @@ import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "vue-sonner";
 
-const { removeStream } = useStreams();
+const { requestRemoveStream } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
 const { toggleFocus, isFocused, clearFocus, focusedStreamId } =
   useFocusedStream();
@@ -147,7 +147,7 @@ const handleScreenshot = () => {
       ]"
     >
       <button
-        @click="removeStream(channelid)"
+        @click="requestRemoveStream(channelid)"
         :class="[
           'flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
@@ -204,6 +204,7 @@ const handleScreenshot = () => {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  border: none;
 }
 
 /* Skeleton fade-out */

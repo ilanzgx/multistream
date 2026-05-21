@@ -20,7 +20,6 @@ const parentHost = computed(() => {
       :src="`${PLATFORMS.twitch?.embedUrl}/?channel=${channel}&parent=${parentHost}&autoplay=true&muted=true`"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
-      frameborder="0"
     />
   </BaseStream>
 </template>
