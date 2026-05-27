@@ -7,9 +7,6 @@ defineProps<{ channel: string }>();
 
 <template>
   <BaseChat platform="kick">
-    <iframe
-      :src="`${PLATFORMS.kick?.chatUrl}/${channel}/chatroom`"
-      frameborder="0"
-    />
+    <iframe :src="`${PLATFORMS.kick?.chatUrl}/${channel}?readonly=true`" frameborder="0" />
   </BaseChat>
 </template>

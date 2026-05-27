@@ -1,9 +1,4 @@
-import {
-  CustomIcon,
-  KickIcon,
-  TwitchIcon,
-  YoutubeIcon,
-} from "@/components/icons";
+import { CustomIcon, KickIcon, TwitchIcon, YoutubeIcon } from "@/components/icons";
 import type { Component } from "vue";
 
 interface PlatformConfig {
@@ -24,8 +19,8 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
     color: "#53FC18",
     icon: KickIcon,
     baseUrl: "https://kick.com",
-    embedUrl: "https://player.kick.com",
-    chatUrl: "https://kick.com",
+    embedUrl: "https://player.kick.cx",
+    chatUrl: "https://chat.kick.cx/embed",
     domains: ["kick.com", "kick.start.gg"],
   },
   twitch: {
