@@ -184,7 +184,7 @@ const canSubmit = computed(() => {
         <section v-if="recents.length" class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl">
           <!-- recent title -->
           <div class="flex items-center gap-3">
-            <div class="flex items-center justify-center size-10 rounded-lg bg-[#1a1d21] border border-[#2a2d33]">
+            <div class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]">
               <History class="size-5 text-gray-400" />
             </div>
             <div>
@@ -204,7 +204,7 @@ const canSubmit = computed(() => {
         <!-- favorites -->
         <section v-if="sortedFavorites.length" class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl">
           <div class="flex items-center gap-3">
-            <div class="flex items-center justify-center size-10 rounded-lg bg-[#1a1d21] border border-[#2a2d33]">
+            <div class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]">
               <Heart class="size-5 text-gray-400" />
             </div>
             <div>
@@ -235,15 +235,15 @@ const canSubmit = computed(() => {
           </div>
 
           <!-- custom iframe URL input -->
-          <div v-if="isCustom" class="flex flex-col sm:flex-row gap-4 w-full">
-            <div class="flex-1 space-y-2">
+          <div v-if="isCustom" class="flex flex-col sm:flex-row gap-2 w-full">
+            <div class="sm:w-2/3">
               <label class="text-sm font-medium text-gray-300">{{ $t("add.iframeUrlLabel") }}</label>
               <input v-model="iframeUrl" type="text" :placeholder="$t('add.iframeUrlPlaceholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" @keyup.enter="handleAddStream" />
             </div>
-            <div class="sm:w-1/3 space-y-2">
-              <label class="text-sm font-medium text-gray-300 flex items-center justify-between gap-2">
+            <div class="sm:w-1/3">
+              <label class="text-sm font-medium text-gray-300">
                 <span>{{ splitLabel($t("add.customNameLabel")).main }}</span>
-                <span v-if="splitLabel($t('add.customNameLabel')).sub" class="text-[10px] text-gray-500 font-normal lowercase tracking-wide shrink-0"> ({{ splitLabel($t("add.customNameLabel")).sub }}) </span>
+                <span v-if="splitLabel($t('add.customNameLabel')).sub" class="text-[10px] text-gray-500 font-normal lowercase tracking-wide shrink-0 ml-2"> ({{ splitLabel($t("add.customNameLabel")).sub }}) </span>
               </label>
               <input v-model="channelName" type="text" :placeholder="$t('add.customNamePlaceholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" />
             </div>
