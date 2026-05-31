@@ -52,7 +52,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       <DialogClose
         v-if="showCloseButton"
         data-slot="dialog-close"
-        class="data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs text-white opacity-70 transition-opacity hover:opacity-100 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        class="data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-lg p-1.5 text-white/60 transition-all duration-200 hover:text-white hover:bg-white/10 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
       >
         <X />
         <span class="sr-only">Close</span>
