@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import StreamChip from "./_components/StreamChip.vue";
@@ -9,6 +9,7 @@ import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useFavorites } from "@/composables/useFavorites";
 import { PLATFORMS } from "@/config/platforms";
 import { History, Heart } from "lucide-vue-next";
+import { parseStreamUrl } from "@/lib/platformParser";
 
 // props
 const props = defineProps<{
@@ -72,6 +73,58 @@ const selectedPlatform = ref<Platform>(PLATFORMS.kick!.id as Platform);
 
 const isCustom = computed(() => selectedPlatform.value === "custom");
 
+const customNameInput = ref<HTMLInputElement | null>(null);
+
+const detectAndApply = async (value: string) => {
+  const result = parseStreamUrl(value);
+  if (!result) return false;
+
+  selectedPlatform.value = result.platform;
+
+  if (result.platform === "custom") {
+    iframeUrl.value = result.iframeUrl || "";
+    channelName.value = "";
+    await nextTick();
+    customNameInput.value?.focus();
+  } else {
+    channelName.value = result.channel;
+  }
+  return true;
+};
+
+const handlePaste = (e: ClipboardEvent) => {
+  const pastedText = e.clipboardData?.getData("text") || "";
+  const result = parseStreamUrl(pastedText);
+  if (result) {
+    e.preventDefault();
+    detectAndApply(pastedText);
+  }
+};
+
+const handleBlur = () => {
+  if (channelName.value) {
+    detectAndApply(channelName.value);
+  }
+};
+
+const handleIframePaste = (e: ClipboardEvent) => {
+  const pastedText = e.clipboardData?.getData("text") || "";
+  const result = parseStreamUrl(pastedText);
+  if (result && result.platform !== "custom") {
+    e.preventDefault();
+    detectAndApply(pastedText);
+  }
+};
+
+const handleIframeBlur = () => {
+  if (iframeUrl.value) {
+    const result = parseStreamUrl(iframeUrl.value);
+    if (result && result.platform !== "custom") {
+      detectAndApply(iframeUrl.value);
+    }
+  }
+};
+
 const handleAddStream = () => {
   if (!canSubmit.value) return;
 
@@ -93,41 +146,26 @@ const handleAddStream = () => {
 
   let channel = channelName.value.trim();
 
-  // if it's a url
-  if (channel.includes(".com") || channel.includes(".tv")) {
-    try {
-      const url = new URL(channel);
-
-      // detect platform from URL
-      for (const platform of Object.values(PLATFORMS)) {
-        if (platform.domains.some((domain) => url.hostname === domain || url.hostname.endsWith("." + domain))) {
-          selectedPlatform.value = platform.id as Platform;
-          break;
-        }
-      }
-
-      // extract channel/video based on platform
-      if (selectedPlatform.value === PLATFORMS.youtube!.id) {
-        const videoId = url.searchParams.get("v");
-        if (videoId) {
-          // youtube.com/watch?v=VIDEO_ID
-          channel = videoId;
-        } else {
-          // youtube.com/live/VIDEO_ID or youtube.com/@channel/live
-          const pathParts = url.pathname.split("/").filter(Boolean);
-          channel = pathParts.pop() || channel;
-        }
-      } else {
-        // kick.com/channel or twitch.tv/channel
-        const pathParts = url.pathname.split("/").filter(Boolean);
-        channel = pathParts.pop() || channel;
-      }
-    } catch {
-      // if not a valid URL, try to extract manually
-      const parts = channel.split("/").filter(Boolean);
-      channel = parts.pop() || channel;
-      channel = channel.split("?")[0] || channel;
+  const parsedResult = parseStreamUrl(channel);
+  if (parsedResult) {
+    selectedPlatform.value = parsedResult.platform;
+    if (parsedResult.platform === "custom") {
+      let url = parsedResult.iframeUrl || "";
+      const name = "Custom Stream";
+      addStream(name, "custom", url);
+      channelName.value = "";
+      iframeUrl.value = "";
+      selectedPlatform.value = PLATFORMS.kick!.id as Platform;
+      emit("update:open", false);
+      return;
+    } else {
+      channel = parsedResult.channel;
     }
+  } else {
+    // if not a valid URL, try to extract manually
+    const parts = channel.split("/").filter(Boolean);
+    channel = parts.pop() || channel;
+    channel = channel.split("?")[0] || channel;
   }
 
   if (!channel) {
@@ -238,14 +276,14 @@ const canSubmit = computed(() => {
           <div v-if="isCustom" class="flex flex-col sm:flex-row gap-2 w-full">
             <div class="sm:w-2/3">
               <label class="text-sm font-medium text-gray-300">{{ $t("add.iframeUrlLabel") }}</label>
-              <input v-model="iframeUrl" type="text" :placeholder="$t('add.iframeUrlPlaceholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" @keyup.enter="handleAddStream" />
+              <input v-model="iframeUrl" type="text" :placeholder="$t('add.iframeUrlPlaceholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" @keyup.enter="handleAddStream" @paste="handleIframePaste" @blur="handleIframeBlur" />
             </div>
             <div class="sm:w-1/3">
               <label class="text-sm font-medium text-gray-300">
                 <span>{{ splitLabel($t("add.customNameLabel")).main }}</span>
                 <span v-if="splitLabel($t('add.customNameLabel')).sub" class="text-[10px] text-gray-500 font-normal lowercase tracking-wide shrink-0 ml-2"> ({{ splitLabel($t("add.customNameLabel")).sub }}) </span>
               </label>
-              <input v-model="channelName" type="text" :placeholder="$t('add.customNamePlaceholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" />
+              <input ref="customNameInput" v-model="channelName" type="text" :placeholder="$t('add.customNamePlaceholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" />
             </div>
           </div>
 
@@ -253,7 +291,7 @@ const canSubmit = computed(() => {
           <div v-else class="space-y-2">
             <label v-if="selectedPlatform === 'kick' || selectedPlatform === 'twitch'" class="text-sm font-medium text-gray-300">{{ $t("add.channelLabel") }}</label>
             <label v-else class="text-sm font-medium text-gray-300">{{ $t("add.videoIdLabel") }}</label>
-            <input v-model="channelName" type="text" :placeholder="$t('add.placeholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" @keyup.enter="handleAddStream" />
+            <input v-model="channelName" type="text" :placeholder="$t('add.placeholder')" class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500" @keyup.enter="handleAddStream" @paste="handlePaste" @blur="handleBlur" />
           </div>
         </div>
       </div>
