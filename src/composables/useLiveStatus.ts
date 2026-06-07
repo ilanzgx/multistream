@@ -155,94 +155,109 @@ async function checkTwitchStreams(
   }
 }
 
+const TWITCH_PAGE_SIZE = 30;
+
 /**
- * @brief Fetch Twitch suggestions
+ * @brief Fetch a single page of Twitch suggestions
  *
- * Fetches the top streams from Twitch using cursor-based pagination.
- * Pages of 30 streams are fetched until the desired limit is reached.
- * Results are sorted with the user's language first.
+ * Fetches one page of top streams from Twitch using cursor-based pagination.
  *
- * @param limit The maximum number of suggestions to return
- * @return The suggestions
+ * @param cursor The cursor from the previous page, or null for the first page
+ * @param pageSize The number of streams per page
+ * @return The streams and the cursor for the next page
  */
-async function fetchTwitchSuggestions(
-  limit: number = REFRESH_CONFIG.suggestionsLimit,
-): Promise<SuggestedStream[]> {
+async function fetchTwitchSuggestionsPage(
+  cursor: string | null,
+  pageSize: number = TWITCH_PAGE_SIZE,
+): Promise<{ streams: any[]; nextCursor: string | null }> {
   try {
-    const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
-    const twitchLanguage =
-      SUPPORTED_LANGUAGES[locale]?.apiCodes.twitch ??
-      SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.twitch;
-
-    const PAGE_SIZE = 30;
-    const allStreams: any[] = [];
-    let cursor: string | null = null;
-
-    // fetch pages until we have enough streams or run out of results
-    while (allStreams.length < limit) {
-      const afterClause = cursor ? `, after: "${cursor}"` : "";
-      const query = `
-        query {
-          streams(first: ${PAGE_SIZE}${afterClause}, options: {sort: VIEWER_COUNT}) {
-            edges {
-              cursor
-              node {
-                broadcaster { login, broadcastSettings { language } }
-                title
-                viewersCount
-                game { displayName }
-                previewImageURL(width: 640, height: 360)
-              }
+    const afterClause = cursor ? `, after: "${cursor}"` : "";
+    const query = `
+      query {
+        streams(first: ${pageSize}${afterClause}, options: {sort: VIEWER_COUNT}) {
+          edges {
+            cursor
+            node {
+              broadcaster { login, broadcastSettings { language } }
+              title
+              viewersCount
+              game { displayName }
+              previewImageURL(width: 640, height: 360)
             }
           }
         }
-      `;
-
-      const response = await httpPost(
-        API_CONFIG.twitch.gqlUrl,
-        JSON.stringify({ query }),
-        {
-          "Client-Id": API_CONFIG.twitch.clientId,
-          "Content-Type": "application/json",
-        },
-      );
-
-      if (!response.ok) break;
-      const data = await response.json();
-
-      const edges = data.data?.streams?.edges ?? [];
-      if (edges.length === 0) break;
-
-      for (const edge of edges) {
-        allStreams.push({
-          channel: edge.node.broadcaster.login,
-          platform: "twitch" as Platform,
-          title: edge.node.title,
-          category: edge.node.game?.displayName || "Just Chatting",
-          viewerCount: edge.node.viewersCount,
-          language: edge.node.broadcaster.broadcastSettings?.language ?? "en",
-          thumbnail: edge.node.previewImageURL,
-        });
       }
+    `;
 
-      cursor = edges[edges.length - 1]?.cursor ?? null;
-
-      if (edges.length < PAGE_SIZE) break;
-    }
-
-    const filtered = allStreams.filter(
-      (s: any) => s.language === twitchLanguage,
+    const response = await httpPost(
+      API_CONFIG.twitch.gqlUrl,
+      JSON.stringify({ query }),
+      {
+        "Client-Id": API_CONFIG.twitch.clientId,
+        "Content-Type": "application/json",
+      },
     );
 
-    return [
-      ...filtered,
-      ...allStreams.filter((s: any) => s.language !== twitchLanguage),
-    ]
-      .slice(0, limit)
-      .map(({ language, ...s }: any) => s);
+    if (!response.ok) return { streams: [], nextCursor: null };
+    const data = await response.json();
+
+    const edges = data.data?.streams?.edges ?? [];
+    if (edges.length === 0) return { streams: [], nextCursor: null };
+
+    const streams = edges.map((edge: any) => ({
+      channel: edge.node.broadcaster.login,
+      platform: "twitch" as Platform,
+      title: edge.node.title,
+      category: edge.node.game?.displayName || "Just Chatting",
+      viewerCount: edge.node.viewersCount,
+      language: edge.node.broadcaster.broadcastSettings?.language ?? "en",
+      thumbnail: edge.node.previewImageURL,
+    }));
+
+    const nextCursor =
+      edges.length < pageSize
+        ? null
+        : (edges[edges.length - 1]?.cursor ?? null);
+
+    return { streams, nextCursor };
   } catch {
-    return [];
+    return { streams: [], nextCursor: null };
   }
+}
+
+/**
+ * @brief Process raw Twitch streams into suggestions
+ *
+ * Sorts streams with the user's language first,
+ * slices to the limit, and maps to SuggestedStream format.
+ *
+ * @param raw The raw streams from fetchTwitchSuggestionsPage
+ * @param twitchLanguage The Twitch language code to prioritize
+ * @param limit The maximum number of suggestions to return
+ * @return The processed suggestions
+ */
+function processTwitchStreams(
+  raw: any[],
+  twitchLanguage: string,
+  limit: number = REFRESH_CONFIG.suggestionsLimit,
+): SuggestedStream[] {
+  // deduplicate by channel login
+  const seen = new Set<string>();
+  const unique = raw.filter((s: any) => {
+    const key = s.channel?.toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  const filtered = unique.filter((s: any) => s.language === twitchLanguage);
+
+  return [
+    ...filtered,
+    ...unique.filter((s: any) => s.language !== twitchLanguage),
+  ]
+    .slice(0, limit)
+    .map(({ language, ...s }: any) => s);
 }
 
 /**
@@ -303,88 +318,103 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap | null> {
 }
 
 /**
- * @brief Fetch all Kick streams
+ * @brief Fetch a single page of Kick featured streams
  *
- * Fetches all Kick streams.
- * This function fetches all Kick streams and returns them.
- * If there are not enough streams in the language, it uses all streams.
- * This for now gets only REFRESH_CONFIG.maxKickPages (3) pages. (08/03/2026)
+ * Fetches one page of featured livestreams from Kick.
  *
- * @return The streams
+ * @param page The page number (1-indexed)
+ * @param kickLangCode The Kick language code for the URL
+ * @return The raw streams from that page
  */
-async function fetchAllKickStreams(): Promise<any[]> {
-  const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
-  const kickLanguage =
-    SUPPORTED_LANGUAGES[locale]?.apiCodes.kick ??
-    SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.kick;
-
-  const requests = Array.from({ length: REFRESH_CONFIG.maxKickPages }, (_, i) =>
-    httpGet(
-      `${API_CONFIG.kick.featuredUrl}/${kickLanguage?.code}?page=${i + 1}`,
-    ),
-  );
-
-  const responses = await Promise.all(requests);
-  const allStreams: any[] = [];
-
-  for (const res of responses) {
-    if (!res.ok) continue;
-    const data = await res.json();
-    allStreams.push(...(data.data ?? []));
+async function fetchKickStreamsPage(
+  page: number,
+  kickLangCode: string,
+): Promise<any[]> {
+  try {
+    const response = await httpGet(
+      `${API_CONFIG.kick.featuredUrl}/${kickLangCode}?page=${page}`,
+    );
+    if (!response.ok) return [];
+    const data = await response.json();
+    return data.data ?? [];
+  } catch {
+    return [];
   }
+}
 
-  const filtered = allStreams.filter(
-    (s) => s.language?.toLowerCase() === kickLanguage?.name.toLowerCase(),
+/**
+ * @brief Process raw Kick streams into suggestions
+ *
+ * Filters by language, deduplicates, sorts by viewer count,
+ * and maps to SuggestedStream format.
+ *
+ * @param raw The raw streams from fetchKickStreamsPage
+ * @param kickLangName The Kick language name for filtering
+ * @param limit The maximum number of suggestions to return
+ * @return The processed suggestions
+ */
+function processKickStreams(
+  raw: any[],
+  kickLangName: string,
+  limit: number = REFRESH_CONFIG.suggestionsLimit,
+): SuggestedStream[] {
+  const filtered = raw.filter(
+    (s) => s.language?.toLowerCase() === kickLangName.toLowerCase(),
   );
 
   // if there are not enough streams in the language, use all streams
-  const streams = filtered.length >= 4 ? filtered : allStreams;
+  const streams = filtered.length >= 4 ? filtered : raw;
 
-  // check if have duplicate streams
+  // deduplicate by channel slug
   const seen = new Set<string>();
-  return streams.filter((s) => {
+  const unique = streams.filter((s) => {
     const key = s.channel?.slug ?? s.slug;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
+
+  return unique
+    .sort(
+      (a, b) =>
+        (b.viewer_count ?? b.viewers ?? 0) - (a.viewer_count ?? a.viewers ?? 0),
+    )
+    .slice(0, limit)
+    .map((s: any) => ({
+      channel: s.channel?.slug || s.slug,
+      platform: "kick" as Platform,
+      title: s.session_title || s.title || "",
+      category: s.categories?.[0]?.name ?? s.category?.name ?? "Just Chatting",
+      viewerCount: s.viewer_count ?? s.viewers ?? 0,
+      thumbnail: s.thumbnail?.src || s.thumbnail?.url,
+    }));
 }
 
 /**
- * @brief Fetch Kick suggestions
+ * @brief Interleave two arrays of suggestions
  *
- * Fetches Kick suggestions.
- * Get the response from fetchAllKickStreams and returns the top limit streams.
- * If there are not enough streams in the language, it uses all streams.
+ * Alternates items from twitch and kick arrays to create a mixed list.
  *
- * @param limit The number of suggestions to fetch
- * @return The suggestions
+ * @param twitch The Twitch suggestions
+ * @param kick The Kick suggestions
+ * @return The interleaved suggestions
  */
-async function fetchKickSuggestions(
-  limit: number = REFRESH_CONFIG.suggestionsLimit,
-): Promise<SuggestedStream[]> {
-  try {
-    const allStreams = await fetchAllKickStreams();
+function interleave(
+  twitch: SuggestedStream[],
+  kick: SuggestedStream[],
+): SuggestedStream[] {
+  const combined: SuggestedStream[] = [];
+  const maxLength = Math.max(twitch.length, kick.length);
 
-    return allStreams
-      .sort(
-        (a, b) =>
-          (b.viewer_count ?? b.viewers ?? 0) -
-          (a.viewer_count ?? a.viewers ?? 0),
-      )
-      .slice(0, limit)
-      .map((s: any) => ({
-        channel: s.channel?.slug || s.slug,
-        platform: "kick" as Platform,
-        title: s.session_title || s.title || "",
-        category:
-          s.categories?.[0]?.name ?? s.category?.name ?? "Just Chatting",
-        viewerCount: s.viewer_count ?? s.viewers ?? 0,
-        thumbnail: s.thumbnail?.src || s.thumbnail?.url,
-      }));
-  } catch {
-    return [];
+  for (let i = 0; i < maxLength; i++) {
+    const t = twitch[i];
+    if (t) combined.push(t);
+
+    const k = kick[i];
+    if (k) combined.push(k);
   }
+
+  return combined;
 }
 
 // --- Composable ---
@@ -397,6 +427,7 @@ const _useLiveStatus = () => {
   const suggestedStreams = ref<SuggestedStream[]>([]);
   const isChecking = ref(false);
   const isLoadingSuggestions = ref(false);
+  const isLoadingMoreSuggestions = ref(false);
   let intervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
@@ -621,36 +652,118 @@ const _useLiveStatus = () => {
   );
 
   /**
-   * @brief Refresh suggestions
+   * @brief Refresh suggestions with two-phase incremental loading
    *
-   * Refreshes the suggestions list.
+   * Phase 1: Fetches the first page of Twitch and Kick in parallel,
+   * renders results immediately for fast time-to-first-content.
    *
-   * @return void
+   * Phase 2: Continues fetching remaining pages in the background.
+   * Twitch pages are fetched sequentially (cursor dependency),
+   * Kick pages are fetched in parallel. The suggestion list is
+   * re-interleaved reactively after each batch.
+   *
+   * @returns Promise<void>
    */
   const refreshSuggestions = async () => {
-    if (isLoadingSuggestions.value) return;
+    if (isLoadingSuggestions.value || isLoadingMoreSuggestions.value) return;
     isLoadingSuggestions.value = true;
 
+    const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
+    const twitchLanguage =
+      SUPPORTED_LANGUAGES[locale]?.apiCodes.twitch ??
+      SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.twitch;
+    const kickLang =
+      SUPPORTED_LANGUAGES[locale]?.apiCodes.kick ??
+      SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.kick;
+
     try {
-      const [twitch, kick] = await Promise.all([
-        fetchTwitchSuggestions(REFRESH_CONFIG.suggestionsLimit),
-        fetchKickSuggestions(REFRESH_CONFIG.suggestionsLimit),
+      // PHASE 1: Fetch first page of each platform in parallel
+      const [twitchPage1, kickPage1Raw] = await Promise.all([
+        fetchTwitchSuggestionsPage(null),
+        fetchKickStreamsPage(1, kickLang?.code ?? "en"),
       ]);
 
-      const combined: SuggestedStream[] = [];
-      const maxLength = Math.max(twitch.length, kick.length);
+      // Process and interleave first batch
+      const twitchResults = processTwitchStreams(
+        twitchPage1.streams,
+        twitchLanguage,
+      );
+      const kickResults = processKickStreams(
+        kickPage1Raw,
+        kickLang?.name ?? "English",
+      );
+      suggestedStreams.value = interleave(twitchResults, kickResults);
 
-      for (let i = 0; i < maxLength; i++) {
-        const t = twitch[i];
-        if (t) combined.push(t);
+      // UI can render now
+      isLoadingSuggestions.value = false;
 
-        const k = kick[i];
-        if (k) combined.push(k);
+      // PHASE 2: Background fetch remaining pages
+      const hasMoreTwitch = twitchPage1.nextCursor !== null;
+      const hasMoreKick = REFRESH_CONFIG.maxKickPages > 1;
+
+      if (hasMoreTwitch || hasMoreKick) {
+        isLoadingMoreSuggestions.value = true;
+
+        try {
+          // Kick pages 2-N in parallel (pages are independent)
+          const kickRemainingPromise = hasMoreKick
+            ? Promise.all(
+                Array.from(
+                  { length: REFRESH_CONFIG.maxKickPages - 1 },
+                  (_, i) => fetchKickStreamsPage(i + 2, kickLang?.code ?? "en"),
+                ),
+              )
+            : Promise.resolve([] as any[][]);
+
+          // Twitch pages 2+ sequentially (cursor dependency)
+          let cursor = twitchPage1.nextCursor;
+          let allTwitchRaw = [...twitchPage1.streams];
+
+          const twitchBackgroundPromise = (async () => {
+            while (
+              allTwitchRaw.length < REFRESH_CONFIG.suggestionsLimit &&
+              cursor
+            ) {
+              const page = await fetchTwitchSuggestionsPage(cursor);
+              allTwitchRaw.push(...page.streams);
+              cursor = page.nextCursor;
+
+              // Re-interleave after each Twitch page for progressive updates
+              const processed = processTwitchStreams(
+                allTwitchRaw,
+                twitchLanguage,
+              );
+              suggestedStreams.value = interleave(processed, kickResults);
+
+              if (page.streams.length < TWITCH_PAGE_SIZE) break;
+            }
+            return allTwitchRaw;
+          })();
+
+          // Wait for both background tasks
+          const [kickRemainingPages, finalTwitchRaw] = await Promise.all([
+            kickRemainingPromise,
+            twitchBackgroundPromise,
+          ]);
+
+          // Final merge with all Kick pages
+          const allKickRaw = [...kickPage1Raw, ...kickRemainingPages.flat()];
+          const finalKick = processKickStreams(
+            allKickRaw,
+            kickLang?.name ?? "English",
+          );
+          const finalTwitch = processTwitchStreams(
+            finalTwitchRaw,
+            twitchLanguage,
+          );
+          suggestedStreams.value = interleave(finalTwitch, finalKick);
+        } finally {
+          isLoadingMoreSuggestions.value = false;
+        }
       }
-
-      suggestedStreams.value = combined;
     } finally {
       isLoadingSuggestions.value = false;
+      isLoadingMoreSuggestions.value = false;
     }
   };
 
@@ -659,6 +772,7 @@ const _useLiveStatus = () => {
     suggestedStreams,
     isChecking,
     isLoadingSuggestions,
+    isLoadingMoreSuggestions,
     getStatus,
     startPolling,
     stopPolling,

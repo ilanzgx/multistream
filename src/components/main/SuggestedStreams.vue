@@ -12,7 +12,8 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 
 const { addStream } = useStreams();
-const { suggestedStreams, isLoadingSuggestions } = useLiveStatus();
+const { suggestedStreams, isLoadingSuggestions, isLoadingMoreSuggestions } =
+  useLiveStatus();
 
 const PAGE_SIZE = 18;
 const currentPage = ref(1);
@@ -26,9 +27,18 @@ const paginatedStreams = computed(() => {
   return suggestedStreams.value.slice(start, start + PAGE_SIZE);
 });
 
-// Reset to page 1 when suggestions reload
-watch(suggestedStreams, () => {
-  currentPage.value = 1;
+// Reset to page 1 only on full reload (not background updates)
+watch(isLoadingSuggestions, (newVal) => {
+  if (newVal) {
+    currentPage.value = 1;
+  }
+});
+
+// Clamp currentPage to valid range after re-interleaving
+watch(totalPages, (newTotal) => {
+  if (currentPage.value > newTotal) {
+    currentPage.value = newTotal;
+  }
 });
 
 const formatViewers = (count?: number) => {
