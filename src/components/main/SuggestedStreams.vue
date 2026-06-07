@@ -12,8 +12,7 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 
 const { addStream } = useStreams();
-const { suggestedStreams, isLoadingSuggestions, isLoadingMoreSuggestions } =
-  useLiveStatus();
+const { suggestedStreams, isLoadingSuggestions } = useLiveStatus();
 
 const PAGE_SIZE = 18;
 const currentPage = ref(1);
