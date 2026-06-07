@@ -141,16 +141,16 @@ jobs:
 
           echo "Generating changelog for range: $RANGE"
 
-          FEATURES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^feat(\(.*\))?:" | sed -E 's/^feat(\([^)]*\))?: //' || true)
-          FIXES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^fix(\(.*\))?:" | sed -E 's/^fix(\([^)]*\))?: //' || true)
-          REFACTORS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^refactor(\(.*\))?:" | sed -E 's/^refactor(\([^)]*\))?: //' || true)
-          STYLES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^style(\(.*\))?:" | sed -E 's/^style(\([^)]*\))?: //' || true)
-          PERFS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^perf(\(.*\))?:" | sed -E 's/^perf(\([^)]*\))?: //' || true)
+          FEATURES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^feat(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          FIXES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^fix(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          REFACTORS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^refactor(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          STYLES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^style(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          PERFS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^perf(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
 
           > changelog.md
 
           if [ -n "$FEATURES" ]; then
-            printf '### ✨ Features\n' >> changelog.md
+            printf '### Features\n' >> changelog.md
             echo "$FEATURES" | while IFS= read -r line; do
               printf -- '- %s\n' "$line" >> changelog.md
             done
@@ -158,7 +158,7 @@ jobs:
           fi
 
           if [ -n "$FIXES" ]; then
-            printf '### 🐛 Bug Fixes\n' >> changelog.md
+            printf '### Bug Fixes\n' >> changelog.md
             echo "$FIXES" | while IFS= read -r line; do
               printf -- '- %s\n' "$line" >> changelog.md
             done
@@ -166,7 +166,7 @@ jobs:
           fi
 
           if [ -n "$REFACTORS" ]; then
-            printf '### ♻️ Refactors\n' >> changelog.md
+            printf '### Refactors\n' >> changelog.md
             echo "$REFACTORS" | while IFS= read -r line; do
               printf -- '- %s\n' "$line" >> changelog.md
             done
@@ -174,7 +174,7 @@ jobs:
           fi
 
           if [ -n "$STYLES" ]; then
-            printf '### 🎨 Style\n' >> changelog.md
+            printf '### Style\n' >> changelog.md
             echo "$STYLES" | while IFS= read -r line; do
               printf -- '- %s\n' "$line" >> changelog.md
             done
@@ -182,7 +182,7 @@ jobs:
           fi
 
           if [ -n "$PERFS" ]; then
-            printf '### ⚡️ Performance\n' >> changelog.md
+            printf '### Performance\n' >> changelog.md
             echo "$PERFS" | while IFS= read -r line; do
               printf -- '- %s\n' "$line" >> changelog.md
             done
@@ -197,7 +197,7 @@ jobs:
           # append downloads table
           TAG="$GITHUB_REF_NAME"
           BASE="https://github.com/ilanzgx/multistream/releases/download/${TAG}"
-          printf '\n## \U0001F4E6 Downloads\n\n' >> changelog.md
+          printf '\n## Downloads\n\n' >> changelog.md
           printf '| Platform | Download |\n' >> changelog.md
           printf '|----------|----------|\n' >> changelog.md
           printf '| Windows (installer) | [`Multistream-windows-x64-setup.exe`](%s/Multistream-windows-x64-setup.exe) |\n' "$BASE" >> changelog.md
