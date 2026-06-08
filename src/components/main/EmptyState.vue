@@ -5,6 +5,7 @@ import { PLATFORMS } from "@/config/platforms";
 
 const emit = defineEmits<{
   add: [];
+  tour: [];
 }>();
 
 const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
@@ -46,6 +47,14 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
       <!-- suggestions -->
       <SuggestedStreams />
+
+      <!-- tour link -->
+      <button
+        class="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors duration-200 cursor-pointer underline underline-offset-4"
+        @click="emit('tour')"
+      >
+        {{ $t("empty.tourLink") }}
+      </button>
     </div>
   </div>
 </template>

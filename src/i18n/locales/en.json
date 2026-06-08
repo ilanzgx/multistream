@@ -46,6 +46,24 @@
       "connected": "Connected",
       "disconnect": "Disconnect",
       "disconnected": "Disconnected"
+    },
+    "help": {
+      "title": "Help",
+      "description": "Need assistance or want to review features?",
+      "showTourButton": "Show Onboarding Tour"
+    },
+    "backup": {
+      "title": "Data & Backup",
+      "description": "Export or import your complete configuration",
+      "exportButton": "Export Data",
+      "importButton": "Import Data",
+      "importConfirmTitle": "Overwrite Configuration?",
+      "importConfirmDescription": "Are you sure you want to import this configuration? This will completely replace your current streams, favorites, recents, and preferences.",
+      "importConfirmButton": "Import and Overwrite",
+      "importConfirmCancel": "Cancel",
+      "importSuccess": "Configuration imported successfully",
+      "importError": "Invalid configuration backup file",
+      "exportSuccess": "Configuration exported successfully"
     }
   },
   "share": {
@@ -73,7 +91,8 @@
   "empty": {
     "title": "No streams registered",
     "description": "Start by adding your favorite channels to watch simultaneously.",
-    "addButton": "Add Stream"
+    "addButton": "Add Stream",
+    "tourLink": "Need help? Take the tour"
   },
   "chat": {
     "controlTitle": "Chat Control",
@@ -123,5 +142,27 @@
     "liveBody": "{title} • {category}",
     "liveBodyTitleOnly": "{title}",
     "liveBodyFallback": "{channel} on {platform}"
+  },
+  "onboarding": {
+    "title": "Welcome to Multistream",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Get Started",
+    "step1": {
+      "title": "Add Streams",
+      "description": "Click the '+' button in the sidebar or press the {key} key to add a Twitch, Kick, or YouTube stream."
+    },
+    "step2": {
+      "title": "Select Chat",
+      "description": "Choose which stream chat is visible in the sidebar using the dropdown at the top, or press keys {keys} to switch instantly."
+    },
+    "step3": {
+      "title": "Keyboard Shortcuts",
+      "description": "Use these quick shortcuts to control your streams and chats efficiently:",
+      "add": "Open add stream dialog",
+      "screenshot": "Take screenshot of focused stream",
+      "chat": "Switch to stream chat {keys}"
+    }
   }
 }

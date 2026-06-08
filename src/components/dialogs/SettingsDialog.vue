@@ -4,9 +4,11 @@ import Button from "../ui/button/Button.vue";
 import { Switch } from "@/components/ui/switch";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { usePreferences } from "@/composables/usePreferences";
-import { RefreshCw, Download, Globe, Bell } from "lucide-vue-next";
+import { RefreshCw, Download, Globe, Bell, Database, Upload, HelpCircle } from "lucide-vue-next";
 import { toast } from "vue-sonner";
-import { watch } from "vue";
+import { watch, ref } from "vue";
+import { useBackup } from "@/composables/useBackup";
+import type { BackupData } from "@/composables/useBackup";
 
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
@@ -36,6 +38,67 @@ const emit = defineEmits<{
 const handleCheckUpdates = () => {
   checkForUpdates(true);
 };
+
+const startTour = () => {
+  window.dispatchEvent(
+    new CustomEvent("multistream-show-dialog", {
+      detail: "onboarding-tour",
+    })
+  );
+  emit("update:open", false);
+};
+
+const { exportConfig, importConfig, validateBackupData } = useBackup();
+const showImportConfirm = ref(false);
+const pendingBackupData = ref<BackupData | null>(null);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click();
+};
+
+const handleExport = () => {
+  exportConfig();
+  toast.success(t("settings.backup.exportSuccess"));
+};
+
+const handleFileImport = (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const data = JSON.parse(event.target?.result as string);
+      if (validateBackupData(data)) {
+        pendingBackupData.value = data;
+        showImportConfirm.value = true;
+      } else {
+        toast.error(t("settings.backup.importError"));
+      }
+    } catch (err) {
+      toast.error(t("settings.backup.importError"));
+    }
+    input.value = "";
+  };
+  reader.readAsText(file);
+};
+
+const confirmImport = () => {
+  if (pendingBackupData.value) {
+    importConfig(pendingBackupData.value);
+    toast.success(t("settings.backup.importSuccess"));
+    pendingBackupData.value = null;
+    showImportConfirm.value = false;
+    emit("update:open", false);
+  }
+};
+
+const cancelImport = () => {
+  pendingBackupData.value = null;
+  showImportConfirm.value = false;
+};
+
 
 watch(notificationsEnabled, (enabled) => {
   if (enabled) {
@@ -126,6 +189,50 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
           <Switch v-model="notificationsEnabled" />
         </div>
 
+        <!-- Data & Backup Section -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33] shrink-0">
+              <Database class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("settings.backup.title") }}
+              </p>
+              <p class="text-gray-400 text-xs">
+                {{ $t("settings.backup.description") }}
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept=".json"
+              class="hidden"
+              @change="handleFileImport"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 active:scale-[0.97]"
+              @click="triggerFileInput"
+            >
+              <Upload class="size-4 mr-2" />
+              {{ $t("settings.backup.importButton") }}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 active:scale-[0.97]"
+              @click="handleExport"
+            >
+              <Download class="size-4 mr-2" />
+              {{ $t("settings.backup.exportButton") }}
+            </Button>
+          </div>
+        </div>
+
         <!-- Accounts / Platforms Section -->
         <div class="flex flex-col gap-4 border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
           <div class="flex items-center gap-3 pb-1 border-b border-[#2a2d33]/30">
@@ -158,6 +265,26 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             </button>
           </div>
         </div>
+
+        <!-- Help / Tour Section -->
+        <div class="flex items-center justify-between border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]">
+              <HelpCircle class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("settings.help.title") }}
+              </p>
+              <p class="text-gray-400 text-xs">
+                {{ $t("settings.help.description") }}
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 active:scale-[0.97]" @click="startTour">
+            {{ $t("settings.help.showTourButton") }}
+          </Button>
+        </div>
       </div>
 
       <DialogFooter class="pt-5 border-t border-[#2a2d33]/50">
@@ -168,5 +295,32 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
         </DialogClose>
       </DialogFooter>
     </DialogContent>
+
+    <!-- Confirm Import Dialog -->
+    <Dialog v-model:open="showImportConfirm">
+      <DialogContent class="bg-[#14161a] border-[#2a2d33] max-w-md">
+        <DialogHeader>
+          <DialogTitle class="text-white">{{ $t("settings.backup.importConfirmTitle") }}</DialogTitle>
+          <DialogDescription class="text-gray-400">
+            {{ $t("settings.backup.importConfirmDescription") }}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="pt-4 border-t border-[#2a2d33]/50 flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200"
+            @click="cancelImport"
+          >
+            {{ $t("settings.backup.importConfirmCancel") }}
+          </Button>
+          <Button
+            class="bg-[#ea580c] hover:bg-[#c2410c] text-white border-transparent transition-all duration-200 active:scale-[0.97]"
+            @click="confirmImport"
+          >
+            {{ $t("settings.backup.importConfirmButton") }}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </Dialog>
 </template>

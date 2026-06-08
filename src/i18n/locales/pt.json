@@ -46,6 +46,24 @@
       "connected": "Conectado",
       "disconnect": "Desconectar",
       "disconnected": "Desconectado"
+    },
+    "help": {
+      "title": "Ajuda",
+      "description": "Precisa de assistência ou quer rever os recursos?",
+      "showTourButton": "Mostrar Tour de Integração"
+    },
+    "backup": {
+      "title": "Dados e Backup",
+      "description": "Exporte ou importe sua configuração completa",
+      "exportButton": "Exportar Dados",
+      "importButton": "Importar Dados",
+      "importConfirmTitle": "Sobrescrever Configuração?",
+      "importConfirmDescription": "Tem certeza que deseja importar esta configuração? Isso substituirá completamente seus streams, favoritos, recentes e preferências atuais.",
+      "importConfirmButton": "Importar e Sobrescrever",
+      "importConfirmCancel": "Cancelar",
+      "importSuccess": "Configuração importada com sucesso",
+      "importError": "Arquivo de backup de configuração inválido",
+      "exportSuccess": "Configuração exportada com sucesso"
     }
   },
   "share": {
@@ -73,7 +91,8 @@
   "empty": {
     "title": "Nenhuma stream registrada",
     "description": "Comece adicionando seus canais favoritos para assistir simultaneamente.",
-    "addButton": "Adicionar Stream"
+    "addButton": "Adicionar Stream",
+    "tourLink": "Precisa de ajuda? Faça o tour"
   },
   "chat": {
     "controlTitle": "Controle de Chat",
@@ -123,5 +142,27 @@
     "liveBody": "{title} • {category}",
     "liveBodyTitleOnly": "{title}",
     "liveBodyFallback": "{channel} em {platform}"
+  },
+  "onboarding": {
+    "title": "Bem-vindo ao Multistream",
+    "skip": "Pular",
+    "back": "Voltar",
+    "next": "Avançar",
+    "finish": "Começar",
+    "step1": {
+      "title": "Adicionar Streams",
+      "description": "Clique no botão '+' no menu lateral ou pressione a tecla {key} para adicionar uma stream da Twitch, Kick ou YouTube."
+    },
+    "step2": {
+      "title": "Selecionar Chat",
+      "description": "Escolha qual chat de stream fica visível no menu lateral usando a caixa de seleção no topo, ou pressione as teclas {keys} para alternar instantaneamente."
+    },
+    "step3": {
+      "title": "Teclas de Atalho",
+      "description": "Use estes atalhos rápidos para controlar suas transmissões e chats com eficiência:",
+      "add": "Abrir diálogo para adicionar stream",
+      "screenshot": "Capturar tela da stream focada",
+      "chat": "Alternar para o chat da stream {keys}"
+    }
   }
 }

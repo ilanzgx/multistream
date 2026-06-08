@@ -4,38 +4,36 @@ export interface Preferences {
   selectedChat: string;
   sidebarOpen: boolean;
   notificationsEnabled: boolean;
+  onboardingCompleted: boolean;
 }
 
 const defaultPreferences: Preferences = {
   selectedChat: "",
   sidebarOpen: true,
   notificationsEnabled: true,
+  onboardingCompleted: false,
 };
 
 const _usePreferences = () => {
   /**
    * @brief Selected chat
    */
-  const selectedChat = useStorage<string>(
-    "preferences.selectedChat",
-    defaultPreferences.selectedChat,
-  );
+  const selectedChat = useStorage<string>("preferences.selectedChat", defaultPreferences.selectedChat);
 
   /**
    * @brief Sidebar open state
    */
-  const sidebarOpen = useStorage<boolean>(
-    "preferences.sidebarOpen",
-    defaultPreferences.sidebarOpen,
-  );
+  const sidebarOpen = useStorage<boolean>("preferences.sidebarOpen", defaultPreferences.sidebarOpen);
 
   /**
    * @brief Notifications enabled
    */
-  const notificationsEnabled = useStorage<boolean>(
-    "preferences.notificationsEnabled",
-    defaultPreferences.notificationsEnabled,
-  );
+  const notificationsEnabled = useStorage<boolean>("preferences.notificationsEnabled", defaultPreferences.notificationsEnabled);
+
+  /**
+   * @brief Onboarding completed state
+   */
+  const onboardingCompleted = useStorage<boolean>("preferences.onboardingCompleted", defaultPreferences.onboardingCompleted);
 
   /**
    * @brief Set the selected chat
@@ -67,6 +65,16 @@ const _usePreferences = () => {
   };
 
   /**
+   * @brief Set the onboarding completed state
+   *
+   * @param completed The completed state
+   * @return void
+   */
+  const setOnboardingCompleted = (completed: boolean) => {
+    onboardingCompleted.value = completed;
+  };
+
+  /**
    * @brief Reset the preferences to default
    *
    * @return void
@@ -75,6 +83,7 @@ const _usePreferences = () => {
     selectedChat.value = defaultPreferences.selectedChat;
     sidebarOpen.value = defaultPreferences.sidebarOpen;
     notificationsEnabled.value = defaultPreferences.notificationsEnabled;
+    onboardingCompleted.value = defaultPreferences.onboardingCompleted;
   };
 
   return {
@@ -82,11 +91,13 @@ const _usePreferences = () => {
     selectedChat,
     sidebarOpen,
     notificationsEnabled,
+    onboardingCompleted,
 
     // actions
     setSelectedChat,
     toggleSidebar,
     setSidebarOpen,
+    setOnboardingCompleted,
     resetPreferences,
   };
 };

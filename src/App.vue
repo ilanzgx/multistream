@@ -10,25 +10,23 @@ import { Toaster } from "./components/ui/sonner";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
 import StreamGrid from "./components/main/StreamGrid.vue";
 import EmptyState from "./components/main/EmptyState.vue";
+import OnboardingTour from "./components/dialogs/OnboardingTour.vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
+const showOnboarding = ref(false);
 
 const { streams, addStream, clearStreams } = useStreams();
-const { selectedChat, sidebarOpen, setSelectedChat } = usePreferences();
+const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } = usePreferences();
 const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
 const { locale } = useI18n();
 
 function handleGlobalKeyDown(e: KeyboardEvent) {
   const target = e.target as HTMLElement;
-  if (
-    target.tagName === "INPUT" ||
-    target.tagName === "TEXTAREA" ||
-    target.isContentEditable
-  ) {
+  if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
     return;
   }
 
@@ -49,9 +47,11 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
 
   // D: open add stream dialog
   if (e.key.toLowerCase() === "d") {
-    window.dispatchEvent(new CustomEvent("multistream-show-dialog", {
-      detail: "add-stream",
-    }));
+    window.dispatchEvent(
+      new CustomEvent("multistream-show-dialog", {
+        detail: "add-stream",
+      }),
+    );
   }
 }
 
@@ -76,27 +76,23 @@ function handleFrameShortcuts(e: MessageEvent) {
 
   // D: open add stream dialog
   if (e.data?.key?.toLowerCase() === "d") {
-    window.dispatchEvent(new CustomEvent("multistream-show-dialog", {
-      detail: "add-stream",
-    }));
+    window.dispatchEvent(
+      new CustomEvent("multistream-show-dialog", {
+        detail: "add-stream",
+      }),
+    );
   }
 }
 
 watch(streams, (newStreams, oldStreams) => {
-  if (
-    selectedChat.value &&
-    !newStreams.some((s) => s.channel === selectedChat.value)
-  ) {
+  if (selectedChat.value && !newStreams.some((s) => s.channel === selectedChat.value)) {
     setSelectedChat("");
   }
 
   // when none streams are selected, auto load the chat of the first stream
   // if have more than 1 stream and remove one, auto load the chat of the first stream
   // if something wrong happens, falls on fallback
-  if (
-    (oldStreams.length === 0 && newStreams.length === 1) ||
-    (oldStreams.length > 1 && newStreams.length === 1)
-  ) {
+  if ((oldStreams.length === 0 && newStreams.length === 1) || (oldStreams.length > 1 && newStreams.length === 1)) {
     setSelectedChat(newStreams[0]?.channel || "");
   }
 
@@ -111,9 +107,21 @@ watch(locale, () => {
   }
 });
 
+function handleDialogShowEvent(e: Event) {
+  const evt = e as CustomEvent;
+  if (evt.detail === "onboarding-tour") {
+    showOnboarding.value = true;
+  }
+}
+
 onMounted(() => {
   window.addEventListener("keydown", handleGlobalKeyDown);
   window.addEventListener("message", handleFrameShortcuts);
+  window.addEventListener("multistream-show-dialog", handleDialogShowEvent);
+
+  if (!onboardingCompleted.value) {
+    showOnboarding.value = true;
+  }
   // dismiss splash screen after a brief moment so user sees the loading state
   const splash = document.getElementById("splash");
   if (splash) {
@@ -139,9 +147,7 @@ onMounted(() => {
       }
     } else {
       clearStreams();
-      parsedStreams.forEach((s) =>
-        addStream(s.channel, s.platform, s.iframeUrl),
-      );
+      parsedStreams.forEach((s) => addStream(s.channel, s.platform, s.iframeUrl));
       window.history.replaceState({}, "", window.location.pathname);
     }
   } catch {
@@ -153,6 +159,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("keydown", handleGlobalKeyDown);
   window.removeEventListener("message", handleFrameShortcuts);
+  window.removeEventListener("multistream-show-dialog", handleDialogShowEvent);
 });
 </script>
 
@@ -164,21 +171,15 @@ onUnmounted(() => {
       <StreamGrid v-if="streams.length > 0" />
 
       <!-- empty state (no streams) -->
-      <EmptyState v-else @add="sidebarRef?.openAddDialog()" />
+      <EmptyState v-else @add="sidebarRef?.openAddDialog()" @tour="showOnboarding = true" />
     </main>
 
     <!-- sidebar -->
     <SidebarPanel ref="sidebarRef" />
 
     <!-- toggle button -->
-    <button
-      v-if="!sidebarOpen"
-      @click="sidebarOpen = true"
-      class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2"
-    >
-      <Menu
-        class="size-4 text-gray-500 group-hover:text-white transition-colors duration-200"
-      />
+    <button v-if="!sidebarOpen" @click="sidebarOpen = true" class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2">
+      <Menu class="size-4 text-gray-500 group-hover:text-white transition-colors duration-200" />
     </button>
 
     <!-- toast notifications -->
@@ -196,5 +197,8 @@ onUnmounted(() => {
         },
       }"
     />
+
+    <!-- onboarding tour -->
+    <OnboardingTour v-model:open="showOnboarding" :allow-outside-close="onboardingCompleted" @complete="setOnboardingCompleted(true)" />
   </div>
 </template>

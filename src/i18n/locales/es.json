@@ -46,6 +46,24 @@
       "connected": "Conectado",
       "disconnect": "Desconectar",
       "disconnected": "Desconectado"
+    },
+    "backup": {
+      "title": "Datos y Copia de seguridad",
+      "description": "Exportar o importar tu configuración completa",
+      "exportButton": "Exportar datos",
+      "importButton": "Importar datos",
+      "importConfirmTitle": "¿Sobrescribir configuración?",
+      "importConfirmDescription": "¿Estás seguro de que deseas importar esta configuración? Esto reemplazará por completo tus transmisiones, favoritos, recientes y preferencias actuales.",
+      "importConfirmButton": "Importar y sobrescribir",
+      "importConfirmCancel": "Cancelar",
+      "importSuccess": "Configuración importada con éxito",
+      "importError": "Archivo de copia de seguridad no válido",
+      "exportSuccess": "Configuración exportada con éxito"
+    },
+    "help": {
+      "title": "Ayuda",
+      "description": "¿Necesitas ayuda o quieres repasar las funciones?",
+      "showTourButton": "Mostrar tour de inducción"
     }
   },
   "share": {
@@ -73,7 +91,8 @@
   "empty": {
     "title": "No hay streams registradas",
     "description": "Comienza agregando tus canales favoritos para verlos simultáneamente.",
-    "addButton": "Agregar Stream"
+    "addButton": "Agregar Stream",
+    "tourLink": "¿Necesitas ayuda? Haz el tour"
   },
   "chat": {
     "controlTitle": "Control de Chat",
@@ -123,5 +142,27 @@
     "liveBody": "{title} • {category}",
     "liveBodyTitleOnly": "{title}",
     "liveBodyFallback": "{channel} en {platform}"
+  },
+  "onboarding": {
+    "title": "Bienvenido a Multistream",
+    "skip": "Omitir",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "finish": "Comenzar",
+    "step1": {
+      "title": "Añadir Transmisiones",
+      "description": "Haz clic en el botón '+' en la barra lateral o presiona la tecla {key} para añadir una transmisión de Twitch, Kick o YouTube."
+    },
+    "step2": {
+      "title": "Seleccionar Chat",
+      "description": "Elige qué chat de transmisión es visible en la barra lateral usando el menú desplegable en la parte superior, o presiona las teclas {keys} para cambiar al instante."
+    },
+    "step3": {
+      "title": "Atajos de Teclado",
+      "description": "Usa estos atajos rápidos para controlar tus transmisiones y chats de manera eficiente:",
+      "add": "Abrir diálogo para añadir transmisión",
+      "screenshot": "Tomar captura de pantalla de la transmisión enfocada",
+      "chat": "Cambiar al chat de la transmisión {keys}"
+    }
   }
 }

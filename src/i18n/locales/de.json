@@ -46,6 +46,24 @@
       "connected": "Verbunden",
       "disconnect": "Trennen",
       "disconnected": "Getrennt"
+    },
+    "backup": {
+      "title": "Daten & Backup",
+      "description": "Exportieren oder Importieren Sie Ihre vollständige Konfiguration",
+      "exportButton": "Daten exportieren",
+      "importButton": "Daten importieren",
+      "importConfirmTitle": "Konfiguration überschreiben?",
+      "importConfirmDescription": "Sind Sie sicher, dass Sie diese Konfiguration importieren möchten? Dadurch werden Ihre aktuellen Streams, Favoriten, Verläufe und Einstellungen vollständig ersetzt.",
+      "importConfirmButton": "Importieren und überschreiben",
+      "importConfirmCancel": "Abbrechen",
+      "importSuccess": "Konfiguration erfolgreich importiert",
+      "importError": "Ungültige Backup-Datei",
+      "exportSuccess": "Konfiguration erfolgreich exportiert"
+    },
+    "help": {
+      "title": "Hilfe",
+      "description": "Benötigen Sie Hilfe oder möchten Sie die Funktionen überprüfen?",
+      "showTourButton": "Einführungstour anzeigen"
     }
   },
   "share": {
@@ -73,7 +91,8 @@
   "empty": {
     "title": "Keine Streams registriert",
     "description": "Fügen Sie zunächst Ihre Lieblingskanäle hinzu, um sie gleichzeitig anzusehen.",
-    "addButton": "Stream hinzufügen"
+    "addButton": "Stream hinzufügen",
+    "tourLink": "Hilfe benötigt? Tour machen"
   },
   "chat": {
     "controlTitle": "Chat-Steuerung",
@@ -123,5 +142,27 @@
     "liveBody": "{title} • {category}",
     "liveBodyTitleOnly": "{title}",
     "liveBodyFallback": "{channel} auf {platform}"
+  },
+  "onboarding": {
+    "title": "Willkommen bei Multistream",
+    "skip": "Überspringen",
+    "back": "Zurück",
+    "next": "Weiter",
+    "finish": "Loslegen",
+    "step1": {
+      "title": "Streams hinzufügen",
+      "description": "Klicke auf das '+'-Symbol in der Seitenleiste oder drücke die Taste {key}, um einen Twitch-, Kick- oder YouTube-Stream hinzuzufügen."
+    },
+    "step2": {
+      "title": "Chat auswählen",
+      "description": "Wähle über das Dropdown-Menü oben aus, welcher Stream-Chat in der Seitenleiste angezeigt wird, oder drücke die Tasten {keys}, um sofort zu wechseln."
+    },
+    "step3": {
+      "title": "Tastaturkurzbefehle",
+      "description": "Verwende diese schnellen Kurzbefehle, um deine Streams und Chats effizient zu steuern:",
+      "add": "Stream-hinzufügen-Dialog öffnen",
+      "screenshot": "Screenshot des fokussierten Streams machen",
+      "chat": "Zum Stream-Chat {keys} wechseln"
+    }
   }
 }

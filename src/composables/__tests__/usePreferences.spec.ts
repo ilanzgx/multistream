@@ -14,12 +14,13 @@ describe("usePreferences composable unit tests", () => {
 
   it("should initialize with default preferences", () => {
     // Arrange & Act
-    const { selectedChat, sidebarOpen, notificationsEnabled } = sut;
+    const { selectedChat, sidebarOpen, notificationsEnabled, onboardingCompleted } = sut;
 
     // Assert
     expect(selectedChat.value).toBe("");
     expect(sidebarOpen.value).toBe(true);
     expect(notificationsEnabled.value).toBe(true);
+    expect(onboardingCompleted.value).toBe(false);
   });
 
   it("should set selected chat correctly", () => {
@@ -31,6 +32,17 @@ describe("usePreferences composable unit tests", () => {
 
     // Assert
     expect(selectedChat.value).toBe("gaules_twitch");
+  });
+
+  it("should set onboarding completed state correctly", () => {
+    // Arrange
+    const { setOnboardingCompleted, onboardingCompleted } = sut;
+
+    // Act
+    setOnboardingCompleted(true);
+
+    // Assert
+    expect(onboardingCompleted.value).toBe(true);
   });
 
   it("should toggle sidebar open state", () => {
@@ -74,19 +86,23 @@ describe("usePreferences composable unit tests", () => {
       setSelectedChat,
       setSidebarOpen,
       notificationsEnabled,
+      setOnboardingCompleted,
       resetPreferences,
       selectedChat,
       sidebarOpen,
+      onboardingCompleted,
     } = sut;
 
     // Tweak properties
     setSelectedChat("alanzoka_twitch");
     setSidebarOpen(false);
     notificationsEnabled.value = false;
+    setOnboardingCompleted(true);
 
     expect(selectedChat.value).toBe("alanzoka_twitch");
     expect(sidebarOpen.value).toBe(false);
     expect(notificationsEnabled.value).toBe(false);
+    expect(onboardingCompleted.value).toBe(true);
 
     // Act
     resetPreferences();
@@ -95,5 +111,6 @@ describe("usePreferences composable unit tests", () => {
     expect(selectedChat.value).toBe("");
     expect(sidebarOpen.value).toBe(true);
     expect(notificationsEnabled.value).toBe(true);
+    expect(onboardingCompleted.value).toBe(false);
   });
 });

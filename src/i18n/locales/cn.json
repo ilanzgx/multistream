@@ -46,6 +46,24 @@
       "connected": "已连接",
       "disconnect": "断开连接",
       "disconnected": "未连接"
+    },
+    "backup": {
+      "title": "数据与备份",
+      "description": "导出或导入您的完整配置",
+      "exportButton": "导出数据",
+      "importButton": "导入数据",
+      "importConfirmTitle": "覆盖配置？",
+      "importConfirmDescription": "您确定要导入此配置吗？这将完全替换您当前的流、收藏夹、最近记录和偏好设置。",
+      "importConfirmButton": "导入并覆盖",
+      "importConfirmCancel": "取消",
+      "importSuccess": "配置导入成功",
+      "importError": "无效的配置文件",
+      "exportSuccess": "配置导出成功"
+    },
+    "help": {
+      "title": "帮助",
+      "description": "需要帮助或想查看功能？",
+      "showTourButton": "显示新手教程"
     }
   },
   "share": {
@@ -73,7 +91,8 @@
   "empty": {
     "title": "没有已注册的直播",
     "description": "首先添加您喜爱的频道以同时观看。",
-    "addButton": "添加直播"
+    "addButton": "添加直播",
+    "tourLink": "需要帮助？查看新手教程"
   },
   "chat": {
     "controlTitle": "聊天控制",
@@ -123,5 +142,27 @@
     "liveBody": "{title} • {category}",
     "liveBodyTitleOnly": "{title}",
     "liveBodyFallback": "{channel} 在 {platform}"
+  },
+  "onboarding": {
+    "title": "欢迎使用 Multistream",
+    "skip": "跳过",
+    "back": "返回",
+    "next": "下一步",
+    "finish": "开始使用",
+    "step1": {
+      "title": "添加直播",
+      "description": "点击侧边栏中的“+”按钮或按 {key} 键以添加 Twitch、Kick 或 YouTube 直播。"
+    },
+    "step2": {
+      "title": "选择聊天",
+      "description": "使用顶部的下拉菜单选择在侧边栏中显示哪个直播聊天，或者按 {keys} 键立即切换。"
+    },
+    "step3": {
+      "title": "键盘快捷键",
+      "description": "使用这些快捷键高效控制您的直播和聊天：",
+      "add": "打开添加直播对话框",
+      "screenshot": "对焦点的直播进行截图",
+      "chat": "切换到直播聊天 {keys}"
+    }
   }
 }
