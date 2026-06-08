@@ -124,7 +124,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl">
       <DialogHeader>
         <DialogTitle class="text-white">
@@ -370,7 +370,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
     </DialogContent>
 
     <!-- Confirm Import Dialog -->
-    <Dialog v-model:open="showImportConfirm">
+    <Dialog v-model:open="showImportConfirm" :modal="false">
       <DialogContent class="bg-[#14161a] border-[#2a2d33] max-w-md">
         <DialogHeader>
           <DialogTitle class="text-white">

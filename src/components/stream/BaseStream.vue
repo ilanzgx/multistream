@@ -188,6 +188,11 @@ const handleScreenshot = () => {
   height: 100%;
   overflow: hidden;
   border: none;
+  /* Prevent black screen rendering bugs in Chromium/WebView2 when overlays/dialogs are open */
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  color-scheme: normal;
 }
 
 /* Skeleton fade-out */

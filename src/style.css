@@ -148,3 +148,13 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Dim app container when any dialog is open to prevent background iframe occlusion black-screens */
+#app {
+  transition: filter 0.2s ease;
+}
+
+body:has([data-slot="dialog-content"]) #app {
+  filter: brightness(0.35);
+  pointer-events: none;
+}

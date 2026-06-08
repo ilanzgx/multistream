@@ -218,7 +218,7 @@ const canSubmit = computed(() => {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl lg:max-w-3xl">
       <DialogHeader>
         <DialogTitle class="text-white">

@@ -55,7 +55,7 @@ const handleImport = () => {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="emit('update:open', $event)">
+  <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#14161a] border-[#2a2d33]">
       <DialogHeader>
         <DialogTitle class="text-white">
