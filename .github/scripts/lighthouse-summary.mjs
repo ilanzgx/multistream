@@ -7,9 +7,7 @@ if (!fs.existsSync(dir)) {
   process.exit(0);
 }
 
-const files = fs
-  .readdirSync(dir)
-  .filter((f) => f.startsWith("lhr-") && f.endsWith(".json"));
+const files = fs.readdirSync(dir).filter((f) => f.startsWith("lhr-") && f.endsWith(".json"));
 
 if (!files.length) {
   process.exit(0);

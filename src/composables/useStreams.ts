@@ -29,7 +29,6 @@ const _useStreams = () => {
   // tracks reload key suffixes for Kick streams to force re-render/reload when another Kick stream is removed
   const kickReloadCounters = reactive<Record<string, number>>({});
 
-
   /**
    * @brief Add a stream
    *
@@ -42,16 +41,10 @@ const _useStreams = () => {
    * @param iframeUrl The iframe URL (optional)
    * @return void
    */
-  const addStream = (
-    channel: string,
-    platform: Platform,
-    iframeUrl?: string,
-  ) => {
+  const addStream = (channel: string, platform: Platform, iframeUrl?: string) => {
     if (
       streams.value.some(
-        (s) =>
-          s.channel.toLowerCase() === channel.toLowerCase() &&
-          s.platform === platform,
+        (s) => s.channel.toLowerCase() === channel.toLowerCase() && s.platform === platform
       )
     ) {
       toast.warning(t("toasts.add.alreadyAdded"));

@@ -11,8 +11,7 @@ import { toast } from "vue-sonner";
 
 const { requestRemoveStream } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
-const { toggleFocus, isFocused, clearFocus, focusedStreamId } =
-  useFocusedStream();
+const { toggleFocus, isFocused, clearFocus, focusedStreamId } = useFocusedStream();
 const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
 
@@ -32,18 +31,14 @@ const isLoading = ref(true);
 const containerRef = ref<HTMLElement>();
 const isFavorite = computed(() => {
   return favorites.value.find(
-    (f) =>
-      f.channel.toLowerCase() === props.channel.toLowerCase() &&
-      f.platform === props.platform,
+    (f) => f.channel.toLowerCase() === props.channel.toLowerCase() && f.platform === props.platform
   );
 });
 
 const isStreamFocused = computed(() => isFocused(props.channelid));
 
 // true when another stream is focused and this one is miniaturized in the sidebar
-const isMiniaturized = computed(
-  () => !!focusedStreamId.value && !isFocused(props.channelid),
-);
+const isMiniaturized = computed(() => !!focusedStreamId.value && !isFocused(props.channelid));
 
 onMounted(() => {
   const iframe = containerRef.value?.querySelector("iframe");
@@ -100,25 +95,13 @@ const handleScreenshot = () => {
         v-if="isLoading"
         class="absolute inset-0 w-full h-full bg-[#0f1115] flex flex-col items-center justify-center z-50"
       >
-        <div
-          :class="[
-            'w-full h-full flex flex-col',
-            isMiniaturized ? 'p-2 gap-2' : 'p-8 gap-4',
-          ]"
-        >
+        <div :class="['w-full h-full flex flex-col', isMiniaturized ? 'p-2 gap-2' : 'p-8 gap-4']">
           <!-- video area skeleton -->
           <Skeleton class="flex-1 w-full rounded-xl bg-white/5" />
 
           <!-- info area skeleton -->
-          <div
-            :class="['flex items-center', isMiniaturized ? 'gap-2' : 'gap-3']"
-          >
-            <Skeleton
-              :class="[
-                'rounded-full bg-white/5',
-                isMiniaturized ? 'size-6' : 'size-12',
-              ]"
-            />
+          <div :class="['flex items-center', isMiniaturized ? 'gap-2' : 'gap-3']">
+            <Skeleton :class="['rounded-full bg-white/5', isMiniaturized ? 'size-6' : 'size-12']" />
             <div v-if="!isMiniaturized" class="space-y-2">
               <Skeleton class="h-4 w-32 bg-white/5" />
               <Skeleton class="h-3 w-24 bg-white/5" />
@@ -147,20 +130,20 @@ const handleScreenshot = () => {
       ]"
     >
       <button
-        @click="requestRemoveStream(channelid)"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
         ]"
+        @click="requestRemoveStream(channelid)"
       >
         <X :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <button
-        @click="handleFavoriteStream(channel, platform)"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-pink-500/80 hover:text-white hover:border-pink-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
         ]"
+        @click="handleFavoriteStream(channel, platform)"
       >
         <Heart
           :class="[isMiniaturized ? 'size-3' : 'size-4', 'transition-colors']"
@@ -169,19 +152,18 @@ const handleScreenshot = () => {
       </button>
       <!-- screenshot button -->
       <button
-        @click="handleScreenshot"
         :disabled="isCapturing"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-blue-500/80 hover:text-white hover:border-blue-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
           isCapturing ? 'opacity-50 pointer-events-none' : '',
         ]"
+        @click="handleScreenshot"
       >
         <Camera :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <!-- focus mode button -->
       <button
-        @click="handleFocusStream(channelid)"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
@@ -189,6 +171,7 @@ const handleScreenshot = () => {
             ? 'bg-yellow-500/80 text-white border-yellow-400/50 hover:bg-yellow-600/80'
             : 'bg-black/60 text-white/80 border-white/10 hover:bg-yellow-500/80 hover:text-white hover:border-yellow-400/50',
         ]"
+        @click="handleFocusStream(channelid)"
       >
         <Maximize2 :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>

@@ -26,15 +26,43 @@ const formatViewers = (count?: number): string => {
 </script>
 
 <template>
-  <button type="button" class="group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer border hover:-translate-y-px active:scale-[0.97]" :class="[status?.isLive ? 'bg-[#1a1d21] text-white border-transparent hover:bg-[#2a2d33]' : 'text-gray-400 hover:text-white hover:bg-[#1a1d21] border-[#2a2d33] bg-[#14161a] hover:border-[#3a3f4b]']" :title="status?.isLive ? `🔴 LIVE — ${status?.viewerCount?.toLocaleString() ?? '?'} viewers${status?.category ? ` • ${status?.category}` : ''}` : undefined" @click="emit('click')">
+  <button
+    type="button"
+    class="group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer border hover:-translate-y-px active:scale-[0.97]"
+    :class="[
+      status?.isLive
+        ? 'bg-[#1a1d21] text-white border-transparent hover:bg-[#2a2d33]'
+        : 'text-gray-400 hover:text-white hover:bg-[#1a1d21] border-[#2a2d33] bg-[#14161a] hover:border-[#3a3f4b]',
+    ]"
+    :title="
+      status?.isLive
+        ? `🔴 LIVE — ${status?.viewerCount?.toLocaleString() ?? '?'} viewers${status?.category ? ` • ${status?.category}` : ''}`
+        : undefined
+    "
+    @click="emit('click')"
+  >
     <!-- live indicator dot -->
     <span v-if="status?.isLive" class="relative flex h-2 w-2 shrink-0">
-      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
+      <span
+        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"
+      />
       <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
     </span>
-    <span v-else-if="props.platform === 'twitch' || props.platform === 'kick'" class="h-2 w-2 shrink-0 rounded-full bg-gray-600" />
+    <span
+      v-else-if="props.platform === 'twitch' || props.platform === 'kick'"
+      class="h-2 w-2 shrink-0 rounded-full bg-gray-600"
+    />
 
-    <component :is="PLATFORMS[props.platform]?.icon" :size="14" :class="[!status?.isLive ? 'opacity-50 saturate-50 group-hover:opacity-100 group-hover:saturate-100 transition-all duration-200' : '']" :style="{ color: PLATFORMS[props.platform]?.color }" />
+    <component
+      :is="PLATFORMS[props.platform]?.icon"
+      :size="14"
+      :class="[
+        !status?.isLive
+          ? 'opacity-50 saturate-50 group-hover:opacity-100 group-hover:saturate-100 transition-all duration-200'
+          : '',
+      ]"
+      :style="{ color: PLATFORMS[props.platform]?.color }"
+    />
     <span class="truncate max-w-30">{{ props.channel }}</span>
 
     <!-- viewer count badge -->
@@ -42,7 +70,12 @@ const formatViewers = (count?: number): string => {
       {{ formatViewers(status?.viewerCount) }}
     </span>
 
-    <button type="button" aria-label="Remove stream" class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-[#2a2d33] border border-[#3a3f4b] transition-colors hover:bg-red-500/80 hover:border-red-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400" @click.stop="emit('remove')">
+    <button
+      type="button"
+      aria-label="Remove stream"
+      class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-[#2a2d33] border border-[#3a3f4b] transition-colors hover:bg-red-500/80 hover:border-red-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400"
+      @click.stop="emit('remove')"
+    >
       <X :size="8" class="text-white" />
     </button>
   </button>

@@ -58,7 +58,9 @@ const handleImport = () => {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#14161a] border-[#2a2d33]">
       <DialogHeader>
-        <DialogTitle class="text-white">{{ $t("import.title") }}</DialogTitle>
+        <DialogTitle class="text-white">
+          {{ $t("import.title") }}
+        </DialogTitle>
         <DialogDescription class="text-gray-400">
           {{ $t("import.description") }}
         </DialogDescription>
@@ -84,9 +86,9 @@ const handleImport = () => {
           </Button>
         </DialogClose>
         <Button
-          @click="handleImport"
           class="bg-white text-[#14161a] font-medium border-transparent hover:bg-gray-200 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
           :disabled="!importLink.trim()"
+          @click="handleImport"
         >
           {{ $t("import.importButton") }}
         </Button>

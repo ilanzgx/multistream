@@ -73,7 +73,15 @@ describe("useBackup composable unit tests", () => {
   describe("importConfig", () => {
     it("should import data into all local storage keys correctly", () => {
       // Arrange
-      const { importConfig, streams, favorites, recents, selectedChat, sidebarOpen, notificationsEnabled } = backupComposable;
+      const {
+        importConfig,
+        streams,
+        favorites,
+        recents,
+        selectedChat,
+        sidebarOpen,
+        notificationsEnabled,
+      } = backupComposable;
 
       // Act
       importConfig(validBackup);
@@ -91,7 +99,15 @@ describe("useBackup composable unit tests", () => {
 
   describe("exportConfig", () => {
     it("should package data and trigger a file download", () => {
-      const { exportConfig, streams, favorites, recents, selectedChat, sidebarOpen, notificationsEnabled } = backupComposable;
+      const {
+        exportConfig,
+        streams,
+        favorites,
+        recents,
+        selectedChat,
+        sidebarOpen,
+        notificationsEnabled,
+      } = backupComposable;
 
       // Populate some test data
       // Arrange

@@ -108,9 +108,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
     it("should start interval polling without duplicating existing ones", () => {
       // Arrange - add a channel so startPolling actually starts
-      mockRecents.value = [
-        { channel: "gaules", platform: "twitch", addedAt: Date.now() },
-      ];
+      mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
       const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
 
       // Act
@@ -124,9 +122,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
     it("should safely stop polling and clear the interval id", () => {
       // Arrange - add a channel so startPolling actually starts
-      mockRecents.value = [
-        { channel: "gaules", platform: "twitch", addedAt: Date.now() },
-      ];
+      mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
       const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
 
       // Arrange (start first)

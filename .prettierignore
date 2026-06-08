@@ -1,0 +1,13 @@
+# Ignore third-party and build directories
+node_modules/
+dist/
+dist-ssr/
+coverage/
+src-tauri/
+
+# Ignore locks and temporary files
+bun.lock
+.husky/
+~
+*.local
+*.log

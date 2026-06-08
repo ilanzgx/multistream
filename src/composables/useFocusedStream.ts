@@ -1,10 +1,7 @@
 import { useStorage, createSharedComposable } from "@vueuse/core";
 
 const _useFocusedStream = () => {
-  const focusedStreamId = useStorage<string | null>(
-    "multistream-focused-id",
-    null,
-  );
+  const focusedStreamId = useStorage<string | null>("multistream-focused-id", null);
 
   /**
    * @brief Toggle focus on a stream

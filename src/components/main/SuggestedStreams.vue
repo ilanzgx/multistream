@@ -18,7 +18,7 @@ const PAGE_SIZE = 18;
 const currentPage = ref(1);
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(suggestedStreams.value.length / PAGE_SIZE)),
+  Math.max(1, Math.ceil(suggestedStreams.value.length / PAGE_SIZE))
 );
 
 const paginatedStreams = computed(() => {
@@ -55,9 +55,9 @@ const formatViewers = (count?: number) => {
     <div
       class="flex items-center gap-2 text-gray-500 text-xs font-medium uppercase tracking-widest select-none"
     >
-      <span class="w-8 h-px bg-gray-700"></span>
+      <span class="w-8 h-px bg-gray-700" />
       {{ $t("add.suggestions") }}
-      <span class="w-8 h-px bg-gray-700"></span>
+      <span class="w-8 h-px bg-gray-700" />
     </div>
 
     <div class="flex flex-wrap justify-center gap-4 w-full">
@@ -71,18 +71,14 @@ const formatViewers = (count?: number) => {
         <div class="relative aspect-video w-full bg-[#0f1115] overflow-hidden">
           <img
             v-if="stream.thumbnail"
-            :src="
-              stream.thumbnail
-                .replace('{width}', '640')
-                .replace('{height}', '360')
-            "
+            :src="stream.thumbnail.replace('{width}', '640').replace('{height}', '360')"
             class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90 group-hover:opacity-100"
             alt=""
           />
           <!-- Gradient Overlay -->
           <div
             class="absolute inset-0 bg-linear-to-t from-[#14161a] via-transparent to-transparent opacity-80"
-          ></div>
+          />
 
           <!-- Live Badge -->
           <div
@@ -91,14 +87,10 @@ const formatViewers = (count?: number) => {
             <span class="relative flex h-2 w-2">
               <span
                 class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"
-              ></span>
-              <span
-                class="relative inline-flex rounded-full h-2 w-2 bg-white"
-              ></span>
+              />
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-white" />
             </span>
-            <span class="text-[10px] font-bold text-white tracking-wide"
-              >LIVE</span
-            >
+            <span class="text-[10px] font-bold text-white tracking-wide">LIVE</span>
           </div>
 
           <!-- Viewers -->
@@ -112,14 +104,12 @@ const formatViewers = (count?: number) => {
         <!-- Info -->
         <div class="p-3 pt-2 flex flex-col gap-0.5 relative z-10">
           <div class="flex items-center justify-between gap-2">
-            <span
-              class="text-xs font-bold text-white truncate max-w-28"
-              :title="stream.channel"
-              >{{ stream.channel }}</span
-            >
+            <span class="text-xs font-bold text-white truncate max-w-28" :title="stream.channel">{{
+              stream.channel
+            }}</span>
             <component
-              v-if="PLATFORMS[stream.platform]"
               :is="PLATFORMS[stream.platform]?.icon"
+              v-if="PLATFORMS[stream.platform]"
               :size="16"
               :style="{ color: PLATFORMS[stream.platform]?.color }"
             />

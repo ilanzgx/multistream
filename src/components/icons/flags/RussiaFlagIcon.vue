@@ -52,12 +52,7 @@ defineProps<{
           d="M0 13.3333H28V6.66667H0V13.3333Z"
           fill="#0C47B7"
         />
-        <path
-          fill-rule="evenodd"
-          clip-rule="evenodd"
-          d="M0 20H28V13.3333H0V20Z"
-          fill="#E53B35"
-        />
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M0 20H28V13.3333H0V20Z" fill="#E53B35" />
       </g>
     </g>
     <defs>

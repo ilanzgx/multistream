@@ -36,9 +36,7 @@ export function parseStreamUrl(input: string): ParseResult | null {
       const platform = PLATFORMS[key];
       if (
         platform &&
-        platform.domains.some(
-          (domain) => hostname === domain || hostname.endsWith("." + domain),
-        )
+        platform.domains.some((domain) => hostname === domain || hostname.endsWith("." + domain))
       ) {
         detectedPlatform = platform.id as Platform;
         break;
@@ -46,9 +44,8 @@ export function parseStreamUrl(input: string): ParseResult | null {
     }
 
     if (detectedPlatform === "twitch" || detectedPlatform === "kick") {
-      const pathParts = url.pathname.split("/").filter(Boolean);
       // Twitch & Kick channel name is always the first path segment
-      const channel = pathParts[0] || "";
+      const channel = url.pathname.split("/").find(Boolean) || "";
       if (channel) {
         const cleanChannel = channel.split("?")[0] ?? channel;
         return {
@@ -59,8 +56,7 @@ export function parseStreamUrl(input: string): ParseResult | null {
     } else if (detectedPlatform === "youtube") {
       // YouTube share links: youtu.be/VIDEO_ID
       if (hostname === "youtu.be" || hostname.endsWith(".youtu.be")) {
-        const pathParts = url.pathname.split("/").filter(Boolean);
-        const videoId = pathParts[0] || "";
+        const videoId = url.pathname.split("/").find(Boolean) || "";
         if (videoId) {
           return {
             platform: "youtube",

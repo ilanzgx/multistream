@@ -43,12 +43,7 @@ defineProps<{
           />
         </g>
         <g filter="url(#filter1_d_de)">
-          <path
-            fill-rule="evenodd"
-            clip-rule="evenodd"
-            d="M0 20H28V13.3333H0V20Z"
-            fill="#FFD521"
-          />
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M0 20H28V13.3333H0V20Z" fill="#FFD521" />
         </g>
       </g>
     </g>
@@ -70,21 +65,9 @@ defineProps<{
           result="hardAlpha"
         />
         <feOffset />
-        <feColorMatrix
-          type="matrix"
-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0"
-        />
-        <feBlend
-          mode="normal"
-          in2="BackgroundImageFix"
-          result="effect1_dropShadow_de"
-        />
-        <feBlend
-          mode="normal"
-          in="SourceGraphic"
-          in2="effect1_dropShadow_de"
-          result="shape"
-        />
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0" />
+        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_de" />
+        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_de" result="shape" />
       </filter>
       <filter
         id="filter1_d_de"
@@ -103,21 +86,9 @@ defineProps<{
           result="hardAlpha"
         />
         <feOffset />
-        <feColorMatrix
-          type="matrix"
-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0"
-        />
-        <feBlend
-          mode="normal"
-          in2="BackgroundImageFix"
-          result="effect1_dropShadow_de"
-        />
-        <feBlend
-          mode="normal"
-          in="SourceGraphic"
-          in2="effect1_dropShadow_de"
-          result="shape"
-        />
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0" />
+        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_de" />
+        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_de" result="shape" />
       </filter>
       <clipPath id="clip0_de">
         <rect width="28" height="20" rx="2" fill="white" />

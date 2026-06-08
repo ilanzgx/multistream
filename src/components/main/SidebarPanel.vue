@@ -17,12 +17,7 @@ import {
   ImportIcon as Import,
   PanelRightClose,
 } from "lucide-vue-next";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Select,
   SelectContent,
@@ -108,20 +103,20 @@ onUnmounted(() => {
       <div class="relative flex-1 overflow-hidden">
         <KickChat
           v-for="stream in streams.filter((s) => s.platform === 'kick')"
-          :key="`chat-${stream.id}`"
           v-show="selectedChat === stream.channel"
+          :key="`chat-${stream.id}`"
           :channel="stream.channel"
         />
         <TwitchChat
           v-for="stream in streams.filter((s) => s.platform === 'twitch')"
-          :key="`chat-${stream.id}`"
           v-show="selectedChat === stream.channel"
+          :key="`chat-${stream.id}`"
           :channel="stream.channel"
         />
         <YoutubeChat
           v-for="stream in streams.filter((s) => s.platform === 'youtube')"
-          :key="`chat-${stream.id}`"
           v-show="selectedChat === stream.channel"
+          :key="`chat-${stream.id}`"
           :channel="stream.channel"
         />
         <div
@@ -224,21 +219,14 @@ onUnmounted(() => {
         </TooltipProvider>
 
         <!-- version -->
-        <div
-          v-if="appVersion"
-          class="mt-5 flex items-center justify-center gap-3"
-        >
-          <div
-            class="h-px flex-1 bg-linear-to-r from-transparent to-[#2a2d33]"
-          ></div>
+        <div v-if="appVersion" class="mt-5 flex items-center justify-center gap-3">
+          <div class="h-px flex-1 bg-linear-to-r from-transparent to-[#2a2d33]" />
           <span
             class="text-[10px] font-semibold tracking-widest uppercase text-gray-500 select-none"
           >
             v{{ appVersion }}
           </span>
-          <div
-            class="h-px flex-1 bg-linear-to-l from-transparent to-[#2a2d33]"
-          ></div>
+          <div class="h-px flex-1 bg-linear-to-l from-transparent to-[#2a2d33]" />
         </div>
       </div>
     </div>

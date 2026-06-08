@@ -1,4 +1,4 @@
-import { ref, watch } from "vue";
+import { ref, watch, onScopeDispose } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { useRecents } from "./useRecents";
 import { useFavorites } from "./useFavorites";
@@ -47,10 +47,7 @@ export function isTauri(): boolean {
  * @param headers The headers to send with the request
  * @return The response
  */
-async function httpGet(
-  url: string,
-  headers?: Record<string, string>,
-): Promise<Response> {
+async function httpGet(url: string, headers?: Record<string, string>): Promise<Response> {
   if (isTauri()) {
     return tauriFetch(url, { method: "GET", headers });
   }
@@ -70,7 +67,7 @@ async function httpGet(
 async function httpPost(
   url: string,
   body: string,
-  headers?: Record<string, string>,
+  headers?: Record<string, string>
 ): Promise<Response> {
   if (isTauri()) {
     return tauriFetch(url, { method: "POST", body, headers });
@@ -88,9 +85,7 @@ async function httpPost(
  * @param channels The channels to check
  * @return The status of the channels
  */
-async function checkTwitchStreams(
-  channels: string[],
-): Promise<StatusMap | null> {
+async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null> {
   const result: StatusMap = {};
   if (channels.length === 0) return result;
 
@@ -107,7 +102,7 @@ async function checkTwitchStreams(
         }
       }
     }
-  `,
+  `
     )
     .join("\n");
 
@@ -122,7 +117,7 @@ async function checkTwitchStreams(
         // Not official, but works for years
         "Client-Id": API_CONFIG.twitch.clientId,
         "Content-Type": "application/json",
-      },
+      }
     );
 
     if (!response.ok) return null;
@@ -168,7 +163,7 @@ const TWITCH_PAGE_SIZE = 30;
  */
 async function fetchTwitchSuggestionsPage(
   cursor: string | null,
-  pageSize: number = TWITCH_PAGE_SIZE,
+  pageSize: number = TWITCH_PAGE_SIZE
 ): Promise<{ streams: any[]; nextCursor: string | null }> {
   try {
     const afterClause = cursor ? `, after: "${cursor}"` : "";
@@ -189,14 +184,10 @@ async function fetchTwitchSuggestionsPage(
       }
     `;
 
-    const response = await httpPost(
-      API_CONFIG.twitch.gqlUrl,
-      JSON.stringify({ query }),
-      {
-        "Client-Id": API_CONFIG.twitch.clientId,
-        "Content-Type": "application/json",
-      },
-    );
+    const response = await httpPost(API_CONFIG.twitch.gqlUrl, JSON.stringify({ query }), {
+      "Client-Id": API_CONFIG.twitch.clientId,
+      "Content-Type": "application/json",
+    });
 
     if (!response.ok) return { streams: [], nextCursor: null };
     const data = await response.json();
@@ -214,10 +205,7 @@ async function fetchTwitchSuggestionsPage(
       thumbnail: edge.node.previewImageURL,
     }));
 
-    const nextCursor =
-      edges.length < pageSize
-        ? null
-        : (edges[edges.length - 1]?.cursor ?? null);
+    const nextCursor = edges.length < pageSize ? null : (edges[edges.length - 1]?.cursor ?? null);
 
     return { streams, nextCursor };
   } catch {
@@ -239,7 +227,7 @@ async function fetchTwitchSuggestionsPage(
 function processTwitchStreams(
   raw: any[],
   twitchLanguage: string,
-  limit: number = REFRESH_CONFIG.suggestionsLimit,
+  limit: number = REFRESH_CONFIG.suggestionsLimit
 ): SuggestedStream[] {
   // deduplicate by channel login
   const seen = new Set<string>();
@@ -252,12 +240,9 @@ function processTwitchStreams(
 
   const filtered = unique.filter((s: any) => s.language === twitchLanguage);
 
-  return [
-    ...filtered,
-    ...unique.filter((s: any) => s.language !== twitchLanguage),
-  ]
+  return [...filtered, ...unique.filter((s: any) => s.language !== twitchLanguage)]
     .slice(0, limit)
-    .map(({ language, ...s }: any) => s);
+    .map(({ language: _, ...s }: any) => s);
 }
 
 /**
@@ -276,7 +261,7 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap | null> {
   const promises = channels.map(async (channel) => {
     try {
       const response = await httpGet(
-        `${API_CONFIG.kick.apiBaseUrl}/${encodeURIComponent(channel)}`,
+        `${API_CONFIG.kick.apiBaseUrl}/${encodeURIComponent(channel)}`
       );
 
       if (!response.ok) {
@@ -326,14 +311,9 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap | null> {
  * @param kickLangCode The Kick language code for the URL
  * @return The raw streams from that page
  */
-async function fetchKickStreamsPage(
-  page: number,
-  kickLangCode: string,
-): Promise<any[]> {
+async function fetchKickStreamsPage(page: number, kickLangCode: string): Promise<any[]> {
   try {
-    const response = await httpGet(
-      `${API_CONFIG.kick.featuredUrl}/${kickLangCode}?page=${page}`,
-    );
+    const response = await httpGet(`${API_CONFIG.kick.featuredUrl}/${kickLangCode}?page=${page}`);
     if (!response.ok) return [];
     const data = await response.json();
     return data.data ?? [];
@@ -356,11 +336,9 @@ async function fetchKickStreamsPage(
 function processKickStreams(
   raw: any[],
   kickLangName: string,
-  limit: number = REFRESH_CONFIG.suggestionsLimit,
+  limit: number = REFRESH_CONFIG.suggestionsLimit
 ): SuggestedStream[] {
-  const filtered = raw.filter(
-    (s) => s.language?.toLowerCase() === kickLangName.toLowerCase(),
-  );
+  const filtered = raw.filter((s) => s.language?.toLowerCase() === kickLangName.toLowerCase());
 
   // if there are not enough streams in the language, use all streams
   const streams = filtered.length >= 4 ? filtered : raw;
@@ -375,9 +353,8 @@ function processKickStreams(
   });
 
   return unique
-    .sort(
-      (a, b) =>
-        (b.viewer_count ?? b.viewers ?? 0) - (a.viewer_count ?? a.viewers ?? 0),
+    .toSorted(
+      (a: any, b: any) => (b.viewer_count ?? b.viewers ?? 0) - (a.viewer_count ?? a.viewers ?? 0)
     )
     .slice(0, limit)
     .map((s: any) => ({
@@ -399,10 +376,7 @@ function processKickStreams(
  * @param kick The Kick suggestions
  * @return The interleaved suggestions
  */
-function interleave(
-  twitch: SuggestedStream[],
-  kick: SuggestedStream[],
-): SuggestedStream[] {
+function interleave(twitch: SuggestedStream[], kick: SuggestedStream[]): SuggestedStream[] {
   const combined: SuggestedStream[] = [];
   const maxLength = Math.max(twitch.length, kick.length);
 
@@ -484,10 +458,7 @@ const _useLiveStatus = () => {
 
       const newStatuses: StatusMap = { ...statuses.value };
 
-      if (
-        twitchResults.status === "fulfilled" &&
-        twitchResults.value !== null
-      ) {
+      if (twitchResults.status === "fulfilled" && twitchResults.value !== null) {
         Object.assign(newStatuses, twitchResults.value);
       }
       if (kickResults.status === "fulfilled" && kickResults.value !== null) {
@@ -532,9 +503,7 @@ const _useLiveStatus = () => {
                 }),
               }).catch(() => {});
             } else {
-              const names = newLiveChannels
-                .map((c) => c.fav.channel)
-                .join(", ");
+              const names = newLiveChannels.map((c) => c.fav.channel).join(", ");
               invoke("send_notification", {
                 title: t("notifications.welcome"),
                 body: t("notifications.welcomeBody", { channels: names }),
@@ -584,10 +553,7 @@ const _useLiveStatus = () => {
    * @param platform The platform of the channel
    * @return The status of the stream
    */
-  const getStatus = (
-    channel: string,
-    platform: Platform,
-  ): LiveStatus | null => {
+  const getStatus = (channel: string, platform: Platform): LiveStatus | null => {
     if (platform !== "twitch" && platform !== "kick") return null;
     const key = `${platform}:${channel.toLowerCase()}`;
     return statuses.value[key] ?? null;
@@ -597,12 +563,8 @@ const _useLiveStatus = () => {
    * @brief Check if there are channels to track
    */
   const hasChannels = () =>
-    recents.value.some(
-      (r) => r.platform === "twitch" || r.platform === "kick",
-    ) ||
-    favorites.value.some(
-      (f) => f.platform === "twitch" || f.platform === "kick",
-    );
+    recents.value.some((r) => r.platform === "twitch" || r.platform === "kick") ||
+    favorites.value.some((f) => f.platform === "twitch" || f.platform === "kick");
 
   /**
    * @brief Start polling
@@ -648,7 +610,7 @@ const _useLiveStatus = () => {
           stopPolling();
         }
       }, 1000);
-    },
+    }
   );
 
   /**
@@ -684,14 +646,8 @@ const _useLiveStatus = () => {
       ]);
 
       // Process and interleave first batch
-      const twitchResults = processTwitchStreams(
-        twitchPage1.streams,
-        twitchLanguage,
-      );
-      const kickResults = processKickStreams(
-        kickPage1Raw,
-        kickLang?.name ?? "English",
-      );
+      const twitchResults = processTwitchStreams(twitchPage1.streams, twitchLanguage);
+      const kickResults = processKickStreams(kickPage1Raw, kickLang?.name ?? "English");
       suggestedStreams.value = interleave(twitchResults, kickResults);
 
       // UI can render now
@@ -708,31 +664,24 @@ const _useLiveStatus = () => {
           // Kick pages 2-N in parallel (pages are independent)
           const kickRemainingPromise = hasMoreKick
             ? Promise.all(
-                Array.from(
-                  { length: REFRESH_CONFIG.maxKickPages - 1 },
-                  (_, i) => fetchKickStreamsPage(i + 2, kickLang?.code ?? "en"),
-                ),
+                Array.from({ length: REFRESH_CONFIG.maxKickPages - 1 }, (_, i) =>
+                  fetchKickStreamsPage(i + 2, kickLang?.code ?? "en")
+                )
               )
             : Promise.resolve([] as any[][]);
 
           // Twitch pages 2+ sequentially (cursor dependency)
           let cursor = twitchPage1.nextCursor;
-          let allTwitchRaw = [...twitchPage1.streams];
+          const allTwitchRaw = [...twitchPage1.streams];
 
           const twitchBackgroundPromise = (async () => {
-            while (
-              allTwitchRaw.length < REFRESH_CONFIG.suggestionsLimit &&
-              cursor
-            ) {
+            while (allTwitchRaw.length < REFRESH_CONFIG.suggestionsLimit && cursor) {
               const page = await fetchTwitchSuggestionsPage(cursor);
               allTwitchRaw.push(...page.streams);
               cursor = page.nextCursor;
 
               // Re-interleave after each Twitch page for progressive updates
-              const processed = processTwitchStreams(
-                allTwitchRaw,
-                twitchLanguage,
-              );
+              const processed = processTwitchStreams(allTwitchRaw, twitchLanguage);
               suggestedStreams.value = interleave(processed, kickResults);
 
               if (page.streams.length < TWITCH_PAGE_SIZE) break;
@@ -748,14 +697,8 @@ const _useLiveStatus = () => {
 
           // Final merge with all Kick pages
           const allKickRaw = [...kickPage1Raw, ...kickRemainingPages.flat()];
-          const finalKick = processKickStreams(
-            allKickRaw,
-            kickLang?.name ?? "English",
-          );
-          const finalTwitch = processTwitchStreams(
-            finalTwitchRaw,
-            twitchLanguage,
-          );
+          const finalKick = processKickStreams(allKickRaw, kickLang?.name ?? "English");
+          const finalTwitch = processTwitchStreams(finalTwitchRaw, twitchLanguage);
           suggestedStreams.value = interleave(finalTwitch, finalKick);
         } finally {
           isLoadingMoreSuggestions.value = false;
@@ -766,6 +709,13 @@ const _useLiveStatus = () => {
       isLoadingMoreSuggestions.value = false;
     }
   };
+
+  onScopeDispose(() => {
+    stopPolling();
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
+  });
 
   return {
     statuses,

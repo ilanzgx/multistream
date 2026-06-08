@@ -41,9 +41,7 @@ const shareLink = computed(() => {
   // regular streams (kick, twitch, youtube)
   const regularStreams = streams.value.filter((s) => s.platform !== "custom");
   if (regularStreams.length) {
-    const streamsParam = regularStreams
-      .map((s) => `${s.platform}:${s.channel}`)
-      .join(",");
+    const streamsParam = regularStreams.map((s) => `${s.platform}:${s.channel}`).join(",");
     params.push(`streams=${streamsParam}`);
   }
 
@@ -76,7 +74,9 @@ const copyLink = async () => {
   <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="bg-[#14161a] border-[#2a2d33]">
       <DialogHeader>
-        <DialogTitle class="text-white">{{ $t("share.title") }}</DialogTitle>
+        <DialogTitle class="text-white">
+          {{ $t("share.title") }}
+        </DialogTitle>
         <DialogDescription class="text-gray-400">
           {{ $t("share.description") }}
         </DialogDescription>
@@ -101,8 +101,8 @@ const copyLink = async () => {
           </Button>
         </DialogClose>
         <Button
-          @click="copyLink"
           class="bg-white text-[#14161a] font-medium hover:bg-gray-200 active:scale-[0.98] transition-all duration-200 border-transparent"
+          @click="copyLink"
         >
           {{ $t("share.copyButton") }}
         </Button>

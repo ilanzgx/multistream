@@ -5,9 +5,7 @@ import { reactiveOmit } from "@vueuse/core";
 import { SwitchRoot, SwitchThumb, useForwardPropsEmits } from "reka-ui";
 import { cn } from "@/lib/utils";
 
-const props = defineProps<
-  SwitchRootProps & { class?: HTMLAttributes["class"] }
->();
+const props = defineProps<SwitchRootProps & { class?: HTMLAttributes["class"] }>();
 
 const emits = defineEmits<SwitchRootEmits>();
 
@@ -28,7 +26,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         'data-[state=unchecked]:bg-[#2a2d33] data-[state=unchecked]:border-[#3a3f4b]',
         'focus-visible:ring-2 focus-visible:ring-green-500/40 focus-visible:ring-offset-1 focus-visible:ring-offset-[#191b1f]',
         'disabled:cursor-not-allowed disabled:opacity-50',
-        props.class,
+        props.class
       )
     "
   >
@@ -39,7 +37,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
           'pointer-events-none block size-4 rounded-full shadow-md ring-0 transition-transform duration-200',
           'bg-white',
           'data-[state=checked]:translate-x-6',
-          'data-[state=unchecked]:translate-x-1',
+          'data-[state=unchecked]:translate-x-1'
         )
       "
     >

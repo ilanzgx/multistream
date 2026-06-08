@@ -70,9 +70,7 @@ watch(focusedStreamId, async () => {
 /**
  * Number of non-focused streams (for grid row calculation in focus mode).
  */
-const nonFocusedCount = computed(
-  () => streams.value.filter((s) => !isFocused(s.id)).length,
-);
+const nonFocusedCount = computed(() => streams.value.filter((s) => !isFocused(s.id)).length);
 
 /**
  * Dynamic inline style for the grid container.
@@ -118,9 +116,7 @@ const getStreamStyle = (streamId: string) => {
  */
 const getStreamClass = (index: number) => {
   if (focusedStreamId.value) return "";
-  return streams.value.length === 3 && index === 2
-    ? "col-span-2 justify-self-center w-1/2"
-    : "";
+  return streams.value.length === 3 && index === 2 ? "col-span-2 justify-self-center w-1/2" : "";
 };
 </script>
 
@@ -160,7 +156,7 @@ const getStreamClass = (index: number) => {
         v-else-if="stream.platform === 'custom'"
         :channel="stream.channel"
         :channelid="stream.id"
-        :iframeUrl="stream.iframeUrl || ''"
+        :iframe-url="stream.iframeUrl || ''"
       />
     </div>
   </div>

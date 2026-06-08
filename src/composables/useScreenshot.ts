@@ -33,7 +33,7 @@ export function useScreenshot() {
   const captureStream = async (
     streamElement: HTMLElement,
     channel: string,
-    platform: string,
+    platform: string
   ): Promise<void> => {
     if (isCapturing.value) return;
     isCapturing.value = true;
@@ -72,10 +72,7 @@ export function useScreenshot() {
         };
 
         window.addEventListener("message", handler);
-        iframe.contentWindow!.postMessage(
-          { type: "MULTISTREAM_CAPTURE", requestId },
-          "*",
-        );
+        iframe.contentWindow!.postMessage({ type: "MULTISTREAM_CAPTURE", requestId }, "*");
       });
 
       if (!result.success) {

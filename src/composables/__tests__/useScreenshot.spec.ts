@@ -34,10 +34,12 @@ describe("useScreenshot composable unit tests", () => {
 
     if (!globalThis.crypto) {
       globalThis.crypto = {
-        randomUUID: () => "12345678-1234-1234-1234-123456789012" as `${string}-${string}-${string}-${string}-${string}`,
+        randomUUID: () =>
+          "12345678-1234-1234-1234-123456789012" as `${string}-${string}-${string}-${string}-${string}`,
       } as any;
     } else if (!globalThis.crypto.randomUUID) {
-      globalThis.crypto.randomUUID = () => "12345678-1234-1234-1234-123456789012" as `${string}-${string}-${string}-${string}-${string}`;
+      globalThis.crypto.randomUUID = () =>
+        "12345678-1234-1234-1234-123456789012" as `${string}-${string}-${string}-${string}-${string}`;
     }
 
     sut = useScreenshot();
@@ -72,7 +74,7 @@ describe("useScreenshot composable unit tests", () => {
 
     // Act
     const capturePromise = sut.captureStream(dummyDiv, "gaules", "twitch");
-    
+
     // Fast forward passed the 5s timeout
     vi.advanceTimersByTime(5000);
     await capturePromise;
@@ -85,7 +87,7 @@ describe("useScreenshot composable unit tests", () => {
   it("should show error if iframe responds with TAINTED_CANVAS", async () => {
     // Arrange
     let messageHandler: any;
-    
+
     const mockWindow = {
       addEventListener: vi.fn((event, handler) => {
         if (event === "message") messageHandler = handler;
@@ -94,8 +96,8 @@ describe("useScreenshot composable unit tests", () => {
     } as any;
     globalThis.window = mockWindow;
 
-    const dummyIframe = { 
-      contentWindow: { 
+    const dummyIframe = {
+      contentWindow: {
         postMessage: vi.fn().mockImplementation((data) => {
           // simulate async response by calling the listener manually
           if (messageHandler) {
@@ -104,12 +106,12 @@ describe("useScreenshot composable unit tests", () => {
                 type: "MULTISTREAM_CAPTURE_RESULT",
                 requestId: data.requestId,
                 success: false,
-                error: "TAINTED_CANVAS"
-              }
+                error: "TAINTED_CANVAS",
+              },
             });
           }
-        }) 
-      } 
+        }),
+      },
     };
     const dummyDiv = { querySelector: vi.fn().mockReturnValue(dummyIframe) } as any;
 
@@ -134,8 +136,8 @@ describe("useScreenshot composable unit tests", () => {
     } as any;
     globalThis.window = mockWindow;
 
-    const dummyIframe = { 
-      contentWindow: { 
+    const dummyIframe = {
+      contentWindow: {
         postMessage: vi.fn().mockImplementation((data) => {
           if (messageHandler) {
             messageHandler({
@@ -143,12 +145,12 @@ describe("useScreenshot composable unit tests", () => {
                 type: "MULTISTREAM_CAPTURE_RESULT",
                 requestId: data.requestId,
                 success: true,
-                dataUrl: "data:image/png;base64,mockdata"
-              }
+                dataUrl: "data:image/png;base64,mockdata",
+              },
             });
           }
-        }) 
-      } 
+        }),
+      },
     };
     const dummyDiv = { querySelector: vi.fn().mockReturnValue(dummyIframe) } as any;
 
@@ -179,8 +181,8 @@ describe("useScreenshot composable unit tests", () => {
     } as any;
     globalThis.window = mockWindow;
 
-    const dummyIframe = { 
-      contentWindow: { 
+    const dummyIframe = {
+      contentWindow: {
         postMessage: vi.fn().mockImplementation((data) => {
           if (messageHandler) {
             messageHandler({
@@ -188,12 +190,12 @@ describe("useScreenshot composable unit tests", () => {
                 type: "MULTISTREAM_CAPTURE_RESULT",
                 requestId: data.requestId,
                 success: true,
-                dataUrl: "data:image/png;base64,mockdata"
-              }
+                dataUrl: "data:image/png;base64,mockdata",
+              },
             });
           }
-        }) 
-      } 
+        }),
+      },
     };
     const dummyDiv = { querySelector: vi.fn().mockReturnValue(dummyIframe) } as any;
 
@@ -202,7 +204,7 @@ describe("useScreenshot composable unit tests", () => {
       createElement: vi.fn().mockImplementation((tagName) => {
         if (tagName === "a") return mockAnchor;
         return {};
-      })
+      }),
     } as any;
 
     // Act

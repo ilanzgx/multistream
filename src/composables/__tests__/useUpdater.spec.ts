@@ -161,7 +161,7 @@ describe("useUpdater composable unit tests", () => {
         expect.objectContaining({
           action: expect.objectContaining({ label: "Update" }),
           duration: 10000,
-        }),
+        })
       );
     });
 
@@ -199,9 +199,7 @@ describe("useUpdater composable unit tests", () => {
 
     it("should handle check error (without toast) properly", async () => {
       // Arrange
-      vi.mocked(tauriUpdater.check).mockRejectedValueOnce(
-        new Error("Network Error"),
-      );
+      vi.mocked(tauriUpdater.check).mockRejectedValueOnce(new Error("Network Error"));
 
       // Act
       await sut.checkForUpdates();
@@ -209,7 +207,7 @@ describe("useUpdater composable unit tests", () => {
       // Assert
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         "Failed to check for updates:",
-        expect.any(Error),
+        expect.any(Error)
       );
       expect(toast.error).not.toHaveBeenCalled();
       expect(sut.isChecking.value).toBe(false);
@@ -217,9 +215,7 @@ describe("useUpdater composable unit tests", () => {
 
     it("should handle check error (with toast flag true)", async () => {
       // Arrange
-      vi.mocked(tauriUpdater.check).mockRejectedValueOnce(
-        new Error("Network Error"),
-      );
+      vi.mocked(tauriUpdater.check).mockRejectedValueOnce(new Error("Network Error"));
 
       // Act
       await sut.checkForUpdates(true);
@@ -287,10 +283,7 @@ describe("useUpdater composable unit tests", () => {
       await sut.installUpdate();
 
       // Assert
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        "Failed to install update:",
-        expect.any(Error),
-      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to install update:", expect.any(Error));
       expect(toast.error).toHaveBeenCalledWith("toasts.update.failedUpdate", {
         id: "update-download",
       });

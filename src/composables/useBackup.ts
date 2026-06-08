@@ -40,7 +40,12 @@ export const validateBackupData = (data: any): data is BackupData => {
     if (!s || typeof s !== "object") return false;
     if (typeof s.id !== "string") return false;
     if (typeof s.channel !== "string") return false;
-    if (s.platform !== "kick" && s.platform !== "twitch" && s.platform !== "youtube" && s.platform !== "custom") {
+    if (
+      s.platform !== "kick" &&
+      s.platform !== "twitch" &&
+      s.platform !== "youtube" &&
+      s.platform !== "custom"
+    ) {
       return false;
     }
     if (s.iframeUrl !== undefined && typeof s.iframeUrl !== "string") {
@@ -53,7 +58,12 @@ export const validateBackupData = (data: any): data is BackupData => {
   for (const f of data.favorites) {
     if (!f || typeof f !== "object") return false;
     if (typeof f.channel !== "string") return false;
-    if (f.platform !== "kick" && f.platform !== "twitch" && f.platform !== "youtube" && f.platform !== "custom") {
+    if (
+      f.platform !== "kick" &&
+      f.platform !== "twitch" &&
+      f.platform !== "youtube" &&
+      f.platform !== "custom"
+    ) {
       return false;
     }
     if (typeof f.addedAt !== "number") return false;
@@ -67,7 +77,12 @@ export const validateBackupData = (data: any): data is BackupData => {
   for (const r of data.recents) {
     if (!r || typeof r !== "object") return false;
     if (typeof r.channel !== "string") return false;
-    if (r.platform !== "kick" && r.platform !== "twitch" && r.platform !== "youtube" && r.platform !== "custom") {
+    if (
+      r.platform !== "kick" &&
+      r.platform !== "twitch" &&
+      r.platform !== "youtube" &&
+      r.platform !== "custom"
+    ) {
       return false;
     }
     if (typeof r.addedAt !== "number") return false;

@@ -22,15 +22,9 @@ const _useFavorites = () => {
    * @param iframeUrl The iframe URL (optional)
    * @return void
    */
-  const addFavorite = (
-    channel: string,
-    platform: Platform,
-    iframeUrl?: string,
-  ) => {
+  const addFavorite = (channel: string, platform: Platform, iframeUrl?: string) => {
     const alreadyExists = favorites.value.some(
-      (f) =>
-        f.channel.toLowerCase() === channel.toLowerCase() &&
-        f.platform === platform,
+      (f) => f.channel.toLowerCase() === channel.toLowerCase() && f.platform === platform
     );
     if (alreadyExists) return;
 
@@ -54,11 +48,7 @@ const _useFavorites = () => {
    */
   const removeFavorite = (channel: string, platform: Platform) => {
     favorites.value = favorites.value.filter(
-      (f) =>
-        !(
-          f.channel.toLowerCase() === channel.toLowerCase() &&
-          f.platform === platform
-        ),
+      (f) => !(f.channel.toLowerCase() === channel.toLowerCase() && f.platform === platform)
     );
   };
 

@@ -22,7 +22,7 @@ const forwarded = useForwardProps(delegatedProps);
     :class="
       cn(
         'inline-flex items-center justify-center gap-1 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*=size-])]:size-4 shrink-0 [&_svg]:shrink-0 px-2.5',
-        props.class,
+        props.class
       )
     "
     v-bind="forwarded"

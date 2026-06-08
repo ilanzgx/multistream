@@ -26,18 +26,10 @@ const _useRecents = () => {
    * @param iframeUrl The iframe URL (optional)
    * @return void
    */
-  const addRecent = (
-    channel: string,
-    platform: Platform,
-    iframeUrl?: string,
-  ) => {
+  const addRecent = (channel: string, platform: Platform, iframeUrl?: string) => {
     // remove if already exists
     recents.value = recents.value.filter(
-      (r) =>
-        !(
-          r.channel.toLowerCase() === channel.toLowerCase() &&
-          r.platform === platform
-        ),
+      (r) => !(r.channel.toLowerCase() === channel.toLowerCase() && r.platform === platform)
     );
 
     // add to top
@@ -63,11 +55,7 @@ const _useRecents = () => {
    */
   const removeRecent = (channel: string, platform: Platform) => {
     recents.value = recents.value.filter(
-      (r) =>
-        !(
-          r.channel.toLowerCase() === channel.toLowerCase() &&
-          r.platform === platform
-        ),
+      (r) => !(r.channel.toLowerCase() === channel.toLowerCase() && r.platform === platform)
     );
   };
 

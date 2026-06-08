@@ -34,7 +34,7 @@ const { getStatus, checkAll } = useLiveStatus();
 const { favorites, removeFavorite } = useFavorites();
 
 const sortedFavorites = computed(() => {
-  return [...favorites.value].sort((a, b) => {
+  return [...favorites.value].toSorted((a, b) => {
     const statusA = getStatus(a.channel, a.platform);
     const statusB = getStatus(b.channel, b.platform);
 
@@ -66,14 +66,10 @@ watch(
     if (isOpen) {
       checkAll();
     }
-  },
+  }
 );
 
-const handleQuickAdd = (
-  channel: string,
-  platform: Platform,
-  iframeUrl?: string,
-) => {
+const handleQuickAdd = (channel: string, platform: Platform, iframeUrl?: string) => {
   addStream(channel, platform, iframeUrl);
   emit("update:open", false);
 };
@@ -206,8 +202,7 @@ const isValidCustomUrl = computed(() => {
   try {
     const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
     return (
-      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
-      parsed.hostname.includes(".")
+      (parsed.protocol === "http:" || parsed.protocol === "https:") && parsed.hostname.includes(".")
     );
   } catch {
     return false;
@@ -224,11 +219,11 @@ const canSubmit = computed(() => {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent
-      class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl lg:max-w-3xl"
-    >
+    <DialogContent class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl lg:max-w-3xl">
       <DialogHeader>
-        <DialogTitle class="text-white">{{ $t("add.title") }}</DialogTitle>
+        <DialogTitle class="text-white">
+          {{ $t("add.title") }}
+        </DialogTitle>
         <DialogDescription class="text-gray-400">
           {{ $t("add.description") }}
         </DialogDescription>
@@ -263,13 +258,7 @@ const canSubmit = computed(() => {
               :channel="recent.channel"
               :platform="recent.platform"
               class="w-full"
-              @click="
-                handleQuickAdd(
-                  recent.channel,
-                  recent.platform,
-                  recent.iframeUrl,
-                )
-              "
+              @click="handleQuickAdd(recent.channel, recent.platform, recent.iframeUrl)"
               @remove="removeRecent(recent.channel, recent.platform)"
             />
           </div>
@@ -311,35 +300,25 @@ const canSubmit = computed(() => {
         </section>
 
         <!-- add stream manually -->
-        <div
-          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
-        >
+        <div class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl">
           <!-- platform selector with icons -->
           <div class="space-y-2">
-            <label class="text-sm font-medium text-gray-300">{{
-              $t("add.platform")
-            }}</label>
+            <label class="text-sm font-medium text-gray-300">{{ $t("add.platform") }}</label>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 v-for="platform in PLATFORMS"
                 :key="platform.id"
                 type="button"
-                @click="selectedPlatform = platform.id as Platform"
                 class="flex flex-col items-center gap-2 p-3 rounded-lg border transition-all duration-200 cursor-pointer hover:scale-[1.03] active:scale-[0.97]"
                 :class="[
                   selectedPlatform === platform.id
                     ? 'bg-[#2a2d33] border-white/20 ring-1 ring-white/10'
                     : 'bg-[#0f1115] border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
                 ]"
+                @click="selectedPlatform = platform.id as Platform"
               >
-                <component
-                  :is="platform.icon"
-                  :size="24"
-                  :style="{ color: platform.color }"
-                />
-                <span class="text-xs text-white capitalize">{{
-                  platform.name
-                }}</span>
+                <component :is="platform.icon" :size="24" :style="{ color: platform.color }" />
+                <span class="text-xs text-white capitalize">{{ platform.name }}</span>
               </button>
             </div>
           </div>
@@ -383,9 +362,7 @@ const canSubmit = computed(() => {
           <!-- channel name (for non-custom platforms) -->
           <div v-else class="space-y-2">
             <label
-              v-if="
-                selectedPlatform === 'kick' || selectedPlatform === 'twitch'
-              "
+              v-if="selectedPlatform === 'kick' || selectedPlatform === 'twitch'"
               class="text-sm font-medium text-gray-300"
               >{{ $t("add.channelLabel") }}</label
             >
@@ -415,9 +392,9 @@ const canSubmit = computed(() => {
           </Button>
         </DialogClose>
         <Button
-          @click="handleAddStream"
           :disabled="!canSubmit"
           class="bg-white text-[#14161a] font-medium border-transparent hover:bg-gray-200 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          @click="handleAddStream"
         >
           {{ $t("add.addButton") }}
         </Button>

@@ -18,22 +18,34 @@ const _usePreferences = () => {
   /**
    * @brief Selected chat
    */
-  const selectedChat = useStorage<string>("preferences.selectedChat", defaultPreferences.selectedChat);
+  const selectedChat = useStorage<string>(
+    "preferences.selectedChat",
+    defaultPreferences.selectedChat
+  );
 
   /**
    * @brief Sidebar open state
    */
-  const sidebarOpen = useStorage<boolean>("preferences.sidebarOpen", defaultPreferences.sidebarOpen);
+  const sidebarOpen = useStorage<boolean>(
+    "preferences.sidebarOpen",
+    defaultPreferences.sidebarOpen
+  );
 
   /**
    * @brief Notifications enabled
    */
-  const notificationsEnabled = useStorage<boolean>("preferences.notificationsEnabled", defaultPreferences.notificationsEnabled);
+  const notificationsEnabled = useStorage<boolean>(
+    "preferences.notificationsEnabled",
+    defaultPreferences.notificationsEnabled
+  );
 
   /**
    * @brief Onboarding completed state
    */
-  const onboardingCompleted = useStorage<boolean>("preferences.onboardingCompleted", defaultPreferences.onboardingCompleted);
+  const onboardingCompleted = useStorage<boolean>(
+    "preferences.onboardingCompleted",
+    defaultPreferences.onboardingCompleted
+  );
 
   /**
    * @brief Set the selected chat

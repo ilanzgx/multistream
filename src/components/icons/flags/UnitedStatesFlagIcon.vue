@@ -63,21 +63,9 @@ defineProps<{
           result="hardAlpha"
         />
         <feOffset dy="1" />
-        <feColorMatrix
-          type="matrix"
-          values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0"
-        />
-        <feBlend
-          mode="normal"
-          in2="BackgroundImageFix"
-          result="effect1_dropShadow_us"
-        />
-        <feBlend
-          mode="normal"
-          in="SourceGraphic"
-          in2="effect1_dropShadow_us"
-          result="shape"
-        />
+        <feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0" />
+        <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_us" />
+        <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_us" result="shape" />
       </filter>
       <linearGradient
         id="paint0_linear_us"

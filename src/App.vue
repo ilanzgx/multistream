@@ -19,7 +19,8 @@ const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
 
 const { streams, addStream, clearStreams } = useStreams();
-const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } = usePreferences();
+const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } =
+  usePreferences();
 const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
 const { locale } = useI18n();
@@ -50,7 +51,7 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
     window.dispatchEvent(
       new CustomEvent("multistream-show-dialog", {
         detail: "add-stream",
-      }),
+      })
     );
   }
 }
@@ -79,7 +80,7 @@ function handleFrameShortcuts(e: MessageEvent) {
     window.dispatchEvent(
       new CustomEvent("multistream-show-dialog", {
         detail: "add-stream",
-      }),
+      })
     );
   }
 }
@@ -92,7 +93,10 @@ watch(streams, (newStreams, oldStreams) => {
   // when none streams are selected, auto load the chat of the first stream
   // if have more than 1 stream and remove one, auto load the chat of the first stream
   // if something wrong happens, falls on fallback
-  if ((oldStreams.length === 0 && newStreams.length === 1) || (oldStreams.length > 1 && newStreams.length === 1)) {
+  if (
+    (oldStreams.length === 0 && newStreams.length === 1) ||
+    (oldStreams.length > 1 && newStreams.length === 1)
+  ) {
     setSelectedChat(newStreams[0]?.channel || "");
   }
 
@@ -178,7 +182,11 @@ onUnmounted(() => {
     <SidebarPanel ref="sidebarRef" />
 
     <!-- toggle button -->
-    <button v-if="!sidebarOpen" @click="sidebarOpen = true" class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2">
+    <button
+      v-if="!sidebarOpen"
+      class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2"
+      @click="sidebarOpen = true"
+    >
       <Menu class="size-4 text-gray-500 group-hover:text-white transition-colors duration-200" />
     </button>
 
@@ -187,7 +195,7 @@ onUnmounted(() => {
       position="bottom-left"
       theme="dark"
       :duration="2500"
-      :toastOptions="{
+      :toast-options="{
         style: {
           padding: '12px 16px',
           fontSize: '13px',
@@ -199,6 +207,10 @@ onUnmounted(() => {
     />
 
     <!-- onboarding tour -->
-    <OnboardingTour v-model:open="showOnboarding" :allow-outside-close="onboardingCompleted" @complete="setOnboardingCompleted(true)" />
+    <OnboardingTour
+      v-model:open="showOnboarding"
+      :allow-outside-close="onboardingCompleted"
+      @complete="setOnboardingCompleted(true)"
+    />
   </div>
 </template>

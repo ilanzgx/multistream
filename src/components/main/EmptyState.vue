@@ -18,9 +18,7 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
       <h2 class="text-2xl lg:text-3xl font-bold text-white">
         {{ $t("empty.title") }}
       </h2>
-      <p
-        class="text-gray-400 text-sm lg:text-base text-center max-w-sm lg:max-w-md"
-      >
+      <p class="text-gray-400 text-sm lg:text-base text-center max-w-sm lg:max-w-md">
         {{ $t("empty.description") }}
       </p>
 
@@ -31,14 +29,14 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
       >
         <div class="flex items-center gap-2">
           <component
+            :is="platform.icon"
             v-for="platform in platforms"
             :key="platform.id"
-            :is="platform.icon"
             :size="15"
             class="text-[#14161a]/60 group-hover:text-[#14161a]/80 transition-colors duration-200"
           />
         </div>
-        <span class="w-px h-4 bg-[#14161a]/15"></span>
+        <span class="w-px h-4 bg-[#14161a]/15" />
         <div class="flex items-center gap-1.5">
           <Plus class="size-4" :stroke-width="2.5" />
           <span class="text-sm">{{ $t("empty.addButton") }}</span>

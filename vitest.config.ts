@@ -12,5 +12,5 @@ export default mergeConfig(
       include: ["src/**/*.spec.ts", "src/**/*.test.ts"],
       pool: "threads",
     },
-  }),
+  })
 );

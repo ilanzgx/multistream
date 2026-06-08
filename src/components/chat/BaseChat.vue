@@ -6,9 +6,7 @@ import type { Platform } from "@/composables/useStreams";
 
 const props = defineProps<{ platform?: Platform }>();
 
-const platformConfig = computed(() =>
-  props.platform ? PLATFORMS[props.platform] : null,
-);
+const platformConfig = computed(() => (props.platform ? PLATFORMS[props.platform] : null));
 
 const isLoading = ref(true);
 const containerRef = ref<HTMLElement>();
@@ -38,8 +36,8 @@ onMounted(() => {
       >
         <!-- Platform icon -->
         <component
-          v-if="platformConfig?.icon"
           :is="platformConfig.icon"
+          v-if="platformConfig?.icon"
           :size="48"
           :style="{ color: platformConfig.color }"
           class="opacity-30"

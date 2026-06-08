@@ -2,15 +2,15 @@ import { createI18n } from "vue-i18n";
 import { en, pt, es, de, cn, ru } from "@/i18n/locales";
 
 export function getDefaultLocale(): string {
-  const supportedLocales = ["en", "pt", "es", "de", "cn", "ru"];
+  const supportedLocales = new Set(["en", "pt", "es", "de", "cn", "ru"]);
 
   const savedLocale = localStorage.getItem("locale");
-  if (savedLocale && supportedLocales.includes(savedLocale)) {
+  if (savedLocale && supportedLocales.has(savedLocale)) {
     return savedLocale;
   }
 
   const browserLang = globalThis.navigator?.language?.split("-")[0] ?? "en";
-  return supportedLocales.includes(browserLang) ? browserLang : "en";
+  return supportedLocales.has(browserLang) ? browserLang : "en";
 }
 
 export const i18n = createI18n({

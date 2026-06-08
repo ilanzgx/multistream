@@ -90,7 +90,7 @@ describe("parseUrlOptions util unit tests", () => {
 
     // Act
     const result = sut(
-      `?streams=${encodeURIComponent(regular)}&c=${encodeURIComponent(customBase64)}`,
+      `?streams=${encodeURIComponent(regular)}&c=${encodeURIComponent(customBase64)}`
     );
 
     // Assert
