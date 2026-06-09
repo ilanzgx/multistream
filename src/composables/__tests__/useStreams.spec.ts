@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from "vitest";
 import { useStreams } from "../useStreams";
 import { toast } from "vue-sonner";
 
@@ -25,11 +25,21 @@ vi.mock("./useRecents", () => ({
 describe("useStreams composable unit tests", () => {
   let sut: ReturnType<typeof useStreams>;
 
+  beforeAll(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(1600000000000));
+  });
+
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
     sut = useStreams();
     sut.clearStreams();
+    sut.resetTimerState();
   });
 
   it("should add a new stream correctly", () => {
@@ -122,14 +132,6 @@ describe("useStreams composable unit tests", () => {
   });
 
   describe("two-phase removal (requestRemoveStream)", () => {
-    beforeEach(() => {
-      vi.useFakeTimers();
-    });
-
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
     it("should mark a stream as leaving and then remove it after delay", () => {
       const { addStream, requestRemoveStream, isLeaving, streams } = sut;
 
@@ -276,6 +278,136 @@ describe("useStreams composable unit tests", () => {
       // Assert: k1 should still have counter 0
       const updatedK1 = streams.value.find((s) => s.channel === "kick1")!;
       expect(getStreamKey(updatedK1)).toBe(`${k1.id}-kick-0`);
+    });
+  });
+
+  describe("Watch time tracking logic", () => {
+    beforeEach(() => {
+      vi.setSystemTime(new Date(1600000000000));
+    });
+
+    it("should set sessionStartTimes on stream add", () => {
+      // Arrange
+      const { addStream, sessionStartTimes, streams } = sut;
+
+      // Act
+      addStream("gaules", "twitch");
+      const id = streams.value[0]!.id;
+
+      // Assert
+      expect(sessionStartTimes[id]).toBe(Date.now());
+    });
+
+    it("should remove session start times on stream remove", () => {
+      // Arrange
+      const { addStream, removeStream, sessionStartTimes, streams } = sut;
+
+      // Act
+      addStream("gaules", "twitch");
+      const id = streams.value[0]!.id;
+
+      // Assert
+      expect(sessionStartTimes[id]).toBeDefined();
+
+      // Act
+      removeStream(id);
+
+      // Assert
+      expect(sessionStartTimes[id]).toBeUndefined();
+    });
+
+    it("should accumulate historical watch time in memory and sync to storage", () => {
+      // Arrange
+      const { addStream, watchHistory, tick } = sut;
+
+      addStream("gaules", "twitch");
+
+      // Simulate 5 ticks of 1 second
+      for (let i = 1; i <= 5; i++) {
+        tick(1600000000000 + i * 1000);
+      }
+
+      // Verify that after 5 seconds, watch-history is NOT updated yet (since we sync every 10s)
+      expect(watchHistory.value["twitch:gaules"]).toBeUndefined();
+
+      // Simulate another 5 ticks of 1 second (10s total)
+      for (let i = 6; i <= 10; i++) {
+        tick(1600000000000 + i * 1000);
+      }
+
+      // Verify it has synced
+      // Assert
+      expect(watchHistory.value["twitch:gaules"]).toBe(10000);
+    });
+
+    it("should flush accumulated watch time immediately on stream remove", () => {
+      const { addStream, removeStream, watchHistory, streams, tick } = sut;
+
+      addStream("gaules", "twitch");
+      const id = streams.value[0]!.id;
+
+      // Simulate 3 ticks of 1 second
+      for (let i = 1; i <= 3; i++) {
+        tick(1600000000000 + i * 1000);
+      }
+
+      // Verify not synced yet
+      expect(watchHistory.value["twitch:gaules"]).toBeUndefined();
+
+      // Remove the stream
+      removeStream(id);
+
+      // Verify it was flushed immediately
+      expect(watchHistory.value["twitch:gaules"]).toBe(3000);
+    });
+
+    it("should flush accumulated watch time immediately on clearStreams", () => {
+      const { addStream, clearStreams, watchHistory, tick } = sut;
+
+      addStream("gaules", "twitch");
+      addStream("alanzoka", "twitch");
+
+      // Simulate 4 ticks of 1 second
+      for (let i = 1; i <= 4; i++) {
+        tick(1600000000000 + i * 1000);
+      }
+
+      // Clear all streams
+      clearStreams();
+
+      // Verify both streams flushed their accumulated times immediately
+      expect(watchHistory.value["twitch:gaules"]).toBe(4000);
+      expect(watchHistory.value["twitch:alanzoka"]).toBe(4000);
+    });
+
+    it("should reactively set sessionStartTimes on backup stream overwrite/import", () => {
+      const { streams, sessionStartTimes } = sut;
+
+      // Overwrite streams directly (simulating backup import)
+      streams.value = [
+        { id: "imported-1", channel: "gaules", platform: "twitch" },
+        { id: "imported-2", channel: "xqc", platform: "kick" },
+      ];
+
+      // Verify that watcher immediately initialized start times
+      expect(sessionStartTimes["imported-1"]).toBe(1600000000000);
+      expect(sessionStartTimes["imported-2"]).toBe(1600000000000);
+    });
+
+    it("should not accumulate watch time for streams that are leaving", () => {
+      const { addStream, requestRemoveStream, tick, watchHistory, streams } = sut;
+
+      addStream("gaules", "twitch");
+      const id = streams.value[0]!.id;
+
+      // Mark stream as leaving
+      requestRemoveStream(id);
+
+      // Simulate 1 tick of 1 second
+      tick(1600000000000 + 1000);
+
+      // Verify watchHistory has no entry for twitch:gaules (not accumulated)
+      expect(watchHistory.value["twitch:gaules"]).toBeUndefined();
     });
   });
 });

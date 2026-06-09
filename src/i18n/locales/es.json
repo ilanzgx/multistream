@@ -88,6 +88,9 @@
   "hide": {
     "tooltip": "Ocultar"
   },
+  "stream": {
+    "watching": "Viendo"
+  },
   "empty": {
     "title": "No hay streams registradas",
     "description": "Comienza agregando tus canales favoritos para verlos simultáneamente.",

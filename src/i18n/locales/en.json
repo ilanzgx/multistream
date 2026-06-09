@@ -88,6 +88,9 @@
   "hide": {
     "tooltip": "Hide"
   },
+  "stream": {
+    "watching": "Watching"
+  },
   "empty": {
     "title": "No streams registered",
     "description": "Start by adding your favorite channels to watch simultaneously.",

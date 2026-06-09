@@ -2,18 +2,51 @@
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { X, Heart, Maximize2, Camera } from "lucide-vue-next";
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "vue-sonner";
 
-const { requestRemoveStream } = useStreams();
+const { requestRemoveStream, sessionStartTimes, now } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
 const { toggleFocus, isFocused, clearFocus, focusedStreamId } = useFocusedStream();
 const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
+
+const formatWatchTime = (ms: number): string => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const paddedMinutes = String(minutes).padStart(2, "0");
+  const paddedSeconds = String(seconds).padStart(2, "0");
+
+  if (hours > 0) {
+    const paddedHours = String(hours).padStart(2, "0");
+    return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`;
+  }
+  return `${paddedMinutes}:${paddedSeconds}`;
+};
+
+const isHovered = ref(false);
+
+const formattedWatchTime = computed(() => {
+  if (!isHovered.value) return "";
+  const start = sessionStartTimes[props.channelid];
+  if (!start) return "00:00";
+  const diff = Math.max(0, now.value - start);
+  return formatWatchTime(diff);
+});
+
+const displayWatchTime = ref("00:00");
+watch(formattedWatchTime, (newVal) => {
+  if (newVal) {
+    displayWatchTime.value = newVal;
+  }
+});
 
 import { PLATFORMS } from "@/config/platforms";
 
@@ -88,7 +121,12 @@ const handleScreenshot = () => {
 </script>
 
 <template>
-  <div ref="containerRef" class="relative h-full group">
+  <div
+    ref="containerRef"
+    class="relative h-full group"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
+  >
     <!-- skeleton loader with smooth fade-out -->
     <Transition name="fade">
       <div
@@ -175,6 +213,18 @@ const handleScreenshot = () => {
       >
         <Maximize2 :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
+    </div>
+
+    <!-- watch timer bottom overlay bar - appears on hover -->
+    <div
+      :class="[
+        'absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] sm:text-xs text-white/90 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 shadow-lg',
+        isMiniaturized ? 'scale-90 bottom-1' : '',
+      ]"
+    >
+      <span class="font-medium tracking-wide"
+        >{{ t("stream.watching") }}: {{ displayWatchTime }}</span
+      >
     </div>
 
     <slot />

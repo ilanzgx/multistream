@@ -65,9 +65,12 @@ const triggerFileInput = () => {
   fileInputRef.value?.click();
 };
 
-const handleExport = () => {
-  exportConfig();
-  toast.success(t("settings.backup.exportSuccess"));
+const handleExport = async () => {
+  const success = await exportConfig();
+  if (success) {
+    toast.success(t("settings.backup.exportSuccess"));
+    emit("update:open", false);
+  }
 };
 
 const handleFileImport = (e: Event) => {

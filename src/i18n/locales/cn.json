@@ -88,6 +88,9 @@
   "hide": {
     "tooltip": "隐藏"
   },
+  "stream": {
+    "watching": "观看时间"
+  },
   "empty": {
     "title": "没有已注册的直播",
     "description": "首先添加您喜爱的频道以同时观看。",

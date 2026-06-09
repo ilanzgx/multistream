@@ -21,6 +21,7 @@ export interface BackupData {
     notificationsEnabled: boolean;
     locale?: string;
   };
+  watchHistory?: Record<string, number>;
 }
 
 /**
@@ -100,11 +101,24 @@ export const validateBackupData = (data: any): data is BackupData => {
     return false;
   }
 
+  // Validate watchHistory
+  if (data.watchHistory !== undefined) {
+    if (
+      typeof data.watchHistory !== "object" ||
+      data.watchHistory === null ||
+      Array.isArray(data.watchHistory)
+    )
+      return false;
+    for (const key in data.watchHistory) {
+      if (typeof data.watchHistory[key] !== "number") return false;
+    }
+  }
+
   return true;
 };
 
 const _useBackup = () => {
-  const { streams } = useStreams();
+  const { streams, watchHistory } = useStreams();
   const { favorites } = useFavorites();
   const { recents } = useRecents();
   const { selectedChat, sidebarOpen, notificationsEnabled } = usePreferences();
@@ -121,7 +135,7 @@ const _useBackup = () => {
   /**
    * @brief Export configuration as a JSON file download
    */
-  const exportConfig = () => {
+  const exportConfig = async (): Promise<boolean> => {
     const backup: BackupData = {
       version: 1,
       app: "multistream",
@@ -135,15 +149,51 @@ const _useBackup = () => {
         notificationsEnabled: notificationsEnabled.value,
         ...(locale && { locale: locale.value }),
       },
+      watchHistory: watchHistory.value,
     };
 
+    const fileName = `multistream-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+    // Try HTML5 File System Access API first (supported by modern WebView2/Chromium)
+    const hasSaveFilePicker = typeof window !== "undefined" && "showSaveFilePicker" in window;
+    if (hasSaveFilePicker) {
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: "JSON Files",
+              accept: {
+                "application/json": [".json"],
+              },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(JSON.stringify(backup, null, 2));
+        await writable.close();
+        return true;
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          return false; // User cancelled
+        }
+        console.error("Save file picker failed, falling back to legacy download:", err);
+      }
+    }
+
+    // Fallback for browsers/environments without showSaveFilePicker
+    legacyDownload(backup, fileName);
+    return true;
+  };
+
+  const legacyDownload = (backup: BackupData, fileName: string) => {
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: "application/json",
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `multistream-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -167,6 +217,9 @@ const _useBackup = () => {
       }
       localStorage.setItem("locale", data.preferences.locale);
     }
+    if (data.watchHistory) {
+      watchHistory.value = data.watchHistory;
+    }
   };
 
   return {
@@ -180,6 +233,7 @@ const _useBackup = () => {
     selectedChat,
     sidebarOpen,
     notificationsEnabled,
+    watchHistory,
   };
 };
 

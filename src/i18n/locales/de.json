@@ -88,6 +88,9 @@
   "hide": {
     "tooltip": "Ausblenden"
   },
+  "stream": {
+    "watching": "Zuschauen"
+  },
   "empty": {
     "title": "Keine Streams registriert",
     "description": "Fügen Sie zunächst Ihre Lieblingskanäle hinzu, um sie gleichzeitig anzusehen.",

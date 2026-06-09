@@ -1,9 +1,10 @@
 import { createSharedComposable, useStorage } from "@vueuse/core";
-import { computed, reactive } from "vue";
+import { computed, reactive, ref, watch, onScopeDispose } from "vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { useRecents } from "./useRecents";
 import { useFocusedStream } from "./useFocusedStream";
+import { WATCH_TIME_CONFIG } from "@/config/watchTime";
 
 export type Platform = "kick" | "twitch" | "youtube" | "custom";
 
@@ -28,6 +29,94 @@ const _useStreams = () => {
 
   // tracks reload key suffixes for Kick streams to force re-render/reload when another Kick stream is removed
   const kickReloadCounters = reactive<Record<string, number>>({});
+
+  // Session watch time tracking
+  const sessionStartTimes = reactive<Record<string, number>>({});
+
+  // Reactively track changes to streams to manage session start times (covers additions, removals, and backup imports)
+  watch(
+    streams,
+    (newStreams) => {
+      newStreams.forEach((s) => {
+        if (!sessionStartTimes[s.id]) {
+          sessionStartTimes[s.id] = Date.now();
+        }
+      });
+      const newIds = new Set(newStreams.map((s) => s.id));
+      for (const id in sessionStartTimes) {
+        if (!newIds.has(id)) {
+          delete sessionStartTimes[id];
+        }
+      }
+    },
+    { immediate: true, deep: true, flush: "sync" }
+  );
+
+  const now = ref(Date.now());
+
+  // Historical watch time tracking
+  const watchHistory = useStorage<Record<string, number>>("watch-history", {});
+  const memoryAccumulator = reactive<Record<string, number>>({});
+  let lastTickTime = Date.now();
+  let lastSyncTime = Date.now();
+
+  const flushStreamWatchTime = (stream: Stream) => {
+    const key = `${stream.platform}:${stream.channel.toLowerCase()}`;
+    const val = memoryAccumulator[key];
+    const history = watchHistory.value;
+    if (val !== undefined && history) {
+      history[key] = (history[key] || 0) + val;
+      delete memoryAccumulator[key];
+    }
+  };
+
+  const flushAllWatchTime = () => {
+    const history = watchHistory.value;
+    if (!history) return;
+    for (const key in memoryAccumulator) {
+      const val = memoryAccumulator[key];
+      if (val !== undefined) {
+        history[key] = (history[key] || 0) + val;
+      }
+      delete memoryAccumulator[key];
+    }
+  };
+
+  const tick = (currentNow: number) => {
+    now.value = currentNow;
+
+    if (streams.value.length === 0) {
+      lastSyncTime = currentNow;
+      lastTickTime = currentNow;
+      return;
+    }
+
+    const delta = Math.max(0, currentNow - lastTickTime);
+
+    streams.value.forEach((s) => {
+      // Only accumulate for streams that are not currently animating out/leaving
+      if (!leavingIds.has(s.id)) {
+        const key = `${s.platform}:${s.channel.toLowerCase()}`;
+        memoryAccumulator[key] = (memoryAccumulator[key] || 0) + delta;
+      }
+    });
+
+    if (currentNow - lastSyncTime >= WATCH_TIME_CONFIG.syncIntervalMs) {
+      flushAllWatchTime();
+      lastSyncTime = currentNow;
+    }
+
+    lastTickTime = currentNow;
+  };
+
+  // Single background ticker for both session timer and historical accumulation
+  const intervalId = setInterval(() => {
+    tick(Date.now());
+  }, WATCH_TIME_CONFIG.tickIntervalMs);
+
+  onScopeDispose(() => {
+    clearInterval(intervalId);
+  });
 
   /**
    * @brief Add a stream
@@ -56,15 +145,18 @@ const _useStreams = () => {
       return;
     }
 
+    const newId = crypto.randomUUID();
     streams.value = [
       ...streams.value,
       {
-        id: crypto.randomUUID(),
+        id: newId,
         channel,
         platform,
         ...(iframeUrl && { iframeUrl }),
       },
     ];
+
+    now.value = Date.now();
 
     toast.success(`${channel} ${t("toasts.add.added")}`);
 
@@ -81,24 +173,26 @@ const _useStreams = () => {
    */
   const removeStream = (id: string) => {
     const stream = streams.value.find((s) => s.id === id);
+    if (!stream) return;
+
     streams.value = streams.value.filter((s) => s.id !== id);
 
     if (focusedStreamId.value === id) {
       clearFocus();
     }
 
-    if (stream) {
-      toast.success(`${stream.channel} ${t("toasts.remove")}`);
+    toast.success(`${stream.channel} ${t("toasts.remove")}`);
 
-      // If a Kick stream was removed, increment reload counters of remaining Kick streams
-      // to trigger an automatic reload of their iframes, restoring audio and process stability.
-      if (stream.platform === "kick") {
-        streams.value.forEach((s) => {
-          if (s.platform === "kick") {
-            kickReloadCounters[s.id] = (kickReloadCounters[s.id] || 0) + 1;
-          }
-        });
-      }
+    flushStreamWatchTime(stream);
+
+    // If a Kick stream was removed, increment reload counters of remaining Kick streams
+    // to trigger an automatic reload of their iframes, restoring audio and process stability.
+    if (stream.platform === "kick") {
+      streams.value.forEach((s) => {
+        if (s.platform === "kick") {
+          kickReloadCounters[s.id] = (kickReloadCounters[s.id] || 0) + 1;
+        }
+      });
     }
   };
 
@@ -147,6 +241,7 @@ const _useStreams = () => {
    * @return void
    */
   const clearStreams = () => {
+    flushAllWatchTime();
     streams.value = [];
     leavingIds.clear();
     clearFocus();
@@ -172,6 +267,14 @@ const _useStreams = () => {
     return "grid-cols-4 grid-rows-3";
   });
 
+  const resetTimerState = () => {
+    lastTickTime = Date.now();
+    lastSyncTime = Date.now();
+    for (const key in memoryAccumulator) {
+      delete memoryAccumulator[key];
+    }
+  };
+
   return {
     streams,
     addStream,
@@ -181,6 +284,11 @@ const _useStreams = () => {
     getStreamKey,
     clearStreams,
     gridClass,
+    sessionStartTimes,
+    now,
+    watchHistory,
+    resetTimerState,
+    tick,
   };
 };
 

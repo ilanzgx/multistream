@@ -28,6 +28,9 @@ describe("useBackup composable unit tests", () => {
       notificationsEnabled: true,
       locale: "pt",
     },
+    watchHistory: {
+      "twitch:twitch_streamer": 120000,
+    },
   };
 
   beforeEach(() => {
@@ -68,6 +71,14 @@ describe("useBackup composable unit tests", () => {
       };
       expect(validateBackupData(invalidPreferences)).toBe(false);
     });
+
+    it("should reject backup with invalid watchHistory structure", () => {
+      const invalidHistory = {
+        ...validBackup,
+        watchHistory: { "twitch:streamer": "100" } as any, // should be number
+      };
+      expect(validateBackupData(invalidHistory)).toBe(false);
+    });
   });
 
   describe("importConfig", () => {
@@ -81,6 +92,7 @@ describe("useBackup composable unit tests", () => {
         selectedChat,
         sidebarOpen,
         notificationsEnabled,
+        watchHistory,
       } = backupComposable;
 
       // Act
@@ -94,11 +106,12 @@ describe("useBackup composable unit tests", () => {
       expect(sidebarOpen.value).toBe(false);
       expect(notificationsEnabled.value).toBe(true);
       expect(localStorage.getItem("locale")).toBe("pt");
+      expect(watchHistory.value).toEqual(validBackup.watchHistory);
     });
   });
 
   describe("exportConfig", () => {
-    it("should package data and trigger a file download", () => {
+    it("should package data and trigger a file download", async () => {
       const {
         exportConfig,
         streams,
@@ -107,6 +120,7 @@ describe("useBackup composable unit tests", () => {
         selectedChat,
         sidebarOpen,
         notificationsEnabled,
+        watchHistory,
       } = backupComposable;
 
       // Populate some test data
@@ -117,6 +131,9 @@ describe("useBackup composable unit tests", () => {
       selectedChat.value = validBackup.preferences.selectedChat;
       sidebarOpen.value = validBackup.preferences.sidebarOpen;
       notificationsEnabled.value = validBackup.preferences.notificationsEnabled;
+      if (validBackup.watchHistory) {
+        watchHistory.value = validBackup.watchHistory;
+      }
 
       // Mock DOM methods used in download on globalThis.document
       const clickMock = vi.fn();
@@ -145,7 +162,7 @@ describe("useBackup composable unit tests", () => {
       globalThis.URL.revokeObjectURL = revokeObjectURLMock;
 
       // Act
-      exportConfig();
+      await exportConfig();
 
       // Assert
       expect(document.createElement).toHaveBeenCalledWith("a");
