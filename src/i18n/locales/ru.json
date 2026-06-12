@@ -17,7 +17,8 @@
     "historyLabel": "История",
     "favoritesLabel": "Избранное",
     "favoritesDescription": "Избранные каналы, которые сейчас в эфире",
-    "suggestions": "Популярно на русском"
+    "suggestions": "Популярно на русском",
+    "categoryAll": "Все"
   },
   "settings": {
     "tooltip": "Настройки",

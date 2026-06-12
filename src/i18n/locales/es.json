@@ -17,7 +17,8 @@
     "historyLabel": "Historial",
     "favoritesLabel": "Favoritos",
     "favoritesDescription": "Canales favoritos que están transmitiendo en vivo",
-    "suggestions": "Tendencias en Español"
+    "suggestions": "Tendencias en Español",
+    "categoryAll": "Todos"
   },
   "settings": {
     "tooltip": "Configuraciones",

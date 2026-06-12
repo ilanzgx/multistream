@@ -17,7 +17,8 @@
     "historyLabel": "历史",
     "favoritesLabel": "收藏",
     "favoritesDescription": "当前正在直播的收藏频道",
-    "suggestions": "热门中文频道"
+    "suggestions": "热门中文频道",
+    "categoryAll": "全部"
   },
   "settings": {
     "tooltip": "设置",

@@ -16,14 +16,29 @@ const { suggestedStreams, isLoadingSuggestions } = useLiveStatus();
 
 const PAGE_SIZE = 18;
 const currentPage = ref(1);
+const selectedCategory = ref<string | null>(null);
 
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(suggestedStreams.value.length / PAGE_SIZE))
+// Categories sorted by frequency (most common first)
+const availableCategories = computed(() => {
+  const freq = new Map<string, number>();
+  for (const stream of suggestedStreams.value) {
+    if (!stream.category) continue;
+    freq.set(stream.category, (freq.get(stream.category) ?? 0) + 1);
+  }
+  return [...freq.entries()].toSorted((a, b) => b[1] - a[1]).map(([category]) => category);
+});
+
+const filteredStreams = computed(() =>
+  selectedCategory.value
+    ? suggestedStreams.value.filter((s) => s.category === selectedCategory.value)
+    : suggestedStreams.value
 );
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredStreams.value.length / PAGE_SIZE)));
 
 const paginatedStreams = computed(() => {
   const start = (currentPage.value - 1) * PAGE_SIZE;
-  return suggestedStreams.value.slice(start, start + PAGE_SIZE);
+  return filteredStreams.value.slice(start, start + PAGE_SIZE);
 });
 
 // Reset to page 1 only on full reload (not background updates)
@@ -33,12 +48,17 @@ watch(isLoadingSuggestions, (newVal) => {
   }
 });
 
-// Clamp currentPage to valid range after re-interleaving
-watch(totalPages, (newTotal) => {
+// Clamp currentPage to valid range after re-interleaving or filter change
+watch([totalPages, selectedCategory], ([newTotal]) => {
   if (currentPage.value > newTotal) {
     currentPage.value = newTotal;
   }
 });
+
+function selectCategory(category: string | null) {
+  selectedCategory.value = category;
+  currentPage.value = 1;
+}
 
 const formatViewers = (count?: number) => {
   if (!count) return "";
@@ -58,6 +78,37 @@ const formatViewers = (count?: number) => {
       <span class="w-8 h-px bg-gray-700" />
       {{ $t("add.suggestions") }}
       <span class="w-8 h-px bg-gray-700" />
+    </div>
+
+    <!-- Category filter chips -->
+    <div
+      v-if="availableCategories.length > 1"
+      class="flex gap-2 overflow-x-auto w-full [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      <button
+        class="flex-none px-3 py-1 rounded-full text-xs font-medium border transition-colors duration-150 cursor-pointer"
+        :class="
+          selectedCategory === null
+            ? 'bg-white/10 text-white border-white/20'
+            : 'text-gray-400 border-[#2a2d33] bg-[#14161a] hover:text-white hover:border-[#3a3f4b]'
+        "
+        @click="selectCategory(null)"
+      >
+        {{ $t("add.categoryAll") }}
+      </button>
+      <button
+        v-for="category in availableCategories"
+        :key="category"
+        class="flex-none px-3 py-1 rounded-full text-xs font-medium border transition-colors duration-150 cursor-pointer"
+        :class="
+          selectedCategory === category
+            ? 'bg-white/10 text-white border-white/20'
+            : 'text-gray-400 border-[#2a2d33] bg-[#14161a] hover:text-white hover:border-[#3a3f4b]'
+        "
+        @click="selectCategory(category)"
+      >
+        {{ category }}
+      </button>
     </div>
 
     <div class="flex flex-wrap justify-center gap-4 w-full">
@@ -131,7 +182,7 @@ const formatViewers = (count?: number) => {
     <Pagination
       v-if="totalPages > 1"
       v-model:page="currentPage"
-      :total="suggestedStreams.length"
+      :total="filteredStreams.length"
       :items-per-page="PAGE_SIZE"
       :sibling-count="1"
       class="mt-2"

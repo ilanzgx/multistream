@@ -17,7 +17,8 @@
     "historyLabel": "Histórico",
     "favoritesLabel": "Favoritos",
     "favoritesDescription": "Canais favoritos que estão em live no momento",
-    "suggestions": "Destaques em Português"
+    "suggestions": "Destaques em Português",
+    "categoryAll": "Todos"
   },
   "settings": {
     "tooltip": "Configurações",

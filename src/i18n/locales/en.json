@@ -17,7 +17,8 @@
     "historyLabel": "History",
     "favoritesLabel": "Favorites",
     "favoritesDescription": "Favorite channels that are currently streaming",
-    "suggestions": "Popular in English"
+    "suggestions": "Popular in English",
+    "categoryAll": "All"
   },
   "settings": {
     "tooltip": "Settings",
