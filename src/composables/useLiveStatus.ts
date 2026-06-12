@@ -306,14 +306,24 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap | null> {
  * @brief Fetch a single page of Kick featured streams
  *
  * Fetches one page of featured livestreams from Kick.
+ * Optionally filtered by a category subcategory slug.
  *
  * @param page The page number (1-indexed)
  * @param kickLangCode The Kick language code for the URL
+ * @param subcategory Optional category slug to filter results
  * @return The raw streams from that page
  */
-async function fetchKickStreamsPage(page: number, kickLangCode: string): Promise<any[]> {
+async function fetchKickStreamsPage(
+  page: number,
+  kickLangCode: string,
+  subcategory?: string
+): Promise<any[]> {
   try {
-    const response = await httpGet(`${API_CONFIG.kick.featuredUrl}/${kickLangCode}?page=${page}`);
+    const params = new URLSearchParams({ page: String(page) });
+    if (subcategory) params.set("subcategory", subcategory);
+    const response = await httpGet(
+      `${API_CONFIG.kick.featuredUrl}/${kickLangCode}?${params.toString()}`
+    );
     if (!response.ok) return [];
     const data = await response.json();
     return data.data ?? [];
@@ -361,7 +371,15 @@ function processKickStreams(
       channel: s.channel?.slug || s.slug,
       platform: "kick" as Platform,
       title: s.session_title || s.title || "",
-      category: s.categories?.[0]?.name ?? s.category?.name ?? "Just Chatting",
+      // Strip trailing abbreviation suffixes added by Kick, e.g.
+      // "Grand Theft Auto V (GTA)" → "Grand Theft Auto V"
+      // "Counter-Strike 2 (CS2)"   → "Counter-Strike 2"
+      // Only matches ALL-CAPS/digit codes (2–5 chars) so subtitles like
+      // "(Java Edition)" or "(The Definitive Edition)" are preserved.
+      category:
+        (s.categories?.[0]?.name ?? s.category?.name ?? "Just Chatting")
+          .replace(/\s*\([A-Z0-9]{2,5}\)\s*$/, "")
+          .trim() || "Just Chatting",
       viewerCount: s.viewer_count ?? s.viewers ?? 0,
       thumbnail: s.thumbnail?.src || s.thumbnail?.url,
     }));
@@ -389,6 +407,160 @@ function interleave(twitch: SuggestedStream[], kick: SuggestedStream[]): Suggest
   }
 
   return combined;
+}
+
+/**
+ * @brief Convert a category display name to a URL slug
+ *
+ * Lowercases the name, replaces any run of non-alphanumeric characters
+ * with a single hyphen, and trims leading/trailing hyphens.
+ * e.g. "Just Chatting" → "just-chatting", "VALORANT" → "valorant"
+ *
+ * @param name The display name of the category
+ * @return The URL slug
+ */
+function categoryNameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * @brief Fetch Twitch streams for a specific category
+ *
+ * Uses the Twitch GQL `game(name:...)` query to retrieve live streams
+ * in the given category, sorted by viewer count.
+ *
+ * @param categoryName The display name of the category (e.g. "Just Chatting")
+ * @param twitchLanguage The Twitch language code to prioritize
+ * @param limit Maximum number of streams to return
+ * @return Processed suggestions for the category
+ */
+async function fetchTwitchStreamsByCategory(
+  categoryName: string,
+  twitchLanguage: string,
+  limit: number = 60
+): Promise<SuggestedStream[]> {
+  /**
+   * Inner helper: fetch streams for a game identified by GQL selector
+   * (e.g. `slug: "counter-strike"`) and return processed suggestions.
+   */
+  const fetchBySelector = async (gameSelector: string): Promise<SuggestedStream[]> => {
+    try {
+      const query = `
+        query {
+          game(${gameSelector}) {
+            streams(first: ${limit}, options: { sort: VIEWER_COUNT }) {
+              edges {
+                node {
+                  broadcaster { login broadcastSettings { language } }
+                  title
+                  viewersCount
+                  game { displayName }
+                  previewImageURL(width: 640, height: 360)
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      const response = await httpPost(API_CONFIG.twitch.gqlUrl, JSON.stringify({ query }), {
+        "Client-Id": API_CONFIG.twitch.clientId,
+        "Content-Type": "application/json",
+      });
+
+      if (!response.ok) return [];
+      const data = await response.json();
+
+      const edges = data.data?.game?.streams?.edges ?? [];
+      const raw = edges.map((edge: any) => ({
+        channel: edge.node.broadcaster.login,
+        platform: "twitch" as Platform,
+        title: edge.node.title,
+        category: edge.node.game?.displayName || categoryName,
+        viewerCount: edge.node.viewersCount,
+        language: edge.node.broadcaster.broadcastSettings?.language ?? "en",
+        thumbnail: edge.node.previewImageURL,
+      }));
+
+      return processTwitchStreams(raw, twitchLanguage, limit);
+    } catch {
+      return [];
+    }
+  };
+
+  /**
+   * Step 1: resolve the exact Twitch slug via searchCategories.
+   * This handles cases where the display name used in the app differs
+   * from what Twitch calls the category (e.g. "Counter-Strike 2" is
+   * catalogued on Twitch simply as "Counter-Strike").
+   * The first search result is the most relevant match.
+   */
+  try {
+    const searchQuery = `
+      query {
+        searchCategories(query: ${JSON.stringify(categoryName)}) {
+          edges { node { slug } }
+        }
+      }
+    `;
+    const searchRes = await httpPost(
+      API_CONFIG.twitch.gqlUrl,
+      JSON.stringify({ query: searchQuery }),
+      {
+        "Client-Id": API_CONFIG.twitch.clientId,
+        "Content-Type": "application/json",
+      }
+    );
+
+    if (searchRes.ok) {
+      const searchData = await searchRes.json();
+      const resolvedSlug = searchData.data?.searchCategories?.edges?.[0]?.node?.slug as
+        | string
+        | undefined;
+
+      if (resolvedSlug) {
+        const results = await fetchBySelector(`slug: ${JSON.stringify(resolvedSlug)}`);
+        if (results.length > 0) return results;
+      }
+    }
+  } catch {
+    // fall through to derived-slug attempt
+  }
+
+  // Step 2: fallback — derive slug from the display name and try directly.
+  return fetchBySelector(`slug: ${JSON.stringify(categoryNameToSlug(categoryName))}`);
+}
+
+/**
+ * @brief Fetch Kick streams for a specific category
+ *
+ * Fetches multiple pages from the featured livestreams endpoint
+ * filtered by the given category slug, in parallel.
+ *
+ * @param categorySlug The URL slug of the category (e.g. "just-chatting")
+ * @param kickLangCode The Kick language code for the URL (e.g. "en")
+ * @param kickLangName The Kick language name for filtering (e.g. "English")
+ * @param pages Number of pages to fetch in parallel
+ * @return Processed suggestions for the category
+ */
+async function fetchKickStreamsByCategory(
+  categorySlug: string,
+  kickLangCode: string,
+  kickLangName: string,
+  pages: number = 3
+): Promise<SuggestedStream[]> {
+  try {
+    const pagePromises = Array.from({ length: pages }, (_, i) =>
+      fetchKickStreamsPage(i + 1, kickLangCode, categorySlug)
+    );
+    const results = await Promise.all(pagePromises);
+    return processKickStreams(results.flat(), kickLangName, pages * TWITCH_PAGE_SIZE);
+  } catch {
+    return [];
+  }
 }
 
 // --- Composable ---
@@ -717,6 +889,35 @@ const _useLiveStatus = () => {
     }
   });
 
+  /**
+   * @brief Fetch streams on-demand for a specific category
+   *
+   * Queries Twitch (via game GQL) and Kick (via subcategory param)
+   * in parallel for the given category name and returns an interleaved
+   * list of results. Silently returns an empty array on any failure.
+   *
+   * @param categoryName The display name of the category
+   * @return Interleaved Twitch + Kick suggestions for the category
+   */
+  const fetchStreamsForCategory = async (categoryName: string): Promise<SuggestedStream[]> => {
+    const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
+    const twitchLanguage =
+      SUPPORTED_LANGUAGES[locale]?.apiCodes.twitch ??
+      SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.twitch;
+    const kickLang =
+      SUPPORTED_LANGUAGES[locale]?.apiCodes.kick ??
+      SUPPORTED_LANGUAGES[DEFAULT_LOCALE]!.apiCodes.kick;
+
+    const categorySlug = categoryNameToSlug(categoryName);
+
+    const [twitchStreams, kickStreams] = await Promise.all([
+      fetchTwitchStreamsByCategory(categoryName, twitchLanguage),
+      fetchKickStreamsByCategory(categorySlug, kickLang?.code ?? "en", kickLang?.name ?? "English"),
+    ]);
+
+    return interleave(twitchStreams, kickStreams);
+  };
+
   return {
     statuses,
     suggestedStreams,
@@ -728,6 +929,7 @@ const _useLiveStatus = () => {
     stopPolling,
     checkAll,
     refreshSuggestions,
+    fetchStreamsForCategory,
   };
 };
 

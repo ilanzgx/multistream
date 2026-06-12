@@ -48,7 +48,7 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
       <!-- tour link -->
       <button
-        class="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors duration-200 cursor-pointer underline underline-offset-4"
+        class="mt-0 text-xs text-gray-500 hover:text-gray-300 transition-colors duration-200 cursor-pointer underline underline-offset-4"
         @click="emit('tour')"
       >
         {{ $t("empty.tourLink") }}

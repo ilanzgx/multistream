@@ -2,6 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { useStreams } from "@/composables/useStreams";
 import { useLiveStatus } from "@/composables/useLiveStatus";
+import type { SuggestedStream } from "@/composables/useLiveStatus";
 import { PLATFORMS } from "@/config/platforms";
 import {
   Pagination,
@@ -12,27 +13,50 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 
 const { addStream } = useStreams();
-const { suggestedStreams, isLoadingSuggestions } = useLiveStatus();
+const { suggestedStreams, isLoadingSuggestions, fetchStreamsForCategory } = useLiveStatus();
 
 const PAGE_SIZE = 18;
 const currentPage = ref(1);
 const selectedCategory = ref<string | null>(null);
 
-// Categories sorted by frequency (most common first)
+// On-demand streams fetched per category, accumulated across clicks.
+// Keyed by "platform:channel" so duplicates are naturally avoided.
+// Persists when going back to "All" so those streams remain visible.
+const extraStreams = ref<Map<string, SuggestedStream>>(new Map());
+const isLoadingCategoryStreams = ref(false);
+let fetchVersion = 0;
+
+// Unified list: base suggestions + every on-demand stream ever fetched,
+// with the base taking precedence to avoid duplicating fresh data.
+const allStreams = computed(() => {
+  const map = new Map<string, SuggestedStream>(
+    suggestedStreams.value.map((s) => [`${s.platform}:${s.channel}`, s])
+  );
+  for (const [key, stream] of extraStreams.value) {
+    if (!map.has(key)) map.set(key, stream);
+  }
+  return [...map.values()];
+});
+
+// Categories sorted by frequency, derived from the full allStreams list
+// so on-demand fetched categories also appear as chips.
 const availableCategories = computed(() => {
   const freq = new Map<string, number>();
-  for (const stream of suggestedStreams.value) {
+  for (const stream of allStreams.value) {
     if (!stream.category) continue;
     freq.set(stream.category, (freq.get(stream.category) ?? 0) + 1);
   }
   return [...freq.entries()].toSorted((a, b) => b[1] - a[1]).map(([category]) => category);
 });
 
-const filteredStreams = computed(() =>
-  selectedCategory.value
-    ? suggestedStreams.value.filter((s) => s.category === selectedCategory.value)
-    : suggestedStreams.value
-);
+// Cap the "All" view so pagination doesn't explode after many on-demand loads.
+// Category-filtered views are uncapped — you always see everything fetched for that category.
+const ALL_MODE_CAP = 200;
+
+const filteredStreams = computed(() => {
+  if (!selectedCategory.value) return allStreams.value.slice(0, ALL_MODE_CAP);
+  return allStreams.value.filter((s) => s.category === selectedCategory.value);
+});
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredStreams.value.length / PAGE_SIZE)));
 
@@ -55,9 +79,44 @@ watch([totalPages, selectedCategory], ([newTotal]) => {
   }
 });
 
-function selectCategory(category: string | null) {
+async function selectCategory(category: string | null) {
   selectedCategory.value = category;
   currentPage.value = 1;
+
+  if (!category) {
+    isLoadingCategoryStreams.value = false;
+    return;
+  }
+
+  // Version guard: if the user clicks another chip before this fetch
+  // completes, the stale result is discarded.
+  const version = ++fetchVersion;
+  isLoadingCategoryStreams.value = true;
+
+  try {
+    const results = await fetchStreamsForCategory(category);
+
+    if (version !== fetchVersion) return;
+
+    // Normalize the category field to the chip label.
+    // Twitch may return streams under a different canonical name
+    // (e.g. "Counter-Strike" for the "Counter-Strike 2" chip from Kick).
+    // Overriding ensures they show under the correct chip and don't
+    // create phantom extra chips in availableCategories.
+    for (const stream of results) {
+      stream.category = category;
+    }
+
+    // Merge new streams into the persistent extra map
+    const updated = new Map(extraStreams.value);
+    for (const stream of results) {
+      const key = `${stream.platform}:${stream.channel}`;
+      if (!updated.has(key)) updated.set(key, stream);
+    }
+    extraStreams.value = updated;
+  } finally {
+    if (version === fetchVersion) isLoadingCategoryStreams.value = false;
+  }
 }
 
 const formatViewers = (count?: number) => {
@@ -99,7 +158,7 @@ const formatViewers = (count?: number) => {
       <button
         v-for="category in availableCategories"
         :key="category"
-        class="flex-none px-3 py-1 rounded-full text-xs font-medium border transition-colors duration-150 cursor-pointer"
+        class="flex-none inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors duration-150 cursor-pointer"
         :class="
           selectedCategory === category
             ? 'bg-white/10 text-white border-white/20'
@@ -108,6 +167,23 @@ const formatViewers = (count?: number) => {
         @click="selectCategory(category)"
       >
         {{ category }}
+        <!-- Loading spinner shown while fetching this category -->
+        <svg
+          v-if="selectedCategory === category && isLoadingCategoryStreams"
+          class="size-3 animate-spin"
+          viewBox="0 0 24 24"
+          fill="none"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+        </svg>
       </button>
     </div>
 
