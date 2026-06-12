@@ -136,7 +136,8 @@
     }
   },
   "skeleton": {
-    "loading": "Cargando transmisión"
+    "loading": "Cargando transmisión",
+    "loadingChannel": "Cargando {channel}..."
   },
   "notifications": {
     "welcome": "🔴 Favoritos en vivo",

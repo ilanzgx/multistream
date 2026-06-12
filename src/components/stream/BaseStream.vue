@@ -8,6 +8,8 @@ import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "vue-sonner";
+import { useLiveStatus } from "@/composables/useLiveStatus";
+import { useElementSize } from "@vueuse/core";
 
 const { requestRemoveStream, sessionStartTimes, now } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
@@ -73,7 +75,63 @@ const isStreamFocused = computed(() => isFocused(props.channelid));
 // true when another stream is focused and this one is miniaturized in the sidebar
 const isMiniaturized = computed(() => !!focusedStreamId.value && !isFocused(props.channelid));
 
+const { getStatus } = useLiveStatus();
+const liveStatus = computed(() => getStatus(props.channel, props.platform));
+
+const viewerCountDisplay = computed(() => {
+  const status = liveStatus.value;
+  if (!status || !status.isLive || status.viewerCount === undefined) return "offline/pending";
+  const num = status.viewerCount;
+  const hex = num.toString(16).toUpperCase();
+  return `${num.toLocaleString()} (0x${hex})`;
+});
+
+const embedDomain = computed(() => {
+  if (props.platform === "custom") return "custom_frame";
+  try {
+    const url = platformConfig.value?.embedUrl;
+    if (!url) return "unknown";
+    return url.replace("https://", "").split("/")[0];
+  } catch {
+    return "unknown";
+  }
+});
+
+const { width, height } = useElementSize(containerRef);
+
+const hostEnvDisplay = computed(() => {
+  if (typeof window === "undefined") return "unknown";
+  const ua = window.navigator.userAgent;
+  let os = "Unknown OS";
+  let engine = "Unknown Engine";
+
+  if (ua.includes("Windows")) {
+    os = "Windows";
+    engine = "WebView2";
+  } else if (ua.includes("Macintosh")) {
+    os = "macOS";
+    engine = "WebKit";
+  } else if (ua.includes("Linux")) {
+    os = "Linux";
+    engine = "WebKitGTK";
+  }
+
+  return `Tauri/${engine} (${os})`;
+});
+
+const appVersionDisplay = computed(() => {
+  return `multistream_v${import.meta.env.VITE_APP_VERSION || "0.0.0"}`;
+});
+
+const connectionStatus = ref("RESOLVING_IFRAME");
+
 onMounted(() => {
+  setTimeout(() => {
+    if (isLoading.value) {
+      connectionStatus.value = "ESTABLISHING_HANDSHAKE";
+    }
+  }, 800);
+
   const iframe = containerRef.value?.querySelector("iframe");
   if (iframe) {
     iframe.addEventListener("load", () => {
@@ -134,14 +192,40 @@ const handleScreenshot = () => {
         class="absolute inset-0 w-full h-full bg-[#0f1115] flex flex-col items-center justify-center z-50"
       >
         <div :class="['w-full h-full flex flex-col', isMiniaturized ? 'p-2 gap-2' : 'p-8 gap-4']">
-          <!-- video area skeleton -->
-          <Skeleton class="flex-1 w-full rounded-xl bg-white/5" />
+          <!-- video area skeleton with progress bar -->
+          <div class="relative flex-1 w-full">
+            <Skeleton class="w-full h-full rounded-xl bg-white/5" />
+            <!-- progress bar: thin animated strip at the top of the video area -->
+            <div class="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl overflow-hidden">
+              <div
+                class="h-full w-1/3 rounded-full animate-[progress_2s_ease-in-out_infinite]"
+                :style="{ background: platformConfig?.color ?? '#ffffff', opacity: 0.5 }"
+              />
+            </div>
+          </div>
 
           <!-- info area skeleton -->
           <div :class="['flex items-center', isMiniaturized ? 'gap-2' : 'gap-3']">
-            <Skeleton :class="['rounded-full bg-white/5', isMiniaturized ? 'size-6' : 'size-12']" />
+            <!-- avatar: real platform icon instead of grey circle -->
+            <div
+              :class="[
+                'rounded-full flex items-center justify-center shrink-0 bg-white/5',
+                isMiniaturized ? 'size-6' : 'size-12',
+              ]"
+            >
+              <component
+                :is="platformConfig?.icon"
+                :size="isMiniaturized ? 14 : 26"
+                :style="{ color: platformConfig?.color }"
+                class="opacity-40"
+              />
+            </div>
             <div v-if="!isMiniaturized" class="space-y-2">
-              <Skeleton class="h-4 w-32 bg-white/5" />
+              <!-- real channel name, muted -->
+              <p class="h-4 text-sm font-medium text-white/30 leading-none tracking-wide">
+                {{ props.channel }}
+              </p>
+              <!-- category still a skeleton -->
               <Skeleton class="h-3 w-24 bg-white/5" />
             </div>
           </div>
@@ -149,13 +233,63 @@ const handleScreenshot = () => {
 
         <!-- centered platform icon (subtle) -->
         <div
-          class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10"
+          class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2.5"
         >
           <component
             :is="platformConfig?.icon"
             :size="isMiniaturized ? 32 : 80"
             :style="{ color: platformConfig?.color }"
+            class="opacity-10"
           />
+          <div
+            class="font-medium tracking-wide animate-pulse text-white/20 text-center"
+            :class="[
+              isMiniaturized ? 'text-[9px] max-w-17.5 sm:max-w-22.5 truncate px-1' : 'text-xs',
+            ]"
+          >
+            {{ t("skeleton.loadingChannel", { channel: props.channel }) }}
+          </div>
+          <!-- Diagnostics Panel -->
+          <div
+            v-if="!isMiniaturized"
+            class="mt-4 font-mono text-[10px] text-white/30 text-left space-y-1 min-w-53.75"
+          >
+            <div
+              class="text-[9px] text-white/15 uppercase tracking-widest border-b border-white/6 pb-1 mb-1 font-semibold"
+            >
+              [stream_diagnostics]
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-white/15">channel_id:</span>
+              <span class="text-white/30 truncate max-w-31.25"
+                >{{ props.platform }}_{{ props.channel }}</span
+              >
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-white/15">embed_src:</span>
+              <span class="text-white/30 truncate max-w-31.25">{{ embedDomain }}</span>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-white/15">status:</span>
+              <span class="text-green-400/30">{{ connectionStatus }}</span>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-white/15">viewers:</span>
+              <span class="text-white/30">{{ viewerCountDisplay }}</span>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-white/15">viewport:</span>
+              <span class="text-white/30">{{ Math.round(width) }}x{{ Math.round(height) }}</span>
+            </div>
+            <div class="flex justify-between gap-4 border-t border-white/6 pt-1 mt-1">
+              <span class="text-white/15">host_env:</span>
+              <span class="text-white/30">{{ hostEnvDisplay }}</span>
+            </div>
+            <div class="flex justify-between gap-4">
+              <span class="text-white/15">build_ver:</span>
+              <span class="text-white/30">{{ appVersionDisplay }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </Transition>

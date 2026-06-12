@@ -140,6 +140,16 @@ body {
   background-color: #3a3f4b;
 }
 
+/* Indeterminate progress bar sweep for skeleton loader */
+@keyframes progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

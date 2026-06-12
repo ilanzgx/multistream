@@ -136,7 +136,8 @@
     }
   },
   "skeleton": {
-    "loading": "Загрузка трансляции"
+    "loading": "Загрузка трансляции",
+    "loadingChannel": "Загрузка {channel}..."
   },
   "notifications": {
     "welcome": "🔴 Избранные стримеры онлайн",

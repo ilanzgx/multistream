@@ -136,7 +136,8 @@
     }
   },
   "skeleton": {
-    "loading": "Loading stream"
+    "loading": "Loading stream",
+    "loadingChannel": "Loading {channel}..."
   },
   "notifications": {
     "welcome": "🔴 Favorites are live",

@@ -136,7 +136,8 @@
     }
   },
   "skeleton": {
-    "loading": "加载直播"
+    "loading": "加载直播",
+    "loadingChannel": "正在加载 {channel}..."
   },
   "notifications": {
     "welcome": "🔴 收藏主播正在直播",
