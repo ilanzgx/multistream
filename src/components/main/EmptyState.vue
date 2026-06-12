@@ -13,15 +13,16 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
 <template>
   <div class="flex items-center justify-center min-h-full py-12 px-4">
-    <div class="flex flex-col items-center gap-5 w-full">
+    <div class="flex flex-col items-center w-full">
       <!-- title & description -->
-      <h2 class="text-2xl lg:text-3xl font-bold text-white">
-        {{ $t("empty.title") }}
-      </h2>
-      <p class="text-gray-400 text-sm lg:text-base text-center max-w-sm lg:max-w-md">
-        {{ $t("empty.description") }}
-      </p>
-
+      <div class="flex flex-col items-center gap-2 text-center max-w-sm lg:max-w-md">
+        <h2 class="text-2xl lg:text-3xl font-bold text-white wrap-break-word">
+          {{ $t("empty.title") }}
+        </h2>
+        <p class="text-gray-400 text-sm lg:text-base wrap-break-word mb-3">
+          {{ $t("empty.description") }}
+        </p>
+      </div>
       <!-- action button with platform icons -->
       <button
         class="group flex items-center gap-3 h-11 pl-4 pr-5 rounded-xl bg-white text-[#14161a] font-semibold cursor-pointer transition-all duration-200 hover:bg-gray-100 hover:scale-105"
@@ -48,7 +49,7 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
       <!-- tour link -->
       <button
-        class="mt-0 text-xs text-gray-500 hover:text-gray-300 transition-colors duration-200 cursor-pointer underline underline-offset-4"
+        class="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors duration-200 cursor-pointer underline underline-offset-4"
         @click="emit('tour')"
       >
         {{ $t("empty.tourLink") }}

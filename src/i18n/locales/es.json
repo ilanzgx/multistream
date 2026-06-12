@@ -93,7 +93,7 @@
     "watching": "Viendo"
   },
   "empty": {
-    "title": "No hay streams registradas",
+    "title": "Ninguna transmisión seleccionada",
     "description": "Comienza agregando tus canales favoritos para verlos simultáneamente.",
     "addButton": "Agregar Stream",
     "tourLink": "¿Necesitas ayuda? Haz el tour"

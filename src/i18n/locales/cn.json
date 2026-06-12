@@ -93,7 +93,7 @@
     "watching": "观看时间"
   },
   "empty": {
-    "title": "没有已注册的直播",
+    "title": "没有选择的直播",
     "description": "首先添加您喜爱的频道以同时观看。",
     "addButton": "添加直播",
     "tourLink": "需要帮助？查看新手教程"

@@ -93,7 +93,7 @@
     "watching": "Watching"
   },
   "empty": {
-    "title": "No streams registered",
+    "title": "No streams selected",
     "description": "Start by adding your favorite channels to watch simultaneously.",
     "addButton": "Add Stream",
     "tourLink": "Need help? Take the tour"
