@@ -159,7 +159,10 @@
     },
     "step2": {
       "title": "Chat auswählen",
-      "description": "Wähle über das Dropdown-Menü oben aus, welcher Stream-Chat in der Seitenleiste angezeigt wird, oder drücke die Tasten {keys}, um sofort zu wechseln."
+      "description": "Wähle über das Dropdown-Menü oben aus, welcher Stream-Chat in der Seitenleiste angezeigt wird, oder drücke die Tasten {keys}, um sofort zu wechseln.",
+      "pressKeys": "Drücke die Tasten",
+      "switchImmediately": "um sofort zu wechseln",
+      "chatActive": "Chat Aktiv"
     },
     "step3": {
       "title": "Tastaturkurzbefehle",
@@ -167,6 +170,11 @@
       "add": "Stream-hinzufügen-Dialog öffnen",
       "screenshot": "Screenshot des fokussierten Streams machen",
       "chat": "Zum Stream-Chat {keys} wechseln"
+    },
+    "step4": {
+      "title": "Stream-Vorschläge nach Kategorie",
+      "description": "Filtere vorgeschlagene Streams nach Kategorie mit den Chips oben. Klicke auf einen Chip, um im Hintergrund mehr Live-Streams von Twitch und Kick für diese Kategorie zu laden.",
+      "caption": "Streams beider Plattformen werden automatisch geladen und beim Durchsuchen zwischengespeichert."
     }
   }
 }

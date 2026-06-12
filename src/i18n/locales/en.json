@@ -159,7 +159,10 @@
     },
     "step2": {
       "title": "Select Chat",
-      "description": "Choose which stream chat is visible in the sidebar using the dropdown at the top, or press keys {keys} to switch instantly."
+      "description": "Choose which stream chat is visible in the sidebar using the dropdown at the top, or press keys {keys} to switch instantly.",
+      "pressKeys": "Press keys",
+      "switchImmediately": "to switch immediately",
+      "chatActive": "Chat Active"
     },
     "step3": {
       "title": "Keyboard Shortcuts",
@@ -167,6 +170,11 @@
       "add": "Open add stream dialog",
       "screenshot": "Take screenshot of focused stream",
       "chat": "Switch to stream chat {keys}"
+    },
+    "step4": {
+      "title": "Stream Suggestions by Category",
+      "description": "Filter suggested streams by category using the chips at the top. Click any chip to instantly load more live streams from Twitch and Kick for that category, in the background.",
+      "caption": "Streams from both platforms load automatically and stay cached as you browse."
     }
   }
 }

@@ -159,7 +159,10 @@
     },
     "step2": {
       "title": "Seleccionar Chat",
-      "description": "Elige qué chat de transmisión es visible en la barra lateral usando el menú desplegable en la parte superior, o presiona las teclas {keys} para cambiar al instante."
+      "description": "Elige qué chat de transmisión es visible en la barra lateral usando el menú desplegable en la parte superior, o presiona las teclas {keys} para cambiar al instante.",
+      "pressKeys": "Presione las teclas",
+      "switchImmediately": "para cambiar al instante",
+      "chatActive": "Chat Activo"
     },
     "step3": {
       "title": "Atajos de Teclado",
@@ -167,6 +170,11 @@
       "add": "Abrir diálogo para añadir transmisión",
       "screenshot": "Tomar captura de pantalla de la transmisión enfocada",
       "chat": "Cambiar al chat de la transmisión {keys}"
+    },
+    "step4": {
+      "title": "Sugerencias de Stream por Categoría",
+      "description": "Filtra las streams sugeridas por categoría usando los chips en la parte superior. Haz clic en cualquier chip para cargar más streams en vivo de Twitch y Kick para esa categoría, en segundo plano.",
+      "caption": "Las streams de ambas plataformas se cargan automáticamente y quedan en caché mientras navegas."
     }
   }
 }

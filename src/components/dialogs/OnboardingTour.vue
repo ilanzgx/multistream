@@ -52,7 +52,7 @@ function handleEscapeKey(e: Event) {
 }
 
 function handleNext() {
-  if (currentStep.value < 3) {
+  if (currentStep.value < 4) {
     currentStep.value++;
   } else {
     handleFinish();
@@ -170,13 +170,15 @@ function handleFinish() {
                     </div>
                     <span
                       class="text-[9px] text-gray-500 uppercase tracking-wider font-semibold font-mono"
-                      >Chat Active</span
+                      >{{ $t("onboarding.step2.chatActive") }}</span
                     >
                   </div>
 
                   <!-- Quick selector helper description -->
                   <div class="flex items-center justify-center gap-2 mt-1">
-                    <span class="text-[11px] text-gray-400">Press keys</span>
+                    <span class="text-[11px] text-gray-400">{{
+                      $t("onboarding.step2.pressKeys")
+                    }}</span>
                     <div class="flex items-center gap-1">
                       <kbd
                         class="px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 bg-[#14161a] border border-[#2a2d33] rounded-md shadow-sm"
@@ -188,7 +190,9 @@ function handleFinish() {
                         >9</kbd
                       >
                     </div>
-                    <span class="text-[11px] text-gray-400">to switch immediately</span>
+                    <span class="text-[11px] text-gray-400">{{
+                      $t("onboarding.step2.switchImmediately")
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -262,6 +266,82 @@ function handleFinish() {
                   </div>
                 </div>
               </div>
+              <!-- STEP 4 GRAPHIC: Category Filters -->
+              <div
+                v-else-if="currentStep === 4"
+                class="relative flex flex-col gap-4 w-full p-5 bg-[#1f2227]/30 rounded-2xl border border-[#2a2d33]/50 overflow-hidden"
+              >
+                <!-- Tech grid pattern -->
+                <div
+                  class="absolute inset-0 bg-[radial-gradient(#2a2d33_1px,transparent_1px)] bg-size-[16px_16px] opacity-40"
+                />
+
+                <!-- Mock chip row -->
+                <div class="relative flex items-center gap-2 flex-wrap">
+                  <span
+                    class="px-3 py-1 rounded-full text-[11px] font-semibold border bg-white/10 text-white border-white/20"
+                    >{{ $t("add.categoryAll") }}</span
+                  >
+                  <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium border text-[#9146FF] border-[#9146FF]/30 bg-[#9146FF]/10"
+                  >
+                    FPS
+                    <!-- spinner -->
+                    <svg class="size-2.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      />
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                  </span>
+                  <span
+                    class="px-3 py-1 rounded-full text-[11px] font-medium border text-gray-400 border-[#2a2d33] bg-[#14161a]"
+                    >Just Chatting</span
+                  >
+                  <span
+                    class="px-3 py-1 rounded-full text-[11px] font-medium border text-gray-400 border-[#2a2d33] bg-[#14161a]"
+                    >Sports</span
+                  >
+                </div>
+
+                <!-- Mock card row — shows streams appearing -->
+                <div class="relative flex gap-2">
+                  <div
+                    v-for="i in 4"
+                    :key="i"
+                    class="flex-1 rounded-lg bg-[#14161a] border border-[#2a2d33]/80 overflow-hidden"
+                  >
+                    <div class="aspect-video w-full bg-[#0f1115]">
+                      <div
+                        class="w-full h-full"
+                        :class="i <= 2 ? 'bg-[#9146FF]/10' : 'bg-[#53FC18]/10 animate-pulse'"
+                      />
+                    </div>
+                    <div class="p-1.5 flex items-center justify-between gap-1">
+                      <span class="text-[9px] font-bold text-white truncate">streamer_{{ i }}</span>
+                      <component
+                        :is="i <= 2 ? TwitchIcon : KickIcon"
+                        class="size-2.5 shrink-0"
+                        :style="{ color: i <= 2 ? '#9146FF' : '#53FC18' }"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Caption -->
+                <p class="relative text-[10px] text-gray-500 text-center">
+                  {{ $t("onboarding.step4.caption") }}
+                </p>
+              </div>
             </div>
           </div>
         </Transition>
@@ -272,7 +352,7 @@ function handleFinish() {
         <!-- Dots indicators -->
         <div class="flex items-center gap-1.5">
           <button
-            v-for="step in 3"
+            v-for="step in 4"
             :key="step"
             class="size-2 rounded-full transition-all duration-300"
             :class="[step === currentStep ? 'bg-white w-4' : 'bg-gray-600 hover:bg-gray-400']"
@@ -284,7 +364,7 @@ function handleFinish() {
         <!-- Action buttons -->
         <div class="flex items-center gap-2">
           <Button
-            v-if="currentStep < 3"
+            v-if="currentStep < 4"
             variant="ghost"
             size="sm"
             class="text-gray-400 hover:text-white hover:bg-white/5 active:scale-[0.97] transition-all"
@@ -309,7 +389,7 @@ function handleFinish() {
             class="bg-white text-[#14161a] hover:bg-gray-200 active:scale-[0.97] transition-all font-semibold"
             @click="handleNext"
           >
-            <template v-if="currentStep === 3">
+            <template v-if="currentStep === 4">
               <Check class="size-4 mr-1" />
               {{ $t("onboarding.finish") }}
             </template>
