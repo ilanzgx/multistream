@@ -12,7 +12,7 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-full py-12 px-4">
+  <div data-testid="empty-state" class="flex items-center justify-center min-h-full py-12 px-4">
     <div class="flex flex-col items-center w-full">
       <!-- title & description -->
       <div class="flex flex-col items-center gap-2 text-center max-w-sm lg:max-w-md">

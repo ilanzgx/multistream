@@ -302,6 +302,7 @@ const handleScreenshot = () => {
       ]"
     >
       <button
+        :data-testid="`remove-stream-${channel}`"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',

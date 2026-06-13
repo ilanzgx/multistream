@@ -70,13 +70,13 @@ const formatViewers = (count?: number): string => {
       {{ formatViewers(status?.viewerCount) }}
     </span>
 
-    <button
-      type="button"
+    <span
+      role="button"
       aria-label="Remove stream"
       class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-[#2a2d33] border border-[#3a3f4b] transition-colors hover:bg-red-500/80 hover:border-red-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400"
       @click.stop="emit('remove')"
     >
       <X :size="8" class="text-white" />
-    </button>
+    </span>
   </button>
 </template>

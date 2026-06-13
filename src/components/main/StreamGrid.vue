@@ -130,6 +130,7 @@ const getStreamClass = (index: number) => {
       v-for="(stream, index) in streams"
       :key="getStreamKey(stream)"
       :data-stream-id="stream.id"
+      :data-testid="`stream-item-${stream.channel}`"
       :style="getStreamStyle(stream.id)"
       :class="[
         getStreamClass(index),
