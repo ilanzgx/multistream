@@ -8,12 +8,10 @@ vi.mock("@tauri-apps/plugin-http", () => ({
 
 describe("http library unit tests", () => {
   let globalFetchSpy: ReturnType<typeof vi.spyOn>;
-  let originalWindow: typeof window;
 
   beforeEach(() => {
     // Arrange (global environment)
     globalFetchSpy = vi.spyOn(globalThis, "fetch");
-    originalWindow = globalThis.window;
   });
 
   afterEach(() => {

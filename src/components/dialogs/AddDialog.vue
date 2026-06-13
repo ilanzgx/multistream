@@ -11,10 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import StreamChip from "./_components/StreamChip.vue";
+import ChannelSearchDropdown from "./_components/ChannelSearchDropdown.vue";
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useRecents } from "@/composables/useRecents";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useFavorites } from "@/composables/useFavorites";
+import { useChannelSearch } from "@/composables/useChannelSearch";
 import { PLATFORMS } from "@/config/platforms";
 import { History, Heart } from "lucide-vue-next";
 import { parseStreamUrl } from "@/lib/platformParser";
@@ -83,6 +85,57 @@ const isCustom = computed(() => selectedPlatform.value === "custom");
 
 const customNameInput = ref<HTMLInputElement | null>(null);
 
+// autocomplete
+const {
+  results: searchResults,
+  isLoading: isSearching,
+  clear: clearSearch,
+} = useChannelSearch(channelName, selectedPlatform);
+
+const activeSearchIndex = ref(-1);
+const isDropdownOpen = computed(
+  () =>
+    !isCustom.value &&
+    (selectedPlatform.value === "twitch" || selectedPlatform.value === "kick") &&
+    (isSearching.value || searchResults.value.length > 0)
+);
+
+const selectSearchResult = (result: { channel: string }) => {
+  channelName.value = result.channel;
+  clearSearch();
+  activeSearchIndex.value = -1;
+};
+
+const handleSearchKeydown = (e: KeyboardEvent) => {
+  if (!isDropdownOpen.value) return;
+
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    activeSearchIndex.value = Math.min(activeSearchIndex.value + 1, searchResults.value.length - 1);
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    activeSearchIndex.value = Math.max(activeSearchIndex.value - 1, -1);
+  } else if (e.key === "Enter" && activeSearchIndex.value >= 0) {
+    e.preventDefault();
+    const selected = searchResults.value[activeSearchIndex.value];
+    if (selected) selectSearchResult(selected);
+  } else if (e.key === "Escape") {
+    clearSearch();
+    activeSearchIndex.value = -1;
+  }
+};
+
+const handleChannelBlur = () => {
+  // Delay so mousedown on a dropdown item fires before blur clears results
+  setTimeout(() => {
+    clearSearch();
+    activeSearchIndex.value = -1;
+    if (channelName.value) {
+      detectAndApply(channelName.value);
+    }
+  }, 150);
+};
+
 const detectAndApply = async (value: string) => {
   const result = parseStreamUrl(value);
   if (!result) return false;
@@ -109,12 +162,6 @@ const handlePaste = (e: ClipboardEvent) => {
   }
 };
 
-const handleBlur = () => {
-  if (channelName.value) {
-    detectAndApply(channelName.value);
-  }
-};
-
 const handleIframePaste = (e: ClipboardEvent) => {
   const pastedText = e.clipboardData?.getData("text") || "";
   const result = parseStreamUrl(pastedText);
@@ -135,6 +182,10 @@ const handleIframeBlur = () => {
 
 const handleAddStream = () => {
   if (!canSubmit.value) return;
+
+  // Close any open autocomplete dropdown
+  clearSearch();
+  activeSearchIndex.value = -1;
 
   if (isCustom.value) {
     let url = iframeUrl.value.trim();
@@ -230,75 +281,6 @@ const canSubmit = computed(() => {
       </DialogHeader>
 
       <div class="space-y-4">
-        <!-- recent channels -->
-        <section
-          v-if="recents.length"
-          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
-        >
-          <!-- recent title -->
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <History class="size-5 text-gray-400" />
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("add.historyLabel") }}
-              </p>
-              <p class="text-xs text-gray-400">
-                {{ $t("add.recents") }}
-              </p>
-            </div>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
-            <StreamChip
-              v-for="recent in recents"
-              :key="`${recent.platform}:${recent.channel}`"
-              :channel="recent.channel"
-              :platform="recent.platform"
-              class="w-full"
-              @click="handleQuickAdd(recent.channel, recent.platform, recent.iframeUrl)"
-              @remove="removeRecent(recent.channel, recent.platform)"
-            />
-          </div>
-        </section>
-
-        <!-- favorites -->
-        <section
-          v-if="sortedFavorites.length"
-          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <Heart class="size-5 text-gray-400" />
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("add.favoritesLabel") }}
-              </p>
-              <p class="text-xs text-gray-400">
-                {{ $t("add.favoritesDescription") }}
-              </p>
-            </div>
-          </div>
-          <div
-            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 overflow-y-auto max-h-[15vh] md:max-h-[20vh] pr-1 py-1 overflow-x-hidden"
-          >
-            <StreamChip
-              v-for="favorite in sortedFavorites"
-              :key="`${favorite.platform}:${favorite.channel}`"
-              :channel="favorite.channel"
-              :platform="favorite.platform"
-              class="w-full"
-              @click="handleQuickAdd(favorite.channel, favorite.platform)"
-              @remove="removeFavorite(favorite.channel, favorite.platform)"
-            />
-          </div>
-        </section>
-
         <!-- add stream manually -->
         <div class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl">
           <!-- platform selector with icons -->
@@ -369,17 +351,97 @@ const canSubmit = computed(() => {
             <label v-else class="text-sm font-medium text-gray-300">{{
               $t("add.videoIdLabel")
             }}</label>
-            <input
-              v-model="channelName"
-              type="text"
-              :placeholder="$t('add.placeholder')"
-              class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500"
-              @keyup.enter="handleAddStream"
-              @paste="handlePaste"
-              @blur="handleBlur"
-            />
+            <div class="relative">
+              <input
+                v-model="channelName"
+                type="text"
+                :placeholder="$t('add.placeholder')"
+                class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-500"
+                autocomplete="off"
+                @keydown="handleSearchKeydown"
+                @keyup.enter="!isDropdownOpen && handleAddStream()"
+                @paste="handlePaste"
+                @blur="handleChannelBlur"
+              />
+              <ChannelSearchDropdown
+                :results="searchResults"
+                :is-loading="isSearching"
+                :active-index="activeSearchIndex"
+                @select="selectSearchResult"
+                @highlight="activeSearchIndex = $event"
+              />
+            </div>
           </div>
         </div>
+
+        <!-- recent channels -->
+        <section
+          v-if="recents.length"
+          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <!-- recent title -->
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
+            >
+              <History class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("add.historyLabel") }}
+              </p>
+              <p class="text-xs text-gray-400">
+                {{ $t("add.recents") }}
+              </p>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
+            <StreamChip
+              v-for="recent in recents"
+              :key="`${recent.platform}:${recent.channel}`"
+              :channel="recent.channel"
+              :platform="recent.platform"
+              class="w-full"
+              @click="handleQuickAdd(recent.channel, recent.platform, recent.iframeUrl)"
+              @remove="removeRecent(recent.channel, recent.platform)"
+            />
+          </div>
+        </section>
+
+        <!-- favorites -->
+        <section
+          v-if="sortedFavorites.length"
+          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
+            >
+              <Heart class="size-5 text-gray-400" />
+            </div>
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ $t("add.favoritesLabel") }}
+              </p>
+              <p class="text-xs text-gray-400">
+                {{ $t("add.favoritesDescription") }}
+              </p>
+            </div>
+          </div>
+          <div
+            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 overflow-y-auto max-h-[15vh] md:max-h-[20vh] pr-1 py-1 overflow-x-hidden"
+          >
+            <StreamChip
+              v-for="favorite in sortedFavorites"
+              :key="`${favorite.platform}:${favorite.channel}`"
+              :channel="favorite.channel"
+              :platform="favorite.platform"
+              class="w-full"
+              @click="handleQuickAdd(favorite.channel, favorite.platform)"
+              @remove="removeFavorite(favorite.channel, favorite.platform)"
+            />
+          </div>
+        </section>
       </div>
 
       <DialogFooter class="pt-5 border-t border-[#2a2d33]/50">
