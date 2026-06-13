@@ -18,7 +18,9 @@
     "favoritesLabel": "Favoritos",
     "favoritesDescription": "Canales favoritos que están transmitiendo en vivo",
     "suggestions": "Tendencias en Español",
-    "categoryAll": "Todos"
+    "categoryAll": "Todos",
+    "searchLoading": "Buscando...",
+    "searchNoResults": "No se encontraron canales"
   },
   "settings": {
     "tooltip": "Configuraciones",

@@ -18,7 +18,9 @@
     "favoritesLabel": "Favoriten",
     "favoritesDescription": "Lieblingskanäle, die derzeit live streamen",
     "suggestions": "Top Deutsche Kanäle",
-    "categoryAll": "Alle"
+    "categoryAll": "Alle",
+    "searchLoading": "Suche läuft...",
+    "searchNoResults": "Keine Kanäle gefunden"
   },
   "settings": {
     "tooltip": "Einstellungen",

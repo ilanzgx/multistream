@@ -18,7 +18,9 @@
     "favoritesLabel": "Favoritos",
     "favoritesDescription": "Canais favoritos que estão em live no momento",
     "suggestions": "Destaques em Português",
-    "categoryAll": "Todos"
+    "categoryAll": "Todos",
+    "searchLoading": "Buscando...",
+    "searchNoResults": "Nenhum canal encontrado"
   },
   "settings": {
     "tooltip": "Configurações",
