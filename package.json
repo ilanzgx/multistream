@@ -12,6 +12,8 @@
     "version": "bun run scripts/sync-version.ts",
     "test": "vitest run --reporter=tree",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
     "lint": "oxlint && eslint .",
     "lint:fix": "prettier --write . && oxlint --fix && eslint . --fix",
@@ -35,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.60.0",
     "@tauri-apps/api": "^2.10.1",
     "@tauri-apps/cli": "^2.10.0",
     "@types/node": "^24.10.1",

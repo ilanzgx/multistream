@@ -26,3 +26,7 @@ coverage
 
 # Tauri
 ~
+
+# Playwright
+playwright-report/
+test-results/
