@@ -4,9 +4,9 @@ import { useRecents } from "./useRecents";
 import { useFavorites } from "./useFavorites";
 import { usePreferences } from "./usePreferences";
 import type { Platform } from "./useStreams";
-import { fetch as tauriFetch } from "@tauri-apps/plugin-http";
 import { invoke } from "@tauri-apps/api/core";
 import { i18n } from "@/i18n";
+import { isTauri, httpGet, httpPost } from "@/lib/http";
 
 import { API_CONFIG, REFRESH_CONFIG } from "@/config/api";
 import { SUPPORTED_LANGUAGES, DEFAULT_LOCALE } from "@/config/i18n";
@@ -28,52 +28,6 @@ export interface SuggestedStream {
 }
 
 type StatusMap = Record<string, LiveStatus>;
-
-/**
- * @brief Check if the app is running in Tauri
- *
- * @return true if the app is running in Tauri, false otherwise
- */
-export function isTauri(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
-}
-
-/**
- * @brief HTTP GET request
- *
- * Sends an HTTP GET request to the given URL.
- *
- * @param url The URL to send the request to
- * @param headers The headers to send with the request
- * @return The response
- */
-async function httpGet(url: string, headers?: Record<string, string>): Promise<Response> {
-  if (isTauri()) {
-    return tauriFetch(url, { method: "GET", headers });
-  }
-  return fetch(url, { headers });
-}
-
-/**
- * @brief HTTP POST request
- *
- * Sends an HTTP POST request to the given URL.
- *
- * @param url The URL to send the request to
- * @param body The body of the request
- * @param headers The headers to send with the request
- * @return The response
- */
-async function httpPost(
-  url: string,
-  body: string,
-  headers?: Record<string, string>
-): Promise<Response> {
-  if (isTauri()) {
-    return tauriFetch(url, { method: "POST", body, headers });
-  }
-  return fetch(url, { method: "POST", body, headers });
-}
 
 /**
  * @brief Check Twitch streams

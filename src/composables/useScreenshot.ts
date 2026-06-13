@@ -2,7 +2,7 @@ import { ref } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
-import { isTauri } from "./useLiveStatus";
+import { isTauri } from "@/lib/http";
 
 /**
  * @brief Composable for capturing screenshots of stream video frames.

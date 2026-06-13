@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useScreenshot } from "../useScreenshot";
 import { toast } from "vue-sonner";
 import * as tauriCore from "@tauri-apps/api/core";
-import * as liveStatus from "../useLiveStatus";
+import * as httpLib from "@/lib/http";
 
 vi.mock("vue-sonner", () => ({
   toast: {
@@ -21,8 +21,10 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn(),
 }));
 
-vi.mock("../useLiveStatus", () => ({
+vi.mock("@/lib/http", () => ({
   isTauri: vi.fn(),
+  httpGet: vi.fn(),
+  httpPost: vi.fn(),
 }));
 
 describe("useScreenshot composable unit tests", () => {
@@ -124,7 +126,7 @@ describe("useScreenshot composable unit tests", () => {
 
   it("should call Tauri invoke and toast success if isTauri is true", async () => {
     // Arrange
-    vi.spyOn(liveStatus, "isTauri").mockReturnValue(true);
+    vi.spyOn(httpLib, "isTauri").mockReturnValue(true);
     vi.spyOn(tauriCore, "invoke").mockResolvedValue("/home/user/Pictures/Multistream/file.png");
 
     let messageHandler: any;
@@ -170,7 +172,7 @@ describe("useScreenshot composable unit tests", () => {
 
   it("should trigger browser download if isTauri is false", async () => {
     // Arrange
-    vi.spyOn(liveStatus, "isTauri").mockReturnValue(false);
+    vi.spyOn(httpLib, "isTauri").mockReturnValue(false);
 
     let messageHandler: any;
     const mockWindow = {
