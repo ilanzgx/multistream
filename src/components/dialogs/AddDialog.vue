@@ -120,6 +120,8 @@ const handleSearchKeydown = (e: KeyboardEvent) => {
     const selected = searchResults.value[activeSearchIndex.value];
     if (selected) selectSearchResult(selected);
   } else if (e.key === "Escape") {
+    e.preventDefault();
+    e.stopPropagation();
     clearSearch();
     activeSearchIndex.value = -1;
   }

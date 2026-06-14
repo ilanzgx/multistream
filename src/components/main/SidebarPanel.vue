@@ -175,6 +175,7 @@ onUnmounted(() => {
             <Tooltip>
               <TooltipTrigger as-child>
                 <Button
+                  data-testid="share-dialog-btn"
                   class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
                   variant="outline"
                   @click="shareDialogOpen = true"
@@ -190,6 +191,7 @@ onUnmounted(() => {
             <Tooltip>
               <TooltipTrigger as-child>
                 <Button
+                  data-testid="import-dialog-btn"
                   class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
                   variant="outline"
                   @click="importDialogOpen = true"

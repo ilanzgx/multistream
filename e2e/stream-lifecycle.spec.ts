@@ -6,6 +6,7 @@ test.describe("Stream lifecycle E2E Test", () => {
     await page.goto("/");
     await page.evaluate(() => {
       localStorage.clear();
+      localStorage.setItem("locale", "en");
       localStorage.setItem("preferences.onboardingCompleted", "true");
       localStorage.setItem("preferences.sidebarOpen", "true");
     });
@@ -24,8 +25,6 @@ test.describe("Stream lifecycle E2E Test", () => {
     // Act: select Kick and type channel
     await page.getByTestId("platform-kick").click();
     await page.getByTestId("channel-input").fill("xqc");
-    // Press Escape to close the autocomplete dropdown so it doesn't intercept the click
-    await page.getByTestId("channel-input").press("Escape");
     await page.getByTestId("add-submit-btn").click();
 
     // Assert: stream appears in grid

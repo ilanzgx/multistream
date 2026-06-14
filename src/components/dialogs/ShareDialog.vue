@@ -84,6 +84,7 @@ const copyLink = async () => {
 
       <div class="space-y-4">
         <input
+          data-testid="share-link-input"
           :value="shareLink"
           type="text"
           readonly
@@ -101,6 +102,7 @@ const copyLink = async () => {
           </Button>
         </DialogClose>
         <Button
+          data-testid="copy-link-btn"
           class="bg-white text-[#14161a] font-medium hover:bg-gray-200 active:scale-[0.98] transition-all duration-200 border-transparent"
           @click="copyLink"
         >
