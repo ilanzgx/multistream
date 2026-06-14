@@ -1,0 +1,308 @@
+use std::fs;
+use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
+use tauri::{AppHandle, Emitter, Manager, State};
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/// Payload emitted on the `transcription:download-progress` event.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct DownloadProgressPayload {
+    pub downloaded: u64,
+    pub total: u64,
+    pub percent: f32,
+}
+
+/// Payload emitted on the `transcription:text` event.
+#[derive(Clone, Serialize, Deserialize)]
+pub struct TranscriptionTextPayload {
+    pub text: String,
+    pub timestamp: u64,
+}
+
+/// Live handle to a running transcription session.
+/// The `running` flag is shared with the background thread so that
+/// `stop_transcription` can gracefully terminate it.
+pub struct TranscriptionHandle {
+    pub running: Arc<AtomicBool>,
+    pub thread: Option<std::thread::JoinHandle<()>>,
+}
+
+/// Tauri-managed state that holds an optional running transcription handle.
+/// Using `Mutex<Option<...>>` makes start/stop idempotent and thread-safe.
+pub struct TranscriptionState(pub Mutex<Option<TranscriptionHandle>>);
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/// Returns the path to the `whisper-models/` directory inside the Tauri
+/// app-data directory, creating it if it does not exist.
+fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("failed to resolve app data dir: {e}"))?;
+
+    let dir = data_dir.join("whisper-models");
+    fs::create_dir_all(&dir).map_err(|e| format!("failed to create models dir: {e}"))?;
+    Ok(dir)
+}
+
+/// Returns the expected file path for a given model name.
+/// Format: `<app_data>/whisper-models/ggml-<model_name>.bin`
+fn model_path(app: &AppHandle, model_name: &str) -> Result<PathBuf, String> {
+    Ok(models_dir(app)?.join(format!("ggml-{model_name}.bin")))
+}
+
+/// Returns the current UNIX timestamp in milliseconds.
+fn timestamp_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+// ---------------------------------------------------------------------------
+// Commands
+// ---------------------------------------------------------------------------
+
+/// Downloads the GGML model file for the given model name from HuggingFace,
+/// streaming it to disk while emitting `transcription:download-progress` events.
+///
+/// The file is saved to: `<app_data>/whisper-models/ggml-<model_name>.bin`
+///
+/// Supported model names: `tiny`, `base`, `small`
+#[tauri::command]
+pub async fn download_whisper_model(
+    model_name: String,
+    app: AppHandle,
+) -> Result<(), String> {
+    let url = format!(
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model_name}.bin"
+    );
+
+    let client = reqwest::Client::new();
+    let response = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| format!("request failed: {e}"))?;
+
+    if !response.status().is_success() {
+        return Err(format!(
+            "download failed with HTTP {}: {}",
+            response.status().as_u16(),
+            response.status().canonical_reason().unwrap_or("unknown")
+        ));
+    }
+
+    let total = response.content_length().unwrap_or(0);
+    let dest_path = model_path(&app, &model_name)?;
+
+    // Stream response body to disk, emitting progress events on each chunk.
+    let mut downloaded: u64 = 0;
+    let mut file_bytes: Vec<u8> = if total > 0 {
+        Vec::with_capacity(total as usize)
+    } else {
+        Vec::new()
+    };
+
+    let mut stream = response.bytes_stream();
+    while let Some(chunk_result) = stream.next().await {
+        let chunk = chunk_result.map_err(|e| format!("stream error: {e}"))?;
+        downloaded += chunk.len() as u64;
+        file_bytes.extend_from_slice(&chunk);
+
+        let percent = if total > 0 {
+            (downloaded as f32 / total as f32) * 100.0
+        } else {
+            0.0
+        };
+
+        let _ = app.emit(
+            "transcription:download-progress",
+            DownloadProgressPayload {
+                downloaded,
+                total,
+                percent,
+            },
+        );
+    }
+
+    fs::write(&dest_path, &file_bytes)
+        .map_err(|e| format!("failed to write model file: {e}"))?;
+
+    Ok(())
+}
+
+/// Returns the current transcription status, including the list of installed
+/// model names and whether a transcription session is currently active.
+#[tauri::command]
+pub fn get_transcription_status(
+    app: AppHandle,
+    state: State<'_, TranscriptionState>,
+) -> Result<serde_json::Value, String> {
+    let dir = models_dir(&app)?;
+
+    // Collect model names from files matching `ggml-*.bin`
+    let installed_models: Vec<String> = fs::read_dir(&dir)
+        .map_err(|e| format!("failed to read models dir: {e}"))?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let name = entry.file_name().to_string_lossy().to_string();
+            if name.starts_with("ggml-") && name.ends_with(".bin") {
+                // Extract the model name from `ggml-<name>.bin`
+                let stripped = name
+                    .strip_prefix("ggml-")
+                    .and_then(|s| s.strip_suffix(".bin"))
+                    .unwrap_or("")
+                    .to_string();
+                if stripped.is_empty() {
+                    None
+                } else {
+                    Some(stripped)
+                }
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    let guard = state.0.lock().map_err(|_| "state lock poisoned")?;
+    let active = guard
+        .as_ref()
+        .map(|h| h.running.load(Ordering::SeqCst))
+        .unwrap_or(false);
+
+    Ok(serde_json::json!({
+        "installed_models": installed_models,
+        "active": active,
+    }))
+}
+
+/// Starts the transcription pipeline for the given model.
+///
+/// If a session is already active, it is stopped first (idempotent).
+///
+/// **Current implementation:** The audio capture and Whisper inference layers
+/// are stubbed. The command spawns a background thread that emits a placeholder
+/// `transcription:text` event every 5 seconds so the full frontend pipeline
+/// (composable → overlay → event flow) can be validated end-to-end.
+///
+/// When `translate` is `true` the future real implementation will pass
+/// `--translate` to the whisper.cpp sidecar, producing English output regardless
+/// of the source language.
+///
+/// TODO(audio-capture): Replace the stub loop with:
+///   1. cpal process-scoped WASAPI loopback capture
+///   2. Resample PCM to 16 kHz mono f32
+///   3. Write 5-second WAV chunks to a temp dir
+///   4. Invoke the `whisper-main` sidecar with `--model`, `-f`, optionally
+///      `--translate`, `--language auto`, `--no-timestamps`, `--no-prints`
+///   5. Parse stdout and emit `transcription:text`
+///   6. Delete the temp WAV file
+#[tauri::command]
+pub fn start_transcription(
+    model_name: String,
+    translate: bool,
+    app: AppHandle,
+    state: State<'_, TranscriptionState>,
+) -> Result<(), String> {
+    let mut guard = state.0.lock().map_err(|_| "state lock poisoned")?;
+
+    // Stop any existing session before starting a new one.
+    if let Some(existing) = guard.take() {
+        existing.running.store(false, Ordering::SeqCst);
+        if let Some(thread) = existing.thread {
+            let _ = thread.join();
+        }
+    }
+
+    // Verify that the requested model file exists before starting.
+    let path = model_path(&app, &model_name)?;
+    if !path.exists() {
+        return Err(format!(
+            "model '{model_name}' is not installed; download it first"
+        ));
+    }
+
+    let running = Arc::new(AtomicBool::new(true));
+    let running_clone = Arc::clone(&running);
+    let app_clone = app.clone();
+
+    let thread = std::thread::spawn(move || {
+        // STUB: Emit a placeholder transcription event every 5 seconds.
+        //
+        // This exercises the complete event → composable → overlay pipeline
+        // without requiring a real audio capture or inference implementation.
+        //
+        // The translate flag and model_name are captured here so the future
+        // implementation can use them directly without changing the thread
+        // signature.
+        let mode = if translate {
+            "translate→en"
+        } else {
+            "original"
+        };
+
+        let stub_prefix = "[Stub] Process-scoped audio capture not yet implemented";
+
+        while running_clone.load(Ordering::SeqCst) {
+            let text = format!(
+                "{stub_prefix} — model: {model_name}, mode: {mode}"
+            );
+
+            let _ = app_clone.emit(
+                "transcription:text",
+                TranscriptionTextPayload {
+                    text,
+                    timestamp: timestamp_ms(),
+                },
+            );
+
+            // Sleep in 100 ms increments so the thread reacts to stop signals
+            // within ~100 ms rather than blocking for the full 5 seconds.
+            for _ in 0..50 {
+                if !running_clone.load(Ordering::SeqCst) {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(100));
+            }
+        }
+    });
+
+    *guard = Some(TranscriptionHandle {
+        running,
+        thread: Some(thread),
+    });
+
+    Ok(())
+}
+
+/// Stops the active transcription session, if any.
+///
+/// Sets the shared `running` flag to `false` and joins the capture thread.
+/// Calling this when no session is active is a safe no-op.
+#[tauri::command]
+pub fn stop_transcription(
+    state: State<'_, TranscriptionState>,
+) -> Result<(), String> {
+    let mut guard = state.0.lock().map_err(|_| "state lock poisoned")?;
+
+    if let Some(handle) = guard.take() {
+        handle.running.store(false, Ordering::SeqCst);
+        if let Some(thread) = handle.thread {
+            let _ = thread.join();
+        }
+    }
+
+    Ok(())
+}

@@ -3,6 +3,9 @@ use tauri::tray::TrayIconBuilder;
 use tauri::menu::{Menu, MenuItem};
 use tauri::window::Color;
 
+mod audio;
+use audio::transcriber::TranscriptionState;
+
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
 
@@ -94,8 +97,18 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_localhost::Builder::new(LOCALHOST_PORT).build())
         .plugin(tauri_plugin_notification::init())
-        .invoke_handler(tauri::generate_handler![send_notification, save_screenshot])
+        .invoke_handler(tauri::generate_handler![
+            send_notification,
+            save_screenshot,
+            audio::transcriber::download_whisper_model,
+            audio::transcriber::get_transcription_status,
+            audio::transcriber::start_transcription,
+            audio::transcriber::stop_transcription,
+        ])
         .setup(move |app| {
+            // initialize the transcription state (no active session on startup)
+            app.manage(TranscriptionState(std::sync::Mutex::new(None)));
+
             if cfg!(debug_assertions) {
                 app.handle().plugin(
                     tauri_plugin_log::Builder::default()
