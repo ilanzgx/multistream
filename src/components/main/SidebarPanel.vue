@@ -162,6 +162,7 @@ onUnmounted(() => {
                 <Button
                   class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
                   variant="outline"
+                  data-testid="settings-btn"
                   @click="settingsDialogOpen = true"
                 >
                   <Settings2 class="size-5 text-white" />
