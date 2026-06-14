@@ -12,19 +12,74 @@ import Button from "../ui/button/Button.vue";
 import { Switch } from "@/components/ui/switch";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { usePreferences } from "@/composables/usePreferences";
-import { RefreshCw, Download, Globe, Bell, Database, Upload, HelpCircle } from "lucide-vue-next";
+import {
+  RefreshCw,
+  Download,
+  Globe,
+  Bell,
+  Database,
+  Upload,
+  HelpCircle,
+  Captions,
+} from "lucide-vue-next";
 import { toast } from "vue-sonner";
-import { watch, ref } from "vue";
+import { watch, ref, computed } from "vue";
 import { useBackup } from "@/composables/useBackup";
 import type { BackupData } from "@/composables/useBackup";
 
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 import { PLATFORMS } from "@/config/platforms";
+import { useTranscription } from "@/composables/useTranscription";
 
 const { checkForUpdates, isChecking } = useUpdater();
 const { notificationsEnabled } = usePreferences();
 const { locale, t } = useI18n();
+
+const {
+  isSupported,
+  installedModels,
+  selectedModel,
+  isEnabled,
+  captionMode,
+  isDownloading,
+  downloadProgress,
+  isActive,
+  downloadModel,
+} = useTranscription();
+
+const transcriptionStatus = computed(() => {
+  if (isDownloading.value) return "downloading";
+  if (isActive.value) return "active";
+  if (installedModels.value.length > 0) return "ready";
+  return "notInstalled";
+});
+
+const transcriptionStatusBadge = computed(() => {
+  switch (transcriptionStatus.value) {
+    case "notInstalled":
+      return {
+        text: t("settings.transcription.statusNotInstalled"),
+        class: "text-gray-500 bg-white/5 border-white/5",
+      };
+    case "downloading":
+      return {
+        text: t("settings.transcription.statusDownloading"),
+        class: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+      };
+    case "ready":
+      return {
+        text: t("settings.transcription.statusReady"),
+        class: "text-orange-400 bg-orange-500/10 border-orange-500/20",
+      };
+    case "active":
+      return {
+        text: t("settings.transcription.statusActive"),
+        class: "text-green-400 bg-green-500/10 border-green-500/20",
+      };
+  }
+  return { text: "", class: "" };
+});
 
 const isRunningInTauri = isTauri();
 
@@ -327,6 +382,149 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                 {{ $t("settings.auth.disconnected") }}
               </span>
             </button>
+          </div>
+        </div>
+
+        <!-- Help / Tour Section -->
+        <!-- Live Transcription Section -->
+        <div
+          v-if="isRunningInTauri"
+          class="flex flex-col gap-4 border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl"
+        >
+          <!-- Row 1: Header & Status -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#2a2d33]/30"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33] shrink-0"
+              >
+                <Captions class="size-5 text-gray-400" />
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <p class="text-white text-sm font-medium">
+                    {{ $t("settings.transcription.title") }}
+                  </p>
+                  <span
+                    class="text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded border"
+                    :class="transcriptionStatusBadge.class"
+                  >
+                    {{ transcriptionStatusBadge.text }}
+                  </span>
+                </div>
+                <p class="text-gray-400 text-xs mt-0.5">
+                  {{ $t("settings.transcription.description") }}
+                </p>
+              </div>
+            </div>
+
+            <div v-if="!isSupported" class="text-xs text-red-400 max-w-xs text-right">
+              {{ $t("settings.transcription.macosWarning") }}
+            </div>
+          </div>
+
+          <!-- Row 2: Contextual Controls -->
+          <div
+            v-if="isSupported"
+            class="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          >
+            <!-- Not Installed -->
+            <template v-if="transcriptionStatus === 'notInstalled'">
+              <div class="flex items-center gap-2 flex-1">
+                <select
+                  v-model="selectedModel"
+                  data-testid="transcription-model-select"
+                  class="bg-[#14161a] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px]"
+                >
+                  <option value="tiny">
+                    {{ $t("settings.transcription.modelLabel") }}: Tiny (75MB)
+                  </option>
+                  <option value="base">
+                    {{ $t("settings.transcription.modelLabel") }}: Base (142MB)
+                  </option>
+                  <option value="small">
+                    {{ $t("settings.transcription.modelLabel") }}: Small (466MB)
+                  </option>
+                </select>
+                <div class="text-[10px] text-gray-500">
+                  <template v-if="selectedModel === 'tiny'">{{
+                    $t("settings.transcription.modelTiny")
+                  }}</template>
+                  <template v-if="selectedModel === 'base'">{{
+                    $t("settings.transcription.modelBase")
+                  }}</template>
+                  <template v-if="selectedModel === 'small'">{{
+                    $t("settings.transcription.modelSmall")
+                  }}</template>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                data-testid="transcription-download-btn"
+                class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200"
+                @click="downloadModel(selectedModel)"
+              >
+                <Download class="size-4 mr-2" />
+                {{ $t("settings.transcription.downloadButton") }}
+              </Button>
+            </template>
+
+            <!-- Downloading -->
+            <template v-else-if="transcriptionStatus === 'downloading'">
+              <div class="flex-1 space-y-1.5 w-full">
+                <div class="flex justify-between text-[10px] text-gray-400 font-mono">
+                  <span
+                    >{{ (downloadProgress.downloaded / 1024 / 1024).toFixed(1) }} MB /
+                    {{ (downloadProgress.total / 1024 / 1024).toFixed(1) }} MB</span
+                  >
+                  <span>{{ downloadProgress.percent.toFixed(1) }}%</span>
+                </div>
+                <div class="h-1.5 w-full bg-[#2a2d33] rounded-full overflow-hidden">
+                  <div
+                    class="h-full bg-blue-500 transition-all duration-300"
+                    :style="{ width: `${downloadProgress.percent}%` }"
+                  ></div>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                class="border-[#2a2d33] bg-transparent text-gray-400 shrink-0"
+              >
+                <RefreshCw class="size-4 mr-2 animate-spin" />
+                {{ $t("settings.transcription.downloadingButton") }}
+              </Button>
+            </template>
+
+            <!-- Ready / Active -->
+            <template v-else>
+              <div class="flex items-center gap-2 flex-1">
+                <select
+                  v-model="captionMode"
+                  data-testid="transcription-mode-select"
+                  class="bg-[#14161a] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px]"
+                >
+                  <option value="original">
+                    {{ $t("settings.transcription.captionModeOriginal") }}
+                  </option>
+                  <option value="translate">
+                    {{ $t("settings.transcription.captionModeTranslate") }}
+                  </option>
+                </select>
+                <div class="text-[10px] text-gray-500">
+                  {{ $t("settings.transcription.captionModeLabel") }}
+                </div>
+              </div>
+              <div class="flex items-center gap-3 shrink-0">
+                <span class="text-xs text-gray-400">{{
+                  $t("settings.transcription.enableToggle")
+                }}</span>
+                <Switch v-model="isEnabled" data-testid="transcription-enable-toggle" />
+              </div>
+            </template>
           </div>
         </div>
 
