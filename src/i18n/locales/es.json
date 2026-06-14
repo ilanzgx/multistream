@@ -61,7 +61,26 @@
       "importConfirmCancel": "Cancelar",
       "importSuccess": "Configuración importada con éxito",
       "importError": "Archivo de copia de seguridad no válido",
-      "exportSuccess": "Configuración exportada con éxito"
+      "exportSuccess": "Configuración exportada exitosamente"
+    },
+    "transcription": {
+      "title": "Transcripción en Vivo",
+      "description": "Subtítulos de IA en tiempo real",
+      "macosWarning": "La captura de audio no es compatible en macOS sin el controlador virtual BlackHole.",
+      "statusNotInstalled": "No Instalado",
+      "statusDownloading": "Descargando...",
+      "statusReady": "Listo",
+      "statusActive": "Activo",
+      "modelLabel": "Modelo",
+      "modelTiny": "El más rápido, menor calidad, poca RAM.",
+      "modelBase": "Rápido, buena calidad, poca RAM.",
+      "modelSmall": "Equilibrado, mejor calidad, RAM moderada.",
+      "downloadButton": "Descargar Modelo",
+      "downloadingButton": "Descargando...",
+      "captionModeLabel": "Modo de Subtítulos",
+      "captionModeOriginal": "Idioma Original",
+      "captionModeTranslate": "Traducir al Inglés",
+      "enableToggle": "Habilitar Transcripción"
     },
     "help": {
       "title": "Ayuda",

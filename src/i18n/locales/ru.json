@@ -63,6 +63,25 @@
       "importError": "Неверный файл резервной копии",
       "exportSuccess": "Конфигурация успешно экспортирована"
     },
+    "transcription": {
+      "title": "Живая транскрипция",
+      "description": "Субтитры ИИ в реальном времени",
+      "macosWarning": "Захват звука не поддерживается в macOS без виртуального драйвера BlackHole.",
+      "statusNotInstalled": "Не установлено",
+      "statusDownloading": "Загрузка...",
+      "statusReady": "Готово",
+      "statusActive": "Активно",
+      "modelLabel": "Модель",
+      "modelTiny": "Самая быстрая, низкое качество, мало ОЗУ.",
+      "modelBase": "Быстрая, хорошее качество, мало ОЗУ.",
+      "modelSmall": "Сбалансированная, лучшее качество, умеренное ОЗУ.",
+      "downloadButton": "Скачать модель",
+      "downloadingButton": "Загрузка...",
+      "captionModeLabel": "Режим субтитров",
+      "captionModeOriginal": "Оригинальный язык",
+      "captionModeTranslate": "Перевести на английский",
+      "enableToggle": "Включить транскрипцию"
+    },
     "help": {
       "title": "Помощь",
       "description": "Нужна помощь или хотите изучить функции?",

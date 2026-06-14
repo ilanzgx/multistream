@@ -63,6 +63,25 @@
       "importError": "Ungültige Backup-Datei",
       "exportSuccess": "Konfiguration erfolgreich exportiert"
     },
+    "transcription": {
+      "title": "Live-Transkription",
+      "description": "Echtzeit-KI-Untertitel für Streams",
+      "macosWarning": "Audioaufnahme wird unter macOS ohne den virtuellen Treiber BlackHole nicht unterstützt.",
+      "statusNotInstalled": "Nicht installiert",
+      "statusDownloading": "Wird heruntergeladen...",
+      "statusReady": "Bereit",
+      "statusActive": "Aktiv",
+      "modelLabel": "Modell",
+      "modelTiny": "Am schnellsten, geringste Qualität, sehr wenig RAM.",
+      "modelBase": "Schnell, gute Qualität, wenig RAM.",
+      "modelSmall": "Ausgewogen, beste Qualität, moderater RAM.",
+      "downloadButton": "Modell herunterladen",
+      "downloadingButton": "Wird heruntergeladen...",
+      "captionModeLabel": "Untertitel-Modus",
+      "captionModeOriginal": "Originalsprache",
+      "captionModeTranslate": "Auf Englisch übersetzen",
+      "enableToggle": "Transkription aktivieren"
+    },
     "help": {
       "title": "Hilfe",
       "description": "Benötigen Sie Hilfe oder möchten Sie die Funktionen überprüfen?",

@@ -67,6 +67,25 @@
       "importSuccess": "Configuração importada com sucesso",
       "importError": "Arquivo de backup de configuração inválido",
       "exportSuccess": "Configuração exportada com sucesso"
+    },
+    "transcription": {
+      "title": "Transcrição Ao Vivo",
+      "description": "Legendas de IA em tempo real",
+      "macosWarning": "A captura de áudio não é suportada no macOS sem o driver virtual BlackHole.",
+      "statusNotInstalled": "Não Instalado",
+      "statusDownloading": "Baixando...",
+      "statusReady": "Pronto",
+      "statusActive": "Ativo",
+      "modelLabel": "Modelo",
+      "modelTiny": "Mais rápido, menor qualidade, pouca RAM.",
+      "modelBase": "Rápido, boa qualidade, pouca RAM.",
+      "modelSmall": "Equilibrado, melhor qualidade, média RAM.",
+      "downloadButton": "Baixar Modelo",
+      "downloadingButton": "Baixando...",
+      "captionModeLabel": "Modo de Legenda",
+      "captionModeOriginal": "Idioma Original",
+      "captionModeTranslate": "Traduzir para Inglês",
+      "enableToggle": "Habilitar Transcrição"
     }
   },
   "share": {

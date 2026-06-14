@@ -63,6 +63,25 @@
       "importError": "无效的配置文件",
       "exportSuccess": "配置导出成功"
     },
+    "transcription": {
+      "title": "实时字幕",
+      "description": "流媒体的实时 AI 字幕",
+      "macosWarning": "在没有 BlackHole 虚拟驱动程序的情况下，macOS 不支持音频捕获。",
+      "statusNotInstalled": "未安装",
+      "statusDownloading": "下载中...",
+      "statusReady": "就绪",
+      "statusActive": "活动",
+      "modelLabel": "模型",
+      "modelTiny": "最快，质量最低，内存占用极少。",
+      "modelBase": "快速，质量好，内存占用少。",
+      "modelSmall": "均衡，质量最佳，内存占用中等。",
+      "downloadButton": "下载模型",
+      "downloadingButton": "下载中...",
+      "captionModeLabel": "字幕模式",
+      "captionModeOriginal": "原始语言",
+      "captionModeTranslate": "翻译为英语",
+      "enableToggle": "启用字幕"
+    },
     "help": {
       "title": "帮助",
       "description": "需要帮助或想查看功能？",

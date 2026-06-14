@@ -67,6 +67,25 @@
       "importSuccess": "Configuration imported successfully",
       "importError": "Invalid configuration backup file",
       "exportSuccess": "Configuration exported successfully"
+    },
+    "transcription": {
+      "title": "Live Transcription",
+      "description": "Real-time AI captions for streams",
+      "macosWarning": "Audio capture is unsupported on macOS without BlackHole virtual driver.",
+      "statusNotInstalled": "Not Installed",
+      "statusDownloading": "Downloading...",
+      "statusReady": "Ready",
+      "statusActive": "Active",
+      "modelLabel": "Model",
+      "modelTiny": "Fastest, lowest quality, very low RAM.",
+      "modelBase": "Fast, good quality, low RAM.",
+      "modelSmall": "Balanced, best quality, moderate RAM.",
+      "downloadButton": "Download Model",
+      "downloadingButton": "Downloading...",
+      "captionModeLabel": "Caption Mode",
+      "captionModeOriginal": "Original Language",
+      "captionModeTranslate": "Translate to English",
+      "enableToggle": "Enable Transcription"
     }
   },
   "share": {
