@@ -3,6 +3,7 @@ import KickStream from "@/components/stream/KickStream.vue";
 import TwitchStream from "@/components/stream/TwitchStream.vue";
 import YoutubeStream from "@/components/stream/YoutubeStream.vue";
 import CustomStream from "@/components/stream/CustomStream.vue";
+import TranscriptionOverlay from "./TranscriptionOverlay.vue";
 import { useStreams } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { usePreferences } from "@/composables/usePreferences";
@@ -134,10 +135,12 @@ const getStreamClass = (index: number) => {
       :style="getStreamStyle(stream.id)"
       :class="[
         getStreamClass(index),
-        'min-h-0 min-w-0 stream-item overflow-hidden rounded-sm',
+        'min-h-0 min-w-0 stream-item overflow-hidden rounded-sm relative',
         isLeaving(stream.id) ? 'stream-leaving' : '',
       ]"
     >
+      <TranscriptionOverlay v-if="isFocused(stream.id)" />
+
       <KickStream
         v-if="stream.platform === 'kick'"
         :channel="stream.channel"
