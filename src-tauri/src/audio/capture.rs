@@ -115,18 +115,19 @@ pub fn resample_mono(input: &[f32], in_rate: u32, out_rate: u32) -> Vec<f32> {
     output
 }
 
-/// Writes 16kHz mono f32 samples to a WAV file.
+/// Writes 16kHz mono 16-bit PCM samples to a WAV file.
 pub fn write_wav(path: &Path, samples: &[f32]) -> Result<(), String> {
     let spec = WavSpec {
         channels: 1,
         sample_rate: 16000,
-        bits_per_sample: 32,
-        sample_format: HoundSampleFormat::Float,
+        bits_per_sample: 16,
+        sample_format: HoundSampleFormat::Int,
     };
 
     let mut writer = WavWriter::create(path, spec).map_err(|e| e.to_string())?;
     for &sample in samples {
-        writer.write_sample(sample).map_err(|e| e.to_string())?;
+        let sample_i16 = (sample.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+        writer.write_sample(sample_i16).map_err(|e| e.to_string())?;
     }
     writer.finalize().map_err(|e| e.to_string())?;
     Ok(())
