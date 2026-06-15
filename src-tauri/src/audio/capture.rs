@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::mpsc;
 
 pub struct CaptureSession {
-    pub stream: cpal::Stream,
+    pub _stream: cpal::Stream,
     pub rx: mpsc::Receiver<f32>,
     pub sample_rate: u32,
     pub channels: u16,
@@ -70,10 +70,12 @@ pub fn start_loopback() -> Result<CaptureSession, String> {
         _ => return Err("Unsupported sample format".into()),
     };
 
-    stream.play().map_err(|e| format!("Failed to play stream: {e}"))?;
+    stream
+        .play()
+        .map_err(|e| format!("Failed to play stream: {e}"))?;
 
     Ok(CaptureSession {
-        stream,
+        _stream: stream,
         rx,
         sample_rate,
         channels,

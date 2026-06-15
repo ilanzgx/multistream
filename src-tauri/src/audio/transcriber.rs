@@ -83,13 +83,9 @@ fn timestamp_ms() -> u64 {
 ///
 /// Supported model names: `tiny`, `base`, `small`
 #[tauri::command]
-pub async fn download_whisper_model(
-    model_name: String,
-    app: AppHandle,
-) -> Result<(), String> {
-    let url = format!(
-        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model_name}.bin"
-    );
+pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Result<(), String> {
+    let url =
+        format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model_name}.bin");
 
     let client = reqwest::Client::new();
     let response = client
@@ -139,8 +135,7 @@ pub async fn download_whisper_model(
         );
     }
 
-    fs::write(&dest_path, &file_bytes)
-        .map_err(|e| format!("failed to write model file: {e}"))?;
+    fs::write(&dest_path, &file_bytes).map_err(|e| format!("failed to write model file: {e}"))?;
 
     Ok(())
 }
@@ -239,11 +234,12 @@ pub fn start_transcription(
     let running = Arc::new(AtomicBool::new(true));
     let running_clone = Arc::clone(&running);
     let app_clone = app.clone();
-    let sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>> = Arc::new(Mutex::new(None));
+    let sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>> =
+        Arc::new(Mutex::new(None));
     let sidecar_child_clone = Arc::clone(&sidecar_child);
 
     let thread = std::thread::spawn(move || {
-        let mut session = match super::capture::start_loopback() {
+        let session = match super::capture::start_loopback() {
             Ok(s) => s,
             Err(e) => {
                 let _ = app_clone.emit(
@@ -282,11 +278,14 @@ pub fn start_transcription(
             }
 
             let mono = super::capture::to_mono(&new_samples, session.channels);
-            let resampled = super::capture::resample_mono(&mono, session.sample_rate, target_sample_rate);
+            let resampled =
+                super::capture::resample_mono(&mono, session.sample_rate, target_sample_rate);
             mono_16k_buffer.extend(resampled);
 
             if mono_16k_buffer.len() >= samples_per_chunk as usize {
-                let chunk_samples = mono_16k_buffer.drain(0..samples_per_chunk as usize).collect::<Vec<_>>();
+                let chunk_samples = mono_16k_buffer
+                    .drain(0..samples_per_chunk as usize)
+                    .collect::<Vec<_>>();
                 let wav_path = temp_dir.join(format!("chunk_{}.wav", timestamp_ms()));
 
                 if let Err(e) = super::capture::write_wav(&wav_path, &chunk_samples) {
@@ -299,14 +298,25 @@ pub fn start_transcription(
                     Err(_) => continue,
                 };
 
-                let resource_dir = app_clone.path().resource_dir().unwrap_or_default().join("binaries");
+                let resource_dir = app_clone
+                    .path()
+                    .resource_dir()
+                    .unwrap_or_default()
+                    .join("binaries");
                 let current_path = std::env::var("PATH").unwrap_or_default();
                 let new_path = format!("{};{}", resource_dir.to_string_lossy(), current_path);
-                
-                let mut sidecar = app_clone.shell().sidecar("whisper-cli").expect("failed to setup sidecar");
+
+                let mut sidecar = app_clone
+                    .shell()
+                    .sidecar("whisper-cli")
+                    .expect("failed to setup sidecar");
                 sidecar = sidecar.env("PATH", new_path);
-                sidecar = sidecar.arg("-m").arg(model_path.to_string_lossy().to_string());
-                sidecar = sidecar.arg("-f").arg(wav_path.to_string_lossy().to_string());
+                sidecar = sidecar
+                    .arg("-m")
+                    .arg(model_path.to_string_lossy().to_string());
+                sidecar = sidecar
+                    .arg("-f")
+                    .arg(wav_path.to_string_lossy().to_string());
                 sidecar = sidecar.arg("-nt");
                 sidecar = sidecar.arg("--no-prints");
 
@@ -351,7 +361,10 @@ pub fn start_transcription(
                 }
 
                 let cleaned = output.trim();
-                if !cleaned.is_empty() && !cleaned.contains("[BLANK_AUDIO]") && !cleaned.starts_with("[_") {
+                if !cleaned.is_empty()
+                    && !cleaned.contains("[BLANK_AUDIO]")
+                    && !cleaned.starts_with("[_")
+                {
                     let _ = app_clone.emit(
                         "transcription:text",
                         TranscriptionTextPayload {
@@ -380,14 +393,12 @@ pub fn start_transcription(
 /// Sets the shared `running` flag to `false` and joins the capture thread.
 /// Calling this when no session is active is a safe no-op.
 #[tauri::command]
-pub fn stop_transcription(
-    state: State<'_, TranscriptionState>,
-) -> Result<(), String> {
+pub fn stop_transcription(state: State<'_, TranscriptionState>) -> Result<(), String> {
     let mut guard = state.0.lock().map_err(|_| "state lock poisoned")?;
 
     if let Some(handle) = guard.take() {
         handle.running.store(false, Ordering::SeqCst);
-        
+
         if let Ok(mut child_guard) = handle.sidecar_child.lock() {
             if let Some(child) = child_guard.take() {
                 let _ = child.kill();
