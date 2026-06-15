@@ -107,19 +107,26 @@ pub fn resample_mono(input: &[f32], in_rate: u32, out_rate: u32) -> Vec<f32> {
     let mut output = Vec::with_capacity(out_len);
 
     for i in 0..out_len {
-        let in_idx = (i as f32 * ratio) as usize;
-        if in_idx < input.len() {
-            output.push(input[in_idx]);
+        let exact_idx = i as f32 * ratio;
+        let idx_floor = exact_idx.floor() as usize;
+        let idx_ceil = (idx_floor + 1).min(input.len().saturating_sub(1));
+        let fraction = exact_idx - idx_floor as f32;
+
+        if idx_floor < input.len() {
+            let sample_floor = input[idx_floor];
+            let sample_ceil = input[idx_ceil];
+            let interpolated = sample_floor + fraction * (sample_ceil - sample_floor);
+            output.push(interpolated);
         }
     }
     output
 }
 
-/// Writes 16kHz mono 16-bit PCM samples to a WAV file.
-pub fn write_wav(path: &Path, samples: &[f32]) -> Result<(), String> {
+/// Writes 16-bit PCM samples to a WAV file with dynamic channels and sample rate.
+pub fn write_wav(path: &Path, samples: &[f32], channels: u16, sample_rate: u32) -> Result<(), String> {
     let spec = WavSpec {
-        channels: 1,
-        sample_rate: 16000,
+        channels,
+        sample_rate,
         bits_per_sample: 16,
         sample_format: HoundSampleFormat::Int,
     };

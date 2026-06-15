@@ -265,6 +265,7 @@ pub fn start_transcription(
         let chunk_duration = 10;
         let samples_per_chunk = target_sample_rate * chunk_duration;
         let mut mono_16k_buffer = Vec::with_capacity(samples_per_chunk as usize);
+        let mut original_buffer = Vec::new();
 
         while running_clone.load(Ordering::SeqCst) {
             let mut new_samples = Vec::new();
@@ -277,6 +278,10 @@ pub fn start_transcription(
                 continue;
             }
 
+            if !new_samples.is_empty() {
+                original_buffer.extend_from_slice(&new_samples);
+            }
+
             let mono = super::capture::to_mono(&new_samples, session.channels);
             let resampled =
                 super::capture::resample_mono(&mono, session.sample_rate, target_sample_rate);
@@ -286,12 +291,53 @@ pub fn start_transcription(
             log::info!("Transcription backlog: {:.2}s", backlog_duration);
 
             if mono_16k_buffer.len() >= samples_per_chunk as usize {
+                // Drop old audio if backlog is too large to keep up with real-time
+                if mono_16k_buffer.len() > samples_per_chunk as usize {
+                    let excess = mono_16k_buffer.len() - samples_per_chunk as usize;
+                    log::warn!("Dropping {:.2}s of audio to keep up with real-time", excess as f32 / target_sample_rate as f32);
+                    mono_16k_buffer.drain(0..excess);
+
+                    let excess_orig = (excess as f32 * (session.sample_rate as f32 / target_sample_rate as f32)).round() as usize * session.channels as usize;
+                    if excess_orig <= original_buffer.len() {
+                        original_buffer.drain(0..excess_orig);
+                    } else {
+                        original_buffer.clear();
+                    }
+                }
+
                 let chunk_samples = mono_16k_buffer
                     .drain(0..samples_per_chunk as usize)
                     .collect::<Vec<_>>();
-                let wav_path = temp_dir.join(format!("chunk_{}.wav", timestamp_ms()));
+                
+                let orig_samples_to_drain = (samples_per_chunk as f32 * (session.sample_rate as f32 / target_sample_rate as f32)).round() as usize * session.channels as usize;
+                let actual_drain = orig_samples_to_drain.min(original_buffer.len());
+                let orig_chunk = original_buffer.drain(0..actual_drain).collect::<Vec<_>>();
 
-                if let Err(e) = super::capture::write_wav(&wav_path, &chunk_samples) {
+                let calc_rms_peak = |s: &[f32]| -> (f32, f32) {
+                    if s.is_empty() { return (0.0, 0.0); }
+                    let mut sq = 0.0;
+                    let mut peak = 0.0_f32;
+                    for &v in s { sq += v*v; if v.abs() > peak { peak = v.abs(); } }
+                    ((sq / s.len() as f32).sqrt(), peak)
+                };
+
+                let (in_rms, in_peak) = calc_rms_peak(&orig_chunk);
+                let (out_rms, out_peak) = calc_rms_peak(&chunk_samples);
+
+                log::info!("Audio Diagnostics:");
+                log::info!("  Input: {} Hz, {} channels | RMS: {:.4}, Peak: {:.4}", session.sample_rate, session.channels, in_rms, in_peak);
+                log::info!("  Output: 16000 Hz, 1 channel | RMS: {:.4}, Peak: {:.4}", out_rms, out_peak);
+
+                let orig_wav_path = temp_dir.join(format!("chunk_{}_original.wav", timestamp_ms()));
+                let resampled_wav_path = temp_dir.join(format!("chunk_{}_resampled.wav", timestamp_ms()));
+
+                const KEEP_DEBUG_AUDIO: bool = false;
+
+                if KEEP_DEBUG_AUDIO {
+                    let _ = super::capture::write_wav(&orig_wav_path, &orig_chunk, session.channels, session.sample_rate);
+                }
+                
+                if let Err(e) = super::capture::write_wav(&resampled_wav_path, &chunk_samples, 1, 16000) {
                     log::error!("Failed to write WAV: {}", e);
                     continue;
                 }
@@ -319,9 +365,13 @@ pub fn start_transcription(
                     .arg(model_path.to_string_lossy().to_string());
                 sidecar = sidecar
                     .arg("-f")
-                    .arg(wav_path.to_string_lossy().to_string());
+                    .arg(resampled_wav_path.to_string_lossy().to_string());
                 sidecar = sidecar.arg("-nt");
                 sidecar = sidecar.arg("--no-prints");
+
+                // Use available parallelism for threads
+                let num_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+                sidecar = sidecar.arg("-t").arg(num_threads.to_string());
 
                 if translate {
                     sidecar = sidecar.arg("-tr");
@@ -389,7 +439,13 @@ pub fn start_transcription(
                     );
                 }
 
-                let _ = std::fs::remove_file(wav_path);
+                if KEEP_DEBUG_AUDIO {
+                    log::info!("WAV files saved for diagnostics at:");
+                    log::info!("  Original: {}", orig_wav_path.display());
+                    log::info!("  Resampled: {}", resampled_wav_path.display());
+                } else {
+                    let _ = std::fs::remove_file(&resampled_wav_path);
+                }
             }
         }
     });
