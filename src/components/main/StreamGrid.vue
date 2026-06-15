@@ -139,7 +139,7 @@ const getStreamClass = (index: number) => {
         isLeaving(stream.id) ? 'stream-leaving' : '',
       ]"
     >
-      <TranscriptionOverlay v-if="isFocused(stream.id)" />
+      <TranscriptionOverlay v-if="isFocused(stream.id) || streams.length === 1" />
 
       <KickStream
         v-if="stream.platform === 'kick'"

@@ -15,6 +15,9 @@ export interface TranscriptionLine {
   timestamp: number;
 }
 
+const lines = ref<TranscriptionLine[]>([]);
+let listenerRegistered = false;
+
 const _useTranscription = () => {
   // State
   const isSupported = ref(true); // For future macOS BlackHole check, true for Windows
@@ -23,7 +26,6 @@ const _useTranscription = () => {
   const downloadingModel = ref<string | null>(null);
   const downloadProgress = ref<DownloadProgress>({ downloaded: 0, total: 0, percent: 0 });
   const isActive = ref(false);
-  const lines = ref<TranscriptionLine[]>([]);
 
   // Persistent Settings
   const selectedModel = useStorage<string>("transcription.model", "base");
@@ -31,7 +33,6 @@ const _useTranscription = () => {
   const captionMode = useStorage<"original" | "translate">("transcription.captionMode", "original");
 
   let unlistenProgress: UnlistenFn | null = null;
-  let unlistenText: UnlistenFn | null = null;
 
   // Refresh status from backend
   const updateStatus = async () => {
@@ -96,15 +97,6 @@ const _useTranscription = () => {
     if (!isTauri() || !installedModels.value.includes(selectedModel.value)) return;
 
     try {
-      if (!unlistenText) {
-        unlistenText = await listen<TranscriptionLine>("transcription:text", (event) => {
-          lines.value.push(event.payload);
-          if (lines.value.length > 8) {
-            lines.value.shift(); // Keep max 8 entries
-          }
-        });
-      }
-
       const translate = captionMode.value === "translate";
       await invoke("start_transcription", {
         modelName: selectedModel.value,
@@ -124,11 +116,6 @@ const _useTranscription = () => {
       await invoke("stop_transcription");
       isActive.value = false;
       lines.value = []; // Clear lines when stopped
-
-      if (unlistenText) {
-        unlistenText();
-        unlistenText = null;
-      }
     } catch (e) {
       console.error("Failed to stop transcription:", e);
     }
@@ -190,13 +177,22 @@ const _useTranscription = () => {
 
   // Initialization
   if (isTauri()) {
+    if (!listenerRegistered) {
+      listenerRegistered = true;
+      listen<TranscriptionLine>("transcription:text", (event) => {
+        const newLines = [...lines.value, event.payload];
+        if (newLines.length > 8) {
+          newLines.shift(); // Keep max 8 entries
+        }
+        lines.value = newLines;
+      }).catch(console.error);
+    }
     updateStatus();
   }
 
   // Cleanup on unmount (if not used as shared, but shared composables don't typically unmount)
   onUnmounted(() => {
     if (unlistenProgress) unlistenProgress();
-    if (unlistenText) unlistenText();
   });
 
   return {

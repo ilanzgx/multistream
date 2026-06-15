@@ -338,6 +338,14 @@ pub fn start_transcription(
                 log::info!("  Input: {} Hz, {} channels | RMS: {:.4}, Peak: {:.4}", session.sample_rate, session.channels, in_rms, in_peak);
                 log::info!("  Output: 16000 Hz, 1 channel | RMS: {:.4}, Peak: {:.4}", out_rms, out_peak);
 
+                // Skip transcription if audio is essentially silent.
+                // This prevents Whisper from hallucinating repeating phrases on silent loopback (e.g. 0 streams playing),
+                // which can cause the UI text to appear "frozen" because the same phrase is emitted repeatedly.
+                if out_rms < 0.001 {
+                    log::info!("Audio chunk is silent. Skipping inference to prevent hallucinations.");
+                    continue;
+                }
+
                 let orig_wav_path = temp_dir.join(format!("chunk_{}_original.wav", timestamp_ms()));
                 let resampled_wav_path = temp_dir.join(format!("chunk_{}_resampled.wav", timestamp_ms()));
 

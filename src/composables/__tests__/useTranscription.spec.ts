@@ -97,7 +97,6 @@ describe("useTranscription composable unit tests", () => {
       translate: false,
     });
     expect(isActive.value).toBe(true);
-    expect(listen).toHaveBeenCalledWith("transcription:text", expect.any(Function));
   });
 
   it("should stop transcription and clear lines", async () => {
