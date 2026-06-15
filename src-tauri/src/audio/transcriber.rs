@@ -262,7 +262,7 @@ pub fn start_transcription(
         let _ = std::fs::create_dir_all(&temp_dir);
 
         let target_sample_rate = 16000;
-        let chunk_duration = 5;
+        let chunk_duration = 10;
         let samples_per_chunk = target_sample_rate * chunk_duration;
         let mut mono_16k_buffer = Vec::with_capacity(samples_per_chunk as usize);
 
@@ -281,6 +281,9 @@ pub fn start_transcription(
             let resampled =
                 super::capture::resample_mono(&mono, session.sample_rate, target_sample_rate);
             mono_16k_buffer.extend(resampled);
+
+            let backlog_duration = mono_16k_buffer.len() as f32 / target_sample_rate as f32;
+            log::info!("Transcription backlog: {:.2}s", backlog_duration);
 
             if mono_16k_buffer.len() >= samples_per_chunk as usize {
                 let chunk_samples = mono_16k_buffer
@@ -326,6 +329,7 @@ pub fn start_transcription(
                     sidecar = sidecar.arg("-l").arg("auto");
                 }
 
+                let start_time = std::time::Instant::now();
                 let (mut rx, child) = match sidecar.spawn() {
                     Ok(res) => res,
                     Err(e) => {
@@ -341,19 +345,29 @@ pub fn start_transcription(
 
                 let output = tauri::async_runtime::block_on(async move {
                     let mut stdout_acc = String::new();
+                    let mut detected_lang = String::new();
                     while let Some(event) = rx.recv().await {
                         match event {
                             tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
                                 stdout_acc.push_str(&String::from_utf8_lossy(&line));
                             }
                             tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
-                                log::debug!("Whisper stderr: {}", String::from_utf8_lossy(&line));
+                                let stderr_str = String::from_utf8_lossy(&line);
+                                if stderr_str.contains("Detected language:") {
+                                    detected_lang = stderr_str.to_string();
+                                }
                             }
                             _ => {}
                         }
                     }
+                    if !detected_lang.is_empty() {
+                        log::info!("Whisper {}", detected_lang.trim());
+                    }
                     stdout_acc
                 });
+
+                let inference_duration = start_time.elapsed();
+                log::info!("Whisper invocation (startup + inference) took: {:?}", inference_duration);
 
                 {
                     let mut child_guard = sidecar_child_clone.lock().unwrap();
@@ -361,6 +375,7 @@ pub fn start_transcription(
                 }
 
                 let cleaned = output.trim();
+                log::info!("Transcription output: {}", cleaned);
                 if !cleaned.is_empty()
                     && !cleaned.contains("[BLANK_AUDIO]")
                     && !cleaned.starts_with("[_")
