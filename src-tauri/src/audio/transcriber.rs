@@ -140,6 +140,16 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
     Ok(())
 }
 
+/// Deletes the GGML model file from disk.
+#[tauri::command]
+pub async fn delete_whisper_model(model_name: String, app: AppHandle) -> Result<(), String> {
+    let dest_path = model_path(&app, &model_name)?;
+    if dest_path.exists() {
+        fs::remove_file(dest_path).map_err(|e| format!("failed to delete model file: {e}"))?;
+    }
+    Ok(())
+}
+
 /// Returns the current transcription status, including the list of installed
 /// model names and whether a transcription session is currently active.
 #[tauri::command]

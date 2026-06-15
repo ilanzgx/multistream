@@ -20,6 +20,7 @@ const _useTranscription = () => {
   const isSupported = ref(true); // For future macOS BlackHole check, true for Windows
   const installedModels = ref<string[]>([]);
   const isDownloading = ref(false);
+  const downloadingModel = ref<string | null>(null);
   const downloadProgress = ref<DownloadProgress>({ downloaded: 0, total: 0, percent: 0 });
   const isActive = ref(false);
   const lines = ref<TranscriptionLine[]>([]);
@@ -62,6 +63,7 @@ const _useTranscription = () => {
     if (!isTauri() || isDownloading.value) return;
 
     isDownloading.value = true;
+    downloadingModel.value = modelName;
     downloadProgress.value = { downloaded: 0, total: 0, percent: 0 };
 
     try {
@@ -82,6 +84,7 @@ const _useTranscription = () => {
       throw e;
     } finally {
       isDownloading.value = false;
+      downloadingModel.value = null;
       if (unlistenProgress) {
         unlistenProgress();
         unlistenProgress = null;
@@ -131,6 +134,36 @@ const _useTranscription = () => {
     }
   };
 
+  const deleteModel = async (modelName: string) => {
+    if (!isTauri() || isDownloading.value) return;
+
+    try {
+      if (isActive.value && selectedModel.value === modelName) {
+        await stopTranscription();
+      }
+
+      await invoke("delete_whisper_model", { modelName });
+      await updateStatus();
+
+      // Fallback logic
+      if (selectedModel.value === modelName) {
+        if (installedModels.value.length > 0) {
+          selectedModel.value = installedModels.value[0];
+          // If transcription was globally enabled, restart it with the fallback model
+          if (isEnabled.value) {
+            await startTranscription();
+          }
+        } else {
+          // No models left
+          isEnabled.value = false;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to delete model:", e);
+      throw e;
+    }
+  };
+
   // Watchers
   watch(
     [isEnabled, captionMode, selectedModel],
@@ -173,10 +206,12 @@ const _useTranscription = () => {
     isEnabled,
     captionMode,
     isDownloading,
+    downloadingModel,
     downloadProgress,
     isActive,
     lines,
     downloadModel,
+    deleteModel,
     startTranscription,
     stopTranscription,
     updateStatus,

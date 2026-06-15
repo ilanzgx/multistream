@@ -102,6 +102,7 @@ pub fn run() {
             send_notification,
             save_screenshot,
             audio::transcriber::download_whisper_model,
+            audio::transcriber::delete_whisper_model,
             audio::transcriber::get_transcription_status,
             audio::transcriber::start_transcription,
             audio::transcriber::stop_transcription,
