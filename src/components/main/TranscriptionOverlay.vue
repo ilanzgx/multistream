@@ -13,7 +13,8 @@ const { isActive, lines } = useTranscription();
       <p
         v-for="(line, index) in lines"
         :key="line.timestamp"
-        class="bg-black/75 text-white text-sm px-3 py-1 rounded text-center backdrop-blur-sm transition-opacity duration-300 w-fit max-w-full truncate"
+        class="bg-black/75 text-white text-sm px-3 py-1 rounded text-center backdrop-blur-sm transition-opacity duration-300 w-fit max-w-full break-words"
+        style="text-wrap: balance"
         :class="[
           index === lines.length - 1
             ? 'opacity-100'

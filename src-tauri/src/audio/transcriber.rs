@@ -386,6 +386,7 @@ pub fn start_transcription(
                     .arg(resampled_wav_path.to_string_lossy().to_string());
                 sidecar = sidecar.arg("-nt");
                 sidecar = sidecar.arg("--no-prints");
+                sidecar = sidecar.arg("--suppress-nst"); // Suppress non-speech tokens like (speaking in foreign language)
 
                 // Use available parallelism for threads
                 let num_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
@@ -393,9 +394,9 @@ pub fn start_transcription(
 
                 if translate {
                     sidecar = sidecar.arg("-tr");
-                } else {
-                    sidecar = sidecar.arg("-l").arg("auto");
                 }
+                
+                sidecar = sidecar.arg("-l").arg("auto");
 
                 let start_time = std::time::Instant::now();
                 let (mut rx, child) = match sidecar.spawn() {
@@ -443,10 +444,14 @@ pub fn start_transcription(
                 }
 
                 let cleaned = output.trim();
+                let is_pure_caption = (cleaned.starts_with('[') && cleaned.ends_with(']')) 
+                    || (cleaned.starts_with('(') && cleaned.ends_with(')'));
+                
                 log::info!("Transcription output: {}", cleaned);
                 if !cleaned.is_empty()
                     && !cleaned.contains("[BLANK_AUDIO]")
                     && !cleaned.starts_with("[_")
+                    && !is_pure_caption
                 {
                     let _ = app_clone.emit(
                         "transcription:text",
