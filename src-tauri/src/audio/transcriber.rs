@@ -34,6 +34,7 @@ pub struct TranscriptionTextPayload {
 pub struct TranscriptionHandle {
     pub running: Arc<AtomicBool>,
     pub thread: Option<std::thread::JoinHandle<()>>,
+    pub sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
 }
 
 /// Tauri-managed state that holds an optional running transcription handle.
@@ -238,6 +239,8 @@ pub fn start_transcription(
     let running = Arc::new(AtomicBool::new(true));
     let running_clone = Arc::clone(&running);
     let app_clone = app.clone();
+    let sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>> = Arc::new(Mutex::new(None));
+    let sidecar_child_clone = Arc::clone(&sidecar_child);
 
     let thread = std::thread::spawn(move || {
         let mut session = match super::capture::start_loopback() {
@@ -313,27 +316,49 @@ pub fn start_transcription(
                     sidecar = sidecar.arg("-l").arg("auto");
                 }
 
-                let output = tauri::async_runtime::block_on(async move {
-                    sidecar.output().await
-                });
+                let (mut rx, child) = match sidecar.spawn() {
+                    Ok(res) => res,
+                    Err(e) => {
+                        log::error!("Failed to spawn sidecar: {e}");
+                        continue;
+                    }
+                };
 
-                match output {
-                    Ok(out) => {
-                        let stdout = String::from_utf8_lossy(&out.stdout).to_string();
-                        let cleaned = stdout.trim();
-                        if !cleaned.is_empty() && !cleaned.contains("[BLANK_AUDIO]") && !cleaned.starts_with("[_") {
-                            let _ = app_clone.emit(
-                                "transcription:text",
-                                TranscriptionTextPayload {
-                                    text: cleaned.to_string(),
-                                    timestamp: timestamp_ms(),
-                                },
-                            );
+                {
+                    let mut child_guard = sidecar_child_clone.lock().unwrap();
+                    *child_guard = Some(child);
+                }
+
+                let output = tauri::async_runtime::block_on(async move {
+                    let mut stdout_acc = String::new();
+                    while let Some(event) = rx.recv().await {
+                        match event {
+                            tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
+                                stdout_acc.push_str(&String::from_utf8_lossy(&line));
+                            }
+                            tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
+                                log::debug!("Whisper stderr: {}", String::from_utf8_lossy(&line));
+                            }
+                            _ => {}
                         }
                     }
-                    Err(e) => {
-                        log::error!("Whisper sidecar error: {e}");
-                    }
+                    stdout_acc
+                });
+
+                {
+                    let mut child_guard = sidecar_child_clone.lock().unwrap();
+                    *child_guard = None;
+                }
+
+                let cleaned = output.trim();
+                if !cleaned.is_empty() && !cleaned.contains("[BLANK_AUDIO]") && !cleaned.starts_with("[_") {
+                    let _ = app_clone.emit(
+                        "transcription:text",
+                        TranscriptionTextPayload {
+                            text: cleaned.to_string(),
+                            timestamp: timestamp_ms(),
+                        },
+                    );
                 }
 
                 let _ = std::fs::remove_file(wav_path);
@@ -344,6 +369,7 @@ pub fn start_transcription(
     *guard = Some(TranscriptionHandle {
         running,
         thread: Some(thread),
+        sidecar_child,
     });
 
     Ok(())
@@ -361,6 +387,13 @@ pub fn stop_transcription(
 
     if let Some(handle) = guard.take() {
         handle.running.store(false, Ordering::SeqCst);
+        
+        if let Ok(mut child_guard) = handle.sidecar_child.lock() {
+            if let Some(child) = child_guard.take() {
+                let _ = child.kill();
+            }
+        }
+
         if let Some(thread) = handle.thread {
             let _ = thread.join();
         }
