@@ -27,7 +27,10 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/whisper-main"
+      "binaries/whisper-cli"
+    ],
+    "resources": [
+      "binaries/*.dll"
     ]
   },
   "plugins": {

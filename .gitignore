@@ -30,3 +30,5 @@ coverage
 # Playwright
 playwright-report/
 test-results/
+
+src-tauri/binaries/

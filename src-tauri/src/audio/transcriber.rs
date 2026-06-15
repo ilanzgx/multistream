@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
+use tauri_plugin_shell::ShellExt;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -239,42 +240,103 @@ pub fn start_transcription(
     let app_clone = app.clone();
 
     let thread = std::thread::spawn(move || {
-        // STUB: Emit a placeholder transcription event every 5 seconds.
-        //
-        // This exercises the complete event → composable → overlay pipeline
-        // without requiring a real audio capture or inference implementation.
-        //
-        // The translate flag and model_name are captured here so the future
-        // implementation can use them directly without changing the thread
-        // signature.
-        let mode = if translate {
-            "translate→en"
-        } else {
-            "original"
+        let mut session = match super::capture::start_loopback() {
+            Ok(s) => s,
+            Err(e) => {
+                let _ = app_clone.emit(
+                    "transcription:text",
+                    TranscriptionTextPayload {
+                        text: format!("[Error] Audio capture failed: {e}"),
+                        timestamp: timestamp_ms(),
+                    },
+                );
+                return;
+            }
         };
 
-        let stub_prefix = "[Stub] Process-scoped audio capture not yet implemented";
+        let temp_dir = app_clone
+            .path()
+            .app_data_dir()
+            .unwrap_or_else(|_| std::path::PathBuf::from("."))
+            .join("whisper-models")
+            .join("temp");
+        let _ = std::fs::create_dir_all(&temp_dir);
+
+        let target_sample_rate = 16000;
+        let chunk_duration = 5;
+        let samples_per_chunk = target_sample_rate * chunk_duration;
+        let mut mono_16k_buffer = Vec::with_capacity(samples_per_chunk as usize);
 
         while running_clone.load(Ordering::SeqCst) {
-            let text = format!(
-                "{stub_prefix} — model: {model_name}, mode: {mode}"
-            );
+            let mut new_samples = Vec::new();
+            while let Ok(sample) = session.rx.try_recv() {
+                new_samples.push(sample);
+            }
 
-            let _ = app_clone.emit(
-                "transcription:text",
-                TranscriptionTextPayload {
-                    text,
-                    timestamp: timestamp_ms(),
-                },
-            );
+            if new_samples.is_empty() {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+                continue;
+            }
 
-            // Sleep in 100 ms increments so the thread reacts to stop signals
-            // within ~100 ms rather than blocking for the full 5 seconds.
-            for _ in 0..50 {
-                if !running_clone.load(Ordering::SeqCst) {
-                    break;
+            let mono = super::capture::to_mono(&new_samples, session.channels);
+            let resampled = super::capture::resample_mono(&mono, session.sample_rate, target_sample_rate);
+            mono_16k_buffer.extend(resampled);
+
+            if mono_16k_buffer.len() >= samples_per_chunk as usize {
+                let chunk_samples = mono_16k_buffer.drain(0..samples_per_chunk as usize).collect::<Vec<_>>();
+                let wav_path = temp_dir.join(format!("chunk_{}.wav", timestamp_ms()));
+
+                if let Err(e) = super::capture::write_wav(&wav_path, &chunk_samples) {
+                    log::error!("Failed to write WAV: {}", e);
+                    continue;
                 }
-                std::thread::sleep(std::time::Duration::from_millis(100));
+
+                let model_path = match model_path(&app_clone, &model_name) {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+
+                let resource_dir = app_clone.path().resource_dir().unwrap_or_default().join("binaries");
+                let current_path = std::env::var("PATH").unwrap_or_default();
+                let new_path = format!("{};{}", resource_dir.to_string_lossy(), current_path);
+                
+                let mut sidecar = app_clone.shell().sidecar("whisper-cli").expect("failed to setup sidecar");
+                sidecar = sidecar.env("PATH", new_path);
+                sidecar = sidecar.arg("-m").arg(model_path.to_string_lossy().to_string());
+                sidecar = sidecar.arg("-f").arg(wav_path.to_string_lossy().to_string());
+                sidecar = sidecar.arg("-nt");
+                sidecar = sidecar.arg("--no-prints");
+
+                if translate {
+                    sidecar = sidecar.arg("-tr");
+                } else {
+                    sidecar = sidecar.arg("-l").arg("auto");
+                }
+
+                let output = tauri::async_runtime::block_on(async move {
+                    sidecar.output().await
+                });
+
+                match output {
+                    Ok(out) => {
+                        let stdout = String::from_utf8_lossy(&out.stdout).to_string();
+                        let cleaned = stdout.trim();
+                        if !cleaned.is_empty() && !cleaned.contains("[BLANK_AUDIO]") && !cleaned.starts_with("[_") {
+                            let _ = app_clone.emit(
+                                "transcription:text",
+                                TranscriptionTextPayload {
+                                    text: cleaned.to_string(),
+                                    timestamp: timestamp_ms(),
+                                },
+                            );
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("Whisper sidecar error: {e}");
+                    }
+                }
+
+                let _ = std::fs::remove_file(wav_path);
             }
         }
     });

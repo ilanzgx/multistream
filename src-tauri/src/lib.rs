@@ -90,8 +90,9 @@ pub fn run() {
         }));
     }
 
-    // load plugin_http, plugin_updater, plugin_process, plugin_localhost, plugin_notification
+    // load plugin_http, plugin_updater, plugin_process, plugin_localhost, plugin_notification, plugin_shell
     builder
+        .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
