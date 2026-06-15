@@ -127,7 +127,8 @@
     "noStreamsHint": "Adicione uma stream para ver o chat."
   },
   "common": {
-    "close": "Fechar"
+    "close": "Fechar",
+    "comingSoon": "Em breve"
   },
   "toasts": {
     "add": {

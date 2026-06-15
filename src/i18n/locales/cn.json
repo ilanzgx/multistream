@@ -127,7 +127,8 @@
     "noStreamsHint": "添加一个直播以查看聊天。"
   },
   "common": {
-    "close": "关闭"
+    "close": "关闭",
+    "comingSoon": "即将推出"
   },
   "toasts": {
     "add": {

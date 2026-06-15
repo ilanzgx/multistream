@@ -127,7 +127,8 @@
     "noStreamsHint": "Добавьте трансляцию для просмотра чата."
   },
   "common": {
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "comingSoon": "Скоро"
   },
   "toasts": {
     "add": {

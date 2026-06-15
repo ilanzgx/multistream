@@ -127,7 +127,8 @@
     "noStreamsHint": "Add a stream to view chat."
   },
   "common": {
-    "close": "Close"
+    "close": "Close",
+    "comingSoon": "Coming soon"
   },
   "toasts": {
     "add": {
