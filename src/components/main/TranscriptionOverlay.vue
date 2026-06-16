@@ -7,7 +7,7 @@ const { isActive, lines } = useTranscription();
 <template>
   <div
     v-if="isActive && lines.length > 0"
-    class="absolute bottom-6 left-1/2 -translate-x-1/2 w-full max-w-[80%] flex flex-col items-center gap-1 z-50 pointer-events-none"
+    class="absolute bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[80%] flex flex-col items-center gap-1 z-50 pointer-events-none"
   >
     <TransitionGroup name="transcription-line">
       <p

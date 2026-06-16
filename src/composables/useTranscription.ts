@@ -200,8 +200,8 @@ const _useTranscription = () => {
       listenerRegistered = true;
       listen<TranscriptionLine>("transcription:text", (event) => {
         const newLines = [...lines.value, event.payload];
-        if (newLines.length > 8) {
-          newLines.shift(); // Keep max 8 entries for overlay
+        if (newLines.length > 6) {
+          newLines.shift(); // Keep max 6 entries for overlay
         }
         lines.value = newLines;
 
