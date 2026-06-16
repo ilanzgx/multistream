@@ -65,7 +65,7 @@
     },
     "transcription": {
       "title": "Live-Transkription",
-      "description": "Echtzeit-KI-Untertitel für Streams",
+      "description": "Echtzeit-Untertitel, generiert durch lokales Machine Learning.",
       "macosWarning": "Audioaufnahme wird unter macOS ohne den virtuellen Treiber BlackHole nicht unterstützt.",
       "statusNotInstalled": "Nicht installiert",
       "statusDownloading": "Wird heruntergeladen...",
@@ -80,12 +80,22 @@
       "captionModeLabel": "Untertitel-Modus",
       "captionModeOriginal": "Originalsprache",
       "captionModeTranslate": "Auf Englisch übersetzen",
-      "enableToggle": "Transkription aktivieren"
+      "enableToggle": "Transkription aktivieren",
+      "modelInstalled": "Installiert",
+      "modelSelected": "Ausgewählt",
+      "modelSelect": "Auswählen",
+      "modelDownload": "Herunterladen"
     },
     "help": {
       "title": "Hilfe",
       "description": "Benötigen Sie Hilfe oder möchten Sie die Funktionen überprüfen?",
       "showTourButton": "Einführungstour anzeigen"
+    },
+    "tabs": {
+      "general": "Allgemein",
+      "data": "Daten",
+      "connections": "Verbindungen",
+      "resources": "Funktionen"
     }
   },
   "share": {

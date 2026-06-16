@@ -26,6 +26,7 @@ import {
   Link,
   Trash2,
   Check,
+  Captions,
 } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
@@ -182,7 +183,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
             <Settings class="size-4" />
-            Geral
+            {{ $t("settings.tabs.general") }}
           </TabsTrigger>
 
           <TabsTrigger
@@ -190,21 +191,21 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
             <Database class="size-4" />
-            Dados
+            {{ $t("settings.tabs.data") }}
           </TabsTrigger>
           <TabsTrigger
             value="conexoes"
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
             <Link class="size-4" />
-            Conexões
+            {{ $t("settings.tabs.connections") }}
           </TabsTrigger>
           <TabsTrigger
             value="recursos"
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
             <Puzzle class="size-4" />
-            Recursos
+            {{ $t("settings.tabs.resources") }}
           </TabsTrigger>
         </TabsList>
 
@@ -406,7 +407,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             <!-- Live Transcription Section -->
             <div v-if="isRunningInTauri" class="space-y-2">
               <div class="flex items-center gap-2 px-1">
-                <Captions class="size-4 text-gray-400" />
+                <Captions class="size-4 text-gray-400 shrink-0" />
                 <div>
                   <div class="flex items-center gap-2">
                     <h3 class="text-white text-sm font-medium">
@@ -417,7 +418,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                       :class="
                         isActive
                           ? 'text-green-400 bg-green-500/10 border-green-500/20'
-                          : isEnabled
+                          : installedModels.length > 0
                             ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
                             : 'text-gray-500 bg-white/5 border-white/5'
                       "
@@ -425,7 +426,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                       {{
                         isActive
                           ? $t("settings.transcription.statusActive")
-                          : isEnabled
+                          : installedModels.length > 0
                             ? $t("settings.transcription.statusReady")
                             : $t("settings.transcription.statusNotInstalled")
                       }}
@@ -489,7 +490,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                           <span
                             v-if="installedModels.includes(model.id)"
                             class="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
-                            >Installed</span
+                            >{{ $t("settings.transcription.modelInstalled") }}</span
                           >
                         </div>
                         <p class="text-[10px] text-gray-400 mt-1">{{ $t(model.tKey) }}</p>
@@ -519,7 +520,8 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                             size="sm"
                             class="border-green-500/30 bg-green-500/10 text-green-400 cursor-default hover:bg-green-500/10 hover:text-green-400"
                           >
-                            <Check class="size-4 mr-1.5" /> Selected
+                            <Check class="size-4 mr-1.5" />
+                            {{ $t("settings.transcription.modelSelected") }}
                           </Button>
                           <Button
                             v-else
@@ -529,7 +531,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                             :disabled="isDownloading"
                             @click="selectedModel = model.id"
                           >
-                            Select
+                            {{ $t("settings.transcription.modelSelect") }}
                           </Button>
                           <Button
                             variant="outline"
@@ -549,7 +551,8 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                             :disabled="isDownloading"
                             @click="downloadModel(model.id)"
                           >
-                            <Download class="size-4 mr-1.5" /> Download
+                            <Download class="size-4 mr-1.5" />
+                            {{ $t("settings.transcription.modelDownload") }}
                           </Button>
                         </template>
                       </div>

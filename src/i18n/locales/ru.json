@@ -65,7 +65,7 @@
     },
     "transcription": {
       "title": "Живая транскрипция",
-      "description": "Субтитры ИИ в реальном времени",
+      "description": "Субтитры в реальном времени, созданные с помощью локального машинного обучения.",
       "macosWarning": "Захват звука не поддерживается в macOS без виртуального драйвера BlackHole.",
       "statusNotInstalled": "Не установлено",
       "statusDownloading": "Загрузка...",
@@ -80,12 +80,22 @@
       "captionModeLabel": "Режим субтитров",
       "captionModeOriginal": "Оригинальный язык",
       "captionModeTranslate": "Перевести на английский",
-      "enableToggle": "Включить транскрипцию"
+      "enableToggle": "Включить транскрипцию",
+      "modelInstalled": "Установлено",
+      "modelSelected": "Выбрано",
+      "modelSelect": "Выбрать",
+      "modelDownload": "Скачать"
     },
     "help": {
       "title": "Помощь",
       "description": "Нужна помощь или хотите изучить функции?",
       "showTourButton": "Показать тур по приложению"
+    },
+    "tabs": {
+      "general": "Общие",
+      "data": "Данные",
+      "connections": "Соединения",
+      "resources": "Функции"
     }
   },
   "share": {

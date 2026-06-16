@@ -65,7 +65,7 @@
     },
     "transcription": {
       "title": "实时字幕",
-      "description": "流媒体的实时 AI 字幕",
+      "description": "使用本地机器学习实时生成的字幕。",
       "macosWarning": "在没有 BlackHole 虚拟驱动程序的情况下，macOS 不支持音频捕获。",
       "statusNotInstalled": "未安装",
       "statusDownloading": "下载中...",
@@ -80,12 +80,22 @@
       "captionModeLabel": "字幕模式",
       "captionModeOriginal": "原始语言",
       "captionModeTranslate": "翻译为英语",
-      "enableToggle": "启用字幕"
+      "enableToggle": "启用字幕",
+      "modelInstalled": "已安装",
+      "modelSelected": "已选择",
+      "modelSelect": "选择",
+      "modelDownload": "下载"
     },
     "help": {
       "title": "帮助",
       "description": "需要帮助或想查看功能？",
       "showTourButton": "显示新手教程"
+    },
+    "tabs": {
+      "general": "常规",
+      "data": "数据",
+      "connections": "连接",
+      "resources": "功能"
     }
   },
   "share": {

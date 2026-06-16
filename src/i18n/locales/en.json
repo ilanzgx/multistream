@@ -70,7 +70,7 @@
     },
     "transcription": {
       "title": "Live Transcription",
-      "description": "Real-time AI captions for streams",
+      "description": "Real-time captions generated using local machine learning.",
       "macosWarning": "Audio capture is unsupported on macOS without BlackHole virtual driver.",
       "statusNotInstalled": "Not Installed",
       "statusDownloading": "Downloading...",
@@ -85,7 +85,17 @@
       "captionModeLabel": "Caption Mode",
       "captionModeOriginal": "Original Language",
       "captionModeTranslate": "Translate to English",
-      "enableToggle": "Enable Transcription"
+      "enableToggle": "Enable Transcription",
+      "modelInstalled": "Installed",
+      "modelSelected": "Selected",
+      "modelSelect": "Select",
+      "modelDownload": "Download"
+    },
+    "tabs": {
+      "general": "General",
+      "data": "Data",
+      "connections": "Connections",
+      "resources": "Features"
     }
   },
   "share": {

@@ -65,7 +65,7 @@
     },
     "transcription": {
       "title": "Transcripción en Vivo",
-      "description": "Subtítulos de IA en tiempo real",
+      "description": "Subtítulos generados en tiempo real usando machine learning local.",
       "macosWarning": "La captura de audio no es compatible en macOS sin el controlador virtual BlackHole.",
       "statusNotInstalled": "No Instalado",
       "statusDownloading": "Descargando...",
@@ -80,12 +80,22 @@
       "captionModeLabel": "Modo de Subtítulos",
       "captionModeOriginal": "Idioma Original",
       "captionModeTranslate": "Traducir al Inglés",
-      "enableToggle": "Habilitar Transcripción"
+      "enableToggle": "Habilitar Transcripción",
+      "modelInstalled": "Instalado",
+      "modelSelected": "Seleccionado",
+      "modelSelect": "Seleccionar",
+      "modelDownload": "Descargar"
     },
     "help": {
       "title": "Ayuda",
       "description": "¿Necesitas ayuda o quieres repasar las funciones?",
       "showTourButton": "Mostrar tour de inducción"
+    },
+    "tabs": {
+      "general": "General",
+      "data": "Datos",
+      "connections": "Conexiones",
+      "resources": "Características"
     }
   },
   "share": {

@@ -70,7 +70,7 @@
     },
     "transcription": {
       "title": "Transcrição Ao Vivo",
-      "description": "Legendas de IA em tempo real",
+      "description": "Legendas geradas em tempo real utilizando machine learning local.",
       "macosWarning": "A captura de áudio não é suportada no macOS sem o driver virtual BlackHole.",
       "statusNotInstalled": "Não Instalado",
       "statusDownloading": "Baixando...",
@@ -85,7 +85,17 @@
       "captionModeLabel": "Modo de Legenda",
       "captionModeOriginal": "Idioma Original",
       "captionModeTranslate": "Traduzir para Inglês",
-      "enableToggle": "Habilitar Transcrição"
+      "enableToggle": "Habilitar Transcrição",
+      "modelInstalled": "Instalado",
+      "modelSelected": "Selecionado",
+      "modelSelect": "Selecionar",
+      "modelDownload": "Baixar"
+    },
+    "tabs": {
+      "general": "Geral",
+      "data": "Dados",
+      "connections": "Conexões",
+      "resources": "Recursos"
     }
   },
   "share": {
