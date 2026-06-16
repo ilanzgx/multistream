@@ -3,6 +3,8 @@ import { createSharedComposable, useStorage } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { isTauri } from "./useUpdater";
+import { toast } from "vue-sonner";
+import { i18n } from "../i18n";
 
 export interface DownloadProgress {
   downloaded: number;
@@ -29,8 +31,10 @@ const _useTranscription = () => {
 
   // Persistent Settings
   const selectedModel = useStorage<string>("transcription.model", "base");
-  const isEnabled = useStorage<boolean>("transcription.enabled", false);
   const captionMode = useStorage<"original" | "translate">("transcription.captionMode", "original");
+
+  // Session State
+  const isEnabled = ref(false);
 
   let unlistenProgress: UnlistenFn | null = null;
 
@@ -168,9 +172,23 @@ const _useTranscription = () => {
           (oldEnabled && (oldMode !== captionMode.value || oldModel !== selectedModel.value))
         ) {
           await startTranscription();
+
+          const t = i18n.global.t;
+          const modelNameText =
+            selectedModel.value.charAt(0).toUpperCase() + selectedModel.value.slice(1);
+          const modeText =
+            captionMode.value === "translate"
+              ? t("settings.transcription.captionModeTranslate")
+              : t("settings.transcription.captionModeOriginal");
+
+          toast.success(t("settings.transcription.startedTitle"), {
+            description: `${t("settings.transcription.startedModel", { model: modelNameText })}\n${t("settings.transcription.startedMode", { mode: modeText })}`,
+          });
         }
       } else if (!enabled && oldEnabled) {
         await stopTranscription();
+        const t = i18n.global.t;
+        toast.info(t("settings.transcription.stoppedTitle"));
       }
     }
   );
