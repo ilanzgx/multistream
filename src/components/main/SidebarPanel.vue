@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import { usePreferences } from "@/composables/usePreferences";
 import { useStreams } from "@/composables/useStreams";
+import { useTranscription } from "@/composables/useTranscription";
 import { Button } from "@/components/ui/button";
 import KickChat from "@/components/chat/KickChat.vue";
 import TwitchChat from "@/components/chat/TwitchChat.vue";
@@ -35,6 +36,7 @@ const appVersion = import.meta.env.VITE_APP_VERSION;
 
 const { streams } = useStreams();
 const { selectedChat, sidebarOpen } = usePreferences();
+const { isActive: transcriptionActive } = useTranscription();
 
 function openAddDialog() {
   addDialogOpen.value = true;
@@ -73,11 +75,21 @@ onUnmounted(() => {
     >
       <!-- stream selector -->
       <div class="p-4 border-b border-[#1f2227]">
-        <p
-          class="text-[10px] font-semibold tracking-widest uppercase text-gray-500 mb-3 text-center"
+        <div
+          class="flex items-center mb-3 px-1 transition-all duration-300"
+          :class="transcriptionActive ? 'justify-between' : 'justify-center'"
         >
-          {{ $t("chat.controlTitle") }}
-        </p>
+          <p class="text-[10px] font-semibold tracking-widest uppercase text-gray-500">
+            {{ $t("chat.controlTitle") }}
+          </p>
+          <div
+            v-if="transcriptionActive"
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-mono tracking-wider uppercase transition-all duration-300"
+          >
+            <div class="h-1.5 w-1.5 rounded-full bg-green-500/80 animate-pulse"></div>
+            {{ $t("settings.transcription.activeIndicator") }}
+          </div>
+        </div>
         <Select v-model="selectedChat">
           <SelectTrigger
             class="w-full bg-[#14161a] text-white border-[#2a2d33] hover:border-[#3a3f4b]"
