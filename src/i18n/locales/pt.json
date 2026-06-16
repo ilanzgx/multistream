@@ -204,16 +204,23 @@
       "chatActive": "Chat Ativo"
     },
     "step3": {
+      "title": "Sugestões de Stream por Categoria",
+      "description": "Filtre as streams sugeridas por categoria usando os chips no topo. Clique em qualquer chip para carregar mais streams ao vivo da Twitch e do Kick para aquela categoria, em background.",
+      "caption": "Streams das duas plataformas são carregadas automaticamente e ficam em cache enquanto você navega."
+    },
+    "step4": {
+      "title": "Transcrição ao Vivo",
+      "description": "Gere legendas em tempo real para o áudio da stream diretamente no seu computador usando modelos de IA locais. Baixe um modelo Whisper, escolha entre o idioma original ou tradução para inglês e veja as legendas sobre a stream focada.",
+      "captionStr": "Este é um exemplo de legendas locais...",
+      "note": "O desempenho depende da sua CPU e do modelo selecionado. O modelo Base é recomendado para a maioria dos sistemas."
+    },
+    "step5": {
       "title": "Teclas de Atalho",
       "description": "Use estes atalhos rápidos para controlar suas transmissões e chats com eficiência:",
       "add": "Abrir diálogo para adicionar stream",
       "screenshot": "Capturar tela da stream focada",
-      "chat": "Alternar para o chat da stream {keys}"
-    },
-    "step4": {
-      "title": "Sugestões de Stream por Categoria",
-      "description": "Filtre as streams sugeridas por categoria usando os chips no topo. Clique em qualquer chip para carregar mais streams ao vivo da Twitch e do Kick para aquela categoria, em background.",
-      "caption": "Streams das duas plataformas são carregadas automaticamente e ficam em cache enquanto você navega."
+      "chat": "Alternar para o chat da stream {keys}",
+      "screenshotTitle": "Screenshot"
     }
   }
 }

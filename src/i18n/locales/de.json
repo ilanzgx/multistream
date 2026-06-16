@@ -204,16 +204,23 @@
       "chatActive": "Chat Aktiv"
     },
     "step3": {
+      "title": "Stream-Vorschläge nach Kategorie",
+      "description": "Filtere vorgeschlagene Streams nach Kategorie mit den Chips oben. Klicke auf einen Chip, um im Hintergrund mehr Live-Streams von Twitch und Kick für diese Kategorie zu laden.",
+      "caption": "Streams beider Plattformen werden automatisch geladen und beim Durchsuchen zwischengespeichert."
+    },
+    "step4": {
+      "title": "Live-Transkription",
+      "description": "Generieren Sie Echtzeit-Untertitel für Stream-Audio direkt auf Ihrem Computer mit lokalen KI-Modellen. Laden Sie ein Whisper-Modell herunter, wählen Sie zwischen Originalsprache oder englischer Übersetzung und zeigen Sie Untertitel über dem fokussierten Stream an.",
+      "captionStr": "Dies ist ein Beispiel für lokale Untertitel...",
+      "note": "Die Leistung hängt von Ihrer CPU und dem ausgewählten Modell ab. Das Basismodell wird für die meisten Systeme empfohlen."
+    },
+    "step5": {
       "title": "Tastaturkurzbefehle",
       "description": "Verwende diese schnellen Kurzbefehle, um deine Streams und Chats effizient zu steuern:",
       "add": "Stream-hinzufügen-Dialog öffnen",
       "screenshot": "Screenshot des fokussierten Streams machen",
-      "chat": "Zum Stream-Chat {keys} wechseln"
-    },
-    "step4": {
-      "title": "Stream-Vorschläge nach Kategorie",
-      "description": "Filtere vorgeschlagene Streams nach Kategorie mit den Chips oben. Klicke auf einen Chip, um im Hintergrund mehr Live-Streams von Twitch und Kick für diese Kategorie zu laden.",
-      "caption": "Streams beider Plattformen werden automatisch geladen und beim Durchsuchen zwischengespeichert."
+      "chat": "Zum Stream-Chat {keys} wechseln",
+      "screenshotTitle": "Screenshot"
     }
   }
 }

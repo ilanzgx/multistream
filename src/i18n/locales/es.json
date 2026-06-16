@@ -204,16 +204,23 @@
       "chatActive": "Chat Activo"
     },
     "step3": {
+      "title": "Sugerencias de Stream por Categoría",
+      "description": "Filtra las streams sugeridas por categoría usando los chips en la parte superior. Haz clic en cualquier chip para cargar más streams en vivo de Twitch y Kick para esa categoría, en segundo plano.",
+      "caption": "Las streams de ambas plataformas se cargan automáticamente y quedan en caché mientras navegas."
+    },
+    "step4": {
+      "title": "Transcripción en Vivo",
+      "description": "Genera subtítulos en tiempo real para el audio del stream directamente en tu computadora usando modelos de IA locales. Descarga un modelo Whisper, elige entre el idioma original o traducción al inglés y mira los subtítulos sobre el stream enfocado.",
+      "captionStr": "Este es un ejemplo de subtítulos locales...",
+      "note": "El rendimiento depende de su CPU y del modelo seleccionado. El modelo Base se recomienda para la mayoría de los sistemas."
+    },
+    "step5": {
       "title": "Atajos de Teclado",
       "description": "Usa estos atajos rápidos para controlar tus transmisiones y chats de manera eficiente:",
       "add": "Abrir diálogo para añadir transmisión",
       "screenshot": "Tomar captura de pantalla de la transmisión enfocada",
-      "chat": "Cambiar al chat de la transmisión {keys}"
-    },
-    "step4": {
-      "title": "Sugerencias de Stream por Categoría",
-      "description": "Filtra las streams sugeridas por categoría usando los chips en la parte superior. Haz clic en cualquier chip para cargar más streams en vivo de Twitch y Kick para esa categoría, en segundo plano.",
-      "caption": "Las streams de ambas plataformas se cargan automáticamente y quedan en caché mientras navegas."
+      "chat": "Cambiar al chat de la transmisión {keys}",
+      "screenshotTitle": "Captura de Pantalla"
     }
   }
 }

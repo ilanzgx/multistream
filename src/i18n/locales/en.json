@@ -204,16 +204,23 @@
       "chatActive": "Chat Active"
     },
     "step3": {
+      "title": "Stream Suggestions by Category",
+      "description": "Filter suggested streams by category using the chips at the top. Click any chip to instantly load more live streams from Twitch and Kick for that category, in the background.",
+      "caption": "Streams from both platforms load automatically and stay cached as you browse."
+    },
+    "step4": {
+      "title": "Live Transcription",
+      "description": "Generate real-time captions for stream audio directly on your computer using local AI models. Download a Whisper model, choose between original language or English translation, and view captions over the focused stream.",
+      "captionStr": "This is an example of local captions...",
+      "note": "Performance depends on your CPU and the selected model. The Base model is recommended for most systems."
+    },
+    "step5": {
       "title": "Keyboard Shortcuts",
       "description": "Use these quick shortcuts to control your streams and chats efficiently:",
       "add": "Open add stream dialog",
       "screenshot": "Take screenshot of focused stream",
-      "chat": "Switch to stream chat {keys}"
-    },
-    "step4": {
-      "title": "Stream Suggestions by Category",
-      "description": "Filter suggested streams by category using the chips at the top. Click any chip to instantly load more live streams from Twitch and Kick for that category, in the background.",
-      "caption": "Streams from both platforms load automatically and stay cached as you browse."
+      "chat": "Switch to stream chat {keys}",
+      "screenshotTitle": "Screenshot"
     }
   }
 }
