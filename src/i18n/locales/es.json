@@ -140,7 +140,18 @@
     "selectPlaceholder": "Seleccione el chat de la stream",
     "selectPrompt": "Seleccione una stream para ver el chat.",
     "noStreams": "No hay streams disponibles.",
-    "noStreamsHint": "Agregue una stream para ver el chat."
+    "noStreamsHint": "Agregue una stream para ver el chat.",
+    "tabs": {
+      "chat": "Chat",
+      "transcript": "Transcripción"
+    },
+    "transcript": {
+      "emptyState": "No hay historial de transcripción.",
+      "emptyStateHint": "Habilite la Transcripción en Vivo para generar subtítulos.",
+      "copy": "Copiar",
+      "clear": "Limpiar",
+      "copied": "¡Copiado!"
+    }
   },
   "common": {
     "close": "Cerrar",

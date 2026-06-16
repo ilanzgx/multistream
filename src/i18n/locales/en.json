@@ -140,7 +140,18 @@
     "selectPlaceholder": "Select stream chat",
     "selectPrompt": "Select a stream to view chat.",
     "noStreams": "No streams available.",
-    "noStreamsHint": "Add a stream to view chat."
+    "noStreamsHint": "Add a stream to view chat.",
+    "tabs": {
+      "chat": "Chat",
+      "transcript": "Transcript"
+    },
+    "transcript": {
+      "emptyState": "No transcription history yet.",
+      "emptyStateHint": "Enable Live Transcription to start generating captions.",
+      "copy": "Copy",
+      "clear": "Clear",
+      "copied": "Copied!"
+    }
   },
   "common": {
     "close": "Close",
