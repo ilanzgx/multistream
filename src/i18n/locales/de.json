@@ -72,9 +72,9 @@
       "statusReady": "Bereit",
       "statusActive": "Aktiv",
       "modelLabel": "Modell",
-      "modelTiny": "Am schnellsten, geringste Qualität, sehr wenig RAM.",
-      "modelBase": "Schnell, gute Qualität, wenig RAM.",
-      "modelSmall": "Ausgewogen, beste Qualität, moderater RAM.",
+      "modelTiny": "Schnellste Inferenz, geringere Genauigkeit, mehr Halluzinationen.",
+      "modelBase": "Empfohlen. Bestes Gleichgewicht zwischen Geschwindigkeit und Qualität. Für die meisten Systeme geeignet.",
+      "modelSmall": "Höchste Genauigkeit, höhere CPU-Auslastung, kann auf älteren Prozessoren langsam sein.",
       "downloadButton": "Modell herunterladen",
       "downloadingButton": "Wird heruntergeladen...",
       "captionModeLabel": "Untertitel-Modus",
@@ -89,7 +89,8 @@
       "startedModel": "Modell: {model}",
       "startedMode": "Modus: {mode}",
       "stoppedTitle": "Live-Transkription Gestoppt",
-      "activeIndicator": "Transkription Aktiv"
+      "activeIndicator": "Transkription Aktiv",
+      "recommendedBadge": "Empfohlen"
     },
     "help": {
       "title": "Hilfe",

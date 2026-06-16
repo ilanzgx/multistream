@@ -51,7 +51,6 @@ const {
   isDownloading,
   downloadingModel,
   downloadProgress,
-  isActive,
   downloadModel,
   deleteModel,
 } = useTranscription();
@@ -413,24 +412,6 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                     <h3 class="text-white text-sm font-medium">
                       {{ $t("settings.transcription.title") }}
                     </h3>
-                    <span
-                      class="text-[10px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded border"
-                      :class="
-                        isActive
-                          ? 'text-green-400 bg-green-500/10 border-green-500/20'
-                          : installedModels.length > 0
-                            ? 'text-orange-400 bg-orange-500/10 border-orange-500/20'
-                            : 'text-gray-500 bg-white/5 border-white/5'
-                      "
-                    >
-                      {{
-                        isActive
-                          ? $t("settings.transcription.statusActive")
-                          : installedModels.length > 0
-                            ? $t("settings.transcription.statusReady")
-                            : $t("settings.transcription.statusNotInstalled")
-                      }}
-                    </span>
                   </div>
                   <p class="text-gray-400 text-xs mt-0.5">
                     {{ $t("settings.transcription.description") }}
@@ -484,13 +465,16 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                       class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-[#2a2d33]/60 bg-[#1e2127]/50"
                     >
                       <div class="flex-1">
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                           <span class="text-sm font-medium text-white">{{ model.name }}</span>
                           <span class="text-[10px] text-gray-500 font-mono">{{ model.size }}</span>
                           <span
                             v-if="installedModels.includes(model.id)"
                             class="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
                             >{{ $t("settings.transcription.modelInstalled") }}</span
+                          >
+                          <span v-if="model.id === 'base'" class="text-[10px] text-gray-400"
+                            >({{ $t("settings.transcription.recommendedBadge") }})</span
                           >
                         </div>
                         <p class="text-[10px] text-gray-400 mt-1">{{ $t(model.tKey) }}</p>
@@ -514,15 +498,13 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                           </div>
                         </template>
                         <template v-else-if="installedModels.includes(model.id)">
-                          <Button
+                          <span
                             v-if="selectedModel === model.id"
-                            variant="outline"
-                            size="sm"
-                            class="border-green-500/30 bg-green-500/10 text-green-400 cursor-default hover:bg-green-500/10 hover:text-green-400"
+                            class="flex items-center text-[10px] px-3 rounded-md bg-[#2a2d33]/20 text-green-400 border border-green-500/20 uppercase tracking-wider font-mono h-9 select-none"
                           >
-                            <Check class="size-4 mr-1.5" />
+                            <Check class="size-3.5 mr-1" />
                             {{ $t("settings.transcription.modelSelected") }}
-                          </Button>
+                          </span>
                           <Button
                             v-else
                             variant="outline"

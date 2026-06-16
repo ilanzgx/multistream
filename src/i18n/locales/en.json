@@ -77,9 +77,9 @@
       "statusReady": "Ready",
       "statusActive": "Active",
       "modelLabel": "Model",
-      "modelTiny": "Fastest, lowest quality, very low RAM.",
-      "modelBase": "Fast, good quality, low RAM.",
-      "modelSmall": "Balanced, best quality, moderate RAM.",
+      "modelTiny": "Fastest inference, lower accuracy, more hallucinations.",
+      "modelBase": "Recommended. Best balance of speed and quality. Suitable for most systems.",
+      "modelSmall": "Highest accuracy, higher CPU usage, may be slow on older processors.",
       "downloadButton": "Download Model",
       "downloadingButton": "Downloading...",
       "captionModeLabel": "Caption Mode",
@@ -94,7 +94,8 @@
       "startedModel": "Model: {model}",
       "startedMode": "Mode: {mode}",
       "stoppedTitle": "Live Transcription Stopped",
-      "activeIndicator": "Live Transcription Active"
+      "activeIndicator": "Live Transcription Active",
+      "recommendedBadge": "Recommended"
     },
     "tabs": {
       "general": "General",

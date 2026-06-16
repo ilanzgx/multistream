@@ -72,9 +72,9 @@
       "statusReady": "就绪",
       "statusActive": "活动",
       "modelLabel": "模型",
-      "modelTiny": "最快，质量最低，内存占用极少。",
-      "modelBase": "快速，质量好，内存占用少。",
-      "modelSmall": "均衡，质量最佳，内存占用中等。",
+      "modelTiny": "推理速度最快，精度较低，出现幻觉较多。",
+      "modelBase": "推荐。速度与质量的最佳平衡。适用于大多数系统。",
+      "modelSmall": "最高精度，CPU 占用率高，在旧处理器上可能较慢。",
       "downloadButton": "下载模型",
       "downloadingButton": "下载中...",
       "captionModeLabel": "字幕模式",
@@ -89,7 +89,8 @@
       "startedModel": "模型: {model}",
       "startedMode": "模式: {mode}",
       "stoppedTitle": "实时转录已停止",
-      "activeIndicator": "实时转录活跃中"
+      "activeIndicator": "实时转录活跃中",
+      "recommendedBadge": "推荐"
     },
     "help": {
       "title": "帮助",
