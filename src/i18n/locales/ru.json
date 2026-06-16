@@ -84,7 +84,12 @@
       "modelInstalled": "Установлено",
       "modelSelected": "Выбрано",
       "modelSelect": "Выбрать",
-      "modelDownload": "Скачать"
+      "modelDownload": "Скачать",
+      "startedTitle": "Транскрипция Запущена",
+      "startedModel": "Модель: {model}",
+      "startedMode": "Режим: {mode}",
+      "stoppedTitle": "Транскрипция Остановлена",
+      "activeIndicator": "Транскрипция Активна"
     },
     "help": {
       "title": "Помощь",

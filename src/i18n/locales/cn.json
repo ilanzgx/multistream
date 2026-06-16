@@ -84,7 +84,12 @@
       "modelInstalled": "已安装",
       "modelSelected": "已选择",
       "modelSelect": "选择",
-      "modelDownload": "下载"
+      "modelDownload": "下载",
+      "startedTitle": "实时转录已启动",
+      "startedModel": "模型: {model}",
+      "startedMode": "模式: {mode}",
+      "stoppedTitle": "实时转录已停止",
+      "activeIndicator": "实时转录活跃中"
     },
     "help": {
       "title": "帮助",

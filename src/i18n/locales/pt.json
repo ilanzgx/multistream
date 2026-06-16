@@ -89,7 +89,12 @@
       "modelInstalled": "Instalado",
       "modelSelected": "Selecionado",
       "modelSelect": "Selecionar",
-      "modelDownload": "Baixar"
+      "modelDownload": "Baixar",
+      "startedTitle": "Transcrição Iniciada",
+      "startedModel": "Modelo: {model}",
+      "startedMode": "Modo: {mode}",
+      "stoppedTitle": "Transcrição Parada",
+      "activeIndicator": "Transcrição Ativa"
     },
     "tabs": {
       "general": "Geral",

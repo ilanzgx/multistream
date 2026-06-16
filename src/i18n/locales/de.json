@@ -84,7 +84,12 @@
       "modelInstalled": "Installiert",
       "modelSelected": "Ausgewählt",
       "modelSelect": "Auswählen",
-      "modelDownload": "Herunterladen"
+      "modelDownload": "Herunterladen",
+      "startedTitle": "Live-Transkription Gestartet",
+      "startedModel": "Modell: {model}",
+      "startedMode": "Modus: {mode}",
+      "stoppedTitle": "Live-Transkription Gestoppt",
+      "activeIndicator": "Transkription Aktiv"
     },
     "help": {
       "title": "Hilfe",

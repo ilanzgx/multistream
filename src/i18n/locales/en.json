@@ -89,7 +89,12 @@
       "modelInstalled": "Installed",
       "modelSelected": "Selected",
       "modelSelect": "Select",
-      "modelDownload": "Download"
+      "modelDownload": "Download",
+      "startedTitle": "Live Transcription Started",
+      "startedModel": "Model: {model}",
+      "startedMode": "Mode: {mode}",
+      "stoppedTitle": "Live Transcription Stopped",
+      "activeIndicator": "Live Transcription Active"
     },
     "tabs": {
       "general": "General",
