@@ -90,7 +90,9 @@
       "startedMode": "Modus: {mode}",
       "stoppedTitle": "Live-Transkription Gestoppt",
       "activeIndicator": "Transkription Aktiv",
-      "recommendedBadge": "Empfohlen"
+      "recommendedBadge": "Empfohlen",
+      "statusDisabled": "Deaktiviert",
+      "modeLabel": "Modus"
     },
     "help": {
       "title": "Hilfe",

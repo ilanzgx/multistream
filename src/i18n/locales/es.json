@@ -90,7 +90,9 @@
       "startedMode": "Modo: {mode}",
       "stoppedTitle": "Transcripción Detenida",
       "activeIndicator": "Transcripción Activa",
-      "recommendedBadge": "Recomendado"
+      "recommendedBadge": "Recomendado",
+      "statusDisabled": "Desactivado",
+      "modeLabel": "Modo"
     },
     "help": {
       "title": "Ayuda",

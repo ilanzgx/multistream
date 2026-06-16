@@ -95,7 +95,9 @@
       "startedMode": "Mode: {mode}",
       "stoppedTitle": "Live Transcription Stopped",
       "activeIndicator": "Live Transcription Active",
-      "recommendedBadge": "Recommended"
+      "recommendedBadge": "Recommended",
+      "statusDisabled": "Disabled",
+      "modeLabel": "Mode"
     },
     "tabs": {
       "general": "General",

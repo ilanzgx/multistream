@@ -90,7 +90,9 @@
       "startedMode": "模式: {mode}",
       "stoppedTitle": "实时转录已停止",
       "activeIndicator": "实时转录活跃中",
-      "recommendedBadge": "推荐"
+      "recommendedBadge": "推荐",
+      "statusDisabled": "已禁用",
+      "modeLabel": "模式"
     },
     "help": {
       "title": "帮助",

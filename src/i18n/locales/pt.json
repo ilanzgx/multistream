@@ -95,7 +95,9 @@
       "startedMode": "Modo: {mode}",
       "stoppedTitle": "Transcrição Parada",
       "activeIndicator": "Transcrição Ativa",
-      "recommendedBadge": "Recomendado"
+      "recommendedBadge": "Recomendado",
+      "statusDisabled": "Desativado",
+      "modeLabel": "Modo"
     },
     "tabs": {
       "general": "Geral",

@@ -90,7 +90,9 @@
       "startedMode": "Режим: {mode}",
       "stoppedTitle": "Транскрипция Остановлена",
       "activeIndicator": "Транскрипция Активна",
-      "recommendedBadge": "Рекомендуется"
+      "recommendedBadge": "Рекомендуется",
+      "statusDisabled": "Отключено",
+      "modeLabel": "Режим"
     },
     "help": {
       "title": "Помощь",

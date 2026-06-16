@@ -1,14 +1,26 @@
 <script lang="ts" setup>
-import { ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick, computed } from "vue";
 import { useTranscription } from "@/composables/useTranscription";
 import { Button } from "@/components/ui/button";
 import { Copy, Trash2 } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 
-const { transcriptHistory, clearTranscriptHistory } = useTranscription();
+const { transcriptHistory, clearTranscriptHistory, isActive, selectedModel, captionMode } =
+  useTranscription();
 const { t } = useI18n();
 const scrollContainer = ref<HTMLElement | null>(null);
+
+const captionModeTranslationKey = computed(() => {
+  return captionMode.value === "translate"
+    ? "settings.transcription.captionModeTranslate"
+    : "settings.transcription.captionModeOriginal";
+});
+
+const formattedModelName = computed(() => {
+  if (!selectedModel.value) return "";
+  return selectedModel.value.charAt(0).toUpperCase() + selectedModel.value.slice(1);
+});
 
 // Auto-scroll to bottom when new entries are added
 watch(
@@ -48,27 +60,62 @@ async function copyTranscript() {
 <template>
   <div class="flex flex-col h-full bg-[#0f1115]">
     <!-- Toolbar -->
-    <div class="flex items-center justify-end gap-2 p-2 border-b border-[#1f2227] bg-[#14161a]">
-      <Button
-        variant="outline"
-        size="sm"
-        class="h-7 text-xs border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
-        :disabled="transcriptHistory.length === 0"
-        @click="copyTranscript"
-      >
-        <Copy class="w-3.5 h-3.5 mr-1.5" />
-        {{ $t("chat.transcript.copy") }}
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        class="h-7 text-xs border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
-        :disabled="transcriptHistory.length === 0"
-        @click="clearTranscriptHistory"
-      >
-        <Trash2 class="w-3.5 h-3.5 mr-1.5" />
-        {{ $t("chat.transcript.clear") }}
-      </Button>
+    <div class="flex items-center justify-between gap-2 p-2 border-b border-[#1f2227] bg-[#14161a]">
+      <!-- Status Block -->
+      <div class="flex flex-col gap-0.5 min-w-0">
+        <div class="flex items-center gap-1.5 mb-0.5">
+          <div
+            class="h-1.5 w-1.5 rounded-full shrink-0"
+            :class="
+              isActive
+                ? 'bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.5)]'
+                : 'bg-transparent border border-gray-500'
+            "
+          ></div>
+          <span
+            class="text-[11px] font-medium tracking-wide uppercase"
+            :class="isActive ? 'text-green-400' : 'text-gray-400'"
+          >
+            {{
+              isActive
+                ? $t("settings.transcription.statusActive")
+                : $t("settings.transcription.statusDisabled")
+            }}
+          </span>
+        </div>
+        <span class="text-[10px] text-gray-500 truncate leading-tight">
+          {{ $t("settings.transcription.modelLabel") }}:
+          <span class="text-gray-300">{{ formattedModelName }}</span>
+        </span>
+        <span class="text-[10px] text-gray-500 truncate leading-tight">
+          {{ $t("settings.transcription.modeLabel") }}:
+          <span class="text-gray-300">{{ $t(captionModeTranslationKey) }}</span>
+        </span>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-6 px-2 text-[10px] border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
+          :disabled="transcriptHistory.length === 0"
+          @click="copyTranscript"
+        >
+          <Copy class="w-3 h-3 mr-1" />
+          {{ $t("chat.transcript.copy") }}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          class="h-6 px-2 text-[10px] border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
+          :disabled="transcriptHistory.length === 0"
+          @click="clearTranscriptHistory"
+        >
+          <Trash2 class="w-3 h-3 mr-1" />
+          {{ $t("chat.transcript.clear") }}
+        </Button>
+      </div>
     </div>
 
     <!-- Transcript Area -->
