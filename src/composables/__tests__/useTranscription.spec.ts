@@ -99,11 +99,12 @@ describe("useTranscription composable unit tests", () => {
     expect(isActive.value).toBe(true);
   });
 
-  it("should stop transcription and clear lines", async () => {
+  it("should stop transcription and clear lines but not transcriptHistory", async () => {
     // Arrange
-    const { stopTranscription, isActive, lines } = useTranscription();
+    const { stopTranscription, isActive, lines, transcriptHistory } = useTranscription();
     isActive.value = true;
     lines.value = [{ text: "Hello", timestamp: 123 }];
+    transcriptHistory.value = [{ text: "Hello", timestamp: 123 }];
 
     // Act
     await stopTranscription();
@@ -112,5 +113,18 @@ describe("useTranscription composable unit tests", () => {
     expect(invoke).toHaveBeenCalledWith("stop_transcription");
     expect(isActive.value).toBe(false);
     expect(lines.value).toEqual([]);
+    expect(transcriptHistory.value).toEqual([{ text: "Hello", timestamp: 123 }]); // Keeps history
+  });
+
+  it("should clear transcriptHistory", async () => {
+    // Arrange
+    const { clearTranscriptHistory, transcriptHistory } = useTranscription();
+    transcriptHistory.value = [{ text: "Hello", timestamp: 123 }];
+
+    // Act
+    clearTranscriptHistory();
+
+    // Assert
+    expect(transcriptHistory.value).toEqual([]);
   });
 });

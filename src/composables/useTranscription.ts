@@ -18,6 +18,7 @@ export interface TranscriptionLine {
 }
 
 const lines = ref<TranscriptionLine[]>([]);
+const transcriptHistory = ref<TranscriptionLine[]>([]);
 let listenerRegistered = false;
 
 const _useTranscription = () => {
@@ -200,9 +201,15 @@ const _useTranscription = () => {
       listen<TranscriptionLine>("transcription:text", (event) => {
         const newLines = [...lines.value, event.payload];
         if (newLines.length > 8) {
-          newLines.shift(); // Keep max 8 entries
+          newLines.shift(); // Keep max 8 entries for overlay
         }
         lines.value = newLines;
+
+        const newHistory = [...transcriptHistory.value, event.payload];
+        if (newHistory.length > 1000) {
+          newHistory.shift(); // Keep max 1000 entries for global view
+        }
+        transcriptHistory.value = newHistory;
       }).catch(console.error);
     }
     updateStatus();
@@ -212,6 +219,10 @@ const _useTranscription = () => {
   onUnmounted(() => {
     if (unlistenProgress) unlistenProgress();
   });
+
+  const clearTranscriptHistory = () => {
+    transcriptHistory.value = [];
+  };
 
   return {
     isSupported,
@@ -224,11 +235,13 @@ const _useTranscription = () => {
     downloadProgress,
     isActive,
     lines,
+    transcriptHistory,
     downloadModel,
     deleteModel,
     startTranscription,
     stopTranscription,
     updateStatus,
+    clearTranscriptHistory,
   };
 };
 
