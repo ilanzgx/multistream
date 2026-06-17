@@ -67,6 +67,12 @@ fn main() {
         if !bin_path.exists() {
             let _ = fs::File::create(bin_path);
         }
+
+        // Create a dummy DLL so that `binaries/*.dll` resource glob doesn't fail
+        let dummy_dll = out_dir.join("dummy.dll");
+        if !dummy_dll.exists() {
+            let _ = fs::File::create(dummy_dll);
+        }
     }
 
     tauri_build::build();
