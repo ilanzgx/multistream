@@ -86,6 +86,12 @@ fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
 /// Returns the expected file path for a given model name.
 /// Format: `<app_data>/whisper-models/ggml-<model_name>.bin`
 fn model_path(app: &AppHandle, model_name: &str) -> Result<PathBuf, String> {
+    if !model_name
+        .chars()
+        .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err("Invalid model name".to_string());
+    }
     Ok(models_dir(app)?.join(format!("ggml-{model_name}.bin")))
 }
 
@@ -298,17 +304,16 @@ pub fn start_transcription(
         Arc::new(Mutex::new(None));
     let sidecar_child_clone = Arc::clone(&sidecar_child);
 
+    let (tx_init, rx_init) = std::sync::mpsc::channel();
+
     let thread = std::thread::spawn(move || {
         let session = match super::capture::start_loopback() {
-            Ok(s) => s,
+            Ok(s) => {
+                let _ = tx_init.send(Ok(()));
+                s
+            }
             Err(e) => {
-                let _ = app_clone.emit(
-                    "transcription:text",
-                    TranscriptionTextPayload {
-                        text: format!("[Error] Audio capture failed: {e}"),
-                        timestamp: timestamp_ms(),
-                    },
-                );
+                let _ = tx_init.send(Err(format!("Audio capture failed: {e}")));
                 return;
             }
         };
@@ -446,7 +451,7 @@ pub fn start_transcription(
                     path: orig_wav_path.clone(),
                     keep: KEEP_DEBUG_AUDIO,
                 };
-                
+
                 let _resampled_guard = TempFileGuard {
                     path: resampled_wav_path.clone(),
                     keep: KEEP_DEBUG_AUDIO,
@@ -481,10 +486,13 @@ pub fn start_transcription(
                 let current_path = std::env::var("PATH").unwrap_or_default();
                 let new_path = format!("{};{}", resource_dir.to_string_lossy(), current_path);
 
-                let mut sidecar = app_clone
-                    .shell()
-                    .sidecar("whisper-cli")
-                    .expect("failed to setup sidecar");
+                let mut sidecar = match app_clone.shell().sidecar("whisper-cli") {
+                    Ok(s) => s,
+                    Err(e) => {
+                        log::error!("failed to setup sidecar: {}", e);
+                        break;
+                    }
+                };
                 sidecar = sidecar.env("PATH", new_path);
                 sidecar = sidecar
                     .arg("-m")
@@ -620,6 +628,10 @@ pub fn start_transcription(
             }
         }
     });
+
+    rx_init
+        .recv()
+        .unwrap_or(Err("Capture thread died unexpectedly".to_string()))?;
 
     *guard = Some(TranscriptionHandle {
         running,
