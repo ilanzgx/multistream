@@ -71,15 +71,15 @@ jobs:
           mkdir -p src-tauri/binaries
           curl -L -o whisper-temp.zip https://github.com/ggml-org/whisper.cpp/releases/download/v1.8.6/whisper-bin-x64.zip
           unzip whisper-temp.zip -d whisper_temp_ext
-          
-          # Copiar apenas os binários estritamente necessários
-          mv whisper_temp_ext/whisper-cli.exe src-tauri/binaries/whisper-cli-x86_64-pc-windows-msvc.exe
-          mv whisper_temp_ext/ggml.dll src-tauri/binaries/
-          mv whisper_temp_ext/ggml-base.dll src-tauri/binaries/
-          mv whisper_temp_ext/ggml-cpu.dll src-tauri/binaries/
-          mv whisper_temp_ext/whisper.dll src-tauri/binaries/
-          mv whisper_temp_ext/SDL2.dll src-tauri/binaries/
-          
+
+          # Copy only the strictly necessary binaries.
+          mv whisper_temp_ext/Release/whisper-cli.exe src-tauri/binaries/whisper-cli-x86_64-pc-windows-msvc.exe
+          mv whisper_temp_ext/Release/ggml.dll src-tauri/binaries/
+          mv whisper_temp_ext/Release/ggml-base.dll src-tauri/binaries/
+          mv whisper_temp_ext/Release/ggml-cpu.dll src-tauri/binaries/
+          mv whisper_temp_ext/Release/whisper.dll src-tauri/binaries/
+          mv whisper_temp_ext/Release/SDL2.dll src-tauri/binaries/
+
           rm -rf whisper-temp.zip whisper_temp_ext
 
       - name: Build Tauri app
