@@ -39,7 +39,7 @@ const sidebarMode = ref<"chat" | "transcript">("chat");
 
 const { streams } = useStreams();
 const { selectedChat, sidebarOpen } = usePreferences();
-const { isActive: transcriptionActive } = useTranscription();
+const { isActive: transcriptionActive, isSupported } = useTranscription();
 
 function openAddDialog() {
   addDialogOpen.value = true;
@@ -103,6 +103,7 @@ onUnmounted(() => {
               {{ $t("chat.tabs.chat") }}
             </TabsTrigger>
             <TabsTrigger
+              v-if="isSupported"
               value="transcript"
               class="data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white text-gray-400"
             >
@@ -173,7 +174,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div v-show="sidebarMode === 'transcript'" class="absolute inset-0">
+        <div v-show="sidebarMode === 'transcript' && isSupported" class="absolute inset-0">
           <TranscriptView />
         </div>
       </div>

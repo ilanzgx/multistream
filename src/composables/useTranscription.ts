@@ -23,7 +23,7 @@ let listenerRegistered = false;
 
 const _useTranscription = () => {
   // State
-  const isSupported = ref(true); // For future macOS BlackHole check, true for Windows
+  const isSupported = ref(false); // Validated via backend during initialization
   const installedModels = ref<string[]>([]);
   const isDownloading = ref(false);
   const downloadingModel = ref<string | null>(null);
@@ -41,7 +41,7 @@ const _useTranscription = () => {
 
   // Refresh status from backend
   const updateStatus = async () => {
-    if (!isTauri()) return;
+    if (!isTauri() || !isSupported.value) return;
     try {
       const status: { installed_models: string[]; active: boolean } = await invoke(
         "get_transcription_status"
@@ -196,23 +196,30 @@ const _useTranscription = () => {
 
   // Initialization
   if (isTauri()) {
-    if (!listenerRegistered) {
-      listenerRegistered = true;
-      listen<TranscriptionLine>("transcription:text", (event) => {
-        const newLines = [...lines.value, event.payload];
-        if (newLines.length > 6) {
-          newLines.shift(); // Keep max 6 entries for overlay
-        }
-        lines.value = newLines;
+    invoke<boolean>("is_transcription_supported")
+      .then((supported) => {
+        isSupported.value = supported;
+        if (supported) {
+          if (!listenerRegistered) {
+            listenerRegistered = true;
+            listen<TranscriptionLine>("transcription:text", (event) => {
+              const newLines = [...lines.value, event.payload];
+              if (newLines.length > 6) {
+                newLines.shift(); // Keep max 6 entries for overlay
+              }
+              lines.value = newLines;
 
-        const newHistory = [...transcriptHistory.value, event.payload];
-        if (newHistory.length > 1000) {
-          newHistory.shift(); // Keep max 1000 entries for global view
+              const newHistory = [...transcriptHistory.value, event.payload];
+              if (newHistory.length > 1000) {
+                newHistory.shift(); // Keep max 1000 entries for global view
+              }
+              transcriptHistory.value = newHistory;
+            }).catch(console.error);
+          }
+          updateStatus();
         }
-        transcriptHistory.value = newHistory;
-      }).catch(console.error);
-    }
-    updateStatus();
+      })
+      .catch(console.error);
   }
 
   // Cleanup on unmount (if not used as shared, but shared composables don't typically unmount)

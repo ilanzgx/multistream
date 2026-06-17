@@ -25,10 +25,15 @@ describe("useTranscription composable unit tests", () => {
     vi.clearAllMocks();
     localStorage.clear();
 
-    // Default get_transcription_status mock
-    (invoke as any).mockResolvedValue({
-      installed_models: ["base", "small"],
-      active: false,
+    // Default invoke mock
+    (invoke as any).mockImplementation((cmd: string) => {
+      if (cmd === "is_transcription_supported") return Promise.resolve(true);
+      if (cmd === "get_transcription_status")
+        return Promise.resolve({
+          installed_models: ["base", "small"],
+          active: false,
+        });
+      return Promise.resolve();
     });
 
     // Default listen mock returning an unlisten function
@@ -41,7 +46,9 @@ describe("useTranscription composable unit tests", () => {
 
   it("should initialize status properly on tauri", async () => {
     // Arrange
-    const { installedModels, isActive, updateStatus } = useTranscription();
+    const { installedModels, isActive, updateStatus, isSupported } = useTranscription();
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0)); // wait for initialization
 
     // Act
     await updateStatus();
@@ -54,9 +61,12 @@ describe("useTranscription composable unit tests", () => {
 
   it("should download model and update status", async () => {
     // Arrange
-    const { downloadModel, isDownloading, installedModels } = useTranscription();
+    const { downloadModel, isDownloading, installedModels, isSupported } = useTranscription();
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0)); // wait for initialization
 
     (invoke as any).mockImplementation((cmd: string) => {
+      if (cmd === "is_transcription_supported") return Promise.resolve(true);
       if (cmd === "download_whisper_model") return Promise.resolve();
       if (cmd === "get_transcription_status")
         return Promise.resolve({
@@ -84,7 +94,10 @@ describe("useTranscription composable unit tests", () => {
 
   it("should start transcription and listen to text events", async () => {
     // Arrange
-    const { startTranscription, isActive, selectedModel, updateStatus } = useTranscription();
+    const { startTranscription, isActive, selectedModel, updateStatus, isSupported } =
+      useTranscription();
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0)); // wait for initialization
     await updateStatus(); // Load installed models
     selectedModel.value = "base";
 
@@ -101,7 +114,10 @@ describe("useTranscription composable unit tests", () => {
 
   it("should stop transcription and clear lines but not transcriptHistory", async () => {
     // Arrange
-    const { stopTranscription, isActive, lines, transcriptHistory } = useTranscription();
+    const { stopTranscription, isActive, lines, transcriptHistory, isSupported } =
+      useTranscription();
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0)); // wait for initialization
     isActive.value = true;
     lines.value = [{ text: "Hello", timestamp: 123 }];
     transcriptHistory.value = [{ text: "Hello", timestamp: 123 }];
@@ -119,6 +135,7 @@ describe("useTranscription composable unit tests", () => {
   it("should clear transcriptHistory", async () => {
     // Arrange
     const { clearTranscriptHistory, transcriptHistory } = useTranscription();
+    await new Promise((r) => setTimeout(r, 0)); // wait for initialization
     transcriptHistory.value = [{ text: "Hello", timestamp: 123 }];
 
     // Act

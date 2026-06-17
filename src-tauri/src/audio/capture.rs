@@ -3,6 +3,14 @@ use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
 use std::path::Path;
 use std::sync::mpsc;
 
+// Future: Abstract the capture mechanism into an `AudioCaptureBackend` trait
+// pub trait AudioCaptureBackend: Send { ... }
+//
+// Current backend: WasapiLoopbackCapture
+// Future backends:
+// - Linux -> PipeWire/PulseAudio backend
+// - macOS -> CoreAudio backend
+
 pub struct CaptureSession {
     pub _stream: cpal::Stream,
     pub rx: mpsc::Receiver<f32>,

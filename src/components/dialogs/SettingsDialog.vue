@@ -404,7 +404,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
           <TabsContent value="recursos" class="space-y-6 mt-0 outline-none">
             <!-- Live Transcription Section -->
-            <div v-if="isRunningInTauri" class="space-y-2">
+            <div v-if="isRunningInTauri && isSupported" class="space-y-2">
               <div class="flex items-center gap-2 px-1">
                 <Captions class="size-4 text-gray-400 shrink-0" />
                 <div>
@@ -420,127 +420,122 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
               </div>
 
               <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl space-y-4">
-                <div v-if="!isSupported" class="text-xs text-red-400">
-                  {{ $t("settings.transcription.macosWarning") }}
-                </div>
-                <template v-else>
-                  <!-- Active Configuration -->
-                  <div
-                    v-if="installedModels.length > 0"
-                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#2a2d33]/50"
-                  >
-                    <div class="flex items-center gap-2 flex-1">
-                      <select
-                        v-model="captionMode"
-                        data-testid="transcription-mode-select"
-                        class="bg-[#1e2127] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px]"
-                      >
-                        <option value="original">
-                          {{ $t("settings.transcription.captionModeOriginal") }}
-                        </option>
-                        <option value="translate">
-                          {{ $t("settings.transcription.captionModeTranslate") }}
-                        </option>
-                      </select>
-                      <div class="text-[10px] text-gray-500">
-                        {{ $t("settings.transcription.captionModeLabel") }}
-                      </div>
-                    </div>
-                    <div class="flex items-center gap-3 shrink-0">
-                      <span class="text-xs text-gray-400">{{
-                        $t("settings.transcription.enableToggle")
-                      }}</span>
-                      <Switch v-model="isEnabled" data-testid="transcription-enable-toggle" />
-                    </div>
-                  </div>
-
-                  <!-- Models List -->
-                  <div class="space-y-2">
-                    <div class="text-xs font-medium text-gray-400 mb-2">
-                      {{ $t("settings.transcription.modelLabel") }}
-                    </div>
-                    <div
-                      v-for="model in AVAILABLE_MODELS"
-                      :key="model.id"
-                      class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-[#2a2d33]/60 bg-[#1e2127]/50"
+                <!-- Active Configuration -->
+                <div
+                  v-if="installedModels.length > 0"
+                  class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#2a2d33]/50"
+                >
+                  <div class="flex items-center gap-2 flex-1">
+                    <select
+                      v-model="captionMode"
+                      data-testid="transcription-mode-select"
+                      class="bg-[#1e2127] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px]"
                     >
-                      <div class="flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                          <span class="text-sm font-medium text-white">{{ model.name }}</span>
-                          <span class="text-[10px] text-gray-500 font-mono">{{ model.size }}</span>
-                          <span
-                            v-if="installedModels.includes(model.id)"
-                            class="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
-                            >{{ $t("settings.transcription.modelInstalled") }}</span
-                          >
-                          <span v-if="model.id === 'base'" class="text-[10px] text-gray-400"
-                            >({{ $t("settings.transcription.recommendedBadge") }})</span
-                          >
-                        </div>
-                        <p class="text-[10px] text-gray-400 mt-1">{{ $t(model.tKey) }}</p>
-                      </div>
-
-                      <div class="shrink-0 flex items-center gap-2">
-                        <template v-if="downloadingModel === model.id">
-                          <div class="w-[120px] space-y-1.5">
-                            <div class="flex justify-between text-[9px] text-gray-400 font-mono">
-                              <span
-                                >{{ (downloadProgress.downloaded / 1024 / 1024).toFixed(1) }}M</span
-                              >
-                              <span>{{ downloadProgress.percent.toFixed(0) }}%</span>
-                            </div>
-                            <div class="h-1 w-full bg-[#2a2d33] rounded-full overflow-hidden">
-                              <div
-                                class="h-full bg-blue-500 transition-all duration-300"
-                                :style="{ width: `${downloadProgress.percent}%` }"
-                              ></div>
-                            </div>
-                          </div>
-                        </template>
-                        <template v-else-if="installedModels.includes(model.id)">
-                          <span
-                            v-if="selectedModel === model.id"
-                            class="flex items-center text-[10px] px-3 rounded-md bg-[#2a2d33]/20 text-green-400 border border-green-500/20 uppercase tracking-wider font-mono h-9 select-none"
-                          >
-                            <Check class="size-3.5 mr-1" />
-                            {{ $t("settings.transcription.modelSelected") }}
-                          </span>
-                          <Button
-                            v-else
-                            variant="outline"
-                            size="sm"
-                            class="border-[#2a2d33] bg-[#2a2d33]/30 text-gray-300 hover:text-white hover:bg-[#3a3f4b] hover:border-[#4a4f5b]"
-                            :disabled="isDownloading"
-                            @click="selectedModel = model.id"
-                          >
-                            {{ $t("settings.transcription.modelSelect") }}
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/10 px-2"
-                            :disabled="isDownloading"
-                            @click="deleteModel(model.id)"
-                          >
-                            <Trash2 class="size-4" />
-                          </Button>
-                        </template>
-                        <template v-else>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33]"
-                            :disabled="isDownloading"
-                            @click="downloadModel(model.id)"
-                          >
-                            <Download class="size-4 mr-1.5" />
-                            {{ $t("settings.transcription.modelDownload") }}
-                          </Button>
-                        </template>
-                      </div>
+                      <option value="original">
+                        {{ $t("settings.transcription.captionModeOriginal") }}
+                      </option>
+                      <option value="translate">
+                        {{ $t("settings.transcription.captionModeTranslate") }}
+                      </option>
+                    </select>
+                    <div class="text-[10px] text-gray-500">
+                      {{ $t("settings.transcription.captionModeLabel") }}
                     </div>
                   </div>
-                </template>
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span class="text-xs text-gray-400">{{
+                      $t("settings.transcription.enableToggle")
+                    }}</span>
+                    <Switch v-model="isEnabled" data-testid="transcription-enable-toggle" />
+                  </div>
+                </div>
+
+                <!-- Models List -->
+                <div class="space-y-2">
+                  <div class="text-xs font-medium text-gray-400 mb-2">
+                    {{ $t("settings.transcription.modelLabel") }}
+                  </div>
+                  <div
+                    v-for="model in AVAILABLE_MODELS"
+                    :key="model.id"
+                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-[#2a2d33]/60 bg-[#1e2127]/50"
+                  >
+                    <div class="flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-sm font-medium text-white">{{ model.name }}</span>
+                        <span class="text-[10px] text-gray-500 font-mono">{{ model.size }}</span>
+                        <span
+                          v-if="installedModels.includes(model.id)"
+                          class="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
+                          >{{ $t("settings.transcription.modelInstalled") }}</span
+                        >
+                        <span v-if="model.id === 'base'" class="text-[10px] text-gray-400"
+                          >({{ $t("settings.transcription.recommendedBadge") }})</span
+                        >
+                      </div>
+                      <p class="text-[10px] text-gray-400 mt-1">{{ $t(model.tKey) }}</p>
+                    </div>
+
+                    <div class="shrink-0 flex items-center gap-2">
+                      <template v-if="downloadingModel === model.id">
+                        <div class="w-[120px] space-y-1.5">
+                          <div class="flex justify-between text-[9px] text-gray-400 font-mono">
+                            <span
+                              >{{ (downloadProgress.downloaded / 1024 / 1024).toFixed(1) }}M</span
+                            >
+                            <span>{{ downloadProgress.percent.toFixed(0) }}%</span>
+                          </div>
+                          <div class="h-1 w-full bg-[#2a2d33] rounded-full overflow-hidden">
+                            <div
+                              class="h-full bg-blue-500 transition-all duration-300"
+                              :style="{ width: `${downloadProgress.percent}%` }"
+                            ></div>
+                          </div>
+                        </div>
+                      </template>
+                      <template v-else-if="installedModels.includes(model.id)">
+                        <span
+                          v-if="selectedModel === model.id"
+                          class="flex items-center text-[10px] px-3 rounded-md bg-[#2a2d33]/20 text-green-400 border border-green-500/20 uppercase tracking-wider font-mono h-9 select-none"
+                        >
+                          <Check class="size-3.5 mr-1" />
+                          {{ $t("settings.transcription.modelSelected") }}
+                        </span>
+                        <Button
+                          v-else
+                          variant="outline"
+                          size="sm"
+                          class="border-[#2a2d33] bg-[#2a2d33]/30 text-gray-300 hover:text-white hover:bg-[#3a3f4b] hover:border-[#4a4f5b]"
+                          :disabled="isDownloading"
+                          @click="selectedModel = model.id"
+                        >
+                          {{ $t("settings.transcription.modelSelect") }}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/10 px-2"
+                          :disabled="isDownloading"
+                          @click="deleteModel(model.id)"
+                        >
+                          <Trash2 class="size-4" />
+                        </Button>
+                      </template>
+                      <template v-else>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33]"
+                          :disabled="isDownloading"
+                          @click="downloadModel(model.id)"
+                        >
+                          <Download class="size-4 mr-1.5" />
+                          {{ $t("settings.transcription.modelDownload") }}
+                        </Button>
+                      </template>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </TabsContent>
