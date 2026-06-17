@@ -14,6 +14,9 @@ test.describe("Live Transcription UI E2E Test", () => {
           if (cmd === "get_transcription_status") {
             return Promise.resolve({ installed_models: ["base"], active: false });
           }
+          if (cmd === "is_transcription_supported") {
+            return Promise.resolve(true);
+          }
           return Promise.resolve();
         },
         listen: () => Promise.resolve(() => {}),
