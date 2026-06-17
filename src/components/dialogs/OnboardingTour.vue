@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { TwitchIcon, KickIcon, YoutubeIcon } from "@/components/icons";
 import { ChevronLeft, ChevronRight, Check, Mic } from "lucide-vue-next";
+import { useTranscription } from "@/composables/useTranscription";
 
 const props = withDefaults(
   defineProps<{
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const currentStep = ref(1);
+const { isSupported } = useTranscription();
 
 // Reset step to 1 when dialog is opened
 watch(
@@ -53,7 +55,11 @@ function handleEscapeKey(e: Event) {
 
 function handleNext() {
   if (currentStep.value < 5) {
-    currentStep.value++;
+    let nextStep = currentStep.value + 1;
+    if (nextStep === 4 && !isSupported.value) {
+      nextStep++;
+    }
+    currentStep.value = nextStep;
   } else {
     handleFinish();
   }
@@ -61,7 +67,11 @@ function handleNext() {
 
 function handleBack() {
   if (currentStep.value > 1) {
-    currentStep.value--;
+    let prevStep = currentStep.value - 1;
+    if (prevStep === 4 && !isSupported.value) {
+      prevStep--;
+    }
+    currentStep.value = prevStep;
   }
 }
 
@@ -412,6 +422,7 @@ function handleFinish() {
         <div class="flex items-center gap-1.5">
           <button
             v-for="step in 5"
+            v-show="step !== 4 || isSupported"
             :key="step"
             class="size-2 rounded-full transition-all duration-300"
             :class="[step === currentStep ? 'bg-white w-4' : 'bg-gray-600 hover:bg-gray-400']"
