@@ -8,11 +8,12 @@ fn main() {
 
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
+    let target = env::var("TARGET").unwrap_or_default();
+
+    let out_dir = Path::new("binaries");
+    let _ = fs::create_dir_all(out_dir);
 
     if target_os == "windows" && target_arch == "x86_64" {
-        let out_dir = Path::new("binaries");
-        let _ = fs::create_dir_all(out_dir);
-
         let bin_name = "whisper-cli-x86_64-pc-windows-msvc.exe";
         let bin_path = out_dir.join(bin_name);
 
@@ -54,6 +55,17 @@ fn main() {
                 let _ = fs::remove_file(zip_path);
                 let _ = fs::remove_dir_all(temp_extract);
             }
+        }
+    } else {
+        // Create a dummy file for unsupported platforms so tauri_build doesn't fail
+        let bin_name = if target_os == "windows" {
+            format!("whisper-cli-{}.exe", target)
+        } else {
+            format!("whisper-cli-{}", target)
+        };
+        let bin_path = out_dir.join(bin_name);
+        if !bin_path.exists() {
+            let _ = fs::File::create(bin_path);
         }
     }
 
