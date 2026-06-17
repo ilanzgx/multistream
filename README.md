@@ -1,11 +1,9 @@
 <a id="readme-top"></a>
 
-<br />
 <div align="center">
-  <h3 align="center">Multistream</h3>
+  <h1 align="center">Multistream</h1>
   <p align="center">
     Watch multiple live streams simultaneously in a single interface.
-    <br />
     <br />
     <strong>Available for Windows, Linux and macOS</strong>
     <br />
@@ -20,7 +18,17 @@
 
 ## About The Project
 
-Multistream is a cross-platform desktop application that lets you watch multiple streams from different platforms (Twitch, Kick and YouTube) at the same time, with integrated real-time chat.
+Multistream is a native desktop application designed for power users who want to watch multiple live streams simultaneously. 
+
+Instead of juggling heavy browser tabs, Multistream unifies Twitch, Kick, and YouTube into a single, distraction-free interface—delivering a premium viewing experience that respects your privacy and system resources.
+
+### Key Features
+
+- **Privacy by Design**: 100% local processing. No middleman servers, no data collection, and no telemetry.
+- **Direct Connections**: Uses standard iframes to communicate directly with official streaming platforms.
+- **Lightweight & Native**: Built with [Tauri](https://tauri.app/) and [Rust](https://www.rust-lang.org/) for incredibly low memory usage and high performance compared to traditional Electron apps.
+- **Cross-Platform**: Available natively for Windows, macOS, and Linux.
+- **Free Local AI Transcription**: Real-time live translation and transcription powered by a highly optimized, offline C++ model ([Whisper.cpp](https://github.com/ggerganov/whisper.cpp)). Runs entirely on your CPU with zero cloud API costs.
 
 ### Built With
 
@@ -53,5 +61,3 @@ Multistream is a cross-platform desktop application that lets you watch multiple
 ## License
 
 Distributed under the GPL-3.0 License. See `LICENSE` for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
