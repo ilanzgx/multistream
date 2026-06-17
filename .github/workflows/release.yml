@@ -64,6 +64,24 @@ jobs:
       - name: Install frontend dependencies
         run: bun install
 
+      - name: Download Whisper Binaries (Windows only)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p src-tauri/binaries
+          curl -L -o whisper-temp.zip https://github.com/ggml-org/whisper.cpp/releases/download/v1.8.6/whisper-bin-x64.zip
+          unzip whisper-temp.zip -d whisper_temp_ext
+          
+          # Copiar apenas os binários estritamente necessários
+          mv whisper_temp_ext/whisper-cli.exe src-tauri/binaries/whisper-cli-x86_64-pc-windows-msvc.exe
+          mv whisper_temp_ext/ggml.dll src-tauri/binaries/
+          mv whisper_temp_ext/ggml-base.dll src-tauri/binaries/
+          mv whisper_temp_ext/ggml-cpu.dll src-tauri/binaries/
+          mv whisper_temp_ext/whisper.dll src-tauri/binaries/
+          mv whisper_temp_ext/SDL2.dll src-tauri/binaries/
+          
+          rm -rf whisper-temp.zip whisper_temp_ext
+
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
