@@ -20,15 +20,16 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@lucide/vue": "^1.18.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tauri-apps/plugin-http": "~2",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-updater": "^2.9.0",
-    "@vueuse/core": "^14.2.1",
+    "@vueuse/core": "^14.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-vue-next": "^0.562.0",
-    "reka-ui": "^2.9.2",
+    "reka-ui": "^2.9.10",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",
     "vue": "^3.5.24",

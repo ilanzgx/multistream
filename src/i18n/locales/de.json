@@ -63,10 +63,47 @@
       "importError": "Ungültige Backup-Datei",
       "exportSuccess": "Konfiguration erfolgreich exportiert"
     },
+    "transcription": {
+      "title": "Live-Transkription",
+      "description": "Echtzeit-Untertitel, generiert durch lokales Machine Learning.",
+      "macosWarning": "Audioaufnahme wird unter macOS ohne den virtuellen Treiber BlackHole nicht unterstützt.",
+      "statusNotInstalled": "Nicht installiert",
+      "statusDownloading": "Wird heruntergeladen...",
+      "statusReady": "Bereit",
+      "statusActive": "Aktiv",
+      "modelLabel": "Modell",
+      "modelTiny": "Schnellste Inferenz, geringere Genauigkeit, mehr Halluzinationen.",
+      "modelBase": "Empfohlen. Bestes Gleichgewicht zwischen Geschwindigkeit und Qualität. Für die meisten Systeme geeignet.",
+      "modelSmall": "Höchste Genauigkeit, höhere CPU-Auslastung, kann auf älteren Prozessoren langsam sein.",
+      "downloadButton": "Modell herunterladen",
+      "downloadingButton": "Wird heruntergeladen...",
+      "captionModeLabel": "Untertitel-Modus",
+      "captionModeOriginal": "Originalsprache",
+      "captionModeTranslate": "Auf Englisch übersetzen",
+      "enableToggle": "Transkription aktivieren",
+      "modelInstalled": "Installiert",
+      "modelSelected": "Ausgewählt",
+      "modelSelect": "Auswählen",
+      "modelDownload": "Herunterladen",
+      "startedTitle": "Live-Transkription Gestartet",
+      "startedModel": "Modell: {model}",
+      "startedMode": "Modus: {mode}",
+      "stoppedTitle": "Live-Transkription Gestoppt",
+      "activeIndicator": "Transkription Aktiv",
+      "recommendedBadge": "Empfohlen",
+      "statusDisabled": "Deaktiviert",
+      "modeLabel": "Modus"
+    },
     "help": {
       "title": "Hilfe",
       "description": "Benötigen Sie Hilfe oder möchten Sie die Funktionen überprüfen?",
       "showTourButton": "Einführungstour anzeigen"
+    },
+    "tabs": {
+      "general": "Allgemein",
+      "data": "Daten",
+      "connections": "Verbindungen",
+      "resources": "Funktionen"
     }
   },
   "share": {
@@ -105,10 +142,22 @@
     "selectPlaceholder": "Stream-Chat auswählen",
     "selectPrompt": "Wählen Sie einen Stream, um den Chat anzuzeigen.",
     "noStreams": "Keine Streams verfügbar.",
-    "noStreamsHint": "Fügen Sie einen Stream hinzu, um den Chat anzuzeigen."
+    "noStreamsHint": "Fügen Sie einen Stream hinzu, um den Chat anzuzeigen.",
+    "tabs": {
+      "chat": "Chat",
+      "transcript": "Transkript"
+    },
+    "transcript": {
+      "emptyState": "Noch kein Transkriptionsverlauf.",
+      "emptyStateHint": "Aktivieren Sie Live-Transkription, um Untertitel zu erstellen.",
+      "copy": "Kopieren",
+      "clear": "Löschen",
+      "copied": "Kopiert!"
+    }
   },
   "common": {
-    "close": "Schließen"
+    "close": "Schließen",
+    "comingSoon": "Demnächst"
   },
   "toasts": {
     "add": {
@@ -168,16 +217,23 @@
       "chatActive": "Chat Aktiv"
     },
     "step3": {
+      "title": "Stream-Vorschläge nach Kategorie",
+      "description": "Filtere vorgeschlagene Streams nach Kategorie mit den Chips oben. Klicke auf einen Chip, um im Hintergrund mehr Live-Streams von Twitch und Kick für diese Kategorie zu laden.",
+      "caption": "Streams beider Plattformen werden automatisch geladen und beim Durchsuchen zwischengespeichert."
+    },
+    "step4": {
+      "title": "Live-Transkription",
+      "description": "Generieren Sie Echtzeit-Untertitel für Stream-Audio direkt auf Ihrem Computer mit lokalen KI-Modellen. Laden Sie ein Whisper-Modell herunter, wählen Sie zwischen Originalsprache oder englischer Übersetzung und zeigen Sie Untertitel über dem fokussierten Stream an.",
+      "captionStr": "Dies ist ein Beispiel für lokale Untertitel...",
+      "note": "Die Leistung hängt von Ihrer CPU und dem ausgewählten Modell ab. Das Basismodell wird für die meisten Systeme empfohlen."
+    },
+    "step5": {
       "title": "Tastaturkurzbefehle",
       "description": "Verwende diese schnellen Kurzbefehle, um deine Streams und Chats effizient zu steuern:",
       "add": "Stream-hinzufügen-Dialog öffnen",
       "screenshot": "Screenshot des fokussierten Streams machen",
-      "chat": "Zum Stream-Chat {keys} wechseln"
-    },
-    "step4": {
-      "title": "Stream-Vorschläge nach Kategorie",
-      "description": "Filtere vorgeschlagene Streams nach Kategorie mit den Chips oben. Klicke auf einen Chip, um im Hintergrund mehr Live-Streams von Twitch und Kick für diese Kategorie zu laden.",
-      "caption": "Streams beider Plattformen werden automatisch geladen und beim Durchsuchen zwischengespeichert."
+      "chat": "Zum Stream-Chat {keys} wechseln",
+      "screenshotTitle": "Screenshot"
     }
   }
 }

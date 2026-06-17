@@ -67,6 +67,43 @@
       "importSuccess": "Configuração importada com sucesso",
       "importError": "Arquivo de backup de configuração inválido",
       "exportSuccess": "Configuração exportada com sucesso"
+    },
+    "transcription": {
+      "title": "Transcrição Ao Vivo",
+      "description": "Legendas geradas em tempo real utilizando machine learning local.",
+      "macosWarning": "A captura de áudio não é suportada no macOS sem o driver virtual BlackHole.",
+      "statusNotInstalled": "Não Instalado",
+      "statusDownloading": "Baixando...",
+      "statusReady": "Pronto",
+      "statusActive": "Ativo",
+      "modelLabel": "Modelo",
+      "modelTiny": "Inferência mais rápida, menor precisão, mais alucinações.",
+      "modelBase": "Recomendado. Melhor equilíbrio entre velocidade e qualidade. Adequado para a maioria dos sistemas.",
+      "modelSmall": "Maior precisão, maior uso da CPU, pode ser lento em processadores antigos.",
+      "downloadButton": "Baixar Modelo",
+      "downloadingButton": "Baixando...",
+      "captionModeLabel": "Modo de Legenda",
+      "captionModeOriginal": "Idioma Original",
+      "captionModeTranslate": "Traduzir para Inglês",
+      "enableToggle": "Habilitar Transcrição",
+      "modelInstalled": "Instalado",
+      "modelSelected": "Selecionado",
+      "modelSelect": "Selecionar",
+      "modelDownload": "Baixar",
+      "startedTitle": "Transcrição Iniciada",
+      "startedModel": "Modelo: {model}",
+      "startedMode": "Modo: {mode}",
+      "stoppedTitle": "Transcrição Parada",
+      "activeIndicator": "Transcrição Ativa",
+      "recommendedBadge": "Recomendado",
+      "statusDisabled": "Desativado",
+      "modeLabel": "Modo"
+    },
+    "tabs": {
+      "general": "Geral",
+      "data": "Dados",
+      "connections": "Conexões",
+      "resources": "Recursos"
     }
   },
   "share": {
@@ -105,10 +142,22 @@
     "selectPlaceholder": "Selecione o chat da stream",
     "selectPrompt": "Selecione uma stream para ver o chat.",
     "noStreams": "Nenhuma stream disponível.",
-    "noStreamsHint": "Adicione uma stream para ver o chat."
+    "noStreamsHint": "Adicione uma stream para ver o chat.",
+    "tabs": {
+      "chat": "Chat",
+      "transcript": "Transcrição"
+    },
+    "transcript": {
+      "emptyState": "Ainda não há histórico de transcrição.",
+      "emptyStateHint": "Ative a Transcrição ao Vivo para gerar legendas.",
+      "copy": "Copiar",
+      "clear": "Limpar",
+      "copied": "Copiado!"
+    }
   },
   "common": {
-    "close": "Fechar"
+    "close": "Fechar",
+    "comingSoon": "Em breve"
   },
   "toasts": {
     "add": {
@@ -168,16 +217,23 @@
       "chatActive": "Chat Ativo"
     },
     "step3": {
+      "title": "Sugestões de Stream por Categoria",
+      "description": "Filtre as streams sugeridas por categoria usando os chips no topo. Clique em qualquer chip para carregar mais streams ao vivo da Twitch e do Kick para aquela categoria, em background.",
+      "caption": "Streams das duas plataformas são carregadas automaticamente e ficam em cache enquanto você navega."
+    },
+    "step4": {
+      "title": "Transcrição ao Vivo",
+      "description": "Gere legendas em tempo real para o áudio da stream diretamente no seu computador usando modelos de IA locais. Baixe um modelo Whisper, escolha entre o idioma original ou tradução para inglês e veja as legendas sobre a stream focada.",
+      "captionStr": "Este é um exemplo de legendas locais...",
+      "note": "O desempenho depende da sua CPU e do modelo selecionado. O modelo Base é recomendado para a maioria dos sistemas."
+    },
+    "step5": {
       "title": "Teclas de Atalho",
       "description": "Use estes atalhos rápidos para controlar suas transmissões e chats com eficiência:",
       "add": "Abrir diálogo para adicionar stream",
       "screenshot": "Capturar tela da stream focada",
-      "chat": "Alternar para o chat da stream {keys}"
-    },
-    "step4": {
-      "title": "Sugestões de Stream por Categoria",
-      "description": "Filtre as streams sugeridas por categoria usando os chips no topo. Clique em qualquer chip para carregar mais streams ao vivo da Twitch e do Kick para aquela categoria, em background.",
-      "caption": "Streams das duas plataformas são carregadas automaticamente e ficam em cache enquanto você navega."
+      "chat": "Alternar para o chat da stream {keys}",
+      "screenshotTitle": "Screenshot"
     }
   }
 }

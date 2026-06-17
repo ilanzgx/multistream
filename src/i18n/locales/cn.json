@@ -63,10 +63,47 @@
       "importError": "无效的配置文件",
       "exportSuccess": "配置导出成功"
     },
+    "transcription": {
+      "title": "实时字幕",
+      "description": "使用本地机器学习实时生成的字幕。",
+      "macosWarning": "在没有 BlackHole 虚拟驱动程序的情况下，macOS 不支持音频捕获。",
+      "statusNotInstalled": "未安装",
+      "statusDownloading": "下载中...",
+      "statusReady": "就绪",
+      "statusActive": "活动",
+      "modelLabel": "模型",
+      "modelTiny": "推理速度最快，精度较低，出现幻觉较多。",
+      "modelBase": "推荐。速度与质量的最佳平衡。适用于大多数系统。",
+      "modelSmall": "最高精度，CPU 占用率高，在旧处理器上可能较慢。",
+      "downloadButton": "下载模型",
+      "downloadingButton": "下载中...",
+      "captionModeLabel": "字幕模式",
+      "captionModeOriginal": "原始语言",
+      "captionModeTranslate": "翻译为英语",
+      "enableToggle": "启用字幕",
+      "modelInstalled": "已安装",
+      "modelSelected": "已选择",
+      "modelSelect": "选择",
+      "modelDownload": "下载",
+      "startedTitle": "实时转录已启动",
+      "startedModel": "模型: {model}",
+      "startedMode": "模式: {mode}",
+      "stoppedTitle": "实时转录已停止",
+      "activeIndicator": "实时转录活跃中",
+      "recommendedBadge": "推荐",
+      "statusDisabled": "已禁用",
+      "modeLabel": "模式"
+    },
     "help": {
       "title": "帮助",
       "description": "需要帮助或想查看功能？",
       "showTourButton": "显示新手教程"
+    },
+    "tabs": {
+      "general": "常规",
+      "data": "数据",
+      "connections": "连接",
+      "resources": "功能"
     }
   },
   "share": {
@@ -105,10 +142,22 @@
     "selectPlaceholder": "选择直播聊天",
     "selectPrompt": "选择一个直播以查看聊天。",
     "noStreams": "没有可用的直播。",
-    "noStreamsHint": "添加一个直播以查看聊天。"
+    "noStreamsHint": "添加一个直播以查看聊天。",
+    "tabs": {
+      "chat": "聊天",
+      "transcript": "转录"
+    },
+    "transcript": {
+      "emptyState": "暂无转录历史。",
+      "emptyStateHint": "启用实时转录以生成字幕。",
+      "copy": "复制",
+      "clear": "清除",
+      "copied": "已复制！"
+    }
   },
   "common": {
-    "close": "关闭"
+    "close": "关闭",
+    "comingSoon": "即将推出"
   },
   "toasts": {
     "add": {
@@ -168,16 +217,23 @@
       "chatActive": "聊天激活"
     },
     "step3": {
+      "title": "按类别推荐直播",
+      "description": "使用顶部的标签按类别筛选推荐的直播。点击任意标签，即可在后台自动从 Twitch 和 Kick 加载该类别的更多直播。",
+      "caption": "两个平台的直播会自动加载，浏览时保持缓存。"
+    },
+    "step4": {
+      "title": "实时转录",
+      "description": "使用本地 AI 模型直接在您的计算机上为流媒体音频生成实时字幕。下载 Whisper 模型，选择原始语言或英文翻译，并在聚焦的流媒体上查看字幕。",
+      "captionStr": "这是本地字幕的示例...",
+      "note": "性能取决于您的 CPU 和选择的模型。推荐大多数系统使用 Base 模型。"
+    },
+    "step5": {
       "title": "键盘快捷键",
       "description": "使用这些快捷键高效控制您的直播和聊天：",
       "add": "打开添加直播对话框",
       "screenshot": "对焦点的直播进行截图",
-      "chat": "切换到直播聊天 {keys}"
-    },
-    "step4": {
-      "title": "按类别推荐直播",
-      "description": "使用顶部的标签按类别筛选推荐的直播。点击任意标签，即可在后台自动从 Twitch 和 Kick 加载该类别的更多直播。",
-      "caption": "两个平台的直播会自动加载，浏览时保持缓存。"
+      "chat": "切换到直播聊天 {keys}",
+      "screenshotTitle": "截图"
     }
   }
 }

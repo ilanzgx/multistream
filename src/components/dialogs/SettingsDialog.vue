@@ -8,11 +8,26 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Button from "../ui/button/Button.vue";
 import { Switch } from "@/components/ui/switch";
 import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { usePreferences } from "@/composables/usePreferences";
-import { RefreshCw, Download, Globe, Bell, Database, Upload, HelpCircle } from "lucide-vue-next";
+import {
+  RefreshCw,
+  Download,
+  Globe,
+  Bell,
+  Database,
+  Upload,
+  HelpCircle,
+  Settings,
+  Puzzle,
+  Link,
+  Trash2,
+  Check,
+  Captions,
+} from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
 import { useBackup } from "@/composables/useBackup";
@@ -21,10 +36,30 @@ import type { BackupData } from "@/composables/useBackup";
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 import { PLATFORMS } from "@/config/platforms";
+import { useTranscription } from "@/composables/useTranscription";
 
 const { checkForUpdates, isChecking } = useUpdater();
 const { notificationsEnabled } = usePreferences();
 const { locale, t } = useI18n();
+
+const {
+  isSupported,
+  installedModels,
+  selectedModel,
+  isEnabled,
+  captionMode,
+  isDownloading,
+  downloadingModel,
+  downloadProgress,
+  downloadModel,
+  deleteModel,
+} = useTranscription();
+
+const AVAILABLE_MODELS = [
+  { id: "tiny", name: "Tiny", size: "75MB", tKey: "settings.transcription.modelTiny" },
+  { id: "base", name: "Base", size: "142MB", tKey: "settings.transcription.modelBase" },
+  { id: "small", name: "Small", size: "466MB", tKey: "settings.transcription.modelSmall" },
+];
 
 const isRunningInTauri = isTauri();
 
@@ -128,7 +163,9 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
 <template>
   <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
-    <DialogContent class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl">
+    <DialogContent
+      class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl flex flex-col h-[700px] max-h-[90vh]"
+    >
       <DialogHeader>
         <DialogTitle class="text-white">
           {{ $t("settings.title") }}
@@ -138,229 +175,374 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
         </DialogDescription>
       </DialogHeader>
 
-      <div class="space-y-4">
-        <!-- Updates Section -->
-        <div
-          v-if="isRunningInTauri"
-          class="flex items-center justify-between border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <Download class="size-5 text-gray-400" />
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("settings.updates.title") }}
-              </p>
-              <p class="text-gray-400 text-xs">
-                {{ $t("settings.updates.description") }}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 active:scale-[0.97]"
-            :disabled="isChecking"
-            @click="handleCheckUpdates"
+      <Tabs default-value="geral" class="flex flex-col flex-1 overflow-hidden mt-2">
+        <TabsList class="grid w-full grid-cols-4 bg-[#1e2127]">
+          <TabsTrigger
+            value="geral"
+            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
-            <RefreshCw class="size-4 mr-2" :class="{ 'animate-spin': isChecking }" />
-            {{ isChecking ? $t("settings.updates.checking") : $t("settings.updates.checkButton") }}
-          </Button>
-        </div>
+            <Settings class="size-4" />
+            {{ $t("settings.tabs.general") }}
+          </TabsTrigger>
 
-        <!-- Language Section -->
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <Globe class="size-5 text-gray-400" />
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("settings.language.title") }}
-              </p>
-              <p class="text-gray-400 text-xs">
-                {{ $t("settings.language.description") }}
-              </p>
-            </div>
-          </div>
-          <div class="grid grid-cols-3 gap-1 w-full sm:w-auto">
-            <button
-              v-for="lang in languages"
-              :key="lang.code"
-              class="flex items-center justify-center sm:justify-start gap-2 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer"
-              :class="
-                locale === lang.code
-                  ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-              "
-              @click="changeLanguage(lang.code)"
-            >
-              <component :is="lang.flag" :size="14" />
-              <span>{{ lang.label }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Notifications Section -->
-        <div
-          v-if="isRunningInTauri"
-          class="flex items-center justify-between border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <Bell class="size-5 text-gray-400" />
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("settings.notifications.title") }}
-              </p>
-              <p class="text-gray-400 text-xs">
-                {{ $t("settings.notifications.description") }}
-              </p>
-            </div>
-          </div>
-          <Switch v-model="notificationsEnabled" />
-        </div>
-
-        <!-- Data & Backup Section -->
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33] shrink-0"
-            >
-              <Database class="size-5 text-gray-400" />
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("settings.backup.title") }}
-              </p>
-              <p class="text-gray-400 text-xs">
-                {{ $t("settings.backup.description") }}
-              </p>
-            </div>
-          </div>
-          <div class="flex gap-2 w-full sm:w-auto shrink-0 justify-end">
-            <input
-              ref="fileInputRef"
-              type="file"
-              accept=".json"
-              class="hidden"
-              @change="handleFileImport"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 active:scale-[0.97]"
-              @click="triggerFileInput"
-            >
-              <Upload class="size-4 mr-2" />
-              {{ $t("settings.backup.importButton") }}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 active:scale-[0.97]"
-              @click="handleExport"
-            >
-              <Download class="size-4 mr-2" />
-              {{ $t("settings.backup.exportButton") }}
-            </Button>
-          </div>
-        </div>
-
-        <!-- Accounts / Platforms Section -->
-        <div class="flex flex-col gap-4 border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
-          <div class="flex items-center gap-3 pb-1 border-b border-[#2a2d33]/30">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33] shrink-0"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="size-5 text-gray-400"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("settings.auth.title") }}
-              </p>
-              <p class="text-gray-400 text-xs">
-                {{ $t("settings.auth.description") }}
-              </p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <button
-              v-for="platform in authPlatforms"
-              :key="platform.id"
-              class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#14161a] text-xs font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-50"
-              disabled
-            >
-              <span :style="{ color: platform.color }" class="shrink-0">
-                <component :is="platform.icon" :size="14" />
-              </span>
-              <span class="text-white font-medium">{{ platform.name }}</span>
-              <span
-                class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-500 bg-white/5 border border-white/5"
-              >
-                {{ $t("settings.auth.disconnected") }}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Help / Tour Section -->
-        <div
-          class="flex items-center justify-between border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <HelpCircle class="size-5 text-gray-400" />
-            </div>
-            <div>
-              <p class="text-white text-sm font-medium">
-                {{ $t("settings.help.title") }}
-              </p>
-              <p class="text-gray-400 text-xs">
-                {{ $t("settings.help.description") }}
-              </p>
-            </div>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 active:scale-[0.97]"
-            @click="startTour"
+          <TabsTrigger
+            value="dados"
+            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
-            {{ $t("settings.help.showTourButton") }}
-          </Button>
-        </div>
-      </div>
+            <Database class="size-4" />
+            {{ $t("settings.tabs.data") }}
+          </TabsTrigger>
+          <TabsTrigger
+            value="conexoes"
+            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+          >
+            <Link class="size-4" />
+            {{ $t("settings.tabs.connections") }}
+          </TabsTrigger>
+          <TabsTrigger
+            value="recursos"
+            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+          >
+            <Puzzle class="size-4" />
+            {{ $t("settings.tabs.resources") }}
+          </TabsTrigger>
+        </TabsList>
 
-      <DialogFooter class="pt-5 border-t border-[#2a2d33]/50">
+        <div class="flex-1 overflow-y-auto mt-4 pr-1 scrollbar-thin">
+          <TabsContent value="geral" class="space-y-6 mt-0 outline-none">
+            <!-- Language Section -->
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 px-1">
+                <Globe class="size-4 text-gray-400" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.language.title") }}
+                  </h3>
+                  <p class="text-gray-400 text-xs">{{ $t("settings.language.description") }}</p>
+                </div>
+              </div>
+              <div
+                class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-start"
+              >
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 w-full">
+                  <button
+                    v-for="lang in languages"
+                    :key="lang.code"
+                    class="flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer w-full"
+                    :class="
+                      locale === lang.code
+                        ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    "
+                    @click="changeLanguage(lang.code)"
+                  >
+                    <component :is="lang.flag" :size="14" />
+                    <span>{{ lang.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notifications Section -->
+            <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-2 px-1">
+                <Bell class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.notifications.title") }}
+                  </h3>
+                  <p class="text-gray-400 text-xs">
+                    {{ $t("settings.notifications.description") }}
+                  </p>
+                </div>
+              </div>
+              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+                <Switch v-model="notificationsEnabled" />
+              </div>
+            </div>
+
+            <!-- Updates Section -->
+            <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-2 px-1">
+                <Download class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">{{ $t("settings.updates.title") }}</h3>
+                  <p class="text-gray-400 text-xs">{{ $t("settings.updates.description") }}</p>
+                </div>
+              </div>
+              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
+                  :disabled="isChecking"
+                  @click="handleCheckUpdates"
+                >
+                  <RefreshCw class="size-4 mr-2" :class="{ 'animate-spin': isChecking }" />
+                  {{
+                    isChecking
+                      ? $t("settings.updates.checking")
+                      : $t("settings.updates.checkButton")
+                  }}
+                </Button>
+              </div>
+            </div>
+
+            <!-- Help / Tour Section -->
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-2 px-1">
+                <HelpCircle class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">{{ $t("settings.help.title") }}</h3>
+                  <p class="text-gray-400 text-xs">{{ $t("settings.help.description") }}</p>
+                </div>
+              </div>
+              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
+                  @click="startTour"
+                >
+                  {{ $t("settings.help.showTourButton") }}
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="conexoes" class="space-y-6 mt-0 outline-none">
+            <!-- Accounts / Platforms Section -->
+            <div class="space-y-2 relative">
+              <div class="flex items-center gap-2 px-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="size-4 text-gray-400"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-white text-sm font-medium">{{ $t("settings.auth.title") }}</h3>
+                    <span class="text-[10px] text-gray-500 font-medium"
+                      >({{ $t("common.comingSoon") }})</span
+                    >
+                  </div>
+                  <p class="text-gray-400 text-xs mt-0.5">{{ $t("settings.auth.description") }}</p>
+                </div>
+              </div>
+              <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
+                  <button
+                    v-for="platform in authPlatforms"
+                    :key="platform.id"
+                    class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] text-xs font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-50"
+                    disabled
+                  >
+                    <span :style="{ color: platform.color }" class="shrink-0">
+                      <component :is="platform.icon" :size="14" />
+                    </span>
+                    <span class="text-white font-medium">{{ platform.name }}</span>
+                    <span
+                      class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-500 bg-white/5 border border-white/5"
+                    >
+                      {{ $t("settings.auth.disconnected") }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="dados" class="space-y-6 mt-0 outline-none">
+            <!-- Data & Backup Section -->
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-2 px-1">
+                <Database class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">{{ $t("settings.backup.title") }}</h3>
+                  <p class="text-gray-400 text-xs">{{ $t("settings.backup.description") }}</p>
+                </div>
+              </div>
+              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center gap-2">
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept=".json"
+                  class="hidden"
+                  @change="handleFileImport"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
+                  @click="triggerFileInput"
+                >
+                  <Upload class="size-4 mr-2" />
+                  {{ $t("settings.backup.importButton") }}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
+                  @click="handleExport"
+                >
+                  <Download class="size-4 mr-2" />
+                  {{ $t("settings.backup.exportButton") }}
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="recursos" class="space-y-6 mt-0 outline-none">
+            <!-- Live Transcription Section -->
+            <div v-if="isRunningInTauri && isSupported" class="space-y-2">
+              <div class="flex items-center gap-2 px-1">
+                <Captions class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-white text-sm font-medium">
+                      {{ $t("settings.transcription.title") }}
+                    </h3>
+                  </div>
+                  <p class="text-gray-400 text-xs mt-0.5">
+                    {{ $t("settings.transcription.description") }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl space-y-4">
+                <!-- Active Configuration -->
+                <div
+                  v-if="installedModels.length > 0"
+                  class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#2a2d33]/50"
+                >
+                  <div class="flex items-center gap-2 flex-1">
+                    <select
+                      v-model="captionMode"
+                      data-testid="transcription-mode-select"
+                      class="bg-[#1e2127] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px]"
+                    >
+                      <option value="original">
+                        {{ $t("settings.transcription.captionModeOriginal") }}
+                      </option>
+                      <option value="translate">
+                        {{ $t("settings.transcription.captionModeTranslate") }}
+                      </option>
+                    </select>
+                    <div class="text-[10px] text-gray-500">
+                      {{ $t("settings.transcription.captionModeLabel") }}
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3 shrink-0">
+                    <span class="text-xs text-gray-400">{{
+                      $t("settings.transcription.enableToggle")
+                    }}</span>
+                    <Switch v-model="isEnabled" data-testid="transcription-enable-toggle" />
+                  </div>
+                </div>
+
+                <!-- Models List -->
+                <div class="space-y-2">
+                  <div class="text-xs font-medium text-gray-400 mb-2">
+                    {{ $t("settings.transcription.modelLabel") }}
+                  </div>
+                  <div
+                    v-for="model in AVAILABLE_MODELS"
+                    :key="model.id"
+                    class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-[#2a2d33]/60 bg-[#1e2127]/50"
+                  >
+                    <div class="flex-1">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-sm font-medium text-white">{{ model.name }}</span>
+                        <span class="text-[10px] text-gray-500 font-mono">{{ model.size }}</span>
+                        <span
+                          v-if="installedModels.includes(model.id)"
+                          class="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
+                          >{{ $t("settings.transcription.modelInstalled") }}</span
+                        >
+                        <span v-if="model.id === 'base'" class="text-[10px] text-gray-400"
+                          >({{ $t("settings.transcription.recommendedBadge") }})</span
+                        >
+                      </div>
+                      <p class="text-[10px] text-gray-400 mt-1">{{ $t(model.tKey) }}</p>
+                    </div>
+
+                    <div class="shrink-0 flex items-center gap-2">
+                      <template v-if="downloadingModel === model.id">
+                        <div class="w-[120px] space-y-1.5">
+                          <div class="flex justify-between text-[9px] text-gray-400 font-mono">
+                            <span
+                              >{{ (downloadProgress.downloaded / 1024 / 1024).toFixed(1) }}M</span
+                            >
+                            <span>{{ downloadProgress.percent.toFixed(0) }}%</span>
+                          </div>
+                          <div class="h-1 w-full bg-[#2a2d33] rounded-full overflow-hidden">
+                            <div
+                              class="h-full bg-blue-500 transition-all duration-300"
+                              :style="{ width: `${downloadProgress.percent}%` }"
+                            ></div>
+                          </div>
+                        </div>
+                      </template>
+                      <template v-else-if="installedModels.includes(model.id)">
+                        <span
+                          v-if="selectedModel === model.id"
+                          class="flex items-center text-[10px] px-3 rounded-md bg-[#2a2d33]/20 text-green-400 border border-green-500/20 uppercase tracking-wider font-mono h-9 select-none"
+                        >
+                          <Check class="size-3.5 mr-1" />
+                          {{ $t("settings.transcription.modelSelected") }}
+                        </span>
+                        <Button
+                          v-else
+                          variant="outline"
+                          size="sm"
+                          class="border-[#2a2d33] bg-[#2a2d33]/30 text-gray-300 hover:text-white hover:bg-[#3a3f4b] hover:border-[#4a4f5b]"
+                          :disabled="isDownloading"
+                          @click="selectedModel = model.id"
+                        >
+                          {{ $t("settings.transcription.modelSelect") }}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/10 px-2"
+                          :disabled="isDownloading"
+                          @click="deleteModel(model.id)"
+                        >
+                          <Trash2 class="size-4" />
+                        </Button>
+                      </template>
+                      <template v-else>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33]"
+                          :disabled="isDownloading"
+                          @click="downloadModel(model.id)"
+                        >
+                          <Download class="size-4 mr-1.5" />
+                          {{ $t("settings.transcription.modelDownload") }}
+                        </Button>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </div>
+      </Tabs>
+
+      <DialogFooter class="pt-5 mt-2 border-t border-[#2a2d33]/50">
         <DialogClose as-child>
           <Button
             variant="outline"

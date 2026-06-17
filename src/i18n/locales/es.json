@@ -61,12 +61,49 @@
       "importConfirmCancel": "Cancelar",
       "importSuccess": "Configuración importada con éxito",
       "importError": "Archivo de copia de seguridad no válido",
-      "exportSuccess": "Configuración exportada con éxito"
+      "exportSuccess": "Configuración exportada exitosamente"
+    },
+    "transcription": {
+      "title": "Transcripción en Vivo",
+      "description": "Subtítulos generados en tiempo real usando machine learning local.",
+      "macosWarning": "La captura de audio no es compatible en macOS sin el controlador virtual BlackHole.",
+      "statusNotInstalled": "No Instalado",
+      "statusDownloading": "Descargando...",
+      "statusReady": "Listo",
+      "statusActive": "Activo",
+      "modelLabel": "Modelo",
+      "modelTiny": "Inferencia más rápida, menor precisión, más alucinaciones.",
+      "modelBase": "Recomendado. Mejor equilibrio entre velocidad y calidad. Adecuado para la mayoría de los sistemas.",
+      "modelSmall": "Mayor precisión, mayor uso de CPU, puede ser lento en procesadores antiguos.",
+      "downloadButton": "Descargar Modelo",
+      "downloadingButton": "Descargando...",
+      "captionModeLabel": "Modo de Subtítulos",
+      "captionModeOriginal": "Idioma Original",
+      "captionModeTranslate": "Traducir al Inglés",
+      "enableToggle": "Habilitar Transcripción",
+      "modelInstalled": "Instalado",
+      "modelSelected": "Seleccionado",
+      "modelSelect": "Seleccionar",
+      "modelDownload": "Descargar",
+      "startedTitle": "Transcripción Iniciada",
+      "startedModel": "Modelo: {model}",
+      "startedMode": "Modo: {mode}",
+      "stoppedTitle": "Transcripción Detenida",
+      "activeIndicator": "Transcripción Activa",
+      "recommendedBadge": "Recomendado",
+      "statusDisabled": "Desactivado",
+      "modeLabel": "Modo"
     },
     "help": {
       "title": "Ayuda",
       "description": "¿Necesitas ayuda o quieres repasar las funciones?",
       "showTourButton": "Mostrar tour de inducción"
+    },
+    "tabs": {
+      "general": "General",
+      "data": "Datos",
+      "connections": "Conexiones",
+      "resources": "Características"
     }
   },
   "share": {
@@ -105,10 +142,22 @@
     "selectPlaceholder": "Seleccione el chat de la stream",
     "selectPrompt": "Seleccione una stream para ver el chat.",
     "noStreams": "No hay streams disponibles.",
-    "noStreamsHint": "Agregue una stream para ver el chat."
+    "noStreamsHint": "Agregue una stream para ver el chat.",
+    "tabs": {
+      "chat": "Chat",
+      "transcript": "Transcripción"
+    },
+    "transcript": {
+      "emptyState": "No hay historial de transcripción.",
+      "emptyStateHint": "Habilite la Transcripción en Vivo para generar subtítulos.",
+      "copy": "Copiar",
+      "clear": "Limpiar",
+      "copied": "¡Copiado!"
+    }
   },
   "common": {
-    "close": "Cerrar"
+    "close": "Cerrar",
+    "comingSoon": "Próximamente"
   },
   "toasts": {
     "add": {
@@ -168,16 +217,23 @@
       "chatActive": "Chat Activo"
     },
     "step3": {
+      "title": "Sugerencias de Stream por Categoría",
+      "description": "Filtra las streams sugeridas por categoría usando los chips en la parte superior. Haz clic en cualquier chip para cargar más streams en vivo de Twitch y Kick para esa categoría, en segundo plano.",
+      "caption": "Las streams de ambas plataformas se cargan automáticamente y quedan en caché mientras navegas."
+    },
+    "step4": {
+      "title": "Transcripción en Vivo",
+      "description": "Genera subtítulos en tiempo real para el audio del stream directamente en tu computadora usando modelos de IA locales. Descarga un modelo Whisper, elige entre el idioma original o traducción al inglés y mira los subtítulos sobre el stream enfocado.",
+      "captionStr": "Este es un ejemplo de subtítulos locales...",
+      "note": "El rendimiento depende de su CPU y del modelo seleccionado. El modelo Base se recomienda para la mayoría de los sistemas."
+    },
+    "step5": {
       "title": "Atajos de Teclado",
       "description": "Usa estos atajos rápidos para controlar tus transmisiones y chats de manera eficiente:",
       "add": "Abrir diálogo para añadir transmisión",
       "screenshot": "Tomar captura de pantalla de la transmisión enfocada",
-      "chat": "Cambiar al chat de la transmisión {keys}"
-    },
-    "step4": {
-      "title": "Sugerencias de Stream por Categoría",
-      "description": "Filtra las streams sugeridas por categoría usando los chips en la parte superior. Haz clic en cualquier chip para cargar más streams en vivo de Twitch y Kick para esa categoría, en segundo plano.",
-      "caption": "Las streams de ambas plataformas se cargan automáticamente y quedan en caché mientras navegas."
+      "chat": "Cambiar al chat de la transmisión {keys}",
+      "screenshotTitle": "Captura de Pantalla"
     }
   }
 }

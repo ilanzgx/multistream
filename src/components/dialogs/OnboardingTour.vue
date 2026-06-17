@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { TwitchIcon, KickIcon, YoutubeIcon } from "@/components/icons";
-import { ChevronLeft, ChevronRight, Check } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, Check, Mic } from "lucide-vue-next";
+import { useTranscription } from "@/composables/useTranscription";
 
 const props = withDefaults(
   defineProps<{
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const currentStep = ref(1);
+const { isSupported } = useTranscription();
 
 // Reset step to 1 when dialog is opened
 watch(
@@ -52,8 +54,12 @@ function handleEscapeKey(e: Event) {
 }
 
 function handleNext() {
-  if (currentStep.value < 4) {
-    currentStep.value++;
+  if (currentStep.value < 5) {
+    let nextStep = currentStep.value + 1;
+    if (nextStep === 4 && !isSupported.value) {
+      nextStep++;
+    }
+    currentStep.value = nextStep;
   } else {
     handleFinish();
   }
@@ -61,7 +67,11 @@ function handleNext() {
 
 function handleBack() {
   if (currentStep.value > 1) {
-    currentStep.value--;
+    let prevStep = currentStep.value - 1;
+    if (prevStep === 4 && !isSupported.value) {
+      prevStep--;
+    }
+    currentStep.value = prevStep;
   }
 }
 
@@ -94,7 +104,7 @@ function handleFinish() {
       </DialogHeader>
 
       <!-- Step Content Area -->
-      <div class="relative py-4 min-h-65 flex flex-col justify-between">
+      <div class="relative py-4 h-[380px] flex flex-col justify-between">
         <Transition name="fade" mode="out-in">
           <div :key="currentStep" class="flex-1 flex flex-col gap-4">
             <!-- Step Description -->
@@ -197,9 +207,66 @@ function handleFinish() {
                 </div>
               </div>
 
-              <!-- STEP 3 GRAPHIC: Shortcuts Grid -->
+              <!-- STEP 4 GRAPHIC: Live Transcription -->
               <div
-                v-else-if="currentStep === 3"
+                v-else-if="currentStep === 4"
+                class="relative flex flex-col items-center justify-center p-6 bg-[#1f2227]/30 rounded-2xl border border-[#2a2d33]/50 overflow-hidden w-full min-h-40 group"
+              >
+                <!-- Tech grid pattern -->
+                <div
+                  class="absolute inset-0 bg-[radial-gradient(#2a2d33_1px,transparent_1px)] bg-size-[16px_16px] opacity-40"
+                />
+
+                <div class="relative w-full max-w-sm flex flex-col gap-3">
+                  <!-- Settings mockup -->
+                  <div
+                    class="flex items-center justify-between px-4 py-3 bg-[#14161a] border border-[#2a2d33] rounded-xl shadow-md"
+                  >
+                    <div class="flex items-center gap-3">
+                      <div class="p-2 bg-[#2a2d33]/40 rounded-lg">
+                        <Mic class="size-4 text-green-400" />
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="text-xs text-white font-medium">{{
+                          $t("onboarding.step4.title")
+                        }}</span>
+                        <span class="text-[10px] text-gray-400"
+                          >{{ $t("settings.title") }} → {{ $t("settings.tabs.resources") }}</span
+                        >
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
+                        >{{ $t("settings.transcription.modelInstalled") }}</span
+                      >
+                    </div>
+                  </div>
+
+                  <!-- Captions mockup on a stream -->
+                  <div
+                    class="relative w-full h-16 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-end justify-center pb-2 shadow-inner"
+                  >
+                    <div
+                      class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"
+                    ></div>
+                    <p
+                      class="relative text-[10px] sm:text-xs font-medium text-white px-2 py-0.5 bg-black/60 rounded text-center backdrop-blur-sm border border-white/10"
+                    >
+                      {{ $t("onboarding.step4.captionStr") }}
+                    </p>
+                  </div>
+
+                  <!-- Note -->
+                  <p class="relative text-[10px] text-gray-500 text-center mt-1">
+                    {{ $t("onboarding.step4.note") }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- STEP 5 GRAPHIC: Shortcuts Grid -->
+              <div
+                v-else-if="currentStep === 5"
                 class="relative grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full p-4 bg-[#1f2227]/30 rounded-2xl border border-[#2a2d33]/50 overflow-hidden"
               >
                 <!-- Tech grid pattern -->
@@ -220,7 +287,7 @@ function handleFinish() {
                       $t("onboarding.step1.title")
                     }}</span>
                     <span class="text-[10px] text-gray-400 mt-0.5 leading-snug">{{
-                      $t("onboarding.step3.add")
+                      $t("onboarding.step5.add")
                     }}</span>
                   </div>
                 </div>
@@ -234,9 +301,11 @@ function handleFinish() {
                     >S</kbd
                   >
                   <div class="flex flex-col">
-                    <span class="text-xs font-semibold text-white">Screenshot</span>
+                    <span class="text-xs font-semibold text-white">{{
+                      $t("onboarding.step5.screenshotTitle")
+                    }}</span>
                     <span class="text-[10px] text-gray-400 mt-0.5 leading-snug">{{
-                      $t("onboarding.step3.screenshot")
+                      $t("onboarding.step5.screenshot")
                     }}</span>
                   </div>
                 </div>
@@ -261,14 +330,14 @@ function handleFinish() {
                       $t("onboarding.step2.title")
                     }}</span>
                     <span class="text-[10px] text-gray-400 mt-0.5 leading-snug">{{
-                      $t("onboarding.step3.chat", { keys: "1-9" })
+                      $t("onboarding.step5.chat", { keys: "1-9" })
                     }}</span>
                   </div>
                 </div>
               </div>
-              <!-- STEP 4 GRAPHIC: Category Filters -->
+              <!-- STEP 3 GRAPHIC: Category Filters -->
               <div
-                v-else-if="currentStep === 4"
+                v-else-if="currentStep === 3"
                 class="relative flex flex-col gap-4 w-full p-5 bg-[#1f2227]/30 rounded-2xl border border-[#2a2d33]/50 overflow-hidden"
               >
                 <!-- Tech grid pattern -->
@@ -339,7 +408,7 @@ function handleFinish() {
 
                 <!-- Caption -->
                 <p class="relative text-[10px] text-gray-500 text-center">
-                  {{ $t("onboarding.step4.caption") }}
+                  {{ $t("onboarding.step3.caption") }}
                 </p>
               </div>
             </div>
@@ -352,7 +421,8 @@ function handleFinish() {
         <!-- Dots indicators -->
         <div class="flex items-center gap-1.5">
           <button
-            v-for="step in 4"
+            v-for="step in 5"
+            v-show="step !== 4 || isSupported"
             :key="step"
             class="size-2 rounded-full transition-all duration-300"
             :class="[step === currentStep ? 'bg-white w-4' : 'bg-gray-600 hover:bg-gray-400']"
@@ -364,7 +434,7 @@ function handleFinish() {
         <!-- Action buttons -->
         <div class="flex items-center gap-2">
           <Button
-            v-if="currentStep < 4"
+            v-if="currentStep < 5"
             variant="ghost"
             size="sm"
             class="text-gray-400 hover:text-white hover:bg-white/5 active:scale-[0.97] transition-all"
@@ -389,7 +459,7 @@ function handleFinish() {
             class="bg-white text-[#14161a] hover:bg-gray-200 active:scale-[0.97] transition-all font-semibold"
             @click="handleNext"
           >
-            <template v-if="currentStep === 4">
+            <template v-if="currentStep === 5">
               <Check class="size-4 mr-1" />
               {{ $t("onboarding.finish") }}
             </template>

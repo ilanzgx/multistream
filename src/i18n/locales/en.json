@@ -67,6 +67,43 @@
       "importSuccess": "Configuration imported successfully",
       "importError": "Invalid configuration backup file",
       "exportSuccess": "Configuration exported successfully"
+    },
+    "transcription": {
+      "title": "Live Transcription",
+      "description": "Real-time captions generated using local machine learning.",
+      "macosWarning": "Audio capture is unsupported on macOS without BlackHole virtual driver.",
+      "statusNotInstalled": "Not Installed",
+      "statusDownloading": "Downloading...",
+      "statusReady": "Ready",
+      "statusActive": "Active",
+      "modelLabel": "Model",
+      "modelTiny": "Fastest inference, lower accuracy, more hallucinations.",
+      "modelBase": "Recommended. Best balance of speed and quality. Suitable for most systems.",
+      "modelSmall": "Highest accuracy, higher CPU usage, may be slow on older processors.",
+      "downloadButton": "Download Model",
+      "downloadingButton": "Downloading...",
+      "captionModeLabel": "Caption Mode",
+      "captionModeOriginal": "Original Language",
+      "captionModeTranslate": "Translate to English",
+      "enableToggle": "Enable Transcription",
+      "modelInstalled": "Installed",
+      "modelSelected": "Selected",
+      "modelSelect": "Select",
+      "modelDownload": "Download",
+      "startedTitle": "Live Transcription Started",
+      "startedModel": "Model: {model}",
+      "startedMode": "Mode: {mode}",
+      "stoppedTitle": "Live Transcription Stopped",
+      "activeIndicator": "Live Transcription Active",
+      "recommendedBadge": "Recommended",
+      "statusDisabled": "Disabled",
+      "modeLabel": "Mode"
+    },
+    "tabs": {
+      "general": "General",
+      "data": "Data",
+      "connections": "Connections",
+      "resources": "Features"
     }
   },
   "share": {
@@ -105,10 +142,22 @@
     "selectPlaceholder": "Select stream chat",
     "selectPrompt": "Select a stream to view chat.",
     "noStreams": "No streams available.",
-    "noStreamsHint": "Add a stream to view chat."
+    "noStreamsHint": "Add a stream to view chat.",
+    "tabs": {
+      "chat": "Chat",
+      "transcript": "Transcript"
+    },
+    "transcript": {
+      "emptyState": "No transcription history yet.",
+      "emptyStateHint": "Enable Live Transcription to start generating captions.",
+      "copy": "Copy",
+      "clear": "Clear",
+      "copied": "Copied!"
+    }
   },
   "common": {
-    "close": "Close"
+    "close": "Close",
+    "comingSoon": "Coming soon"
   },
   "toasts": {
     "add": {
@@ -168,16 +217,23 @@
       "chatActive": "Chat Active"
     },
     "step3": {
+      "title": "Stream Suggestions by Category",
+      "description": "Filter suggested streams by category using the chips at the top. Click any chip to instantly load more live streams from Twitch and Kick for that category, in the background.",
+      "caption": "Streams from both platforms load automatically and stay cached as you browse."
+    },
+    "step4": {
+      "title": "Live Transcription",
+      "description": "Generate real-time captions for stream audio directly on your computer using local AI models. Download a Whisper model, choose between original language or English translation, and view captions over the focused stream.",
+      "captionStr": "This is an example of local captions...",
+      "note": "Performance depends on your CPU and the selected model. The Base model is recommended for most systems."
+    },
+    "step5": {
       "title": "Keyboard Shortcuts",
       "description": "Use these quick shortcuts to control your streams and chats efficiently:",
       "add": "Open add stream dialog",
       "screenshot": "Take screenshot of focused stream",
-      "chat": "Switch to stream chat {keys}"
-    },
-    "step4": {
-      "title": "Stream Suggestions by Category",
-      "description": "Filter suggested streams by category using the chips at the top. Click any chip to instantly load more live streams from Twitch and Kick for that category, in the background.",
-      "caption": "Streams from both platforms load automatically and stay cached as you browse."
+      "chat": "Switch to stream chat {keys}",
+      "screenshotTitle": "Screenshot"
     }
   }
 }
