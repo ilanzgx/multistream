@@ -429,7 +429,8 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                     <select
                       v-model="captionMode"
                       data-testid="transcription-mode-select"
-                      class="bg-[#1e2127] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px]"
+                      class="bg-[#1e2127] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="isDownloading"
                     >
                       <option value="original">
                         {{ $t("settings.transcription.captionModeOriginal") }}
@@ -446,7 +447,11 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                     <span class="text-xs text-gray-400">{{
                       $t("settings.transcription.enableToggle")
                     }}</span>
-                    <Switch v-model="isEnabled" data-testid="transcription-enable-toggle" />
+                    <Switch
+                      v-model="isEnabled"
+                      data-testid="transcription-enable-toggle"
+                      :disabled="isDownloading"
+                    />
                   </div>
                 </div>
 
