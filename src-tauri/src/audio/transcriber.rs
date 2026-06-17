@@ -52,6 +52,20 @@ impl Drop for TranscriptionHandle {
 /// Using `Mutex<Option<...>>` makes start/stop idempotent and thread-safe.
 pub struct TranscriptionState(pub Mutex<Option<TranscriptionHandle>>);
 
+/// RAII guard to safely ensure temporary files are deleted when they go out of scope.
+struct TempFileGuard {
+    path: PathBuf,
+    keep: bool,
+}
+
+impl Drop for TempFileGuard {
+    fn drop(&mut self) {
+        if !self.keep {
+            let _ = fs::remove_file(&self.path);
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -428,6 +442,16 @@ pub fn start_transcription(
 
                 const KEEP_DEBUG_AUDIO: bool = false;
 
+                let _orig_guard = TempFileGuard {
+                    path: orig_wav_path.clone(),
+                    keep: KEEP_DEBUG_AUDIO,
+                };
+                
+                let _resampled_guard = TempFileGuard {
+                    path: resampled_wav_path.clone(),
+                    keep: KEEP_DEBUG_AUDIO,
+                };
+
                 if KEEP_DEBUG_AUDIO {
                     let _ = super::capture::write_wav(
                         &orig_wav_path,
@@ -592,8 +616,6 @@ pub fn start_transcription(
                     log::info!("WAV files saved for diagnostics at:");
                     log::info!("  Original: {}", orig_wav_path.display());
                     log::info!("  Resampled: {}", resampled_wav_path.display());
-                } else {
-                    let _ = std::fs::remove_file(&resampled_wav_path);
                 }
             }
         }
