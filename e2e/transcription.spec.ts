@@ -33,9 +33,14 @@ test.describe("Live Transcription UI E2E Test", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
+    // Act: Switch to the Features tab where Transcription lives
+    await page.getByRole("tab", { name: "Features" }).click();
+
     // Assert: Transcription section is visible
-    await expect(page.getByText("Live Transcription")).toBeVisible();
-    await expect(page.getByText("Real-time AI captions for streams")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Live Transcription" })).toBeVisible();
+    await expect(
+      page.getByText("Real-time captions generated using local machine learning.")
+    ).toBeVisible();
 
     // Assert: Since model 'base' is mocked as installed, the mode select and toggle should appear
     await expect(page.getByTestId("transcription-mode-select")).toBeVisible();
