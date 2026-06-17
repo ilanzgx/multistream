@@ -101,6 +101,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             send_notification,
             save_screenshot,
+            audio::transcriber::is_transcription_supported,
             audio::transcriber::download_whisper_model,
             audio::transcriber::delete_whisper_model,
             audio::transcriber::get_transcription_status,

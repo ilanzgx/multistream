@@ -87,6 +87,13 @@ fn timestamp_ms() -> u64 {
 // Commands
 // ---------------------------------------------------------------------------
 
+pub const TRANSCRIPTION_SUPPORTED: bool = cfg!(target_os = "windows");
+
+#[tauri::command]
+pub fn is_transcription_supported() -> bool {
+    TRANSCRIPTION_SUPPORTED
+}
+
 /// Downloads the GGML model file for the given model name from HuggingFace,
 /// streaming it to disk while emitting `transcription:download-progress` events.
 ///
@@ -95,6 +102,10 @@ fn timestamp_ms() -> u64 {
 /// Supported model names: `tiny`, `base`, `small`
 #[tauri::command]
 pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Result<(), String> {
+    if !TRANSCRIPTION_SUPPORTED {
+        return Err("Live transcription is currently supported only on Windows".to_string());
+    }
+
     let url =
         format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model_name}.bin");
 
@@ -154,6 +165,10 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
 /// Deletes the GGML model file from disk.
 #[tauri::command]
 pub async fn delete_whisper_model(model_name: String, app: AppHandle) -> Result<(), String> {
+    if !TRANSCRIPTION_SUPPORTED {
+        return Err("Live transcription is currently supported only on Windows".to_string());
+    }
+
     let dest_path = model_path(&app, &model_name)?;
     if dest_path.exists() {
         fs::remove_file(dest_path).map_err(|e| format!("failed to delete model file: {e}"))?;
@@ -168,6 +183,10 @@ pub fn get_transcription_status(
     app: AppHandle,
     state: State<'_, TranscriptionState>,
 ) -> Result<serde_json::Value, String> {
+    if !TRANSCRIPTION_SUPPORTED {
+        return Err("Live transcription is currently supported only on Windows".to_string());
+    }
+
     let dir = models_dir(&app)?;
 
     // Collect model names from files matching `ggml-*.bin`
@@ -234,6 +253,10 @@ pub fn start_transcription(
     app: AppHandle,
     state: State<'_, TranscriptionState>,
 ) -> Result<(), String> {
+    if !TRANSCRIPTION_SUPPORTED {
+        return Err("Live transcription is currently supported only on Windows".to_string());
+    }
+
     let mut guard = state.0.lock().map_err(|_| "state lock poisoned")?;
 
     // Stop any existing session before starting a new one.
@@ -591,6 +614,10 @@ pub fn start_transcription(
 /// Calling this when no session is active is a safe no-op.
 #[tauri::command]
 pub fn stop_transcription(state: State<'_, TranscriptionState>) -> Result<(), String> {
+    if !TRANSCRIPTION_SUPPORTED {
+        return Err("Live transcription is currently supported only on Windows".to_string());
+    }
+
     let mut guard = state.0.lock().map_err(|_| "state lock poisoned")?;
 
     if let Some(mut handle) = guard.take() {
