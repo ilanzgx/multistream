@@ -83,8 +83,8 @@ const _useTranscription = () => {
       await invoke("download_whisper_model", { modelName });
       await updateStatus();
 
-      // Auto-select the newly downloaded model if none was installed before
-      if (!selectedModel.value) {
+      // Auto-select the newly downloaded model if none was installed before or the current selection is invalid
+      if (!selectedModel.value || !installedModels.value.includes(selectedModel.value)) {
         selectedModel.value = modelName;
       }
     } catch (e) {
