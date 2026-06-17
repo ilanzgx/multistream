@@ -24,7 +24,7 @@ pub fn start_loopback() -> Result<CaptureSession, String> {
     let sample_rate = config.sample_rate().0;
     let channels = config.channels();
 
-    let (tx, rx) = mpsc::channel();
+    let (tx, rx) = mpsc::sync_channel(48000 * 2 * 10); // 10s of bounded buffering
 
     let err_fn = |err| log::error!("an error occurred on loopback audio stream: {}", err);
 
@@ -34,7 +34,7 @@ pub fn start_loopback() -> Result<CaptureSession, String> {
                 &config.into(),
                 move |data: &[f32], _: &_| {
                     for &sample in data {
-                        let _ = tx.send(sample);
+                        let _ = tx.try_send(sample);
                     }
                 },
                 err_fn,
@@ -46,7 +46,7 @@ pub fn start_loopback() -> Result<CaptureSession, String> {
                 &config.into(),
                 move |data: &[i16], _: &_| {
                     for &sample in data {
-                        let _ = tx.send(sample as f32 / i16::MAX as f32);
+                        let _ = tx.try_send(sample as f32 / i16::MAX as f32);
                     }
                 },
                 err_fn,
@@ -58,7 +58,7 @@ pub fn start_loopback() -> Result<CaptureSession, String> {
                 &config.into(),
                 move |data: &[u16], _: &_| {
                     for &sample in data {
-                        let _ = tx.send(
+                        let _ = tx.try_send(
                             (sample as f32 - u16::MAX as f32 / 2.0) / (u16::MAX as f32 / 2.0),
                         );
                     }
@@ -123,7 +123,12 @@ pub fn resample_mono(input: &[f32], in_rate: u32, out_rate: u32) -> Vec<f32> {
 }
 
 /// Writes 16-bit PCM samples to a WAV file with dynamic channels and sample rate.
-pub fn write_wav(path: &Path, samples: &[f32], channels: u16, sample_rate: u32) -> Result<(), String> {
+pub fn write_wav(
+    path: &Path,
+    samples: &[f32],
+    channels: u16,
+    sample_rate: u32,
+) -> Result<(), String> {
     let spec = WavSpec {
         channels,
         sample_rate,

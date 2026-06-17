@@ -37,6 +37,17 @@ pub struct TranscriptionHandle {
     pub sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
 }
 
+impl Drop for TranscriptionHandle {
+    fn drop(&mut self) {
+        self.running.store(false, Ordering::SeqCst);
+        if let Ok(mut child_guard) = self.sidecar_child.lock() {
+            if let Some(child) = child_guard.take() {
+                let _ = child.kill();
+            }
+        }
+    }
+}
+
 /// Tauri-managed state that holds an optional running transcription handle.
 /// Using `Mutex<Option<...>>` makes start/stop idempotent and thread-safe.
 pub struct TranscriptionState(pub Mutex<Option<TranscriptionHandle>>);
@@ -226,9 +237,11 @@ pub fn start_transcription(
     let mut guard = state.0.lock().map_err(|_| "state lock poisoned")?;
 
     // Stop any existing session before starting a new one.
-    if let Some(existing) = guard.take() {
-        existing.running.store(false, Ordering::SeqCst);
-        if let Some(thread) = existing.thread {
+    if let Some(mut existing) = guard.take() {
+        let thread = existing.thread.take();
+        drop(existing); // This triggers the Drop trait to kill the child and set `running` to false
+
+        if let Some(thread) = thread {
             let _ = thread.join();
         }
     }
@@ -277,57 +290,85 @@ pub fn start_transcription(
         let mut mono_16k_buffer = Vec::with_capacity(samples_per_chunk as usize);
         let mut original_buffer = Vec::new();
 
+        let max_backlog_samples = target_sample_rate * 15; // 15 seconds
+
         while running_clone.load(Ordering::SeqCst) {
             let mut new_samples = Vec::new();
-            while let Ok(sample) = session.rx.try_recv() {
-                new_samples.push(sample);
+
+            match session
+                .rx
+                .recv_timeout(std::time::Duration::from_millis(100))
+            {
+                Ok(sample) => {
+                    new_samples.push(sample);
+                    while let Ok(s) = session.rx.try_recv() {
+                        new_samples.push(s);
+                    }
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                    log::error!("Audio capture channel disconnected");
+                    break;
+                }
             }
 
             if new_samples.is_empty() {
-                std::thread::sleep(std::time::Duration::from_millis(50));
                 continue;
             }
 
-            if !new_samples.is_empty() {
-                original_buffer.extend_from_slice(&new_samples);
-            }
+            original_buffer.extend_from_slice(&new_samples);
 
             let mono = super::capture::to_mono(&new_samples, session.channels);
             let resampled =
                 super::capture::resample_mono(&mono, session.sample_rate, target_sample_rate);
             mono_16k_buffer.extend(resampled);
 
+            // Backlog protection
+            if mono_16k_buffer.len() > max_backlog_samples as usize {
+                let excess = mono_16k_buffer.len() - max_backlog_samples as usize;
+                log::warn!(
+                    "Audio backlog exceeded limit, dropping oldest {:.2}s of samples",
+                    excess as f32 / target_sample_rate as f32
+                );
+                mono_16k_buffer.drain(0..excess);
+
+                let excess_orig = (excess as f32
+                    * (session.sample_rate as f32 / target_sample_rate as f32))
+                    .round() as usize
+                    * session.channels as usize;
+                if excess_orig <= original_buffer.len() {
+                    original_buffer.drain(0..excess_orig);
+                } else {
+                    original_buffer.clear();
+                }
+            }
+
             let backlog_duration = mono_16k_buffer.len() as f32 / target_sample_rate as f32;
-            log::info!("Transcription backlog: {:.2}s", backlog_duration);
 
             if mono_16k_buffer.len() >= samples_per_chunk as usize {
-                // Drop old audio if backlog is too large to keep up with real-time
-                if mono_16k_buffer.len() > samples_per_chunk as usize {
-                    let excess = mono_16k_buffer.len() - samples_per_chunk as usize;
-                    log::warn!("Dropping {:.2}s of audio to keep up with real-time", excess as f32 / target_sample_rate as f32);
-                    mono_16k_buffer.drain(0..excess);
-
-                    let excess_orig = (excess as f32 * (session.sample_rate as f32 / target_sample_rate as f32)).round() as usize * session.channels as usize;
-                    if excess_orig <= original_buffer.len() {
-                        original_buffer.drain(0..excess_orig);
-                    } else {
-                        original_buffer.clear();
-                    }
-                }
-
                 let chunk_samples = mono_16k_buffer
                     .drain(0..samples_per_chunk as usize)
                     .collect::<Vec<_>>();
-                
-                let orig_samples_to_drain = (samples_per_chunk as f32 * (session.sample_rate as f32 / target_sample_rate as f32)).round() as usize * session.channels as usize;
+
+                let orig_samples_to_drain = (samples_per_chunk as f32
+                    * (session.sample_rate as f32 / target_sample_rate as f32))
+                    .round() as usize
+                    * session.channels as usize;
                 let actual_drain = orig_samples_to_drain.min(original_buffer.len());
                 let orig_chunk = original_buffer.drain(0..actual_drain).collect::<Vec<_>>();
 
                 let calc_rms_peak = |s: &[f32]| -> (f32, f32) {
-                    if s.is_empty() { return (0.0, 0.0); }
+                    if s.is_empty() {
+                        return (0.0, 0.0);
+                    }
                     let mut sq = 0.0;
                     let mut peak = 0.0_f32;
-                    for &v in s { sq += v*v; if v.abs() > peak { peak = v.abs(); } }
+                    for &v in s {
+                        sq += v * v;
+                        if v.abs() > peak {
+                            peak = v.abs();
+                        }
+                    }
                     ((sq / s.len() as f32).sqrt(), peak)
                 };
 
@@ -335,27 +376,47 @@ pub fn start_transcription(
                 let (out_rms, out_peak) = calc_rms_peak(&chunk_samples);
 
                 log::info!("Audio Diagnostics:");
-                log::info!("  Input: {} Hz, {} channels | RMS: {:.4}, Peak: {:.4}", session.sample_rate, session.channels, in_rms, in_peak);
-                log::info!("  Output: 16000 Hz, 1 channel | RMS: {:.4}, Peak: {:.4}", out_rms, out_peak);
+                log::info!(
+                    "  Input: {} Hz, {} channels | RMS: {:.4}, Peak: {:.4}",
+                    session.sample_rate,
+                    session.channels,
+                    in_rms,
+                    in_peak
+                );
+                log::info!(
+                    "  Output: 16000 Hz, 1 channel | RMS: {:.4}, Peak: {:.4}",
+                    out_rms,
+                    out_peak
+                );
 
                 // Skip transcription if audio is essentially silent.
                 // This prevents Whisper from hallucinating repeating phrases on silent loopback (e.g. 0 streams playing),
                 // which can cause the UI text to appear "frozen" because the same phrase is emitted repeatedly.
                 if out_rms < 0.001 {
-                    log::info!("Audio chunk is silent. Skipping inference to prevent hallucinations.");
+                    log::info!(
+                        "Audio chunk is silent. Skipping inference to prevent hallucinations."
+                    );
                     continue;
                 }
 
                 let orig_wav_path = temp_dir.join(format!("chunk_{}_original.wav", timestamp_ms()));
-                let resampled_wav_path = temp_dir.join(format!("chunk_{}_resampled.wav", timestamp_ms()));
+                let resampled_wav_path =
+                    temp_dir.join(format!("chunk_{}_resampled.wav", timestamp_ms()));
 
                 const KEEP_DEBUG_AUDIO: bool = false;
 
                 if KEEP_DEBUG_AUDIO {
-                    let _ = super::capture::write_wav(&orig_wav_path, &orig_chunk, session.channels, session.sample_rate);
+                    let _ = super::capture::write_wav(
+                        &orig_wav_path,
+                        &orig_chunk,
+                        session.channels,
+                        session.sample_rate,
+                    );
                 }
-                
-                if let Err(e) = super::capture::write_wav(&resampled_wav_path, &chunk_samples, 1, 16000) {
+
+                if let Err(e) =
+                    super::capture::write_wav(&resampled_wav_path, &chunk_samples, 1, 16000)
+                {
                     log::error!("Failed to write WAV: {}", e);
                     continue;
                 }
@@ -385,17 +446,18 @@ pub fn start_transcription(
                     .arg("-f")
                     .arg(resampled_wav_path.to_string_lossy().to_string());
                 sidecar = sidecar.arg("-nt");
-                sidecar = sidecar.arg("--no-prints");
                 sidecar = sidecar.arg("--suppress-nst"); // Suppress non-speech tokens like (speaking in foreign language)
 
                 // Use available parallelism for threads
-                let num_threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4);
+                let num_threads = std::thread::available_parallelism()
+                    .map(|n| n.get())
+                    .unwrap_or(4);
                 sidecar = sidecar.arg("-t").arg(num_threads.to_string());
 
                 if translate {
                     sidecar = sidecar.arg("-tr");
                 }
-                
+
                 sidecar = sidecar.arg("-l").arg("auto");
 
                 let start_time = std::time::Instant::now();
@@ -412,41 +474,82 @@ pub fn start_transcription(
                     *child_guard = Some(child);
                 }
 
+                let sidecar_child_inner = Arc::clone(&sidecar_child_clone);
                 let output = tauri::async_runtime::block_on(async move {
-                    let mut stdout_acc = String::new();
-                    let mut detected_lang = String::new();
-                    while let Some(event) = rx.recv().await {
-                        match event {
-                            tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
-                                stdout_acc.push_str(&String::from_utf8_lossy(&line));
-                            }
-                            tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
-                                let stderr_str = String::from_utf8_lossy(&line);
-                                if stderr_str.contains("Detected language:") {
-                                    detected_lang = stderr_str.to_string();
+                    let rx_task = async {
+                        let mut stdout_acc = String::new();
+                        let mut stderr_acc = String::new();
+                        while let Some(event) = rx.recv().await {
+                            match event {
+                                tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
+                                    stdout_acc.push_str(&String::from_utf8_lossy(&line));
                                 }
+                                tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
+                                    stderr_acc.push_str(&String::from_utf8_lossy(&line));
+                                }
+                                _ => {}
                             }
-                            _ => {}
+                        }
+                        (stdout_acc, stderr_acc)
+                    };
+
+                    match tokio::time::timeout(std::time::Duration::from_secs(45), rx_task).await {
+                        Ok(res) => res,
+                        Err(_) => {
+                            log::warn!("Whisper inference timed out after 45 seconds");
+                            let mut child_guard = sidecar_child_inner.lock().unwrap();
+                            if let Some(child) = child_guard.take() {
+                                let _ = child.kill();
+                            }
+                            (String::new(), String::new())
                         }
                     }
-                    if !detected_lang.is_empty() {
-                        log::info!("Whisper {}", detected_lang.trim());
-                    }
-                    stdout_acc
                 });
 
                 let inference_duration = start_time.elapsed();
-                log::info!("Whisper invocation (startup + inference) took: {:?}", inference_duration);
+                let rtf = inference_duration.as_secs_f32() / chunk_duration as f32;
+
+                // Extract language from stderr
+                let mut detected_lang = String::new();
+                for line in output.1.lines() {
+                    let line = line.trim();
+                    if line.contains("auto-detected language:") {
+                        if let Some(idx) = line.find("auto-detected language:") {
+                            detected_lang = line[idx + "auto-detected language:".len()..]
+                                .trim()
+                                .to_string();
+                        }
+                    } else if line.contains("Detected language:") {
+                        if let Some(idx) = line.find("Detected language:") {
+                            detected_lang =
+                                line[idx + "Detected language:".len()..].trim().to_string();
+                        }
+                    }
+                }
+                // Strip out the confidence probability "(p = 0.99)" if present
+                if let Some(idx) = detected_lang.find('(') {
+                    detected_lang = detected_lang[..idx].trim().to_string();
+                }
+
+                log::info!("--- Audio Diagnostics ---");
+                log::info!("Chunk: {:.1}s", chunk_duration);
+                log::info!("Inference: {:.1}s", inference_duration.as_secs_f32());
+                log::info!("RTF: {:.2}", rtf);
+                log::info!("Backlog: {:.1}s", backlog_duration);
+                if !detected_lang.is_empty() {
+                    log::info!("Language: {}", detected_lang);
+                }
+                log::info!("-------------------------");
 
                 {
                     let mut child_guard = sidecar_child_clone.lock().unwrap();
                     *child_guard = None;
                 }
 
-                let cleaned = output.trim();
-                let is_pure_caption = (cleaned.starts_with('[') && cleaned.ends_with(']')) 
+                let cleaned = output.0.trim();
+                let is_pure_caption = (cleaned.starts_with('[') && cleaned.ends_with(']'))
                     || (cleaned.starts_with('(') && cleaned.ends_with(')'));
-                
+
                 log::info!("Transcription output: {}", cleaned);
                 if !cleaned.is_empty()
                     && !cleaned.contains("[BLANK_AUDIO]")
@@ -490,16 +593,11 @@ pub fn start_transcription(
 pub fn stop_transcription(state: State<'_, TranscriptionState>) -> Result<(), String> {
     let mut guard = state.0.lock().map_err(|_| "state lock poisoned")?;
 
-    if let Some(handle) = guard.take() {
-        handle.running.store(false, Ordering::SeqCst);
+    if let Some(mut handle) = guard.take() {
+        let thread = handle.thread.take();
+        drop(handle); // Triggers Drop logic (kills child, sets running=false)
 
-        if let Ok(mut child_guard) = handle.sidecar_child.lock() {
-            if let Some(child) = child_guard.take() {
-                let _ = child.kill();
-            }
-        }
-
-        if let Some(thread) = handle.thread {
+        if let Some(thread) = thread {
             let _ = thread.join();
         }
     }
