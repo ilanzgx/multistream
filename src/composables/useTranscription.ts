@@ -84,7 +84,9 @@ const _useTranscription = () => {
       await updateStatus();
 
       // Auto-select the newly downloaded model if none was installed before
-      selectedModel.value = modelName;
+      if (!selectedModel.value) {
+        selectedModel.value = modelName;
+      }
     } catch (e) {
       console.error("Failed to download model:", e);
       throw e;
@@ -98,8 +100,8 @@ const _useTranscription = () => {
     }
   };
 
-  const startTranscription = async () => {
-    if (!isTauri() || !installedModels.value.includes(selectedModel.value)) return;
+  const startTranscription = async (): Promise<boolean> => {
+    if (!isTauri() || !installedModels.value.includes(selectedModel.value)) return false;
 
     try {
       const translate = captionMode.value === "translate";
@@ -108,9 +110,11 @@ const _useTranscription = () => {
         translate,
       });
       isActive.value = true;
+      return true;
     } catch (e) {
       console.error("Failed to start transcription:", e);
       isEnabled.value = false; // Reset if failed
+      return false;
     }
   };
 
@@ -172,7 +176,8 @@ const _useTranscription = () => {
           !oldEnabled ||
           (oldEnabled && (oldMode !== captionMode.value || oldModel !== selectedModel.value))
         ) {
-          await startTranscription();
+          const started = await startTranscription();
+          if (!started) return;
 
           const t = i18n.global.t;
           const modelNameText =
