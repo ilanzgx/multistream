@@ -78,7 +78,7 @@
       "downloadButton": "Modell herunterladen",
       "downloadingButton": "Wird heruntergeladen...",
       "captionModeLabel": "Untertitel-Modus",
-      "captionModeOriginal": "Originalsprache",
+      "captionModeOriginal": "Sprache automatisch erkennen",
       "captionModeTranslate": "Auf Englisch übersetzen",
       "enableToggle": "Transkription aktivieren",
       "modelInstalled": "Installiert",
@@ -230,9 +230,13 @@
     },
     "step4": {
       "title": "Live-Transkription",
-      "description": "Generieren Sie Echtzeit-Untertitel für Stream-Audio direkt auf Ihrem Computer mit lokalen KI-Modellen. Laden Sie ein Whisper-Modell herunter, wählen Sie zwischen Originalsprache oder englischer Übersetzung und zeigen Sie Untertitel über dem fokussierten Stream an.",
-      "captionStr": "Dies ist ein Beispiel für lokale Untertitel...",
-      "note": "Die Leistung hängt von Ihrer CPU und dem ausgewählten Modell ab. Das Basismodell wird für die meisten Systeme empfohlen."
+      "description": "Schauen Sie Streams mit Echtzeit-Untertiteln, die direkt auf Ihrem Computer generiert werden.",
+      "captionOriginal": "Original: Bonjour tout le monde.",
+      "captionTranslation": "Übersetzung: Hello everyone.",
+      "feature1": "Echtzeit-Untertitel",
+      "feature2": "Optionale englische Übersetzung",
+      "feature3": "Läuft lokal auf Ihrem Computer",
+      "note": "Alles läuft lokal auf Ihrem Computer. Die Leistung hängt von Ihrer CPU und dem ausgewählten Modell ab."
     },
     "step5": {
       "title": "Tastaturkurzbefehle",

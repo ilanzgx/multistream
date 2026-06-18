@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { TwitchIcon, KickIcon, YoutubeIcon } from "@/components/icons";
-import { ChevronLeft, ChevronRight, Check, Mic } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, Check, Mic, ArrowDown } from "lucide-vue-next";
 import { useTranscription } from "@/composables/useTranscription";
 
 const props = withDefaults(
@@ -217,27 +217,27 @@ function handleFinish() {
                   class="absolute inset-0 bg-[radial-gradient(#2a2d33_1px,transparent_1px)] bg-size-[16px_16px] opacity-40"
                 />
 
-                <div class="relative w-full max-w-sm flex flex-col gap-3">
+                <div class="relative w-full max-w-sm flex flex-col gap-2.5">
                   <!-- Settings mockup -->
                   <div
-                    class="flex items-center justify-between px-4 py-3 bg-[#14161a] border border-[#2a2d33] rounded-xl shadow-md"
+                    class="flex items-center justify-between px-3 py-2 bg-[#14161a] border border-[#2a2d33] rounded-xl shadow-md"
                   >
-                    <div class="flex items-center gap-3">
-                      <div class="p-2 bg-[#2a2d33]/40 rounded-lg">
-                        <Mic class="size-4 text-green-400" />
+                    <div class="flex items-center gap-2">
+                      <div class="p-1.5 bg-[#2a2d33]/40 rounded-lg">
+                        <Mic class="size-3.5 text-green-400" />
                       </div>
                       <div class="flex flex-col">
-                        <span class="text-xs text-white font-medium">{{
+                        <span class="text-[11px] text-white font-medium">{{
                           $t("onboarding.step4.title")
                         }}</span>
-                        <span class="text-[10px] text-gray-400"
+                        <span class="text-[9px] text-gray-400"
                           >{{ $t("settings.title") }} → {{ $t("settings.tabs.resources") }}</span
                         >
                       </div>
                     </div>
                     <div class="flex items-center gap-2">
                       <span
-                        class="text-[9px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
+                        class="text-[8px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
                         >{{ $t("settings.transcription.modelInstalled") }}</span
                       >
                     </div>
@@ -245,20 +245,44 @@ function handleFinish() {
 
                   <!-- Captions mockup on a stream -->
                   <div
-                    class="relative w-full h-16 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-end justify-center pb-2 shadow-inner"
+                    class="relative w-full py-2.5 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-center justify-center shadow-inner"
                   >
                     <div
                       class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"
                     ></div>
-                    <p
-                      class="relative text-[10px] sm:text-xs font-medium text-white px-2 py-0.5 bg-black/60 rounded text-center backdrop-blur-sm border border-white/10"
-                    >
-                      {{ $t("onboarding.step4.captionStr") }}
-                    </p>
+                    <div class="relative flex flex-col items-center gap-1">
+                      <p
+                        class="text-[9px] sm:text-[10px] font-medium text-white px-2 py-0.5 bg-black/60 rounded text-center backdrop-blur-sm border border-white/10"
+                      >
+                        {{ $t("onboarding.step4.captionOriginal") }}
+                      </p>
+                      <ArrowDown class="size-2.5 text-white/50" />
+                      <p
+                        class="text-[9px] sm:text-[10px] font-medium text-white px-2 py-0.5 bg-green-500/20 text-green-300 rounded text-center backdrop-blur-sm border border-green-500/20"
+                      >
+                        {{ $t("onboarding.step4.captionTranslation") }}
+                      </p>
+                    </div>
                   </div>
 
+                  <!-- Feature Bullets -->
+                  <ul class="flex flex-col gap-1 px-1">
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step4.feature1") }}
+                    </li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step4.feature2") }}
+                    </li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step4.feature3") }}
+                    </li>
+                  </ul>
+
                   <!-- Note -->
-                  <p class="relative text-[10px] text-gray-500 text-center mt-1">
+                  <p class="relative text-[9px] text-gray-500 text-center">
                     {{ $t("onboarding.step4.note") }}
                   </p>
                 </div>

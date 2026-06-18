@@ -78,7 +78,7 @@
       "downloadButton": "下载模型",
       "downloadingButton": "下载中...",
       "captionModeLabel": "字幕模式",
-      "captionModeOriginal": "原始语言",
+      "captionModeOriginal": "自动检测语言",
       "captionModeTranslate": "翻译为英语",
       "enableToggle": "启用字幕",
       "modelInstalled": "已安装",
@@ -230,9 +230,13 @@
     },
     "step4": {
       "title": "实时转录",
-      "description": "使用本地 AI 模型直接在您的计算机上为流媒体音频生成实时字幕。下载 Whisper 模型，选择原始语言或英文翻译，并在聚焦的流媒体上查看字幕。",
-      "captionStr": "这是本地字幕的示例...",
-      "note": "性能取决于您的 CPU 和选择的模型。推荐大多数系统使用 Base 模型。"
+      "description": "观看直播时，您的计算机可直接生成实时字幕。",
+      "captionOriginal": "原文: Bonjour tout le monde.",
+      "captionTranslation": "翻译: Hello everyone.",
+      "feature1": "实时字幕",
+      "feature2": "可选英文翻译",
+      "feature3": "在您的计算机本地运行",
+      "note": "所有处理都在您的计算机本地运行。性能取决于您的 CPU 和所选的模型。"
     },
     "step5": {
       "title": "键盘快捷键",

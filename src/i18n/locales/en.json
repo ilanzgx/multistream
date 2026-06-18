@@ -83,7 +83,7 @@
       "downloadButton": "Download Model",
       "downloadingButton": "Downloading...",
       "captionModeLabel": "Caption Mode",
-      "captionModeOriginal": "Original Language",
+      "captionModeOriginal": "Auto-detect language",
       "captionModeTranslate": "Translate to English",
       "enableToggle": "Enable Transcription",
       "modelInstalled": "Installed",
@@ -230,9 +230,13 @@
     },
     "step4": {
       "title": "Live Transcription",
-      "description": "Generate real-time captions for stream audio directly on your computer using local AI models. Download a Whisper model, choose between original language or English translation, and view captions over the focused stream.",
-      "captionStr": "This is an example of local captions...",
-      "note": "Performance depends on your CPU and the selected model. The Base model is recommended for most systems."
+      "description": "Watch streams with real-time captions generated directly on your computer.",
+      "captionOriginal": "Original: Bonjour tout le monde.",
+      "captionTranslation": "Translation: Hello everyone.",
+      "feature1": "Real-time captions",
+      "feature2": "Optional English translation",
+      "feature3": "Runs locally on your computer",
+      "note": "Everything runs locally on your computer. Performance depends on your CPU and the selected model."
     },
     "step5": {
       "title": "Keyboard Shortcuts",

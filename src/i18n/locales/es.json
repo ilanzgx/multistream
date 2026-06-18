@@ -78,7 +78,7 @@
       "downloadButton": "Descargar Modelo",
       "downloadingButton": "Descargando...",
       "captionModeLabel": "Modo de Subtítulos",
-      "captionModeOriginal": "Idioma Original",
+      "captionModeOriginal": "Detectar idioma",
       "captionModeTranslate": "Traducir al Inglés",
       "enableToggle": "Habilitar Transcripción",
       "modelInstalled": "Instalado",
@@ -230,9 +230,13 @@
     },
     "step4": {
       "title": "Transcripción en Vivo",
-      "description": "Genera subtítulos en tiempo real para el audio del stream directamente en tu computadora usando modelos de IA locales. Descarga un modelo Whisper, elige entre el idioma original o traducción al inglés y mira los subtítulos sobre el stream enfocado.",
-      "captionStr": "Este es un ejemplo de subtítulos locales...",
-      "note": "El rendimiento depende de su CPU y del modelo seleccionado. El modelo Base se recomienda para la mayoría de los sistemas."
+      "description": "Mira transmisiones con subtítulos en tiempo real generados directamente en tu computadora.",
+      "captionOriginal": "Original: Bonjour tout le monde.",
+      "captionTranslation": "Traducción: Hello everyone.",
+      "feature1": "Subtítulos en tiempo real",
+      "feature2": "Traducción opcional al inglés",
+      "feature3": "Se ejecuta localmente en tu computadora",
+      "note": "Todo se ejecuta localmente en tu computadora. El rendimiento depende de tu CPU y del modelo seleccionado."
     },
     "step5": {
       "title": "Atajos de Teclado",
