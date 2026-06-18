@@ -19,6 +19,7 @@ import {
   Share2,
   ImportIcon as Import,
   PanelRightClose,
+  Loader2,
 } from "lucide-vue-next";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
@@ -39,7 +40,11 @@ const sidebarMode = ref<"chat" | "transcript">("chat");
 
 const { streams } = useStreams();
 const { selectedChat, sidebarOpen } = usePreferences();
-const { isActive: transcriptionActive, isSupported } = useTranscription();
+const {
+  isActive: transcriptionActive,
+  isSupported,
+  status: transcriptionStatus,
+} = useTranscription();
 
 function openAddDialog() {
   addDialogOpen.value = true;
@@ -87,10 +92,31 @@ onUnmounted(() => {
           </p>
           <div
             v-if="transcriptionActive"
-            class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-green-400 text-[9px] font-mono tracking-wider uppercase transition-all duration-300"
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono tracking-wider uppercase transition-all duration-300 border"
+            :class="{
+              'bg-green-500/10 border-green-500/20 text-green-400':
+                transcriptionStatus === 'active',
+              'bg-blue-500/10 border-blue-500/20 text-blue-400':
+                transcriptionStatus === 'processing',
+              'bg-red-500/10 border-red-500/20 text-red-400': transcriptionStatus === 'error',
+            }"
           >
-            <div class="h-1.5 w-1.5 rounded-full bg-green-500/80 animate-pulse"></div>
-            {{ $t("settings.transcription.activeIndicator") }}
+            <Loader2 v-if="transcriptionStatus === 'processing'" class="h-2.5 w-2.5 animate-spin" />
+            <div
+              v-else
+              class="h-1.5 w-1.5 rounded-full animate-pulse"
+              :class="{
+                'bg-green-500/80': transcriptionStatus === 'active',
+                'bg-red-500/80': transcriptionStatus === 'error',
+              }"
+            ></div>
+            {{
+              transcriptionStatus === "processing"
+                ? $t("settings.transcription.processingIndicator")
+                : transcriptionStatus === "error"
+                  ? $t("settings.transcription.errorIndicator")
+                  : $t("settings.transcription.activeIndicator")
+            }}
           </div>
         </div>
 

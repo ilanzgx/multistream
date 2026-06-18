@@ -90,6 +90,13 @@
       "startedMode": "Modus: {mode}",
       "stoppedTitle": "Live-Transkription Gestoppt",
       "activeIndicator": "Transkription Aktiv",
+      "processingIndicator": "Audio wird verarbeitet",
+      "errorIndicator": "Transkriptionsfehler",
+      "lastCaption": "Letzter Untertitel:",
+      "timeNow": "gerade eben",
+      "timeAgo": "vor {time}",
+      "timeS": "{s}s",
+      "timeM": "{m}m",
       "recommendedBadge": "Empfohlen",
       "statusDisabled": "Deaktiviert",
       "modeLabel": "Modus"

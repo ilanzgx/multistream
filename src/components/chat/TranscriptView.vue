@@ -1,15 +1,31 @@
 <script lang="ts" setup>
 import { ref, watch, nextTick, computed } from "vue";
+import { useNow } from "@vueuse/core";
 import { useTranscription } from "@/composables/useTranscription";
 import { Button } from "@/components/ui/button";
 import { Copy, Trash2 } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
+import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-const { transcriptHistory, clearTranscriptHistory, isActive, selectedModel, captionMode } =
+const { transcriptHistory, clearTranscriptHistory, selectedModel, captionMode, lastCaptionTime } =
   useTranscription();
 const { t } = useI18n();
+const now = useNow();
 const scrollContainer = ref<HTMLElement | null>(null);
+
+const timeAgoText = computed(() => {
+  if (!lastCaptionTime.value) return null;
+  const diffInSeconds = Math.floor((now.value.getTime() - lastCaptionTime.value) / 1000);
+  if (diffInSeconds < 5) return t("settings.transcription.timeNow");
+  if (diffInSeconds < 60) {
+    const timeStr = t("settings.transcription.timeS", { s: diffInSeconds });
+    return t("settings.transcription.timeAgo", { time: timeStr });
+  }
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  const timeStr = t("settings.transcription.timeM", { m: diffInMinutes });
+  return t("settings.transcription.timeAgo", { time: timeStr });
+});
 
 const captionModeTranslationKey = computed(() => {
   return captionMode.value === "translate"
@@ -63,26 +79,6 @@ async function copyTranscript() {
     <div class="flex items-center justify-between gap-2 p-2 border-b border-[#1f2227] bg-[#14161a]">
       <!-- Status Block -->
       <div class="flex flex-col gap-0.5 min-w-0">
-        <div class="flex items-center gap-1.5 mb-0.5">
-          <div
-            class="h-1.5 w-1.5 rounded-full shrink-0"
-            :class="
-              isActive
-                ? 'bg-green-500 shadow-[0_0_4px_rgba(34,197,94,0.5)]'
-                : 'bg-transparent border border-gray-500'
-            "
-          ></div>
-          <span
-            class="text-[11px] font-medium tracking-wide uppercase"
-            :class="isActive ? 'text-green-400' : 'text-gray-400'"
-          >
-            {{
-              isActive
-                ? $t("settings.transcription.statusActive")
-                : $t("settings.transcription.statusDisabled")
-            }}
-          </span>
-        </div>
         <span class="text-[10px] text-gray-500 truncate leading-tight">
           {{ $t("settings.transcription.modelLabel") }}:
           <span class="text-gray-300">{{ formattedModelName }}</span>
@@ -91,30 +87,49 @@ async function copyTranscript() {
           {{ $t("settings.transcription.modeLabel") }}:
           <span class="text-gray-300">{{ $t(captionModeTranslationKey) }}</span>
         </span>
+        <span v-if="timeAgoText" class="text-[10px] text-gray-500 truncate leading-tight">
+          {{ $t("settings.transcription.lastCaption") }}
+          <span class="text-gray-300">{{ timeAgoText }}</span>
+        </span>
       </div>
 
       <!-- Action Buttons -->
       <div class="flex items-center gap-1.5 shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          class="h-6 px-2 text-[10px] border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
-          :disabled="transcriptHistory.length === 0"
-          @click="copyTranscript"
-        >
-          <Copy class="w-3 h-3 mr-1" />
-          {{ $t("chat.transcript.copy") }}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          class="h-6 px-2 text-[10px] border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
-          :disabled="transcriptHistory.length === 0"
-          @click="clearTranscriptHistory"
-        >
-          <Trash2 class="w-3 h-3 mr-1" />
-          {{ $t("chat.transcript.clear") }}
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="outline"
+                size="icon"
+                class="h-6 w-6 border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
+                :disabled="transcriptHistory.length === 0"
+                @click="copyTranscript"
+              >
+                <Copy class="w-3 h-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{{ $t("chat.transcript.copy") }}</p>
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <Button
+                variant="outline"
+                size="icon"
+                class="h-6 w-6 border-[#2a2d33] bg-[#1a1d24] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
+                :disabled="transcriptHistory.length === 0"
+                @click="clearTranscriptHistory"
+              >
+                <Trash2 class="w-3 h-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{{ $t("chat.transcript.clear") }}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
 

@@ -516,10 +516,12 @@ pub fn start_transcription(
                 sidecar = sidecar.arg("-l").arg("auto");
 
                 let start_time = std::time::Instant::now();
+                let _ = app_clone.emit("transcription:status", "processing");
                 let (mut rx, child) = match sidecar.spawn() {
                     Ok(res) => res,
                     Err(e) => {
                         log::error!("Failed to spawn sidecar: {e}");
+                        let _ = app_clone.emit("transcription:status", "error");
                         continue;
                     }
                 };
@@ -530,6 +532,7 @@ pub fn start_transcription(
                 }
 
                 let sidecar_child_inner = Arc::clone(&sidecar_child_clone);
+                let app_inner = app_clone.clone();
                 let output = tauri::async_runtime::block_on(async move {
                     let rx_task = async {
                         let mut stdout_acc = String::new();
@@ -556,6 +559,7 @@ pub fn start_transcription(
                             if let Some(child) = child_guard.take() {
                                 let _ = child.kill();
                             }
+                            let _ = app_inner.emit("transcription:status", "error");
                             (String::new(), String::new())
                         }
                     }
@@ -600,6 +604,8 @@ pub fn start_transcription(
                     let mut child_guard = sidecar_child_clone.lock().unwrap();
                     *child_guard = None;
                 }
+
+                let _ = app_clone.emit("transcription:status", "active");
 
                 let cleaned = output.0.trim();
                 let is_pure_caption = (cleaned.starts_with('[') && cleaned.ends_with(']'))

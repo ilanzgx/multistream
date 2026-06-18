@@ -95,6 +95,13 @@
       "startedMode": "Modo: {mode}",
       "stoppedTitle": "Transcrição Parada",
       "activeIndicator": "Transcrição Ativa",
+      "processingIndicator": "Processando Áudio",
+      "errorIndicator": "Erro na Transcrição",
+      "lastCaption": "Última legenda:",
+      "timeNow": "agora",
+      "timeAgo": "há {time}",
+      "timeS": "{s}s",
+      "timeM": "{m}m",
       "recommendedBadge": "Recomendado",
       "statusDisabled": "Desativado",
       "modeLabel": "Modo"

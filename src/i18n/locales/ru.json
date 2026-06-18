@@ -90,6 +90,13 @@
       "startedMode": "Режим: {mode}",
       "stoppedTitle": "Транскрипция Остановлена",
       "activeIndicator": "Транскрипция Активна",
+      "processingIndicator": "Обработка аудио",
+      "errorIndicator": "Ошибка транскрипции",
+      "lastCaption": "Последний субтитр:",
+      "timeNow": "только что",
+      "timeAgo": "{time} назад",
+      "timeS": "{s}с",
+      "timeM": "{m}м",
       "recommendedBadge": "Рекомендуется",
       "statusDisabled": "Отключено",
       "modeLabel": "Режим"

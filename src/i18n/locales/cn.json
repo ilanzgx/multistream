@@ -90,6 +90,13 @@
       "startedMode": "模式: {mode}",
       "stoppedTitle": "实时转录已停止",
       "activeIndicator": "实时转录活跃中",
+      "processingIndicator": "处理音频中",
+      "errorIndicator": "转录错误",
+      "lastCaption": "最新字幕:",
+      "timeNow": "刚刚",
+      "timeAgo": "{time} 前",
+      "timeS": "{s}秒",
+      "timeM": "{m}分钟",
       "recommendedBadge": "推荐",
       "statusDisabled": "已禁用",
       "modeLabel": "模式"

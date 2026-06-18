@@ -90,6 +90,13 @@
       "startedMode": "Modo: {mode}",
       "stoppedTitle": "Transcripción Detenida",
       "activeIndicator": "Transcripción Activa",
+      "processingIndicator": "Procesando Audio",
+      "errorIndicator": "Error de Transcripción",
+      "lastCaption": "Última leyenda:",
+      "timeNow": "justo ahora",
+      "timeAgo": "hace {time}",
+      "timeS": "{s}s",
+      "timeM": "{m}m",
       "recommendedBadge": "Recomendado",
       "statusDisabled": "Desactivado",
       "modeLabel": "Modo"

@@ -95,6 +95,13 @@
       "startedMode": "Mode: {mode}",
       "stoppedTitle": "Live Transcription Stopped",
       "activeIndicator": "Live Transcription Active",
+      "processingIndicator": "Processing Audio",
+      "errorIndicator": "Transcription Error",
+      "lastCaption": "Last caption:",
+      "timeNow": "just now",
+      "timeAgo": "{time} ago",
+      "timeS": "{s}s",
+      "timeM": "{m}m",
       "recommendedBadge": "Recommended",
       "statusDisabled": "Disabled",
       "modeLabel": "Mode"

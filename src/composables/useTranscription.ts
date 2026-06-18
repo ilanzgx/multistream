@@ -29,6 +29,8 @@ const _useTranscription = () => {
   const downloadingModel = ref<string | null>(null);
   const downloadProgress = ref<DownloadProgress>({ downloaded: 0, total: 0, percent: 0 });
   const isActive = ref(false);
+  const status = ref<"active" | "processing" | "error" | "inactive">("inactive");
+  const lastCaptionTime = ref<number | null>(null);
 
   // Persistent Settings
   const selectedModel = useStorage<string>("transcription.model", "base");
@@ -43,11 +45,17 @@ const _useTranscription = () => {
   const updateStatus = async () => {
     if (!isTauri() || !isSupported.value) return;
     try {
-      const status: { installed_models: string[]; active: boolean } = await invoke(
+      const backendStatus: { installed_models: string[]; active: boolean } = await invoke(
         "get_transcription_status"
       );
-      installedModels.value = status.installed_models;
-      isActive.value = status.active;
+      installedModels.value = backendStatus.installed_models;
+      isActive.value = backendStatus.active;
+
+      if (backendStatus.active && status.value === "inactive") {
+        status.value = "active";
+      } else if (!backendStatus.active) {
+        status.value = "inactive";
+      }
 
       // If enabled but not active (e.g. app restarted), and model is installed, start it
       if (
@@ -110,6 +118,7 @@ const _useTranscription = () => {
         translate,
       });
       isActive.value = true;
+      status.value = "active";
       return true;
     } catch (e) {
       console.error("Failed to start transcription:", e);
@@ -124,6 +133,8 @@ const _useTranscription = () => {
     try {
       await invoke("stop_transcription");
       isActive.value = false;
+      status.value = "inactive";
+      lastCaptionTime.value = null;
       lines.value = []; // Clear lines when stopped
     } catch (e) {
       console.error("Failed to stop transcription:", e);
@@ -219,6 +230,13 @@ const _useTranscription = () => {
                 newHistory.shift(); // Keep max 1000 entries for global view
               }
               transcriptHistory.value = newHistory;
+              lastCaptionTime.value = Date.now();
+            }).catch(console.error);
+
+            listen<string>("transcription:status", (event) => {
+              if (isActive.value) {
+                status.value = event.payload as "active" | "processing" | "error";
+              }
             }).catch(console.error);
           }
           updateStatus();
@@ -246,6 +264,8 @@ const _useTranscription = () => {
     downloadingModel,
     downloadProgress,
     isActive,
+    status,
+    lastCaptionTime,
     lines,
     transcriptHistory,
     downloadModel,
