@@ -95,27 +95,23 @@ onUnmounted(() => {
             class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono tracking-wider uppercase transition-all duration-300 border"
             :class="{
               'bg-green-500/10 border-green-500/20 text-green-400':
-                transcriptionStatus === 'active',
-              'bg-blue-500/10 border-blue-500/20 text-blue-400':
-                transcriptionStatus === 'processing',
+                transcriptionStatus === 'active' || transcriptionStatus === 'processing',
               'bg-red-500/10 border-red-500/20 text-red-400': transcriptionStatus === 'error',
             }"
           >
             <Loader2 v-if="transcriptionStatus === 'processing'" class="h-2.5 w-2.5 animate-spin" />
             <div
               v-else
-              class="h-1.5 w-1.5 rounded-full animate-pulse"
+              class="h-1.5 w-1.5 rounded-full"
               :class="{
-                'bg-green-500/80': transcriptionStatus === 'active',
+                'bg-green-500/80 animate-pulse': transcriptionStatus === 'active',
                 'bg-red-500/80': transcriptionStatus === 'error',
               }"
             ></div>
             {{
-              transcriptionStatus === "processing"
-                ? $t("settings.transcription.processingIndicator")
-                : transcriptionStatus === "error"
-                  ? $t("settings.transcription.errorIndicator")
-                  : $t("settings.transcription.activeIndicator")
+              transcriptionStatus === "error"
+                ? $t("settings.transcription.errorIndicator")
+                : $t("settings.transcription.activeIndicator")
             }}
           </div>
         </div>
