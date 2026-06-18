@@ -109,6 +109,13 @@ fn timestamp_ms() -> u64 {
 
 pub const TRANSCRIPTION_SUPPORTED: bool = cfg!(target_os = "windows");
 
+static CANCEL_DOWNLOAD: AtomicBool = AtomicBool::new(false);
+
+#[tauri::command]
+pub fn cancel_whisper_download() {
+    CANCEL_DOWNLOAD.store(true, Ordering::Relaxed);
+}
+
 #[tauri::command]
 pub fn is_transcription_supported() -> bool {
     TRANSCRIPTION_SUPPORTED
@@ -129,7 +136,11 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
     let url =
         format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{model_name}.bin");
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3600))
+        .build()
+        .map_err(|e| format!("failed to build client: {e}"))?;
+
     let response = client
         .get(&url)
         .send()
@@ -147,37 +158,49 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
     let total = response.content_length().unwrap_or(0);
     let dest_path = model_path(&app, &model_name)?;
 
-    // Stream response body to disk, emitting progress events on each chunk.
+    // Reset cancellation flag before starting
+    CANCEL_DOWNLOAD.store(false, Ordering::Relaxed);
+
+    use std::io::Write;
+    let mut file = std::fs::File::create(&dest_path)
+        .map_err(|e| format!("failed to create model file: {e}"))?;
+
+    // Stream response body directly to disk, emitting progress events on each chunk.
     let mut downloaded: u64 = 0;
-    let mut file_bytes: Vec<u8> = if total > 0 {
-        Vec::with_capacity(total as usize)
-    } else {
-        Vec::new()
-    };
-
     let mut stream = response.bytes_stream();
+    let mut last_emit = std::time::Instant::now();
+    let throttle_interval = std::time::Duration::from_millis(100);
+
     while let Some(chunk_result) = stream.next().await {
+        if CANCEL_DOWNLOAD.load(Ordering::Relaxed) {
+            // User cancelled the download
+            drop(file);
+            let _ = fs::remove_file(&dest_path);
+            return Err("Download cancelled by user".to_string());
+        }
+
         let chunk = chunk_result.map_err(|e| format!("stream error: {e}"))?;
+        file.write_all(&chunk).map_err(|e| format!("write error: {e}"))?;
         downloaded += chunk.len() as u64;
-        file_bytes.extend_from_slice(&chunk);
 
-        let percent = if total > 0 {
-            (downloaded as f32 / total as f32) * 100.0
-        } else {
-            0.0
-        };
+        if last_emit.elapsed() >= throttle_interval || downloaded == total {
+            last_emit = std::time::Instant::now();
+            let percent = if total > 0 {
+                (downloaded as f32 / total as f32) * 100.0
+            } else {
+                0.0
+            };
 
-        let _ = app.emit(
-            "transcription:download-progress",
-            DownloadProgressPayload {
-                downloaded,
-                total,
-                percent,
-            },
-        );
+            let _ = app.emit(
+                "transcription:download-progress",
+                DownloadProgressPayload {
+                    downloaded,
+                    total,
+                    percent,
+                },
+            );
+        }
     }
-
-    fs::write(&dest_path, &file_bytes).map_err(|e| format!("failed to write model file: {e}"))?;
 
     Ok(())
 }

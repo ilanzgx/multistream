@@ -27,6 +27,7 @@ import {
   Trash2,
   Check,
   Captions,
+  X,
 } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
@@ -52,6 +53,7 @@ const {
   downloadingModel,
   downloadProgress,
   downloadModel,
+  cancelDownload,
   deleteModel,
 } = useTranscription();
 
@@ -490,11 +492,20 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                             >
                             <span>{{ downloadProgress.percent.toFixed(0) }}%</span>
                           </div>
-                          <div class="h-1 w-full bg-[#2a2d33] rounded-full overflow-hidden">
-                            <div
-                              class="h-full bg-blue-500 transition-all duration-300"
-                              :style="{ width: `${downloadProgress.percent}%` }"
-                            ></div>
+                          <div class="flex items-center gap-2">
+                            <div class="h-1 flex-1 bg-[#2a2d33] rounded-full overflow-hidden">
+                              <div
+                                class="h-full bg-blue-500 transition-all duration-300"
+                                :style="{ width: `${downloadProgress.percent}%` }"
+                              ></div>
+                            </div>
+                            <button
+                              class="text-gray-400 hover:text-red-400 transition-colors p-0.5"
+                              title="Cancelar download"
+                              @click="cancelDownload"
+                            >
+                              <X class="w-3 h-3" />
+                            </button>
                           </div>
                         </div>
                       </template>

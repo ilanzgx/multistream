@@ -103,6 +103,7 @@ pub fn run() {
             save_screenshot,
             audio::transcriber::is_transcription_supported,
             audio::transcriber::download_whisper_model,
+            audio::transcriber::cancel_whisper_download,
             audio::transcriber::delete_whisper_model,
             audio::transcriber::get_transcription_status,
             audio::transcriber::start_transcription,

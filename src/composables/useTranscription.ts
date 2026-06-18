@@ -108,6 +108,15 @@ const _useTranscription = () => {
     }
   };
 
+  const cancelDownload = async () => {
+    if (!isTauri() || !isDownloading.value) return;
+    try {
+      await invoke("cancel_whisper_download");
+    } catch (e) {
+      console.error("Failed to cancel download:", e);
+    }
+  };
+
   const startTranscription = async (): Promise<boolean> => {
     if (!isTauri() || !installedModels.value.includes(selectedModel.value)) return false;
 
@@ -269,6 +278,7 @@ const _useTranscription = () => {
     lines,
     transcriptHistory,
     downloadModel,
+    cancelDownload,
     deleteModel,
     startTranscription,
     stopTranscription,
