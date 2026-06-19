@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -33,6 +33,9 @@ pub struct TranscriptionTextPayload {
 /// `stop_transcription` can gracefully terminate it.
 pub struct TranscriptionHandle {
     pub running: Arc<AtomicBool>,
+    /// Chunk duration in seconds, readable from the capture thread at each iteration
+    /// via `Ordering::Relaxed`. Valid range: 5–30 s.
+    pub chunk_duration: Arc<AtomicU32>,
     pub thread: Option<std::thread::JoinHandle<()>>,
     pub sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
 }
@@ -293,6 +296,7 @@ pub fn get_transcription_status(
 pub fn start_transcription(
     model_name: String,
     translate: bool,
+    chunk_duration: u32,
     app: AppHandle,
     state: State<'_, TranscriptionState>,
 ) -> Result<(), String> {
@@ -326,6 +330,8 @@ pub fn start_transcription(
     let sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>> =
         Arc::new(Mutex::new(None));
     let sidecar_child_clone = Arc::clone(&sidecar_child);
+    let chunk_dur_atomic = Arc::new(AtomicU32::new(chunk_duration.clamp(5, 30)));
+    let chunk_dur_clone = Arc::clone(&chunk_dur_atomic);
 
     let (tx_init, rx_init) = std::sync::mpsc::channel();
 
@@ -349,15 +355,20 @@ pub fn start_transcription(
             .join("temp");
         let _ = std::fs::create_dir_all(&temp_dir);
 
-        let target_sample_rate = 16000;
-        let chunk_duration = 10;
-        let samples_per_chunk = target_sample_rate * chunk_duration;
-        let mut mono_16k_buffer = Vec::with_capacity(samples_per_chunk as usize);
+        let target_sample_rate: u32 = 16000;
+        // Initial capacity hint; will be recomputed dynamically each iteration.
+        let mut mono_16k_buffer = Vec::with_capacity((target_sample_rate * 10) as usize);
         let mut original_buffer = Vec::new();
 
-        let max_backlog_samples = target_sample_rate * 15; // 15 seconds
-
         while running_clone.load(Ordering::SeqCst) {
+            // Re-read chunk duration on every iteration so that slider changes take
+            // effect immediately. If the buffer already holds more audio than the new
+            // chunk size, the `>= samples_per_chunk` guard below fires right away.
+            let chunk_duration = chunk_dur_clone.load(Ordering::Relaxed).clamp(5, 30);
+            let samples_per_chunk = target_sample_rate * chunk_duration;
+            // Backlog ceiling scales with chunk size to preserve the same relative
+            // behaviour regardless of the chosen duration.
+            let max_backlog_samples = target_sample_rate * chunk_duration * 2;
             let mut new_samples = Vec::new();
 
             match session
@@ -664,6 +675,7 @@ pub fn start_transcription(
 
     *guard = Some(TranscriptionHandle {
         running,
+        chunk_duration: chunk_dur_atomic,
         thread: Some(thread),
         sidecar_child,
     });
@@ -692,5 +704,34 @@ pub fn stop_transcription(state: State<'_, TranscriptionState>) -> Result<(), St
         }
     }
 
+    Ok(())
+}
+
+/// Updates the chunk duration for the currently running transcription session.
+///
+/// The new value is clamped to the valid range [5, 30] seconds and stored in the
+/// shared `AtomicU32`. The capture thread reads it at the beginning of every loop
+/// iteration, so the change takes effect on the next chunk boundary without any
+/// restart. If no session is active the call is a safe no-op (logged for debugging).
+#[tauri::command]
+pub fn set_chunk_duration(
+    seconds: u32,
+    state: State<'_, TranscriptionState>,
+) -> Result<(), String> {
+    let clamped = seconds.clamp(5, 30);
+    let guard = state.0.lock().map_err(|_| "state lock poisoned")?;
+    match guard.as_ref() {
+        Some(handle) => {
+            handle.chunk_duration.store(clamped, Ordering::Relaxed);
+            log::info!("chunk_duration updated to {}s", clamped);
+        }
+        None => {
+            log::info!(
+                "set_chunk_duration called with {}s but no active session; \
+                 value will be applied when transcription starts",
+                clamped
+            );
+        }
+    }
     Ok(())
 }
