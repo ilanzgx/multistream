@@ -15,7 +15,8 @@ export type ChunkStep = (typeof CHUNK_STEPS)[number];
  * Always returns a value from CHUNK_STEPS.
  */
 function toValidChunkStep(value: number): ChunkStep {
-  return (CHUNK_STEPS.find((s) => s >= value) ?? 30) as ChunkStep;
+  const maxStep = CHUNK_STEPS[CHUNK_STEPS.length - 1] as ChunkStep;
+  return (CHUNK_STEPS.find((s) => s >= value) ?? maxStep) as ChunkStep;
 }
 
 export interface DownloadProgress {
