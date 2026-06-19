@@ -104,7 +104,10 @@
       "timeM": "{m}m",
       "recommendedBadge": "Recomendado",
       "statusDisabled": "Desativado",
-      "modeLabel": "Modo"
+      "modeLabel": "Modo",
+      "chunkDurationLabel": "Responsividade das Legendas",
+      "chunkDurationHintLow": "Valores menores exibem legendas mais rápido, mas podem usar mais CPU.",
+      "chunkDurationHintHigh": "Valores maiores reduzem a pressão de processamento, mas aumentam o atraso."
     },
     "tabs": {
       "general": "Geral",

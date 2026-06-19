@@ -99,7 +99,10 @@
       "timeM": "{m}м",
       "recommendedBadge": "Рекомендуется",
       "statusDisabled": "Отключено",
-      "modeLabel": "Режим"
+      "modeLabel": "Режим",
+      "chunkDurationLabel": "Быстродействие субтитров",
+      "chunkDurationHintLow": "Меньшие значения показывают субтитры быстрее, но могут увеличить нагрузку на процессор.",
+      "chunkDurationHintHigh": "Большие значения снижают нагрузку на процессор, но увеличивают задержку."
     },
     "help": {
       "title": "Помощь",

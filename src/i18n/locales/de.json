@@ -99,7 +99,10 @@
       "timeM": "{m}m",
       "recommendedBadge": "Empfohlen",
       "statusDisabled": "Deaktiviert",
-      "modeLabel": "Modus"
+      "modeLabel": "Modus",
+      "chunkDurationLabel": "Untertitel-Reaktionszeit",
+      "chunkDurationHintLow": "Niedrigere Werte zeigen Untertitel schneller an, können aber mehr CPU nutzen.",
+      "chunkDurationHintHigh": "Höhere Werte reduzieren die Verarbeitungslast, erhöhen jedoch die Verzögerung."
     },
     "help": {
       "title": "Hilfe",
