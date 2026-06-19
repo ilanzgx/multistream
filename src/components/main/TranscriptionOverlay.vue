@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { useTranscription } from "@/composables/useTranscription";
 
-const { isActive, lines } = useTranscription();
+const { isActive, lines, showOverlay } = useTranscription();
 </script>
 
 <template>
   <div
-    v-if="isActive && lines.length > 0"
+    v-if="isActive && showOverlay && lines.length > 0"
     class="absolute bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[80%] flex flex-col items-center gap-1 z-50 pointer-events-none"
   >
     <TransitionGroup name="transcription-line">

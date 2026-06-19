@@ -161,6 +161,7 @@
     "transcript": {
       "emptyState": "No transcription history yet.",
       "emptyStateHint": "Enable Live Transcription to start generating captions.",
+      "showOverlay": "Show overlay",
       "copy": "Copy",
       "clear": "Clear",
       "copied": "Copied!"

@@ -159,8 +159,9 @@
       "transcript": "Transcrição"
     },
     "transcript": {
-      "emptyState": "Ainda não há histórico de transcrição.",
-      "emptyStateHint": "Ative a Transcrição ao Vivo para gerar legendas.",
+      "emptyState": "Nenhum histórico de transcrição ainda.",
+      "emptyStateHint": "Ative a Transcrição ao Vivo para começar a gerar legendas.",
+      "showOverlay": "Mostrar overlay",
       "copy": "Copiar",
       "clear": "Limpar",
       "copied": "Copiado!"

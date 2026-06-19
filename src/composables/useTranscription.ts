@@ -49,6 +49,7 @@ const _useTranscription = () => {
   const selectedModel = useStorage<string>("transcription.model", "base");
   const captionMode = useStorage<"original" | "translate">("transcription.captionMode", "original");
   const chunkDuration = useStorage<ChunkStep>("transcription.chunkDuration", 10);
+  const showOverlay = useStorage<boolean>("transcription.showOverlay", true);
 
   // Session State
   const isEnabled = ref(false);
@@ -296,6 +297,7 @@ const _useTranscription = () => {
     isEnabled,
     captionMode,
     chunkDuration,
+    showOverlay,
     isDownloading,
     downloadingModel,
     downloadProgress,

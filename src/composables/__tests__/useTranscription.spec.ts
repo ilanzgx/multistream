@@ -155,6 +155,15 @@ describe("useTranscription composable unit tests", () => {
     expect(chunkDuration.value).toBe(10);
   });
 
+  it("should default showOverlay to true", async () => {
+    // Arrange
+    const { showOverlay } = useTranscription();
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Act / Assert
+    expect(showOverlay.value).toBe(true);
+  });
+
   it("should snap setChunkDuration to nearest valid step", async () => {
     // Arrange
     const { setChunkDuration, chunkDuration } = useTranscription();

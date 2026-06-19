@@ -159,8 +159,9 @@
       "transcript": "Transcripción"
     },
     "transcript": {
-      "emptyState": "No hay historial de transcripción.",
-      "emptyStateHint": "Habilite la Transcripción en Vivo para generar subtítulos.",
+      "emptyState": "Aún no hay historial de transcripción.",
+      "emptyStateHint": "Habilite la Transcripción en vivo para comenzar a generar subtítulos.",
+      "showOverlay": "Mostrar superposición",
       "copy": "Copiar",
       "clear": "Limpiar",
       "copied": "¡Copiado!"

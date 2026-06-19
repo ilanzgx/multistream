@@ -160,7 +160,8 @@
     },
     "transcript": {
       "emptyState": "暂无转录历史。",
-      "emptyStateHint": "启用实时转录以生成字幕。",
+      "emptyStateHint": "启用实时转录以开始生成字幕。",
+      "showOverlay": "显示悬浮字幕",
       "copy": "复制",
       "clear": "清除",
       "copied": "已复制！"

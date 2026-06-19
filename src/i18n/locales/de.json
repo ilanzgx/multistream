@@ -161,6 +161,7 @@
     "transcript": {
       "emptyState": "Noch kein Transkriptionsverlauf.",
       "emptyStateHint": "Aktivieren Sie Live-Transkription, um Untertitel zu erstellen.",
+      "showOverlay": "Overlay anzeigen",
       "copy": "Kopieren",
       "clear": "Löschen",
       "copied": "Kopiert!"

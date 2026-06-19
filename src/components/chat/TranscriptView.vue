@@ -3,13 +3,20 @@ import { ref, watch, nextTick, computed } from "vue";
 import { useNow } from "@vueuse/core";
 import { useTranscription } from "@/composables/useTranscription";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Copy, Trash2 } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-const { transcriptHistory, clearTranscriptHistory, selectedModel, captionMode, lastCaptionTime } =
-  useTranscription();
+const {
+  transcriptHistory,
+  clearTranscriptHistory,
+  selectedModel,
+  captionMode,
+  lastCaptionTime,
+  showOverlay,
+} = useTranscription();
 const { t } = useI18n();
 const now = useNow();
 const scrollContainer = ref<HTMLElement | null>(null);
@@ -94,8 +101,19 @@ async function copyTranscript() {
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex items-center gap-1.5 shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <div class="flex items-center mr-1">
+                <Switch v-model="showOverlay" data-testid="transcription-overlay-toggle" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{{ $t("chat.transcript.showOverlay") }}</p>
+            </TooltipContent>
+          </Tooltip>
+
           <Tooltip>
             <TooltipTrigger as-child>
               <Button
