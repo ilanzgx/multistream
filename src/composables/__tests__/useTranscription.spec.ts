@@ -108,6 +108,7 @@ describe("useTranscription composable unit tests", () => {
     expect(invoke).toHaveBeenCalledWith("start_transcription", {
       modelName: "base",
       translate: false,
+      chunkDuration: 10,
     });
     expect(isActive.value).toBe(true);
   });
@@ -143,5 +144,39 @@ describe("useTranscription composable unit tests", () => {
 
     // Assert
     expect(transcriptHistory.value).toEqual([]);
+  });
+
+  it("should default chunkDuration to 10", async () => {
+    // Arrange
+    const { chunkDuration } = useTranscription();
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Act / Assert
+    expect(chunkDuration.value).toBe(10);
+  });
+
+  it("should snap setChunkDuration to nearest valid step", async () => {
+    // Arrange
+    const { setChunkDuration, chunkDuration } = useTranscription();
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Act — value 7 should snap up to 10
+    await setChunkDuration(7);
+
+    // Assert
+    expect(chunkDuration.value).toBe(10);
+    expect(invoke).toHaveBeenCalledWith("set_chunk_duration", { seconds: 10 });
+  });
+
+  it("should call set_chunk_duration with exact step value", async () => {
+    // Arrange
+    const { setChunkDuration } = useTranscription();
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Act
+    await setChunkDuration(5);
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("set_chunk_duration", { seconds: 5 });
   });
 });

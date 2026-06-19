@@ -33,11 +33,11 @@ import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
 import { useBackup } from "@/composables/useBackup";
 import type { BackupData } from "@/composables/useBackup";
-
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 import { PLATFORMS } from "@/config/platforms";
-import { useTranscription } from "@/composables/useTranscription";
+import { useTranscription, CHUNK_STEPS } from "@/composables/useTranscription";
+import { Slider } from "@/components/ui/slider";
 
 const { checkForUpdates, isChecking } = useUpdater();
 const { notificationsEnabled } = usePreferences();
@@ -49,12 +49,14 @@ const {
   selectedModel,
   isEnabled,
   captionMode,
+  chunkDuration,
   isDownloading,
   downloadingModel,
   downloadProgress,
   downloadModel,
   cancelDownload,
   deleteModel,
+  setChunkDuration,
 } = useTranscription();
 
 const AVAILABLE_MODELS = [
@@ -166,7 +168,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 <template>
   <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
     <DialogContent
-      class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl flex flex-col h-[700px] max-h-[90vh]"
+      class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl flex flex-col h-[780px] max-h-[90vh]"
     >
       <DialogHeader>
         <DialogTitle class="text-white">
@@ -457,6 +459,46 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                   </div>
                 </div>
 
+                <!-- Caption Responsiveness slider -->
+                <div class="space-y-1">
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs font-medium text-gray-400">
+                      {{ $t("settings.transcription.chunkDurationLabel") }}
+                    </div>
+                  </div>
+                  <div dir="ltr" class="pt-1 pb-0.5">
+                    <Slider
+                      :model-value="[chunkDuration]"
+                      :min="CHUNK_STEPS[0]"
+                      :max="CHUNK_STEPS[CHUNK_STEPS.length - 1]"
+                      :step="CHUNK_STEPS[1] - CHUNK_STEPS[0]"
+                      data-testid="chunk-duration-slider"
+                      class="w-full my-2"
+                      :disabled="isDownloading"
+                      @update:model-value="(val) => val && val[0] && setChunkDuration(val[0])"
+                    />
+                    <!-- Tick labels -->
+                    <div class="flex justify-between w-full mt-1.5 px-1">
+                      <span
+                        v-for="step in CHUNK_STEPS"
+                        :key="step"
+                        class="text-[10px] font-mono transition-colors leading-none"
+                        :class="
+                          step === chunkDuration ? 'text-white font-semibold' : 'text-gray-500'
+                        "
+                        >{{ step }}s</span
+                      >
+                    </div>
+                  </div>
+                  <p class="text-[10px] text-gray-400 mt-1 leading-tight">
+                    {{ $t("settings.transcription.chunkDurationHintLow") }}
+                    {{ $t("settings.transcription.chunkDurationHintHigh") }}
+                    <strong class="font-semibold text-gray-300">{{
+                      $t("settings.transcription.chunkDurationHintRec")
+                    }}</strong>
+                  </p>
+                </div>
+
                 <!-- Models List -->
                 <div class="space-y-2">
                   <div class="text-xs font-medium text-gray-400 mb-2">
@@ -512,7 +554,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                       <template v-else-if="installedModels.includes(model.id)">
                         <span
                           v-if="selectedModel === model.id"
-                          class="flex items-center text-[10px] px-3 rounded-md bg-[#2a2d33]/20 text-green-400 border border-green-500/20 uppercase tracking-wider font-mono h-9 select-none"
+                          class="flex items-center text-[10px] px-3 rounded-md text-green-400 uppercase tracking-wider font-mono h-9 select-none"
                         >
                           <Check class="size-3.5 mr-1" />
                           {{ $t("settings.transcription.modelSelected") }}

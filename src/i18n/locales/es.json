@@ -99,7 +99,11 @@
       "timeM": "{m}m",
       "recommendedBadge": "Recomendado",
       "statusDisabled": "Desactivado",
-      "modeLabel": "Modo"
+      "modeLabel": "Modo",
+      "chunkDurationLabel": "Responsividad de Subtítulos",
+      "chunkDurationHintLow": "Los valores más bajos muestran subtítulos más rápido pero pueden usar más CPU.",
+      "chunkDurationHintHigh": "Los valores más altos reducen la carga de procesamiento pero aumentan el retraso.",
+      "chunkDurationHintRec": "Se recomiendan 10s para la mayoría de los sistemas."
     },
     "help": {
       "title": "Ayuda",

@@ -104,7 +104,11 @@
       "timeM": "{m}m",
       "recommendedBadge": "Recommended",
       "statusDisabled": "Disabled",
-      "modeLabel": "Mode"
+      "modeLabel": "Mode",
+      "chunkDurationLabel": "Caption Responsiveness",
+      "chunkDurationHintLow": "Lower values show captions faster but may use more CPU.",
+      "chunkDurationHintHigh": "Higher values reduce processing pressure but increase delay.",
+      "chunkDurationHintRec": "10s is recommended for most systems."
     },
     "tabs": {
       "general": "General",

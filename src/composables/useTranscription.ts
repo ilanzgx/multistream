@@ -6,6 +6,19 @@ import { isTauri } from "./useUpdater";
 import { toast } from "vue-sonner";
 import { i18n } from "../i18n";
 
+/** Valid discrete chunk duration values in seconds. */
+export const CHUNK_STEPS = [5, 10, 15, 20, 25, 30] as const;
+export type ChunkStep = (typeof CHUNK_STEPS)[number];
+
+/**
+ * Clamps an arbitrary number to the nearest valid chunk step.
+ * Always returns a value from CHUNK_STEPS.
+ */
+function toValidChunkStep(value: number): ChunkStep {
+  const maxStep = CHUNK_STEPS[CHUNK_STEPS.length - 1] as ChunkStep;
+  return (CHUNK_STEPS.find((s) => s >= value) ?? maxStep) as ChunkStep;
+}
+
 export interface DownloadProgress {
   downloaded: number;
   total: number;
@@ -35,6 +48,7 @@ const _useTranscription = () => {
   // Persistent Settings
   const selectedModel = useStorage<string>("transcription.model", "base");
   const captionMode = useStorage<"original" | "translate">("transcription.captionMode", "original");
+  const chunkDuration = useStorage<ChunkStep>("transcription.chunkDuration", 10);
 
   // Session State
   const isEnabled = ref(false);
@@ -125,6 +139,7 @@ const _useTranscription = () => {
       await invoke("start_transcription", {
         modelName: selectedModel.value,
         translate,
+        chunkDuration: chunkDuration.value,
       });
       isActive.value = true;
       status.value = "active";
@@ -147,6 +162,17 @@ const _useTranscription = () => {
       lines.value = []; // Clear lines when stopped
     } catch (e) {
       console.error("Failed to stop transcription:", e);
+    }
+  };
+
+  const setChunkDuration = async (seconds: number) => {
+    const valid = toValidChunkStep(seconds);
+    chunkDuration.value = valid;
+    if (!isTauri()) return;
+    try {
+      await invoke("set_chunk_duration", { seconds: valid });
+    } catch (e) {
+      console.error("Failed to set chunk duration:", e);
     }
   };
 
@@ -269,6 +295,7 @@ const _useTranscription = () => {
     selectedModel,
     isEnabled,
     captionMode,
+    chunkDuration,
     isDownloading,
     downloadingModel,
     downloadProgress,
@@ -282,6 +309,7 @@ const _useTranscription = () => {
     deleteModel,
     startTranscription,
     stopTranscription,
+    setChunkDuration,
     updateStatus,
     clearTranscriptHistory,
   };

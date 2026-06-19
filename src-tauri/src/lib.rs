@@ -108,6 +108,7 @@ pub fn run() {
             audio::transcriber::get_transcription_status,
             audio::transcriber::start_transcription,
             audio::transcriber::stop_transcription,
+            audio::transcriber::set_chunk_duration,
         ])
         .setup(move |app| {
             // initialize the transcription state (no active session on startup)

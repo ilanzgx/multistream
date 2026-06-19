@@ -99,7 +99,11 @@
       "timeM": "{m}分钟",
       "recommendedBadge": "推荐",
       "statusDisabled": "已禁用",
-      "modeLabel": "模式"
+      "modeLabel": "模式",
+      "chunkDurationLabel": "字幕响应速度",
+      "chunkDurationHintLow": "较小的值能更快显示字幕，但可能占用更多 CPU。",
+      "chunkDurationHintHigh": "较大的值可降低处理压力，但会增加延迟。",
+      "chunkDurationHintRec": "建议大多数系统设置为 10s。"
     },
     "help": {
       "title": "帮助",
