@@ -1,3 +1,4 @@
+import { effectScope, EffectScope } from "vue";
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useBackup, validateBackupData } from "../useBackup";
 import type { BackupData } from "../useBackup";
@@ -10,6 +11,7 @@ vi.mock("vue-i18n", () => ({
 }));
 
 describe("useBackup composable unit tests", () => {
+  let scope: EffectScope;
   let backupComposable: ReturnType<typeof useBackup>;
 
   const validBackup: BackupData = {
@@ -36,10 +38,12 @@ describe("useBackup composable unit tests", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    backupComposable = useBackup();
+    scope = effectScope();
+    backupComposable = scope.run(() => useBackup())!;
   });
 
   afterEach(() => {
+    scope?.stop();
     delete (globalThis as any).document;
   });
 
@@ -72,12 +76,32 @@ describe("useBackup composable unit tests", () => {
       expect(validateBackupData(invalidPreferences)).toBe(false);
     });
 
+    it("should reject backup with invalid locale", () => {
+      // Arrange
+      const invalidLocale = {
+        ...validBackup,
+        preferences: { ...validBackup.preferences, locale: 123 } as any,
+      };
+
+      // Act & Assert
+      expect(validateBackupData(invalidLocale)).toBe(false);
+    });
+
     it("should reject backup with invalid watchHistory structure", () => {
+      // Arrange
       const invalidHistory = {
         ...validBackup,
         watchHistory: { "twitch:streamer": "100" } as any, // should be number
       };
+
+      const invalidHistoryArray = {
+        ...validBackup,
+        watchHistory: [] as any, // should be object
+      };
+
+      // Act & Assert
       expect(validateBackupData(invalidHistory)).toBe(false);
+      expect(validateBackupData(invalidHistoryArray)).toBe(false);
     });
   });
 
@@ -171,6 +195,55 @@ describe("useBackup composable unit tests", () => {
       expect(document.body.removeChild).toHaveBeenCalledWith(mockLink);
       expect(createObjectURLMock).toHaveBeenCalled();
       expect(revokeObjectURLMock).toHaveBeenCalledWith("blob:url");
+    });
+
+    it("should use showSaveFilePicker if available", async () => {
+      // Arrange
+      const { exportConfig } = backupComposable;
+
+      const mockWritable = {
+        write: vi.fn(),
+        close: vi.fn(),
+      };
+      const mockHandle = {
+        createWritable: vi.fn().mockResolvedValue(mockWritable),
+      };
+
+      (globalThis as any).window = {
+        showSaveFilePicker: vi.fn().mockResolvedValue(mockHandle),
+      };
+
+      // Act
+      const result = await exportConfig();
+
+      // Assert
+      expect(result).toBe(true);
+      expect((globalThis as any).window.showSaveFilePicker).toHaveBeenCalled();
+      expect(mockHandle.createWritable).toHaveBeenCalled();
+      expect(mockWritable.write).toHaveBeenCalled();
+      expect(mockWritable.close).toHaveBeenCalled();
+
+      delete (globalThis as any).window;
+    });
+
+    it("should handle AbortError from showSaveFilePicker", async () => {
+      // Arrange
+      const { exportConfig } = backupComposable;
+
+      const abortError = new Error("AbortError");
+      abortError.name = "AbortError";
+
+      (globalThis as any).window = {
+        showSaveFilePicker: vi.fn().mockRejectedValue(abortError),
+      };
+
+      // Act
+      const result = await exportConfig();
+
+      // Assert - Should return false if user cancelled
+      expect(result).toBe(false);
+
+      delete (globalThis as any).window;
     });
   });
 });

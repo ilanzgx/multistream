@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useLiveStatus } from "../useLiveStatus";
-import { ref } from "vue";
+import { ref, effectScope, EffectScope } from "vue";
 
 // module-level refs so tests can populate them before startPolling
 const mockRecents = ref<any[]>([]);
@@ -36,6 +36,7 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 describe("useLiveStatus composable unit tests (Critical Paths)", () => {
+  let scope: EffectScope;
   let sut: ReturnType<typeof useLiveStatus>;
 
   beforeEach(() => {
@@ -43,7 +44,8 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
     vi.useFakeTimers();
     mockRecents.value = [];
 
-    sut = useLiveStatus();
+    scope = effectScope();
+    sut = scope.run(() => useLiveStatus())!;
     sut.stopPolling();
     sut.statuses.value = {}; // Reset state
   });
@@ -135,6 +137,24 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       // Multiple stops should be safe
       sut.stopPolling();
       expect(clearIntervalSpy).toHaveBeenCalledTimes(1); // Didn't increase
+    });
+
+    it("should clean up intervals on scope dispose", () => {
+      // Arrange
+      mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
+      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
+
+      const scope = effectScope();
+      scope.run(() => {
+        const localSut = useLiveStatus();
+        localSut.startPolling();
+      });
+
+      // Act
+      scope.stop(); // triggers onScopeDispose
+
+      // Assert
+      expect(clearIntervalSpy).toHaveBeenCalled();
     });
   });
 
@@ -254,25 +274,29 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       fetchSpy.mockRestore();
     });
 
-    it("should fetch suggestions from both platforms and interleave them", async () => {
+    it("should fetch suggestions from both platforms and interleave them, including phase 2", async () => {
+      // Arrange
+      let twitchCallCount = 0;
       fetchSpy.mockImplementation(async (url: string | Request | URL) => {
         const urlStr = url.toString();
         if (urlStr.includes("twitch.tv")) {
+          twitchCallCount++;
+          // First call returns 30 items to trigger Phase 2. Second call returns 1 item.
+          const edgeCount = twitchCallCount === 1 ? 30 : 1;
           return {
             ok: true,
             json: async () => ({
               data: {
                 streams: {
-                  edges: [
-                    {
-                      node: {
-                        broadcaster: { login: "shroud" },
-                        title: "Valo",
-                        viewersCount: 10000,
-                        game: { displayName: "Valorant" },
-                      },
+                  edges: Array.from({ length: edgeCount }).map((_, i) => ({
+                    cursor: `cursor_${i}`,
+                    node: {
+                      broadcaster: { login: `shroud_${twitchCallCount}_${i}` },
+                      title: "Valo",
+                      viewersCount: 10000 - i,
+                      game: { displayName: "Valorant" },
                     },
-                  ],
+                  })),
                 },
               },
             }),
@@ -296,13 +320,95 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
         return { ok: false };
       });
 
+      // Act
       await sut.refreshSuggestions();
 
+      // Assert
       expect(sut.suggestedStreams.value.length).toBeGreaterThan(0);
       expect(sut.suggestedStreams.value[0]?.platform).toBe("twitch");
-      expect(sut.suggestedStreams.value[0]?.channel).toBe("shroud");
       expect(sut.suggestedStreams.value[1]?.platform).toBe("kick");
-      expect(sut.suggestedStreams.value[1]?.channel).toBe("xqc");
+      // Verify Phase 2 background fetch happened (twitch called more than once)
+      expect(twitchCallCount).toBeGreaterThan(1);
+    });
+  });
+
+  describe("fetchStreamsForCategory", () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      fetchSpy = vi.spyOn(globalThis, "fetch");
+    });
+
+    afterEach(() => {
+      fetchSpy.mockRestore();
+    });
+
+    it("should fetch from both platforms and interleave results for a category", async () => {
+      // Arrange
+      fetchSpy.mockImplementation(async (url: string | Request | URL, options?: RequestInit) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("twitch.tv/gql")) {
+          const bodyStr = typeof options?.body === "string" ? options.body : "";
+          if (bodyStr.includes("searchCategories")) {
+            return {
+              ok: true,
+              json: async () => ({
+                data: {
+                  searchCategories: { edges: [{ node: { slug: "valorant" } }] },
+                },
+              }),
+            };
+          } else {
+            return {
+              ok: true,
+              json: async () => ({
+                data: {
+                  game: {
+                    streams: {
+                      edges: [
+                        {
+                          node: {
+                            broadcaster: { login: "shroud" },
+                            title: "Valo",
+                            viewersCount: 10000,
+                            game: { displayName: "Valorant" },
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              }),
+            };
+          }
+        }
+        if (urlStr.includes("featured-livestreams")) {
+          return {
+            ok: true,
+            json: async () => ({
+              data: [
+                {
+                  slug: "xqc",
+                  session_title: "Reacts",
+                  viewers: 15000,
+                  categories: [{ name: "Valorant" }],
+                },
+              ],
+            }),
+          };
+        }
+        return { ok: false };
+      });
+
+      // Act
+      const results = await sut.fetchStreamsForCategory("Valorant");
+
+      // Assert
+      expect(results.length).toBeGreaterThan(0);
+      expect(results[0]?.platform).toBe("twitch");
+      expect(results[0]?.channel).toBe("shroud");
+      expect(results[1]?.platform).toBe("kick");
+      expect(results[1]?.channel).toBe("xqc");
     });
   });
 });

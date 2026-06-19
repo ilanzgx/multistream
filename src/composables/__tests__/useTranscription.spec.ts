@@ -1,3 +1,4 @@
+import { effectScope, EffectScope } from "vue";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useTranscription } from "../useTranscription";
 
@@ -16,11 +17,29 @@ vi.mock("@/composables/useUpdater", () => ({
   useUpdater: () => ({ checkForUpdates: vi.fn(), isChecking: false }),
 }));
 
+vi.mock("vue-sonner", () => ({
+  toast: { success: vi.fn(), info: vi.fn() },
+}));
+
+vi.mock("vue", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vue")>();
+  return {
+    ...actual,
+    onUnmounted: vi.fn(),
+  };
+});
+
+vi.mock("../i18n", () => ({
+  i18n: { global: { t: (key: string) => key } },
+}));
+
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 describe("useTranscription composable unit tests", () => {
+  let scope: EffectScope;
   beforeEach(() => {
+    scope = effectScope();
     // Arrange
     vi.clearAllMocks();
     localStorage.clear();
@@ -41,12 +60,15 @@ describe("useTranscription composable unit tests", () => {
   });
 
   afterEach(() => {
+    scope?.stop();
     vi.restoreAllMocks();
   });
 
   it("should initialize status properly on tauri", async () => {
     // Arrange
-    const { installedModels, isActive, updateStatus, isSupported } = useTranscription();
+    const { installedModels, isActive, updateStatus, isSupported } = scope.run(() =>
+      useTranscription()
+    )!;
     isSupported.value = true;
     await new Promise((r) => setTimeout(r, 0)); // wait for initialization
 
@@ -61,7 +83,9 @@ describe("useTranscription composable unit tests", () => {
 
   it("should download model and update status", async () => {
     // Arrange
-    const { downloadModel, isDownloading, installedModels, isSupported } = useTranscription();
+    const { downloadModel, isDownloading, installedModels, isSupported } = scope.run(() =>
+      useTranscription()
+    )!;
     isSupported.value = true;
     await new Promise((r) => setTimeout(r, 0)); // wait for initialization
 
@@ -94,8 +118,9 @@ describe("useTranscription composable unit tests", () => {
 
   it("should start transcription and listen to text events", async () => {
     // Arrange
-    const { startTranscription, isActive, selectedModel, updateStatus, isSupported } =
-      useTranscription();
+    const { startTranscription, isActive, selectedModel, updateStatus, isSupported } = scope.run(
+      () => useTranscription()
+    )!;
     isSupported.value = true;
     await new Promise((r) => setTimeout(r, 0)); // wait for initialization
     await updateStatus(); // Load installed models
@@ -115,8 +140,9 @@ describe("useTranscription composable unit tests", () => {
 
   it("should stop transcription and clear lines but not transcriptHistory", async () => {
     // Arrange
-    const { stopTranscription, isActive, lines, transcriptHistory, isSupported } =
-      useTranscription();
+    const { stopTranscription, isActive, lines, transcriptHistory, isSupported } = scope.run(() =>
+      useTranscription()
+    )!;
     isSupported.value = true;
     await new Promise((r) => setTimeout(r, 0)); // wait for initialization
     isActive.value = true;
@@ -135,7 +161,7 @@ describe("useTranscription composable unit tests", () => {
 
   it("should clear transcriptHistory", async () => {
     // Arrange
-    const { clearTranscriptHistory, transcriptHistory } = useTranscription();
+    const { clearTranscriptHistory, transcriptHistory } = scope.run(() => useTranscription())!;
     await new Promise((r) => setTimeout(r, 0)); // wait for initialization
     transcriptHistory.value = [{ text: "Hello", timestamp: 123 }];
 
@@ -148,7 +174,7 @@ describe("useTranscription composable unit tests", () => {
 
   it("should default chunkDuration to 10", async () => {
     // Arrange
-    const { chunkDuration } = useTranscription();
+    const { chunkDuration } = scope.run(() => useTranscription())!;
     await new Promise((r) => setTimeout(r, 0));
 
     // Act / Assert
@@ -157,7 +183,7 @@ describe("useTranscription composable unit tests", () => {
 
   it("should default showOverlay to true", async () => {
     // Arrange
-    const { showOverlay } = useTranscription();
+    const { showOverlay } = scope.run(() => useTranscription())!;
     await new Promise((r) => setTimeout(r, 0));
 
     // Act / Assert
@@ -166,7 +192,7 @@ describe("useTranscription composable unit tests", () => {
 
   it("should snap setChunkDuration to nearest valid step", async () => {
     // Arrange
-    const { setChunkDuration, chunkDuration } = useTranscription();
+    const { setChunkDuration, chunkDuration } = scope.run(() => useTranscription())!;
     await new Promise((r) => setTimeout(r, 0));
 
     // Act — value 7 should snap up to 10
@@ -179,7 +205,7 @@ describe("useTranscription composable unit tests", () => {
 
   it("should call set_chunk_duration with exact step value", async () => {
     // Arrange
-    const { setChunkDuration } = useTranscription();
+    const { setChunkDuration } = scope.run(() => useTranscription())!;
     await new Promise((r) => setTimeout(r, 0));
 
     // Act
@@ -187,5 +213,81 @@ describe("useTranscription composable unit tests", () => {
 
     // Assert
     expect(invoke).toHaveBeenCalledWith("set_chunk_duration", { seconds: 5 });
+  });
+
+  it("should cancel download", async () => {
+    // Arrange
+    const { cancelDownload, isDownloading, isSupported } = scope.run(() => useTranscription())!;
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+    isDownloading.value = true;
+
+    // Act
+    await cancelDownload();
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("cancel_whisper_download");
+  });
+
+  it("should delete model and update status", async () => {
+    // Arrange
+    const { deleteModel, installedModels, isSupported, isActive, selectedModel } = scope.run(() =>
+      useTranscription()
+    )!;
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+    installedModels.value = ["base", "small"];
+    selectedModel.value = "base";
+    isActive.value = false;
+
+    // Act
+    await deleteModel("small");
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("delete_whisper_model", { modelName: "small" });
+    expect(invoke).toHaveBeenCalledWith("get_transcription_status");
+  });
+
+  it("should stop transcription if deleting the active model", async () => {
+    // Arrange
+    const { deleteModel, installedModels, isSupported, isActive, selectedModel } = scope.run(() =>
+      useTranscription()
+    )!;
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+    installedModels.value = ["base", "small"];
+    selectedModel.value = "base";
+    isActive.value = true;
+
+    // Act
+    await deleteModel("base");
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("stop_transcription");
+    expect(invoke).toHaveBeenCalledWith("delete_whisper_model", { modelName: "base" });
+  });
+
+  it("should restart transcription if captionMode changes while enabled", async () => {
+    // Arrange
+    const { isEnabled, captionMode, selectedModel, installedModels, isSupported } = scope.run(() =>
+      useTranscription()
+    )!;
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+    installedModels.value = ["base"];
+    selectedModel.value = "base";
+    isEnabled.value = true; // Initially enabled
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Act
+    captionMode.value = "translate";
+    await new Promise((r) => setTimeout(r, 0)); // wait for watcher
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("start_transcription", {
+      modelName: "base",
+      translate: true,
+      chunkDuration: 10,
+    });
   });
 });

@@ -1,4 +1,5 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from "vitest";
+import { effectScope, EffectScope } from "vue";
+import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from "vitest";
 import { useStreams } from "../useStreams";
 import { toast } from "vue-sonner";
 
@@ -23,6 +24,7 @@ vi.mock("./useRecents", () => ({
 }));
 
 describe("useStreams composable unit tests", () => {
+  let scope: EffectScope;
   let sut: ReturnType<typeof useStreams>;
 
   beforeAll(() => {
@@ -34,10 +36,15 @@ describe("useStreams composable unit tests", () => {
     vi.useRealTimers();
   });
 
+  afterEach(() => {
+    scope?.stop();
+  });
+
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    sut = useStreams();
+    scope = effectScope();
+    sut = scope.run(() => useStreams())!;
     sut.clearStreams();
     sut.resetTimerState();
   });
