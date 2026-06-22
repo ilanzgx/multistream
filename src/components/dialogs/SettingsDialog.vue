@@ -28,6 +28,7 @@ import {
   Check,
   Captions,
   X,
+  LogOut,
 } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
@@ -42,6 +43,18 @@ import { Slider } from "@/components/ui/slider";
 const { checkForUpdates, isChecking } = useUpdater();
 const { notificationsEnabled } = usePreferences();
 const { locale, t } = useI18n();
+
+import { useTwitchAuth } from "@/composables/useTwitchAuth";
+const { authenticated, username, logout } = useTwitchAuth();
+
+const openAuthModal = () => {
+  window.dispatchEvent(
+    new CustomEvent("multistream-show-dialog", {
+      detail: "twitch-auth",
+    })
+  );
+  emit("update:open", false);
+};
 
 const {
   isSupported,
@@ -336,31 +349,67 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                 <div>
                   <div class="flex items-center gap-2">
                     <h3 class="text-white text-sm font-medium">{{ $t("settings.auth.title") }}</h3>
-                    <span class="text-[10px] text-gray-500 font-medium"
+                    <!--<span class="text-[10px] text-gray-500 font-medium"
                       >({{ $t("common.comingSoon") }})</span
-                    >
+                    >-->
                   </div>
                   <p class="text-gray-400 text-xs mt-0.5">{{ $t("settings.auth.description") }}</p>
                 </div>
               </div>
               <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
-                  <button
-                    v-for="platform in authPlatforms"
-                    :key="platform.id"
-                    class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] text-xs font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-50"
-                    disabled
-                  >
-                    <span :style="{ color: platform.color }" class="shrink-0">
-                      <component :is="platform.icon" :size="14" />
-                    </span>
-                    <span class="text-white font-medium">{{ platform.name }}</span>
-                    <span
-                      class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-500 bg-white/5 border border-white/5"
+                  <template v-for="platform in authPlatforms" :key="platform.id">
+                    <template v-if="platform.id === 'twitch'">
+                      <div
+                        v-if="authenticated"
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#9146FF]/30 bg-[#9146FF]/10 text-xs font-medium transition-all duration-200"
+                      >
+                        <span :style="{ color: platform.color }" class="shrink-0">
+                          <component :is="platform.icon" :size="14" />
+                        </span>
+                        <span class="text-white font-medium truncate max-w-[100px]">{{
+                          username
+                        }}</span>
+                        <button
+                          class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
+                          title="Logout"
+                          @click="logout"
+                        >
+                          <LogOut class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <button
+                        v-else
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200"
+                        @click="openAuthModal"
+                      >
+                        <span :style="{ color: platform.color }" class="shrink-0">
+                          <component :is="platform.icon" :size="14" />
+                        </span>
+                        <span class="text-white font-medium">{{ platform.name }}</span>
+                        <span
+                          class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
+                        >
+                          {{ $t("chat.unified.connectButton") }}
+                        </span>
+                      </button>
+                    </template>
+                    <button
+                      v-else
+                      class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] text-xs font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-35"
+                      disabled
                     >
-                      {{ $t("settings.auth.disconnected") }}
-                    </span>
-                  </button>
+                      <span :style="{ color: platform.color }" class="shrink-0">
+                        <component :is="platform.icon" :size="14" />
+                      </span>
+                      <span class="text-white font-medium">{{ platform.name }}</span>
+                      <span
+                        class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-500 bg-white/5 border border-white/5"
+                      >
+                        {{ $t("settings.auth.disconnected") }}
+                      </span>
+                    </button>
+                  </template>
                 </div>
               </div>
             </div>

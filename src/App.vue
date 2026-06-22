@@ -11,12 +11,14 @@ import SidebarPanel from "./components/main/SidebarPanel.vue";
 import StreamGrid from "./components/main/StreamGrid.vue";
 import EmptyState from "./components/main/EmptyState.vue";
 import OnboardingTour from "./components/dialogs/OnboardingTour.vue";
+import TwitchAuthDialog from "./components/dialogs/TwitchAuthDialog.vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
+const showTwitchAuth = ref(false);
 
 const { streams, addStream, clearStreams } = useStreams();
 const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } =
@@ -115,6 +117,8 @@ function handleDialogShowEvent(e: Event) {
   const evt = e as CustomEvent;
   if (evt.detail === "onboarding-tour") {
     showOnboarding.value = true;
+  } else if (evt.detail === "twitch-auth") {
+    showTwitchAuth.value = true;
   }
 }
 
@@ -212,5 +216,7 @@ onUnmounted(() => {
       :allow-outside-close="onboardingCompleted"
       @complete="setOnboardingCompleted(true)"
     />
+
+    <TwitchAuthDialog v-model:open="showTwitchAuth" />
   </div>
 </template>
