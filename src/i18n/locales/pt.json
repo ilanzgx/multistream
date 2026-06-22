@@ -165,6 +165,25 @@
       "copy": "Copiar",
       "clear": "Limpar",
       "copied": "Copiado!"
+    },
+    "unified": {
+      "selectorLabel": "Chat Unificado da Twitch",
+      "connectTitle": "Conectar com a Twitch",
+      "connectHint": "Entre com sua conta para ver mensagens de todos os canais Twitch da sua grade em um único feed.",
+      "connectButton": "Conectar",
+      "reconnecting": "Reconectando…",
+      "noTwitchStreams": "Nenhuma stream da Twitch na sua grade.",
+      "noTwitchStreamsHint": "Adicione uma stream da Twitch para ver mensagens aqui.",
+      "disconnected": "Chat desconectado.",
+      "auth": {
+        "expired": "O código de autorização expirou. Por favor, tente novamente.",
+        "error": "Ocorreu um erro durante a autenticação: ",
+        "tryAgain": "Tentar Novamente",
+        "step1": "1. Abra o link de verificação abaixo",
+        "step2": "2. Insira este código para vincular sua conta",
+        "waiting": "Aguardando autorização...",
+        "cancel": "Cancelar"
+      }
     }
   },
   "common": {
