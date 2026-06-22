@@ -5,18 +5,21 @@ import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
+import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
 import StreamGrid from "./components/main/StreamGrid.vue";
 import EmptyState from "./components/main/EmptyState.vue";
 import OnboardingTour from "./components/dialogs/OnboardingTour.vue";
+import TwitchAuthDialog from "./components/dialogs/TwitchAuthDialog.vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
+const showTwitchAuth = ref(false);
 
 const { streams, addStream, clearStreams } = useStreams();
 const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } =
@@ -86,7 +89,12 @@ function handleFrameShortcuts(e: MessageEvent) {
 }
 
 watch(streams, (newStreams, oldStreams) => {
-  if (selectedChat.value && !newStreams.some((s) => s.channel === selectedChat.value)) {
+  if (selectedChat.value === UNIFIED_CHAT_ID) {
+    const hasTwitchStreams = newStreams.some((s) => s.platform === "twitch");
+    if (!hasTwitchStreams) {
+      setSelectedChat("");
+    }
+  } else if (selectedChat.value && !newStreams.some((s) => s.channel === selectedChat.value)) {
     setSelectedChat("");
   }
 
@@ -94,8 +102,9 @@ watch(streams, (newStreams, oldStreams) => {
   // if have more than 1 stream and remove one, auto load the chat of the first stream
   // if something wrong happens, falls on fallback
   if (
-    (oldStreams.length === 0 && newStreams.length === 1) ||
-    (oldStreams.length > 1 && newStreams.length === 1)
+    selectedChat.value !== UNIFIED_CHAT_ID &&
+    ((oldStreams.length === 0 && newStreams.length === 1) ||
+      (oldStreams.length > 1 && newStreams.length === 1))
   ) {
     setSelectedChat(newStreams[0]?.channel || "");
   }
@@ -115,6 +124,8 @@ function handleDialogShowEvent(e: Event) {
   const evt = e as CustomEvent;
   if (evt.detail === "onboarding-tour") {
     showOnboarding.value = true;
+  } else if (evt.detail === "twitch-auth") {
+    showTwitchAuth.value = true;
   }
 }
 
@@ -212,5 +223,7 @@ onUnmounted(() => {
       :allow-outside-close="onboardingCompleted"
       @complete="setOnboardingCompleted(true)"
     />
+
+    <TwitchAuthDialog v-model:open="showTwitchAuth" />
   </div>
 </template>

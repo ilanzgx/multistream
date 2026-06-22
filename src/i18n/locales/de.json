@@ -165,6 +165,25 @@
       "copy": "Kopieren",
       "clear": "Löschen",
       "copied": "Kopiert!"
+    },
+    "unified": {
+      "selectorLabel": "Einheitlicher Twitch-Chat",
+      "connectTitle": "Mit Twitch verbinden",
+      "connectHint": "Melde dich an, um Nachrichten aller Twitch-Kanäle in deinem Raster in einem Feed zu sehen.",
+      "connectButton": "Verbinden",
+      "reconnecting": "Verbindung wird wiederhergestellt…",
+      "noTwitchStreams": "Keine Twitch-Streams im Raster.",
+      "noTwitchStreamsHint": "Füge einen Twitch-Stream hinzu, um Nachrichten hier zu sehen.",
+      "disconnected": "Chat getrennt.",
+      "auth": {
+        "expired": "Der Autorisierungscode ist abgelaufen. Bitte versuche es erneut.",
+        "error": "Während der Authentifizierung ist ein Fehler aufgetreten: ",
+        "tryAgain": "Erneut versuchen",
+        "step1": "1. Öffne den Verifizierungslink unten",
+        "step2": "2. Gib diesen Code ein, um dein Konto zu verknüpfen",
+        "waiting": "Warten auf Autorisierung...",
+        "cancel": "Abbrechen"
+      }
     }
   },
   "common": {

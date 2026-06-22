@@ -165,6 +165,25 @@
       "copy": "复制",
       "clear": "清除",
       "copied": "已复制！"
+    },
+    "unified": {
+      "selectorLabel": "Twitch 统一聊天",
+      "connectTitle": "连接 Twitch",
+      "connectHint": "登录以在单一聊天流中查看网格中所有 Twitch 频道的消息。",
+      "connectButton": "连接",
+      "reconnecting": "正在重新连接…",
+      "noTwitchStreams": "网格中没有 Twitch 直播。",
+      "noTwitchStreamsHint": "添加 Twitch 直播以在此查看消息。",
+      "disconnected": "聊天已断开。",
+      "auth": {
+        "expired": "授权码已过期。请重试。",
+        "error": "验证过程中发生错误：",
+        "tryAgain": "重试",
+        "step1": "1. 打开下方的验证链接",
+        "step2": "2. 输入此代码以关联您的账户",
+        "waiting": "等待授权中...",
+        "cancel": "取消"
+      }
     }
   },
   "common": {

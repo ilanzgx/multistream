@@ -165,6 +165,25 @@
       "copy": "Copy",
       "clear": "Clear",
       "copied": "Copied!"
+    },
+    "unified": {
+      "selectorLabel": "Unified Twitch Chat",
+      "connectTitle": "Connect with Twitch",
+      "connectHint": "Sign in to see messages from all Twitch channels in your grid in a single feed.",
+      "connectButton": "Connect",
+      "reconnecting": "Reconnecting…",
+      "noTwitchStreams": "No Twitch streams in your grid.",
+      "noTwitchStreamsHint": "Add a Twitch stream to see messages here.",
+      "disconnected": "Chat disconnected.",
+      "auth": {
+        "expired": "The authorization code has expired. Please try again.",
+        "error": "An error occurred during authentication: ",
+        "tryAgain": "Try Again",
+        "step1": "1. Open the verification link below",
+        "step2": "2. Enter this code to link your account",
+        "waiting": "Waiting for authorization...",
+        "cancel": "Cancel"
+      }
     }
   },
   "common": {
