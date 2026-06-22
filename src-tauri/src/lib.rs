@@ -1,4 +1,4 @@
-use tauri::Manager;
+use tauri::{Manager, Emitter};
 use tauri::tray::TrayIconBuilder;
 use tauri::menu::{Menu, MenuItem};
 use tauri::window::Color;
@@ -135,7 +135,49 @@ pub fn run() {
 
             let twitch_state = TwitchState::new();
             if let Some(stored_auth) = twitch::commands::init_stored_auth(app.handle()) {
-                *twitch_state.auth.try_lock().expect("lock on startup") = Some(stored_auth);
+                *twitch_state.auth.try_lock().expect("lock on startup") = Some(stored_auth.clone());
+
+                let app_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let Ok(http) = reqwest::Client::builder().use_rustls_tls().build() else { return };
+                    let state = app_handle.state::<TwitchState>();
+                    
+                    let validate_resp = http
+                        .get("https://id.twitch.tv/oauth2/validate")
+                        .bearer_auth(&stored_auth.access_token)
+                        .send()
+                        .await;
+
+                    match validate_resp {
+                        Ok(resp) if resp.status().is_success() => {
+                            // Valid
+                        }
+                        Ok(_) => {
+                            match twitch::oauth::refresh_token(&http, &stored_auth.refresh_token).await {
+                                Ok(refreshed) => {
+                                    let _ = twitch::oauth::store_auth(&app_handle, &refreshed);
+                                    *state.auth.lock().await = Some(refreshed);
+                                }
+                                Err(twitch::error::TwitchError::TokenRefreshFailed) => {
+                                    *state.auth.lock().await = None;
+                                    twitch::oauth::clear_auth(&app_handle);
+                                    use twitch::state::AuthState;
+                                    let _ = app_handle.emit("twitch-auth-expired", ());
+                                    let _ = app_handle.emit("twitch-auth-changed", AuthState {
+                                        authenticated: false,
+                                        username: None,
+                                    });
+                                }
+                                Err(_) => {
+                                    // Network error during refresh - preserve credentials
+                                }
+                            }
+                        }
+                        Err(_) => {
+                            // Network error - do not clear credentials
+                        }
+                    }
+                });
             }
             app.manage(twitch_state);
 

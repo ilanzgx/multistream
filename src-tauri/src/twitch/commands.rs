@@ -5,7 +5,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use super::error::TwitchError;
 use super::irc::update_subscriptions;
 use super::oauth;
-use super::state::{AuthState, ConnectionState, TwitchAuthInfo, TwitchState, UnifiedChatMessage};
+use super::state::{AuthState, ConnectionState, ConnectionStateEvent, TwitchAuthInfo, TwitchState, UnifiedChatMessage};
 
 #[tauri::command]
 pub async fn twitch_login(
@@ -53,7 +53,15 @@ pub async fn twitch_login(
                         break;
                     }
 
-                    match oauth::poll_device_token(&http, &device_code).await {
+                    let poll_result = tokio::select! {
+                        res = oauth::poll_device_token(&http, &device_code) => res,
+                        _ = &mut abort_rx => {
+                            println!("Auth polling aborted during request");
+                            break;
+                        }
+                    };
+
+                    match poll_result {
                         Ok(Some(auth)) => {
                             let _ = oauth::store_auth(&app_handle, &auth);
                             *state_ref.auth.lock().await = Some(auth.clone());
@@ -96,6 +104,12 @@ pub async fn twitch_logout(
     app: AppHandle,
     state: State<'_, TwitchState>,
 ) -> Result<(), TwitchError> {
+    let mut auth_abort_guard = state.auth_abort_tx.lock().await;
+    if let Some(tx) = auth_abort_guard.take() {
+        let _ = tx.send(());
+    }
+    drop(auth_abort_guard);
+
     let mut shutdown_guard = state.irc_shutdown_tx.lock().await;
     if let Some(tx) = shutdown_guard.take() {
         let _ = tx.send(());
@@ -144,7 +158,24 @@ pub async fn twitch_set_channels(
         .build()
         .map_err(TwitchError::Http)?;
 
-    let auth_info = try_refresh_if_needed(&app, auth_info, &state, &http).await?;
+    let auth_info = match try_refresh_if_needed(&app, auth_info, &state, &http).await {
+        Ok(info) => info,
+        Err(TwitchError::TokenRefreshFailed) => {
+            // Token refresh failed or is invalid
+            *state.auth.lock().await = None;
+            oauth::clear_auth(&app);
+            let _ = app.emit("twitch-auth-expired", ());
+            let _ = app.emit(
+                "twitch-auth-changed",
+                AuthState {
+                    authenticated: false,
+                    username: None,
+                },
+            );
+            return Err(TwitchError::TokenRefreshFailed);
+        }
+        Err(e) => return Err(e),
+    };
 
     update_subscriptions(
         &app,
@@ -168,8 +199,10 @@ pub async fn twitch_get_messages(
 #[tauri::command]
 pub async fn twitch_get_connection_state(
     state: State<'_, TwitchState>,
-) -> Result<ConnectionState, TwitchError> {
-    Ok(state.connection_state.lock().await.clone())
+) -> Result<ConnectionStateEvent, TwitchError> {
+    Ok(ConnectionStateEvent {
+        state: state.connection_state.lock().await.clone(),
+    })
 }
 
 async fn try_refresh_if_needed(
@@ -179,22 +212,22 @@ async fn try_refresh_if_needed(
     http: &reqwest::Client,
 ) -> Result<TwitchAuthInfo, TwitchError> {
     let validate_url = "https://id.twitch.tv/oauth2/validate";
-    let is_valid = http
+    let validate_resp = http
         .get(validate_url)
         .bearer_auth(&auth.access_token)
         .send()
-        .await
-        .map(|r| r.status().is_success())
-        .unwrap_or(false);
+        .await;
 
-    if is_valid {
-        return Ok(auth);
+    match validate_resp {
+        Ok(resp) if resp.status().is_success() => Ok(auth),
+        Ok(_) => {
+            let refreshed = oauth::refresh_token(http, &auth.refresh_token).await?;
+            oauth::store_auth(app, &refreshed)?;
+            *state.auth.lock().await = Some(refreshed.clone());
+            Ok(refreshed)
+        }
+        Err(e) => Err(TwitchError::Http(e)),
     }
-
-    let refreshed = oauth::refresh_token(http, &auth.refresh_token).await?;
-    oauth::store_auth(app, &refreshed)?;
-    *state.auth.lock().await = Some(refreshed.clone());
-    Ok(refreshed)
 }
 
 pub fn init_stored_auth(app: &AppHandle) -> Option<TwitchAuthInfo> {

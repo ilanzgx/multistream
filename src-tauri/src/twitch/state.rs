@@ -27,6 +27,11 @@ pub enum ConnectionState {
     Disconnected,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConnectionStateEvent {
+    pub state: ConnectionState,
+}
+
 #[derive(Debug, Default)]
 pub struct SubscriptionSet {
     pub grid_channels: HashSet<String>,
