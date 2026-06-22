@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { usePreferences } from "@/composables/usePreferences";
 import { useStreams } from "@/composables/useStreams";
 import { useTranscription } from "@/composables/useTranscription";
@@ -7,11 +7,21 @@ import { Button } from "@/components/ui/button";
 import KickChat from "@/components/chat/KickChat.vue";
 import TwitchChat from "@/components/chat/TwitchChat.vue";
 import YoutubeChat from "@/components/chat/YoutubeChat.vue";
+import UnifiedTwitchChat from "@/components/chat/UnifiedTwitchChat.vue";
 import AddDialog from "@/components/dialogs/AddDialog.vue";
 import ShareDialog from "@/components/dialogs/ShareDialog.vue";
 import ImportDialog from "@/components/dialogs/ImportDialog.vue";
 import SettingsDialog from "@/components/dialogs/SettingsDialog.vue";
 import TranscriptView from "@/components/chat/TranscriptView.vue";
+import { UNIFIED_CHAT_ID } from "@/composables/useUnifiedChat";
+import { KickIcon, TwitchIcon, YoutubeIcon, CustomIcon } from "@/components/icons";
+
+const platformIcons: Record<string, any> = {
+  twitch: TwitchIcon,
+  kick: KickIcon,
+  youtube: YoutubeIcon,
+  custom: CustomIcon,
+};
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   UserPlus2,
@@ -45,6 +55,10 @@ const {
   isSupported,
   status: transcriptionStatus,
 } = useTranscription();
+
+const selectedStreamObj = computed(() =>
+  streams.value.find((s) => s.channel === selectedChat.value)
+);
 
 function openAddDialog() {
   addDialogOpen.value = true;
@@ -139,7 +153,20 @@ onUnmounted(() => {
             <SelectTrigger
               class="w-full bg-[#14161a] text-white border-[#2a2d33] hover:border-[#3a3f4b]"
             >
-              <SelectValue :placeholder="$t('chat.selectPlaceholder')" />
+              <SelectValue :placeholder="$t('chat.selectPlaceholder')">
+                <div v-if="selectedChat === UNIFIED_CHAT_ID" class="flex items-center gap-2">
+                  <TwitchIcon class="w-4 h-4 shrink-0 text-[#bf94ff]" />
+                  <span class="truncate">{{ $t("chat.unified.selectorLabel") }}</span>
+                </div>
+                <div v-else-if="selectedStreamObj" class="flex items-center gap-2">
+                  <component
+                    :is="platformIcons[selectedStreamObj.platform]"
+                    class="w-4 h-4 shrink-0"
+                  />
+                  <span class="truncate">{{ selectedStreamObj.channel }}</span>
+                </div>
+                <span v-else>{{ $t("chat.selectPlaceholder") }}</span>
+              </SelectValue>
             </SelectTrigger>
             <SelectContent class="bg-[#14161a] border-[#2a2d33]">
               <SelectGroup>
@@ -149,7 +176,20 @@ onUnmounted(() => {
                   :value="stream.channel"
                   class="text-white focus:bg-[#2a2d33] focus:text-white cursor-pointer"
                 >
-                  {{ stream.channel }}
+                  <div class="flex items-center gap-2">
+                    <component :is="platformIcons[stream.platform]" class="w-4 h-4 shrink-0" />
+                    <span class="truncate">{{ stream.channel }}</span>
+                  </div>
+                </SelectItem>
+                <SelectItem
+                  v-if="streams.some((s) => s.platform === 'twitch')"
+                  :value="UNIFIED_CHAT_ID"
+                  class="text-[#bf94ff] focus:bg-[#2a2d33] focus:text-white cursor-pointer border-t border-[#2a2d33] mt-1 pt-1"
+                >
+                  <div class="flex items-center gap-2">
+                    <TwitchIcon class="w-4 h-4 shrink-0" />
+                    <span class="truncate">{{ $t("chat.unified.selectorLabel") }}</span>
+                  </div>
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -178,6 +218,7 @@ onUnmounted(() => {
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />
+          <UnifiedTwitchChat v-show="selectedChat === UNIFIED_CHAT_ID" />
           <div
             v-if="streams.length === 0"
             class="absolute inset-0 flex items-center justify-center text-muted-foreground"
