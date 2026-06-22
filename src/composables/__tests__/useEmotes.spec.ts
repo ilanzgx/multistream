@@ -8,6 +8,7 @@ describe("useEmotes", () => {
   let sut: ReturnType<typeof useEmotes>;
 
   beforeEach(() => {
+    vi.resetModules();
     mockFetch.mockReset();
     mockFetch.mockImplementation(async (url: string) => {
       if (url?.includes("betterttv.net/3/cached/emotes/global")) {

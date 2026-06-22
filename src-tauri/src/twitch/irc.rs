@@ -164,9 +164,12 @@ async fn connect_irc(
     channels: &HashSet<String>,
     shutdown_rx: &mut oneshot::Receiver<()>,
 ) -> Result<(), TwitchError> {
-    let (ws_stream, _) = connect_async(IRC_URL)
-        .await
-        .map_err(|e| TwitchError::WebSocket(e.to_string()))?;
+    let connect_future = connect_async(IRC_URL);
+    let (ws_stream, _) = match tokio::time::timeout(Duration::from_secs(10), connect_future).await {
+        Ok(Ok(result)) => result,
+        Ok(Err(e)) => return Err(TwitchError::WebSocket(e.to_string())),
+        Err(_) => return Err(TwitchError::WebSocket("Connection timeout".to_string())),
+    };
 
     let (mut write, mut read) = ws_stream.split();
 

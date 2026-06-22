@@ -31,7 +31,12 @@ const authError = ref<string | null>(null);
 
 async function startFlow() {
   authError.value = null;
-  deviceFlow.value = await startLogin();
+  const flow = await startLogin();
+  if (!flow) {
+    authError.value = "Failed to initialize login flow.";
+    return;
+  }
+  deviceFlow.value = flow;
 }
 
 async function handleCancel() {

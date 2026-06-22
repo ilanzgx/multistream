@@ -49,7 +49,12 @@ describe("useUnifiedChat", () => {
       { id: "2", channel: "cellbit", platform: "twitch" },
       { id: "3", channel: "somekick", platform: "kick" },
     ];
-    (invoke as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (invoke as ReturnType<typeof vi.fn>).mockImplementation((cmd: string) => {
+      if (cmd === "twitch_get_connection_state") {
+        return Promise.resolve({ state: "connected" });
+      }
+      return Promise.resolve([]);
+    });
     (listen as ReturnType<typeof vi.fn>).mockResolvedValue(vi.fn());
   });
 

@@ -83,6 +83,9 @@ const _useUnifiedChat = () => {
   async function init() {
     if (!isTauri()) return;
 
+    let pendingMessages: UnifiedChatMessage[] = [];
+    let flushTimer: any = null;
+
     const state = await invoke<{ state: ConnectionState }>("twitch_get_connection_state").catch(
       () => ({ state: "disconnected" as ConnectionState })
     );
@@ -90,32 +93,39 @@ const _useUnifiedChat = () => {
 
     await hydrateMessages();
 
-    let pendingMessages: UnifiedChatMessage[] = [];
-    let flushTimer: any = null;
-
-    unlistenMessage = await listen<UnifiedChatMessage>("unified-chat-message", (event) => {
-      pendingMessages.push(event.payload);
-      if (!flushTimer) {
-        flushTimer = setTimeout(() => {
-          if (pendingMessages.length > 0) {
-            messages.value.push(...pendingMessages);
-            if (messages.value.length > MAX_FRONTEND_MESSAGES) {
-              messages.value.splice(0, messages.value.length - MAX_FRONTEND_MESSAGES);
+    const localUnlistenMessage = await listen<UnifiedChatMessage>(
+      "unified-chat-message",
+      (event) => {
+        pendingMessages.push(event.payload);
+        if (!flushTimer) {
+          flushTimer = setTimeout(() => {
+            if (pendingMessages.length > 0) {
+              messages.value.push(...pendingMessages);
+              if (messages.value.length > MAX_FRONTEND_MESSAGES) {
+                messages.value.splice(0, messages.value.length - MAX_FRONTEND_MESSAGES);
+              }
+              pendingMessages = [];
             }
-            pendingMessages = [];
-          }
-          flushTimer = null;
-        }, 50); // 50ms batching (20fps) to eliminate jitters
+            flushTimer = null;
+          }, 50); // 50ms batching (20fps) to eliminate jitters
+        }
       }
-    });
+    );
 
-    unlistenState = await listen<ConnectionStateEvent>("twitch-connection-state", (event) => {
-      connectionState.value = event.payload.state;
-    });
+    const localUnlistenState = await listen<ConnectionStateEvent>(
+      "twitch-connection-state",
+      (event) => {
+        connectionState.value = event.payload.state;
+      }
+    );
 
-    unlistenAuthExpired = await listen("twitch-auth-expired", () => {
+    const localUnlistenAuthExpired = await listen("twitch-auth-expired", () => {
       connectionState.value = "disconnected";
     });
+
+    unlistenMessage = localUnlistenMessage;
+    unlistenState = localUnlistenState;
+    unlistenAuthExpired = localUnlistenAuthExpired;
   }
 
   watch(
@@ -125,7 +135,9 @@ const _useUnifiedChat = () => {
       channels.forEach(async (channel) => {
         if (!channelAvatars[channel]) {
           try {
-            const res = await fetch(`https://decapi.me/twitch/avatar/${channel}`);
+            const res = await fetch(
+              `https://decapi.me/twitch/avatar/${encodeURIComponent(channel)}`
+            );
             if (res.ok) {
               const url = await res.text();
               if (url.startsWith("http")) {

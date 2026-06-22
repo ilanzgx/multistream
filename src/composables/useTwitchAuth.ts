@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref, computed, onScopeDispose } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -78,8 +78,17 @@ const _useTwitchAuth = () => {
 
   async function logout() {
     if (!isTauri()) return;
-    await invoke("twitch_logout");
+    try {
+      await invoke("twitch_logout");
+    } catch (e) {
+      console.error("Failed to logout from Twitch:", e);
+    }
   }
+
+  onScopeDispose(() => {
+    if (unlistenAuthChanged) unlistenAuthChanged();
+    if (unlistenAuthError) unlistenAuthError();
+  });
 
   if (isTauri()) {
     init().catch(console.error);

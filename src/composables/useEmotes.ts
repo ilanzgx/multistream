@@ -85,8 +85,8 @@ const _useEmotes = () => {
 
   const loadGlobalEmotes = async (): Promise<void> => {
     if (globalEmotesLoaded.value) return;
-    globalEmotesLoaded.value = true;
     await Promise.allSettled([fetch7TVGlobal(), fetchBTTVGlobal()]);
+    globalEmotesLoaded.value = true;
   };
 
   const fetch7TVChannel = async (userId: string, map: EmoteMap): Promise<void> => {
@@ -127,11 +127,11 @@ const _useEmotes = () => {
   const loadChannelEmotes = async (username: string): Promise<void> => {
     if (channelEmotes[username]) return;
 
-    channelEmotes[username] = new Map();
-    const map = channelEmotes[username];
-
     const userId = await fetchTwitchId(username);
     if (!userId) return;
+
+    channelEmotes[username] = new Map();
+    const map = channelEmotes[username];
 
     await Promise.allSettled([fetch7TVChannel(userId, map), fetchBTTVChannel(userId, map)]);
   };
