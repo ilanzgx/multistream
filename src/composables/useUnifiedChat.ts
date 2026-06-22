@@ -1,4 +1,4 @@
-import { ref, computed, watch, onScopeDispose } from "vue";
+import { ref, computed, watch, onScopeDispose, reactive } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -49,6 +49,7 @@ function channelColor(channel: string): string {
 const _useUnifiedChat = () => {
   const messages = ref<UnifiedChatMessage[]>([]);
   const connectionState = ref<ConnectionState>("disconnected");
+  const channelAvatars = reactive<Record<string, string>>({});
   const { streams } = useStreams();
   const { authenticated } = useTwitchAuth();
 
@@ -89,10 +90,22 @@ const _useUnifiedChat = () => {
 
     await hydrateMessages();
 
+    let pendingMessages: UnifiedChatMessage[] = [];
+    let flushTimer: any = null;
+
     unlistenMessage = await listen<UnifiedChatMessage>("unified-chat-message", (event) => {
-      messages.value.push(event.payload);
-      if (messages.value.length > MAX_FRONTEND_MESSAGES) {
-        messages.value.splice(0, messages.value.length - MAX_FRONTEND_MESSAGES);
+      pendingMessages.push(event.payload);
+      if (!flushTimer) {
+        flushTimer = setTimeout(() => {
+          if (pendingMessages.length > 0) {
+            messages.value.push(...pendingMessages);
+            if (messages.value.length > MAX_FRONTEND_MESSAGES) {
+              messages.value.splice(0, messages.value.length - MAX_FRONTEND_MESSAGES);
+            }
+            pendingMessages = [];
+          }
+          flushTimer = null;
+        }, 50); // 50ms batching (20fps) to eliminate jitters
       }
     });
 
@@ -109,8 +122,23 @@ const _useUnifiedChat = () => {
     twitchChannels,
     (channels) => {
       syncChannels(channels);
+      channels.forEach(async (channel) => {
+        if (!channelAvatars[channel]) {
+          try {
+            const res = await fetch(`https://decapi.me/twitch/avatar/${channel}`);
+            if (res.ok) {
+              const url = await res.text();
+              if (url.startsWith("http")) {
+                channelAvatars[channel] = url.trim();
+              }
+            }
+          } catch (e) {
+            console.error(`[useUnifiedChat] Failed to fetch avatar for ${channel}`, e);
+          }
+        }
+      });
     },
-    { deep: true }
+    { deep: true, immediate: true }
   );
 
   onScopeDispose(() => {
@@ -133,6 +161,7 @@ const _useUnifiedChat = () => {
     messages,
     connectionState,
     channelColor,
+    channelAvatars,
     twitchChannels,
   };
 };

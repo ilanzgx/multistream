@@ -1,41 +1,33 @@
 <script lang="ts" setup>
-import { ref, watch, nextTick, computed } from "vue";
+import { watch, computed } from "vue";
 import { WifiOff, RefreshCw, MessageSquare, Twitch } from "lucide-vue-next";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
+import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { useI18n } from "vue-i18n";
 import { TwitchIcon } from "../icons";
 
-const { messages, connectionState, channelColor, twitchChannels } = useUnifiedChat();
+const { messages, connectionState, channelColor, channelAvatars, twitchChannels } =
+  useUnifiedChat();
 const { authenticated, loading: authLoading } = useTwitchAuth();
 const { t } = useI18n();
+const { loadChannelEmotes } = useEmotes();
 
-const scrollContainer = ref<HTMLElement | null>(null);
-const isUserScrolledUp = ref(false);
-
+const reversedMessages = computed(() => [...messages.value].toReversed());
 const hasTwitchStreams = computed(() => twitchChannels.value.length > 0);
-
-function onScroll() {
-  if (!scrollContainer.value) return;
-  const { scrollTop, scrollHeight, clientHeight } = scrollContainer.value;
-  isUserScrolledUp.value = scrollHeight - scrollTop - clientHeight > 80;
-}
 
 function openAuthModal() {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "twitch-auth" }));
 }
 
 watch(
-  () => messages.value.length,
-  async () => {
-    if (isUserScrolledUp.value) return;
-    await nextTick();
-    if (scrollContainer.value) {
-      scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
-    }
-  }
+  twitchChannels,
+  (channels) => {
+    channels.forEach((channel) => loadChannelEmotes(channel));
+  },
+  { immediate: true, deep: true }
 );
 </script>
 
@@ -89,15 +81,14 @@ watch(
 
     <template v-else>
       <div
-        ref="scrollContainer"
-        class="flex-1 overflow-y-auto custom-scrollbar py-1"
-        @scroll="onScroll"
+        class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-1 flex flex-col-reverse"
       >
         <UnifiedChatMessage
-          v-for="msg in messages"
+          v-for="msg in reversedMessages"
           :key="msg.id"
           :message="msg"
           :channel-color="channelColor(msg.channel)"
+          :channel-avatar="channelAvatars[msg.channel]"
         />
       </div>
     </template>
