@@ -6,6 +6,18 @@ use tauri::window::Color;
 mod audio;
 use audio::transcriber::TranscriptionState;
 
+mod twitch;
+use twitch::state::TwitchState;
+use twitch::commands::{
+    twitch_login,
+    twitch_cancel_login,
+    twitch_logout,
+    twitch_get_auth_state,
+    twitch_set_channels,
+    twitch_get_messages,
+    twitch_get_connection_state,
+};
+
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
 
@@ -90,7 +102,7 @@ pub fn run() {
         }));
     }
 
-    // load plugin_http, plugin_updater, plugin_process, plugin_localhost, plugin_notification, plugin_shell
+    // load plugin_http, plugin_updater, plugin_process, plugin_localhost, plugin_notification, plugin_shell, plugin_deep_link
     builder
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_http::init())
@@ -98,6 +110,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_localhost::Builder::new(LOCALHOST_PORT).build())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_deep_link::init())
         .invoke_handler(tauri::generate_handler![
             send_notification,
             save_screenshot,
@@ -109,10 +122,22 @@ pub fn run() {
             audio::transcriber::start_transcription,
             audio::transcriber::stop_transcription,
             audio::transcriber::set_chunk_duration,
+            twitch_login,
+            twitch_cancel_login,
+            twitch_logout,
+            twitch_get_auth_state,
+            twitch_set_channels,
+            twitch_get_messages,
+            twitch_get_connection_state,
         ])
         .setup(move |app| {
-            // initialize the transcription state (no active session on startup)
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
+
+            let twitch_state = TwitchState::new();
+            if let Some(stored_auth) = twitch::commands::init_stored_auth(app.handle()) {
+                *twitch_state.auth.try_lock().expect("lock on startup") = Some(stored_auth);
+            }
+            app.manage(twitch_state);
 
             if cfg!(debug_assertions) {
                 app.handle().plugin(

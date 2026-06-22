@@ -8,6 +8,7 @@
   },
   "permissions": [
     "core:default",
+    "core:window:allow-create",
     "updater:default",
     "updater:allow-check",
     "updater:allow-download",
@@ -27,6 +28,9 @@
         { "url": "https://kick.com/api/**" },
         { "url": "https://kick.com/stream/**" }
       ]
-    }
+    },
+    "shell:allow-open",
+    "deep-link:default",
+    "deep-link:allow-get-current"
   ]
 }
