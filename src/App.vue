@@ -5,6 +5,7 @@ import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
+import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
@@ -88,7 +89,12 @@ function handleFrameShortcuts(e: MessageEvent) {
 }
 
 watch(streams, (newStreams, oldStreams) => {
-  if (selectedChat.value && !newStreams.some((s) => s.channel === selectedChat.value)) {
+  if (selectedChat.value === UNIFIED_CHAT_ID) {
+    const hasTwitchStreams = newStreams.some((s) => s.platform === "twitch");
+    if (!hasTwitchStreams) {
+      setSelectedChat("");
+    }
+  } else if (selectedChat.value && !newStreams.some((s) => s.channel === selectedChat.value)) {
     setSelectedChat("");
   }
 
@@ -96,8 +102,9 @@ watch(streams, (newStreams, oldStreams) => {
   // if have more than 1 stream and remove one, auto load the chat of the first stream
   // if something wrong happens, falls on fallback
   if (
-    (oldStreams.length === 0 && newStreams.length === 1) ||
-    (oldStreams.length > 1 && newStreams.length === 1)
+    selectedChat.value !== UNIFIED_CHAT_ID &&
+    ((oldStreams.length === 0 && newStreams.length === 1) ||
+      (oldStreams.length > 1 && newStreams.length === 1))
   ) {
     setSelectedChat(newStreams[0]?.channel || "");
   }
