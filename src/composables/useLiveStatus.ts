@@ -1,5 +1,5 @@
 import { ref, watch, onScopeDispose } from "vue";
-import { createSharedComposable } from "@vueuse/core";
+import { createSharedComposable, useDocumentVisibility } from "@vueuse/core";
 import { useRecents } from "./useRecents";
 import { useFavorites } from "./useFavorites";
 import { usePreferences } from "./usePreferences";
@@ -522,6 +522,7 @@ const _useLiveStatus = () => {
   const { recents } = useRecents();
   const { favorites } = useFavorites();
   const { notificationsEnabled } = usePreferences();
+  const visibility = useDocumentVisibility();
   const statuses = ref<StatusMap>({});
   const previousStatuses = ref<StatusMap>({});
   const suggestedStreams = ref<SuggestedStream[]>([]);
@@ -549,7 +550,8 @@ const _useLiveStatus = () => {
    * @returns Promise<void>
    */
   const checkAll = async () => {
-    if (isChecking.value) return;
+    // Se o app estiver oculto/minimizado e as notificações estiverem desligadas, não há porquê gastar CPU/Rede
+    if (isChecking.value || (visibility.value === "hidden" && !notificationsEnabled.value)) return;
 
     const twitchSet = new Set<string>();
     const kickSet = new Set<string>();

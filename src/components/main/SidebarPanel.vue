@@ -1,18 +1,24 @@
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, defineAsyncComponent, watch } from "vue";
 import { usePreferences } from "@/composables/usePreferences";
 import { useStreams } from "@/composables/useStreams";
 import { useTranscription } from "@/composables/useTranscription";
 import { Button } from "@/components/ui/button";
-import KickChat from "@/components/chat/KickChat.vue";
-import TwitchChat from "@/components/chat/TwitchChat.vue";
-import YoutubeChat from "@/components/chat/YoutubeChat.vue";
-import UnifiedTwitchChat from "@/components/chat/UnifiedTwitchChat.vue";
-import AddDialog from "@/components/dialogs/AddDialog.vue";
-import ShareDialog from "@/components/dialogs/ShareDialog.vue";
-import ImportDialog from "@/components/dialogs/ImportDialog.vue";
-import SettingsDialog from "@/components/dialogs/SettingsDialog.vue";
-import TranscriptView from "@/components/chat/TranscriptView.vue";
+const KickChat = defineAsyncComponent(() => import("@/components/chat/KickChat.vue"));
+const TwitchChat = defineAsyncComponent(() => import("@/components/chat/TwitchChat.vue"));
+const YoutubeChat = defineAsyncComponent(() => import("@/components/chat/YoutubeChat.vue"));
+const UnifiedTwitchChat = defineAsyncComponent(
+  () => import("@/components/chat/UnifiedTwitchChat.vue")
+);
+const TranscriptView = defineAsyncComponent(() => import("@/components/chat/TranscriptView.vue"));
+
+const AddDialog = defineAsyncComponent(() => import("@/components/dialogs/AddDialog.vue"));
+const ShareDialog = defineAsyncComponent(() => import("@/components/dialogs/ShareDialog.vue"));
+const ImportDialog = defineAsyncComponent(() => import("@/components/dialogs/ImportDialog.vue"));
+const SettingsDialog = defineAsyncComponent(
+  () => import("@/components/dialogs/SettingsDialog.vue")
+);
+
 import { UNIFIED_CHAT_ID } from "@/composables/useUnifiedChat";
 import { KickIcon, TwitchIcon, YoutubeIcon, CustomIcon } from "@/components/icons";
 
@@ -45,11 +51,64 @@ const addDialogOpen = ref(false);
 const shareDialogOpen = ref(false);
 const importDialogOpen = ref(false);
 const settingsDialogOpen = ref(false);
+
+const hasOpenedAdd = ref(false);
+const hasOpenedShare = ref(false);
+const hasOpenedImport = ref(false);
+const hasOpenedSettings = ref(false);
+
+watch(
+  addDialogOpen,
+  (v) => {
+    if (v) hasOpenedAdd.value = true;
+  },
+  { immediate: true }
+);
+watch(
+  shareDialogOpen,
+  (v) => {
+    if (v) hasOpenedShare.value = true;
+  },
+  { immediate: true }
+);
+watch(
+  importDialogOpen,
+  (v) => {
+    if (v) hasOpenedImport.value = true;
+  },
+  { immediate: true }
+);
+watch(
+  settingsDialogOpen,
+  (v) => {
+    if (v) hasOpenedSettings.value = true;
+  },
+  { immediate: true }
+);
+
 const appVersion = import.meta.env.VITE_APP_VERSION;
 const sidebarMode = ref<"chat" | "transcript">("chat");
 
+const hasLoadedUnifiedChat = ref(false);
+const hasLoadedTranscript = ref(false);
+
 const { streams } = useStreams();
 const { selectedChat, sidebarOpen } = usePreferences();
+
+watch(
+  selectedChat,
+  (v) => {
+    if (v === UNIFIED_CHAT_ID) hasLoadedUnifiedChat.value = true;
+  },
+  { immediate: true }
+);
+watch(
+  sidebarMode,
+  (v) => {
+    if (v === "transcript") hasLoadedTranscript.value = true;
+  },
+  { immediate: true }
+);
 const {
   isActive: transcriptionActive,
   isSupported,
@@ -218,7 +277,10 @@ onUnmounted(() => {
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />
-          <UnifiedTwitchChat v-show="selectedChat === UNIFIED_CHAT_ID" />
+          <UnifiedTwitchChat
+            v-if="hasLoadedUnifiedChat"
+            v-show="selectedChat === UNIFIED_CHAT_ID"
+          />
           <div
             v-if="streams.length === 0"
             class="absolute inset-0 flex items-center justify-center text-muted-foreground"
@@ -238,7 +300,7 @@ onUnmounted(() => {
         </div>
 
         <div v-show="sidebarMode === 'transcript' && isSupported" class="absolute inset-0">
-          <TranscriptView />
+          <TranscriptView v-if="hasLoadedTranscript" />
         </div>
       </div>
 
@@ -342,8 +404,8 @@ onUnmounted(() => {
   </aside>
 
   <!-- dialogs -->
-  <AddDialog v-model:open="addDialogOpen" />
-  <ShareDialog v-model:open="shareDialogOpen" />
-  <ImportDialog v-model:open="importDialogOpen" />
-  <SettingsDialog v-model:open="settingsDialogOpen" />
+  <AddDialog v-if="hasOpenedAdd" v-model:open="addDialogOpen" />
+  <ShareDialog v-if="hasOpenedShare" v-model:open="shareDialogOpen" />
+  <ImportDialog v-if="hasOpenedImport" v-model:open="importDialogOpen" />
+  <SettingsDialog v-if="hasOpenedSettings" v-model:open="settingsDialogOpen" />
 </template>

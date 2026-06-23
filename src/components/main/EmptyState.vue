@@ -1,5 +1,8 @@
 <script lang="ts" setup>
-import SuggestedStreams from "@/components/main/SuggestedStreams.vue";
+import { defineAsyncComponent } from "vue";
+const SuggestedStreams = defineAsyncComponent(
+  () => import("@/components/main/SuggestedStreams.vue")
+);
 import { Plus } from "lucide-vue-next";
 import { PLATFORMS } from "@/config/platforms";
 
@@ -16,9 +19,9 @@ const platforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
     <div class="flex flex-col items-center w-full">
       <!-- title & description -->
       <div class="flex flex-col items-center gap-2 text-center max-w-sm lg:max-w-md">
-        <h2 class="text-2xl lg:text-3xl font-bold text-white wrap-break-word">
+        <h1 class="text-2xl lg:text-3xl font-bold text-white wrap-break-word">
           {{ $t("empty.title") }}
-        </h2>
+        </h1>
         <p class="text-gray-400 text-sm lg:text-base wrap-break-word mb-3">
           {{ $t("empty.description") }}
         </p>

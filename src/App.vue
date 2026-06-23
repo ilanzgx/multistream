@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
 import { Menu } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
@@ -9,10 +9,16 @@ import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
-import StreamGrid from "./components/main/StreamGrid.vue";
-import EmptyState from "./components/main/EmptyState.vue";
-import OnboardingTour from "./components/dialogs/OnboardingTour.vue";
-import TwitchAuthDialog from "./components/dialogs/TwitchAuthDialog.vue";
+const StreamGrid = defineAsyncComponent(() => import("./components/main/StreamGrid.vue"));
+const EmptyState = defineAsyncComponent(() => import("./components/main/EmptyState.vue"));
+
+const OnboardingTour = defineAsyncComponent(
+  () => import("./components/dialogs/OnboardingTour.vue")
+);
+const TwitchAuthDialog = defineAsyncComponent(
+  () => import("./components/dialogs/TwitchAuthDialog.vue")
+);
+
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
@@ -20,6 +26,24 @@ import { parseUrlOptions } from "./lib/parseUrlOptions";
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
 const showTwitchAuth = ref(false);
+
+const hasOpenedOnboarding = ref(false);
+const hasOpenedTwitchAuth = ref(false);
+
+watch(
+  showOnboarding,
+  (val) => {
+    if (val) hasOpenedOnboarding.value = true;
+  },
+  { immediate: true }
+);
+watch(
+  showTwitchAuth,
+  (val) => {
+    if (val) hasOpenedTwitchAuth.value = true;
+  },
+  { immediate: true }
+);
 
 const { streams, addStream, clearStreams } = useStreams();
 const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } =
@@ -142,8 +166,8 @@ onMounted(() => {
   if (splash) {
     setTimeout(() => {
       splash.classList.add("fade-out");
-      setTimeout(() => splash.remove(), 400);
-    }, 800);
+      setTimeout(() => splash.remove(), 250);
+    }, 300);
   }
 
   // check for updates on startup
@@ -195,6 +219,7 @@ onUnmounted(() => {
     <!-- toggle button -->
     <button
       v-if="!sidebarOpen"
+      aria-label="Abrir menu lateral"
       class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2"
       @click="sidebarOpen = true"
     >
@@ -219,11 +244,12 @@ onUnmounted(() => {
 
     <!-- onboarding tour -->
     <OnboardingTour
+      v-if="hasOpenedOnboarding"
       v-model:open="showOnboarding"
       :allow-outside-close="onboardingCompleted"
       @complete="setOnboardingCompleted(true)"
     />
 
-    <TwitchAuthDialog v-model:open="showTwitchAuth" />
+    <TwitchAuthDialog v-if="hasOpenedTwitchAuth" v-model:open="showTwitchAuth" />
   </div>
 </template>
