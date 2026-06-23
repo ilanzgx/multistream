@@ -5,7 +5,7 @@ use super::error::TwitchError;
 use super::state::TwitchAuthInfo;
 
 pub const CLIENT_ID: &str = "y0twwqcd7k38sf5587sxoi5ca9ghid";
-const SCOPES: &str = "chat:read";
+const SCOPES: &str = "chat:read chat:edit";
 const DEVICE_URL: &str = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL: &str = "https://id.twitch.tv/oauth2/token";
 const VALIDATE_URL: &str = "https://id.twitch.tv/oauth2/validate";
@@ -33,10 +33,7 @@ struct ValidateResponse {
 }
 
 pub async fn start_device_flow(http: &reqwest::Client) -> Result<DeviceFlowResponse, TwitchError> {
-    let form_data = [
-        ("client_id", CLIENT_ID),
-        ("scopes", SCOPES),
-    ];
+    let form_data = [("client_id", CLIENT_ID), ("scopes", SCOPES)];
 
     let response = http
         .post(DEVICE_URL)
@@ -47,7 +44,10 @@ pub async fn start_device_flow(http: &reqwest::Client) -> Result<DeviceFlowRespo
 
     if !response.status().is_success() {
         let err_text = response.text().await.unwrap_or_default();
-        return Err(TwitchError::OAuth(format!("Device flow start failed: {}", err_text)));
+        return Err(TwitchError::OAuth(format!(
+            "Device flow start failed: {}",
+            err_text
+        )));
     }
 
     let device_flow: DeviceFlowResponse = response
@@ -96,7 +96,10 @@ pub async fn poll_device_token(
         return Err(TwitchError::OAuth(format!("Polling failed: {}", err_text)));
     }
 
-    let response: TokenResponse = response.json().await.map_err(|e| TwitchError::OAuth(e.to_string()))?;
+    let response: TokenResponse = response
+        .json()
+        .await
+        .map_err(|e| TwitchError::OAuth(e.to_string()))?;
 
     let validate: ValidateResponse = http
         .get(VALIDATE_URL)
@@ -153,8 +156,7 @@ pub async fn refresh_token(
 }
 
 pub fn store_auth(_app: &AppHandle, auth: &TwitchAuthInfo) -> Result<(), TwitchError> {
-    let json = serde_json::to_string(auth)
-        .map_err(|e| TwitchError::Storage(e.to_string()))?;
+    let json = serde_json::to_string(auth).map_err(|e| TwitchError::Storage(e.to_string()))?;
 
     std::fs::write(auth_file_path(), json.as_bytes())
         .map_err(|e| TwitchError::Storage(e.to_string()))

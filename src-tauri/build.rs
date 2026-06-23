@@ -17,7 +17,9 @@ fn main() {
         let bin_name = "whisper-cli-x86_64-pc-windows-msvc.exe";
         let bin_path = out_dir.join(bin_name);
 
-        let is_empty = fs::metadata(&bin_path).map(|m| m.len() == 0).unwrap_or(true);
+        let is_empty = fs::metadata(&bin_path)
+            .map(|m| m.len() == 0)
+            .unwrap_or(true);
 
         if is_empty {
             println!("cargo:warning=Downloading whisper.cpp precompiled binary for Windows x64...");
@@ -42,24 +44,28 @@ fn main() {
                 if status.success() {
                     // Find whisper-cli.exe and .dlls
                     let mut found_exe = false;
-                    for entry in walkdir::WalkDir::new(&temp_extract).into_iter().filter_map(|e| e.ok()) {
+                    for entry in walkdir::WalkDir::new(&temp_extract)
+                        .into_iter()
+                        .filter_map(|e| e.ok())
+                    {
                         let file_name = entry.file_name().to_string_lossy();
                         if file_name == "whisper-cli.exe" {
-                            fs::rename(entry.path(), &bin_path).expect("Failed to move whisper-cli.exe");
+                            fs::rename(entry.path(), &bin_path)
+                                .expect("Failed to move whisper-cli.exe");
                             found_exe = true;
                         } else if file_name.ends_with(".dll") {
                             let dest = out_dir.join(file_name.as_ref());
                             fs::rename(entry.path(), &dest).expect("Failed to move dll file");
                         }
                     }
-                    
+
                     if !found_exe || !bin_path.exists() {
                         panic!("whisper-cli.exe was not found in the downloaded archive.");
                     }
                 } else {
                     panic!("Failed to extract whisper.cpp archive");
                 }
-                
+
                 let _ = fs::remove_file(zip_path);
                 let _ = fs::remove_dir_all(temp_extract);
             } else {

@@ -45,6 +45,12 @@ pub struct TwitchAuthInfo {
     pub user_id: String,
 }
 
+#[derive(Debug, Clone)]
+pub struct OutboundIrcMessage {
+    pub channel: String,
+    pub text: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthState {
     pub authenticated: bool,
@@ -58,6 +64,7 @@ pub struct TwitchState {
     pub connection_state: Mutex<ConnectionState>,
     pub irc_shutdown_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
     pub auth_abort_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
+    pub irc_outbound_tx: Mutex<Option<tokio::sync::mpsc::Sender<OutboundIrcMessage>>>,
 }
 
 impl TwitchState {
@@ -69,6 +76,7 @@ impl TwitchState {
             connection_state: Mutex::new(ConnectionState::Disconnected),
             irc_shutdown_tx: Mutex::new(None),
             auth_abort_tx: Mutex::new(None),
+            irc_outbound_tx: Mutex::new(None),
         }
     }
 }

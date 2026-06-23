@@ -5,7 +5,10 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use super::error::TwitchError;
 use super::irc::update_subscriptions;
 use super::oauth;
-use super::state::{AuthState, ConnectionState, ConnectionStateEvent, TwitchAuthInfo, TwitchState, UnifiedChatMessage};
+use super::state::{
+    AuthState, ConnectionState, ConnectionStateEvent, OutboundIrcMessage, TwitchAuthInfo,
+    TwitchState, UnifiedChatMessage,
+};
 
 #[tauri::command]
 pub async fn twitch_login(
@@ -65,7 +68,7 @@ pub async fn twitch_login(
                         Ok(Some(auth)) => {
                             let _ = oauth::store_auth(&app_handle, &auth);
                             *state_ref.auth.lock().await = Some(auth.clone());
-                            
+
                             let auth_state = AuthState {
                                 authenticated: true,
                                 username: Some(auth.username.clone()),
@@ -132,7 +135,9 @@ pub async fn twitch_logout(
 }
 
 #[tauri::command]
-pub async fn twitch_get_auth_state(state: State<'_, TwitchState>) -> Result<AuthState, TwitchError> {
+pub async fn twitch_get_auth_state(
+    state: State<'_, TwitchState>,
+) -> Result<AuthState, TwitchError> {
     let auth = state.auth.lock().await;
     Ok(AuthState {
         authenticated: auth.is_some(),
@@ -146,6 +151,10 @@ pub async fn twitch_set_channels(
     state: State<'_, TwitchState>,
     channels: Vec<String>,
 ) -> Result<(), TwitchError> {
+    log::info!(
+        "[twitch-irc] twitch_set_channels called with: {:?}",
+        channels
+    );
     let new_set: HashSet<String> = channels.into_iter().map(|c| c.to_lowercase()).collect();
     let auth = state.auth.lock().await.clone();
 
@@ -177,13 +186,7 @@ pub async fn twitch_set_channels(
         Err(e) => return Err(e),
     };
 
-    update_subscriptions(
-        &app,
-        new_set,
-        auth_info.access_token,
-        auth_info.username,
-    )
-    .await;
+    update_subscriptions(&app, new_set, auth_info.access_token, auth_info.username).await;
 
     Ok(())
 }
@@ -203,6 +206,52 @@ pub async fn twitch_get_connection_state(
     Ok(ConnectionStateEvent {
         state: state.connection_state.lock().await.clone(),
     })
+}
+
+#[tauri::command]
+pub async fn twitch_send_message(
+    app: AppHandle,
+    state: State<'_, TwitchState>,
+    channel: String,
+    text: String,
+) -> Result<(), TwitchError> {
+    let tx = state.irc_outbound_tx.lock().await.clone();
+    if let Some(tx) = tx {
+        tx.send(OutboundIrcMessage {
+            channel: channel.clone(),
+            text: text.clone(),
+        })
+        .await
+        .map_err(|_| TwitchError::WebSocket("Failed to send message".to_owned()))?;
+
+        let username = state
+            .auth
+            .lock()
+            .await
+            .as_ref()
+            .map(|a| a.username.clone())
+            .unwrap_or_default();
+        let message = UnifiedChatMessage {
+            id: format!("local-{}", rand::random::<u64>()),
+            channel: channel.clone(),
+            username: username.clone(),
+            display_name: username,
+            message: text,
+            timestamp_ms: std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis() as u64,
+            color: None,
+            badges: Vec::new(),
+            emotes: None,
+        };
+
+        state.messages.lock().await.push_back(message.clone());
+        let _ = app.emit("unified-chat-message", message);
+    } else {
+        return Err(TwitchError::WebSocket("Not connected to IRC".to_owned()));
+    }
+    Ok(())
 }
 
 async fn try_refresh_if_needed(

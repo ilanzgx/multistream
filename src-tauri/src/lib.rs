@@ -1,22 +1,17 @@
-use tauri::{Manager, Emitter};
-use tauri::tray::TrayIconBuilder;
 use tauri::menu::{Menu, MenuItem};
+use tauri::tray::TrayIconBuilder;
 use tauri::window::Color;
+use tauri::{Emitter, Manager};
 
 mod audio;
 use audio::transcriber::TranscriptionState;
 
 mod twitch;
-use twitch::state::TwitchState;
 use twitch::commands::{
-    twitch_login,
-    twitch_cancel_login,
-    twitch_logout,
-    twitch_get_auth_state,
-    twitch_set_channels,
-    twitch_get_messages,
-    twitch_get_connection_state,
+    twitch_cancel_login, twitch_get_auth_state, twitch_get_connection_state, twitch_get_messages,
+    twitch_login, twitch_logout, twitch_send_message, twitch_set_channels,
 };
+use twitch::state::TwitchState;
 
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
@@ -50,10 +45,7 @@ async fn send_notification(
 // invokable function to save a screenshot to the Pictures/Multistream directory
 // receives a base64-encoded data URL from the frontend and writes it as a PNG file
 #[tauri::command]
-async fn save_screenshot(
-    data_url: String,
-    filename: String,
-) -> Result<String, String> {
+async fn save_screenshot(data_url: String, filename: String) -> Result<String, String> {
     use std::fs;
     use std::path::PathBuf;
 
@@ -70,16 +62,13 @@ async fn save_screenshot(
         .map_err(|e| format!("Failed to decode image: {}", e))?;
 
     // resolve save directory: ~/Pictures/Multistream/
-    let pictures_dir = dirs::picture_dir()
-        .unwrap_or_else(|| PathBuf::from("."));
+    let pictures_dir = dirs::picture_dir().unwrap_or_else(|| PathBuf::from("."));
 
     let save_dir = pictures_dir.join("Multistream");
-    fs::create_dir_all(&save_dir)
-        .map_err(|e| format!("Failed to create directory: {}", e))?;
+    fs::create_dir_all(&save_dir).map_err(|e| format!("Failed to create directory: {}", e))?;
 
     let file_path = save_dir.join(&filename);
-    fs::write(&file_path, &image_data)
-        .map_err(|e| format!("Failed to save screenshot: {}", e))?;
+    fs::write(&file_path, &image_data).map_err(|e| format!("Failed to save screenshot: {}", e))?;
 
     Ok(file_path.to_string_lossy().to_string())
 }
@@ -94,7 +83,8 @@ pub fn run() {
     let mut builder = tauri::Builder::default();
 
     // load plugin_single_instance
-    #[cfg(desktop)] {
+    #[cfg(desktop)]
+    {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.set_focus();
@@ -129,6 +119,7 @@ pub fn run() {
             twitch_set_channels,
             twitch_get_messages,
             twitch_get_connection_state,
+            twitch_send_message,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
@@ -139,9 +130,11 @@ pub fn run() {
 
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
-                    let Ok(http) = reqwest::Client::builder().use_rustls_tls().build() else { return };
+                    let Ok(http) = reqwest::Client::builder().use_rustls_tls().build() else {
+                        return;
+                    };
                     let state = app_handle.state::<TwitchState>();
-                    
+
                     let validate_resp = http
                         .get("https://id.twitch.tv/oauth2/validate")
                         .bearer_auth(&stored_auth.access_token)
@@ -153,7 +146,9 @@ pub fn run() {
                             // Valid
                         }
                         Ok(_) => {
-                            match twitch::oauth::refresh_token(&http, &stored_auth.refresh_token).await {
+                            match twitch::oauth::refresh_token(&http, &stored_auth.refresh_token)
+                                .await
+                            {
                                 Ok(refreshed) => {
                                     let _ = twitch::oauth::store_auth(&app_handle, &refreshed);
                                     *state.auth.lock().await = Some(refreshed);
@@ -163,10 +158,13 @@ pub fn run() {
                                     twitch::oauth::clear_auth(&app_handle);
                                     use twitch::state::AuthState;
                                     let _ = app_handle.emit("twitch-auth-expired", ());
-                                    let _ = app_handle.emit("twitch-auth-changed", AuthState {
-                                        authenticated: false,
-                                        username: None,
-                                    });
+                                    let _ = app_handle.emit(
+                                        "twitch-auth-changed",
+                                        AuthState {
+                                            authenticated: false,
+                                            username: None,
+                                        },
+                                    );
                                 }
                                 Err(_) => {
                                     // Network error during refresh - preserve credentials
@@ -218,7 +216,7 @@ pub fn run() {
                      --disable-background-timer-throttling \
                      --disable-backgrounding-occluded-windows \
                      --disable-renderer-backgrounding \
-                     --autoplay-policy=no-user-gesture-required"
+                     --autoplay-policy=no-user-gesture-required",
                 )
                 .initialization_script_for_all_frames(&player_injector)
                 .initialization_script_for_all_frames(&metrics_injector)

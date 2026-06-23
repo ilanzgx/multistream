@@ -9,7 +9,7 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 use super::error::TwitchError;
 use super::state::{
-    ConnectionState, TwitchState, UnifiedChatMessage, MAX_MESSAGES,
+    ConnectionState, OutboundIrcMessage, TwitchState, UnifiedChatMessage, MAX_MESSAGES,
 };
 
 const IRC_URL: &str = "wss://irc-ws.chat.twitch.tv:443";
@@ -100,6 +100,7 @@ pub async fn run_irc_loop(
     username: String,
     channels: HashSet<String>,
     mut shutdown_rx: oneshot::Receiver<()>,
+    mut outbound_rx: tokio::sync::mpsc::Receiver<OutboundIrcMessage>,
 ) {
     let mut attempt: u32 = 0;
 
@@ -114,7 +115,16 @@ pub async fn run_irc_loop(
         )
         .await;
 
-        match connect_irc(&app, &access_token, &username, &channels, &mut shutdown_rx).await {
+        match connect_irc(
+            &app,
+            &access_token,
+            &username,
+            &channels,
+            &mut shutdown_rx,
+            &mut outbound_rx,
+        )
+        .await
+        {
             Ok(()) => {
                 log::info!("[twitch-irc] shutdown requested, exiting loop");
                 emit_connection_state(&app, ConnectionState::Disconnected).await;
@@ -163,6 +173,7 @@ async fn connect_irc(
     username: &str,
     channels: &HashSet<String>,
     shutdown_rx: &mut oneshot::Receiver<()>,
+    outbound_rx: &mut tokio::sync::mpsc::Receiver<OutboundIrcMessage>,
 ) -> Result<(), TwitchError> {
     let connect_future = connect_async(IRC_URL);
     let (ws_stream, _) = match tokio::time::timeout(Duration::from_secs(10), connect_future).await {
@@ -176,7 +187,7 @@ async fn connect_irc(
     for line in [
         format!("PASS oauth:{access_token}"),
         format!("NICK {username}"),
-        "CAP REQ :twitch.tv/tags".to_owned(),
+        "CAP REQ :twitch.tv/tags twitch.tv/commands".to_owned(),
     ] {
         write
             .send(Message::Text(line))
@@ -219,6 +230,14 @@ async fn connect_irc(
                     _ => {}
                 }
             }
+            msg = outbound_rx.recv() => {
+                if let Some(out_msg) = msg {
+                    let line = format!("PRIVMSG #{} :{}", out_msg.channel, out_msg.text);
+                    if let Err(e) = write.send(Message::Text(line)).await {
+                        log::warn!("[twitch-irc] failed to send message: {e}");
+                    }
+                }
+            }
             _ = &mut *shutdown_rx => {
                 let _ = write.send(Message::Close(None)).await;
                 return Ok(());
@@ -234,8 +253,40 @@ async fn handle_irc_message(app: &AppHandle, text: &str) -> Result<(), TwitchErr
             continue;
         }
 
-        if line.contains("NOTICE") && line.contains("Login authentication failed") {
-            return Err(TwitchError::OAuth("IRC auth failed".to_owned()));
+        if !line.contains("PRIVMSG") {
+            // log::info!("[twitch-irc-recv] {}", line);
+        }
+
+        if line.contains("NOTICE") {
+            if line.contains("Login authentication failed") {
+                return Err(TwitchError::OAuth("IRC auth failed".to_owned()));
+            }
+
+            // Extract channel and message from NOTICE
+            // e.g. :tmi.twitch.tv NOTICE #xqc :This room is in 2 weeks followers-only mode.
+            if let (Some(hash_idx), Some(colon_idx)) = (line.find(" #"), line.rfind(" :")) {
+                if hash_idx < colon_idx {
+                    let channel = &line[hash_idx + 2..colon_idx]
+                        .split_whitespace()
+                        .next()
+                        .unwrap_or("");
+                    let text = &line[colon_idx + 2..];
+
+                    #[derive(serde::Serialize, Clone)]
+                    struct TwitchChatErrorEvent {
+                        channel: String,
+                        message: String,
+                    }
+
+                    let _ = app.emit(
+                        "twitch-chat-error",
+                        TwitchChatErrorEvent {
+                            channel: channel.to_string(),
+                            message: text.to_string(),
+                        },
+                    );
+                }
+            }
         }
 
         if line.contains("PRIVMSG") {
@@ -285,9 +336,12 @@ pub async fn update_subscriptions(
     let (tx, rx) = oneshot::channel();
     *state.irc_shutdown_tx.lock().await = Some(tx);
 
+    let (out_tx, out_rx) = tokio::sync::mpsc::channel(32);
+    *state.irc_outbound_tx.lock().await = Some(out_tx);
+
     let app_clone = app.clone();
     tokio::spawn(async move {
-        run_irc_loop(app_clone, access_token, username, new_channels, rx).await;
+        run_irc_loop(app_clone, access_token, username, new_channels, rx, out_rx).await;
     });
 }
 
@@ -330,7 +384,10 @@ mod tests {
         // Arrange + Act + Assert
         for attempt in 0u32..20 {
             let delay = backoff_delay(attempt);
-            assert!(delay <= Duration::from_secs(61), "delay too large at attempt {attempt}");
+            assert!(
+                delay <= Duration::from_secs(61),
+                "delay too large at attempt {attempt}"
+            );
         }
     }
 
