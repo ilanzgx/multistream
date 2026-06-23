@@ -19,6 +19,7 @@ export interface UnifiedChatMessage {
   color: string | null;
   badges: string[];
   emotes: string | null;
+  isPending?: boolean;
 }
 
 export type ConnectionState = "connected" | "reconnecting" | "disconnected";
@@ -80,6 +81,23 @@ const _useUnifiedChat = () => {
     }
   }
 
+  async function sendMessage(channel: string, text: string) {
+    if (!isTauri() || !authenticated.value) return;
+    try {
+      await invoke("twitch_send_message", { channel, text });
+
+      // Optimistically add the message to the list to feel fast
+      // But Twitch IRC also reflects our own messages via WebSocket, so we might see it twice.
+      // Actually, standard Twitch IRC might not reflect our own messages unless we have echo-message tag enabled.
+      // For now, let's just let the Rust backend handle it and maybe we get it echoed, or we can push it optimistically.
+      // Since we don't have our own local badges and color readily available, let's not push optimistically yet
+      // to avoid weird UI glitches, or just push a minimal message if needed.
+    } catch (e) {
+      console.error("[useUnifiedChat] failed to send message", e);
+      throw e;
+    }
+  }
+
   async function init() {
     if (!isTauri()) return;
 
@@ -96,7 +114,17 @@ const _useUnifiedChat = () => {
     const localUnlistenMessage = await listen<UnifiedChatMessage>(
       "unified-chat-message",
       (event) => {
-        pendingMessages.push(event.payload);
+        const msg = event.payload;
+
+        if (msg.id.startsWith("local-")) {
+          msg.isPending = true;
+          setTimeout(() => {
+            const found = messages.value.find((m) => m && m.id === msg.id);
+            if (found) found.isPending = false;
+          }, 1000);
+        }
+
+        pendingMessages.push(msg);
         if (!flushTimer) {
           flushTimer = setTimeout(() => {
             if (pendingMessages.length > 0) {
@@ -169,12 +197,38 @@ const _useUnifiedChat = () => {
     init().catch(console.error);
   }
 
+  function removeLastLocalMessage(channel: string, currentUsername: string): string | null {
+    // Find the index of the last message by this user in this channel
+    let lastIdx = -1;
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      const m = messages.value[i];
+      if (
+        m &&
+        m.channel === channel &&
+        m.username.toLowerCase() === currentUsername.toLowerCase()
+      ) {
+        lastIdx = i;
+        break;
+      }
+    }
+
+    if (lastIdx !== -1) {
+      const removed = messages.value.splice(lastIdx, 1)[0];
+      if (removed) {
+        return removed.message;
+      }
+    }
+    return null;
+  }
+
   return {
     messages,
     connectionState,
     channelColor,
     channelAvatars,
     twitchChannels,
+    sendMessage,
+    removeLastLocalMessage,
   };
 };
 

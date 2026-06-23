@@ -4,11 +4,17 @@ import type { UnifiedChatMessage } from "@/composables/useUnifiedChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Sword, Crown, Gem, Star } from "lucide-vue-next";
 
-const props = defineProps<{
-  message: UnifiedChatMessage;
-  channelColor: string;
-  channelAvatar?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    message: UnifiedChatMessage & { isPending?: boolean };
+    channelColor: string;
+    channelAvatar?: string;
+    compact?: boolean;
+  }>(),
+  {
+    compact: false,
+  }
+);
 
 const { parseMessage } = useEmotes();
 
@@ -52,30 +58,36 @@ const nameColor = computed(() => props.message.color || "#e5e7eb"); // Default t
 </script>
 
 <template>
-  <div class="message-row relative px-3 py-1.5 hover:bg-white/[0.03] transition-colors">
+  <div
+    class="message-row relative px-3 py-1.5 hover:bg-white/[0.03] transition-colors"
+    :class="{ 'opacity-60': props.message.isPending }"
+  >
     <!-- Channel Color Left Indicator -->
     <div
+      v-if="!props.compact"
       class="absolute left-0 top-0 bottom-0 w-[3px] opacity-70"
       :style="{ backgroundColor: props.channelColor }"
     />
 
-    <div class="flex items-start gap-2 pl-1">
-      <!-- Channel Avatar -->
-      <img
-        v-if="props.channelAvatar"
-        :src="props.channelAvatar"
-        :alt="props.message.channel"
-        :title="`Stream: ${props.message.channel}`"
-        class="w-[18px] h-[18px] rounded-full object-cover mt-[1px] shrink-0 border border-white/5"
-      />
-      <div
-        v-else
-        class="w-[18px] h-[18px] rounded-full mt-[1px] shrink-0 border border-white/5 flex items-center justify-center text-[8px] font-bold text-white/50 uppercase"
-        :style="{ backgroundColor: props.channelColor + '40' }"
-        :title="`Stream: ${props.message.channel}`"
-      >
-        {{ props.message.channel.charAt(0) }}
-      </div>
+    <div class="flex items-start gap-2" :class="{ 'pl-1': !props.compact }">
+      <template v-if="!props.compact">
+        <!-- Channel Avatar -->
+        <img
+          v-if="props.channelAvatar"
+          :src="props.channelAvatar"
+          :alt="props.message.channel"
+          :title="`Stream: ${props.message.channel}`"
+          class="w-[18px] h-[18px] rounded-full object-cover mt-[1px] shrink-0 border border-white/5"
+        />
+        <div
+          v-else
+          class="w-[18px] h-[18px] rounded-full mt-[1px] shrink-0 border border-white/5 flex items-center justify-center text-[8px] font-bold text-white/50 uppercase"
+          :style="{ backgroundColor: props.channelColor + '40' }"
+          :title="`Stream: ${props.message.channel}`"
+        >
+          {{ props.message.channel.charAt(0) }}
+        </div>
+      </template>
 
       <!-- Message Content -->
       <p class="text-sm leading-relaxed break-words text-gray-300 flex-1 min-w-0">
