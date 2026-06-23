@@ -154,6 +154,7 @@
     "selectPrompt": "Seleccione una stream para ver el chat.",
     "noStreams": "No hay streams disponibles.",
     "noStreamsHint": "Agregue una stream para ver el chat.",
+    "sendPlaceholder": "Enviar un mensaje...",
     "tabs": {
       "chat": "Chat",
       "transcript": "Transcripción"
