@@ -13,16 +13,6 @@ interface PlatformConfig {
 }
 
 export const PLATFORMS: Record<string, PlatformConfig> = {
-  kick: {
-    id: "kick",
-    name: "Kick",
-    color: "#53FC18",
-    icon: KickIcon,
-    baseUrl: "https://kick.com",
-    embedUrl: "https://player.kick.cx",
-    chatUrl: "https://chat.kick.cx/embed",
-    domains: ["kick.com", "kick.start.gg"],
-  },
   twitch: {
     id: "twitch",
     name: "Twitch",
@@ -32,6 +22,16 @@ export const PLATFORMS: Record<string, PlatformConfig> = {
     embedUrl: "https://player.twitch.tv",
     chatUrl: "https://www.twitch.tv/embed",
     domains: ["twitch.tv", "twitch.com"],
+  },
+  kick: {
+    id: "kick",
+    name: "Kick",
+    color: "#53FC18",
+    icon: KickIcon,
+    baseUrl: "https://kick.com",
+    embedUrl: "https://player.kick.cx",
+    chatUrl: "https://chat.kick.cx/embed",
+    domains: ["kick.com", "kick.start.gg"],
   },
   youtube: {
     id: "youtube",

@@ -262,29 +262,34 @@ async fn handle_irc_message(app: &AppHandle, text: &str) -> Result<(), TwitchErr
                 return Err(TwitchError::OAuth("IRC auth failed".to_owned()));
             }
 
-            // Extract channel and message from NOTICE
-            // e.g. :tmi.twitch.tv NOTICE #xqc :This room is in 2 weeks followers-only mode.
-            if let (Some(hash_idx), Some(colon_idx)) = (line.find(" #"), line.rfind(" :")) {
-                if hash_idx < colon_idx {
-                    let channel = &line[hash_idx + 2..colon_idx]
-                        .split_whitespace()
-                        .next()
-                        .unwrap_or("");
-                    let text = &line[colon_idx + 2..];
+            // Twitch sends NOTICE for room state changes (e.g. slow mode on)
+            // AND for message failures. Message failures always have a msg-id starting with msg_
+            // e.g. @msg-id=msg_banned :tmi.twitch.tv NOTICE #xqc :You are banned.
+            let is_msg_error = line.contains("msg-id=msg_") || !line.starts_with('@');
 
-                    #[derive(serde::Serialize, Clone)]
-                    struct TwitchChatErrorEvent {
-                        channel: String,
-                        message: String,
+            if is_msg_error {
+                if let (Some(hash_idx), Some(colon_idx)) = (line.find(" #"), line.rfind(" :")) {
+                    if hash_idx < colon_idx {
+                        let channel = &line[hash_idx + 2..colon_idx]
+                            .split_whitespace()
+                            .next()
+                            .unwrap_or("");
+                        let text = &line[colon_idx + 2..];
+
+                        #[derive(serde::Serialize, Clone)]
+                        struct TwitchChatErrorEvent {
+                            channel: String,
+                            message: String,
+                        }
+
+                        let _ = app.emit(
+                            "twitch-chat-error",
+                            TwitchChatErrorEvent {
+                                channel: channel.to_string(),
+                                message: text.to_string(),
+                            },
+                        );
                     }
-
-                    let _ = app.emit(
-                        "twitch-chat-error",
-                        TwitchChatErrorEvent {
-                            channel: channel.to_string(),
-                            message: text.to_string(),
-                        },
-                    );
                 }
             }
         }

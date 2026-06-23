@@ -17,6 +17,7 @@ pub async fn twitch_login(
 ) -> Result<oauth::DeviceFlowResponse, TwitchError> {
     let http = reqwest::Client::builder()
         .use_rustls_tls()
+        .timeout(std::time::Duration::from_secs(10))
         .build()
         .map_err(TwitchError::Http)?;
 

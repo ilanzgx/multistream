@@ -79,7 +79,7 @@ const handleQuickAdd = (channel: string, platform: Platform, iframeUrl?: string)
 // local state
 const channelName = ref("");
 const iframeUrl = ref("");
-const selectedPlatform = ref<Platform>(PLATFORMS.kick!.id as Platform);
+const selectedPlatform = ref<Platform>(PLATFORMS.twitch!.id as Platform);
 
 const isCustom = computed(() => selectedPlatform.value === "custom");
 
@@ -200,7 +200,7 @@ const handleAddStream = () => {
     addStream(name, "custom", url);
     channelName.value = "";
     iframeUrl.value = "";
-    selectedPlatform.value = PLATFORMS.kick!.id as Platform;
+    selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
     emit("update:open", false);
     return;
   }
@@ -216,7 +216,7 @@ const handleAddStream = () => {
       addStream(name, "custom", url);
       channelName.value = "";
       iframeUrl.value = "";
-      selectedPlatform.value = PLATFORMS.kick!.id as Platform;
+      selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
       emit("update:open", false);
       return;
     } else {
@@ -236,7 +236,7 @@ const handleAddStream = () => {
   addStream(channel, selectedPlatform.value);
 
   channelName.value = "";
-  selectedPlatform.value = PLATFORMS.kick!.id as Platform;
+  selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
   emit("update:open", false);
 };
 

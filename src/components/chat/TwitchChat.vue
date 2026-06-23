@@ -26,6 +26,7 @@ const parentHost = computed(() => {
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
       frameborder="0"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
     />
   </BaseChat>
 </template>

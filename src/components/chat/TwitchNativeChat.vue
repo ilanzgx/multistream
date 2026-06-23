@@ -55,10 +55,10 @@ onMounted(async () => {
     (event) => {
       const { channel, message } = event.payload;
       if (channel === props.channel) {
-        toast.error(message);
         if (username.value) {
           const lastText = removeLastLocalMessage(channel, username.value);
           if (lastText) {
+            toast.error(message);
             newMessage.value = lastText;
           }
         }

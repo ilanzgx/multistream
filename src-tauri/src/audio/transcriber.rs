@@ -183,7 +183,8 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
         }
 
         let chunk = chunk_result.map_err(|e| format!("stream error: {e}"))?;
-        file.write_all(&chunk).map_err(|e| format!("write error: {e}"))?;
+        file.write_all(&chunk)
+            .map_err(|e| format!("write error: {e}"))?;
         downloaded += chunk.len() as u64;
 
         if last_emit.elapsed() >= throttle_interval || downloaded == total {

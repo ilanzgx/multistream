@@ -205,7 +205,8 @@ const _useUnifiedChat = () => {
       if (
         m &&
         m.channel === channel &&
-        m.username.toLowerCase() === currentUsername.toLowerCase()
+        m.username.toLowerCase() === currentUsername.toLowerCase() &&
+        m.isPending === true
       ) {
         lastIdx = i;
         break;

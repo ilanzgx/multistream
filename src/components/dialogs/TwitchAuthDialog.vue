@@ -65,7 +65,8 @@ watch(
         deviceFlow.value = null;
       }
     }
-  }
+  },
+  { immediate: true }
 );
 
 watch(authenticated, (isAuth) => {
