@@ -249,11 +249,15 @@
       "chatActive": "Chat Ativo"
     },
     "step3": {
+      "title": "Chat da Twitch",
+      "description": "Converse diretamente pelo app! Faça login na Twitch para enviar mensagens nos chats individuais, ou acompanhe tudo de uma vez pelo chat unificado."
+    },
+    "step4": {
       "title": "Sugestões de Stream por Categoria",
       "description": "Filtre as streams sugeridas por categoria usando os chips no topo. Clique em qualquer chip para carregar mais streams ao vivo da Twitch e do Kick para aquela categoria, em background.",
       "caption": "Streams das duas plataformas são carregadas automaticamente e ficam em cache enquanto você navega."
     },
-    "step4": {
+    "step5": {
       "title": "Transcrição ao Vivo",
       "description": "Assista a streams com legendas em tempo real geradas diretamente no seu computador.",
       "captionOriginal": "Original: Bonjour tout le monde.",
@@ -263,7 +267,7 @@
       "feature3": "Roda localmente no seu computador",
       "note": "Tudo roda localmente no seu computador. A performance depende da sua CPU e do modelo selecionado."
     },
-    "step5": {
+    "step6": {
       "title": "Teclas de Atalho",
       "description": "Use estes atalhos rápidos para controlar suas transmissões e chats com eficiência:",
       "add": "Abrir diálogo para adicionar stream",

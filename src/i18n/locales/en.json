@@ -249,11 +249,15 @@
       "chatActive": "Chat Active"
     },
     "step3": {
+      "title": "Twitch Chat",
+      "description": "Chat directly in the app! Log in with Twitch to send messages in individual chats, or read messages from all your streams at once using the unified chat."
+    },
+    "step4": {
       "title": "Stream Suggestions by Category",
       "description": "Filter suggested streams by category using the chips at the top. Click any chip to instantly load more live streams from Twitch and Kick for that category, in the background.",
       "caption": "Streams from both platforms load automatically and stay cached as you browse."
     },
-    "step4": {
+    "step5": {
       "title": "Live Transcription",
       "description": "Watch streams with real-time captions generated directly on your computer.",
       "captionOriginal": "Original: Bonjour tout le monde.",
@@ -263,7 +267,7 @@
       "feature3": "Runs locally on your computer",
       "note": "Everything runs locally on your computer. Performance depends on your CPU and the selected model."
     },
-    "step5": {
+    "step6": {
       "title": "Keyboard Shortcuts",
       "description": "Use these quick shortcuts to control your streams and chats efficiently:",
       "add": "Open add stream dialog",

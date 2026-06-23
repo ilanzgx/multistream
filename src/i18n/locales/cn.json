@@ -249,11 +249,15 @@
       "chatActive": "聊天激活"
     },
     "step3": {
+      "title": "Twitch 聊天",
+      "description": "直接在应用中聊天！登录 Twitch 以在单独的聊天中发送消息，或使用统一聊天同时查看所有直播的消息。"
+    },
+    "step4": {
       "title": "按类别推荐直播",
       "description": "使用顶部的标签按类别筛选推荐的直播。点击任意标签，即可在后台自动从 Twitch 和 Kick 加载该类别的更多直播。",
       "caption": "两个平台的直播会自动加载，浏览时保持缓存。"
     },
-    "step4": {
+    "step5": {
       "title": "实时转录",
       "description": "观看直播时，您的计算机可直接生成实时字幕。",
       "captionOriginal": "原文: Bonjour tout le monde.",
@@ -263,7 +267,7 @@
       "feature3": "在您的计算机本地运行",
       "note": "所有处理都在您的计算机本地运行。性能取决于您的 CPU 和所选的模型。"
     },
-    "step5": {
+    "step6": {
       "title": "键盘快捷键",
       "description": "使用这些快捷键高效控制您的直播和聊天：",
       "add": "打开添加直播对话框",
