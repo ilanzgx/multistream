@@ -91,7 +91,7 @@ const nameColor = computed(() => props.message.color || "#e5e7eb"); // Default t
 
         <!-- User Name -->
         <span class="font-bold mr-1" :style="{ color: nameColor }">
-          {{ props.message.display_name }}<span class="text-gray-500">:</span>
+          {{ props.message.display_name }}<span class="text-gray-400">:</span>
         </span>
 
         <!-- Tokens -->

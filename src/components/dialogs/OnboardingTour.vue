@@ -134,7 +134,7 @@ function handleFinish() {
                     <YoutubeIcon class="size-4 text-[#FF0000]" />
                   </div>
                   <span class="h-4 w-px bg-[#2a2d33]" />
-                  <span class="text-xs text-gray-500 font-mono truncate select-none"
+                  <span class="text-xs text-gray-400 font-mono truncate select-none"
                     >twitch.tv/channel_name...</span
                   >
                   <span class="ml-auto flex items-center gap-1">
@@ -179,7 +179,7 @@ function handleFinish() {
                       <span class="text-xs text-white font-medium">Ninja (Kick)</span>
                     </div>
                     <span
-                      class="text-[9px] text-gray-500 uppercase tracking-wider font-semibold font-mono"
+                      class="text-[9px] text-gray-400 uppercase tracking-wider font-semibold font-mono"
                       >{{ $t("onboarding.step2.chatActive") }}</span
                     >
                   </div>
@@ -282,7 +282,7 @@ function handleFinish() {
                   </ul>
 
                   <!-- Note -->
-                  <p class="relative text-[9px] text-gray-500 text-center">
+                  <p class="relative text-[9px] text-gray-400 text-center">
                     {{ $t("onboarding.step4.note") }}
                   </p>
                 </div>
@@ -343,7 +343,7 @@ function handleFinish() {
                       class="flex items-center justify-center size-8 text-sm font-bold text-white bg-[#1f2227] border border-[#3a3f4b] rounded-lg shadow-sm"
                       >1</kbd
                     >
-                    <span class="text-gray-500 font-bold">-</span>
+                    <span class="text-gray-400 font-bold">-</span>
                     <kbd
                       class="flex items-center justify-center size-8 text-sm font-bold text-white bg-[#1f2227] border border-[#3a3f4b] rounded-lg shadow-sm"
                       >9</kbd
@@ -431,7 +431,7 @@ function handleFinish() {
                 </div>
 
                 <!-- Caption -->
-                <p class="relative text-[10px] text-gray-500 text-center">
+                <p class="relative text-[10px] text-gray-400 text-center">
                   {{ $t("onboarding.step3.caption") }}
                 </p>
               </div>
@@ -443,16 +443,22 @@ function handleFinish() {
       <!-- Footer Buttons & Progress dot indicators -->
       <div class="flex items-center justify-between pt-4 border-t border-[#2a2d33]/50">
         <!-- Dots indicators -->
-        <div class="flex items-center gap-1.5">
+        <div class="flex items-center gap-0">
           <button
             v-for="step in 5"
             v-show="step !== 4 || isSupported"
             :key="step"
-            class="size-2 rounded-full transition-all duration-300"
-            :class="[step === currentStep ? 'bg-white w-4' : 'bg-gray-600 hover:bg-gray-400']"
+            class="p-2.5 group cursor-pointer"
             :aria-label="`Go to step ${step}`"
             @click="currentStep = step"
-          />
+          >
+            <div
+              class="size-2 rounded-full transition-all duration-300"
+              :class="[
+                step === currentStep ? 'bg-white w-4' : 'bg-gray-600 group-hover:bg-gray-400',
+              ]"
+            />
+          </button>
         </div>
 
         <!-- Action buttons -->

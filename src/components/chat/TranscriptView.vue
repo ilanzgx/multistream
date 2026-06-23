@@ -86,15 +86,15 @@ async function copyTranscript() {
     <div class="flex items-center justify-between gap-2 p-2 border-b border-[#1f2227] bg-[#14161a]">
       <!-- Status Block -->
       <div class="flex flex-col gap-0.5 min-w-0">
-        <span class="text-[10px] text-gray-500 truncate leading-tight">
+        <span class="text-[10px] text-gray-400 truncate leading-tight">
           {{ $t("settings.transcription.modelLabel") }}:
           <span class="text-gray-300">{{ formattedModelName }}</span>
         </span>
-        <span class="text-[10px] text-gray-500 truncate leading-tight">
+        <span class="text-[10px] text-gray-400 truncate leading-tight">
           {{ $t("settings.transcription.modeLabel") }}:
           <span class="text-gray-300">{{ $t(captionModeTranslationKey) }}</span>
         </span>
-        <span v-if="timeAgoText" class="text-[10px] text-gray-500 truncate leading-tight">
+        <span v-if="timeAgoText" class="text-[10px] text-gray-400 truncate leading-tight">
           {{ $t("settings.transcription.lastCaption") }}
           <span class="text-gray-300">{{ timeAgoText }}</span>
         </span>
@@ -159,14 +159,14 @@ async function copyTranscript() {
       >
         <p class="text-center text-sm text-gray-400">
           {{ $t("chat.transcript.emptyState") }}<br />
-          <span class="text-xs text-gray-500 mt-1 inline-block">{{
+          <span class="text-xs text-gray-400 mt-1 inline-block">{{
             $t("chat.transcript.emptyStateHint")
           }}</span>
         </p>
       </div>
 
       <div v-for="(entry, index) in transcriptHistory" :key="index" class="flex flex-col gap-0.5">
-        <span class="text-[10px] text-gray-500 font-mono">{{ formatTime(entry.timestamp) }}</span>
+        <span class="text-[10px] text-gray-400 font-mono">{{ formatTime(entry.timestamp) }}</span>
         <p class="text-sm text-gray-200 leading-relaxed">{{ entry.text }}</p>
       </div>
     </div>

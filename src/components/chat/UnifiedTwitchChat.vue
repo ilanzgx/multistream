@@ -48,7 +48,7 @@ watch(
         </div>
         <div class="text-center space-y-1">
           <p class="font-medium text-gray-200">{{ $t("chat.unified.connectTitle") }}</p>
-          <p class="text-sm text-gray-500">{{ $t("chat.unified.connectHint") }}</p>
+          <p class="text-sm text-gray-400">{{ $t("chat.unified.connectHint") }}</p>
         </div>
         <div class="pt-2">
           <Button
@@ -67,7 +67,7 @@ watch(
     <template v-else-if="!hasTwitchStreams">
       <div class="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
         <MessageSquare class="w-8 h-8 text-gray-600" />
-        <p class="text-sm text-gray-500">{{ t("chat.unified.noTwitchStreams") }}</p>
+        <p class="text-sm text-gray-400">{{ t("chat.unified.noTwitchStreams") }}</p>
         <p class="text-xs text-gray-600">{{ t("chat.unified.noTwitchStreamsHint") }}</p>
       </div>
     </template>
@@ -75,7 +75,7 @@ watch(
     <template v-else-if="connectionState === 'disconnected' && messages.length === 0">
       <div class="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
         <WifiOff class="w-8 h-8 text-gray-600" />
-        <p class="text-sm text-gray-500">{{ t("chat.unified.disconnected") }}</p>
+        <p class="text-sm text-gray-400">{{ t("chat.unified.disconnected") }}</p>
       </div>
     </template>
 

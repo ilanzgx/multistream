@@ -132,7 +132,7 @@ const formatViewers = (count?: number) => {
     class="mt-6 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-5xl md:max-w-6xl lg:max-w-8xl"
   >
     <div
-      class="flex items-center gap-2 text-gray-500 text-xs font-medium uppercase tracking-widest select-none"
+      class="flex items-center gap-2 text-gray-400 text-xs font-medium uppercase tracking-widest select-none"
     >
       <span class="w-8 h-px bg-gray-700" />
       {{ $t("add.suggestions") }}
@@ -245,7 +245,7 @@ const formatViewers = (count?: number) => {
             {{ stream.category }}
           </p>
           <p
-            class="text-[11px] text-gray-500 truncate mt-1 group-hover:text-gray-300 transition-colors"
+            class="text-[11px] text-gray-400 truncate mt-1 group-hover:text-gray-300 transition-colors"
             :title="stream.title"
           >
             {{ stream.title }}
@@ -277,7 +277,7 @@ const formatViewers = (count?: number) => {
           :class="[
             page === currentPage
               ? 'bg-white/10 text-white border-white/20'
-              : 'text-gray-500 hover:text-white bg-[#14161a] border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
+              : 'text-gray-400 hover:text-white bg-[#14161a] border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
           ]"
           @click="currentPage = page"
         >

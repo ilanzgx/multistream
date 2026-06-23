@@ -160,7 +160,7 @@ onUnmounted(() => {
           class="flex items-center mb-3 px-1 transition-all duration-300"
           :class="transcriptionActive ? 'justify-between' : 'justify-center'"
         >
-          <p class="text-[10px] font-semibold tracking-widest uppercase text-gray-500">
+          <p class="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
             {{ $t("chat.controlTitle") }}
           </p>
           <div
@@ -393,7 +393,7 @@ onUnmounted(() => {
         <div v-if="appVersion" class="mt-5 flex items-center justify-center gap-3">
           <div class="h-px flex-1 bg-linear-to-r from-transparent to-[#2a2d33]" />
           <span
-            class="text-[10px] font-semibold tracking-widest uppercase text-gray-500 select-none"
+            class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 select-none"
           >
             v{{ appVersion }}
           </span>

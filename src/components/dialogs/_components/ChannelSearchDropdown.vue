@@ -83,7 +83,7 @@ const emit = defineEmits<{
           <!-- Category (shown when live) -->
           <span
             v-if="result.isLive && result.category"
-            class="text-[10px] text-gray-500 truncate max-w-20 shrink-0"
+            class="text-[10px] text-gray-400 truncate max-w-20 shrink-0"
           >
             {{ result.category }}
           </span>

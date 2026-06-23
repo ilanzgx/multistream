@@ -349,7 +349,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                 <div>
                   <div class="flex items-center gap-2">
                     <h3 class="text-white text-sm font-medium">{{ $t("settings.auth.title") }}</h3>
-                    <!--<span class="text-[10px] text-gray-500 font-medium"
+                    <!--<span class="text-[10px] text-gray-400 font-medium"
                       >({{ $t("common.comingSoon") }})</span
                     >-->
                   </div>
@@ -404,7 +404,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                       </span>
                       <span class="text-white font-medium">{{ platform.name }}</span>
                       <span
-                        class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-500 bg-white/5 border border-white/5"
+                        class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-400 bg-white/5 border border-white/5"
                       >
                         {{ $t("settings.auth.disconnected") }}
                       </span>
@@ -492,7 +492,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         {{ $t("settings.transcription.captionModeTranslate") }}
                       </option>
                     </select>
-                    <div class="text-[10px] text-gray-500">
+                    <div class="text-[10px] text-gray-400">
                       {{ $t("settings.transcription.captionModeLabel") }}
                     </div>
                   </div>
@@ -533,7 +533,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         :key="step"
                         class="text-[10px] font-mono transition-colors leading-none"
                         :class="
-                          step === chunkDuration ? 'text-white font-semibold' : 'text-gray-500'
+                          step === chunkDuration ? 'text-white font-semibold' : 'text-gray-400'
                         "
                         >{{ step }}s</span
                       >
@@ -561,7 +561,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                     <div class="flex-1">
                       <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm font-medium text-white">{{ model.name }}</span>
-                        <span class="text-[10px] text-gray-500 font-mono">{{ model.size }}</span>
+                        <span class="text-[10px] text-gray-400 font-mono">{{ model.size }}</span>
                         <span
                           v-if="installedModels.includes(model.id)"
                           class="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
