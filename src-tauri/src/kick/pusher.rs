@@ -51,20 +51,25 @@ pub async fn update_kick_subscriptions(
         return;
     };
 
-    {
+    let rx = {
         let mut shutdown_guard = state.pusher_shutdown_tx.lock().await;
         if let Some(tx) = shutdown_guard.take() {
             let _ = tx.send(());
         }
-    }
 
-    if new_channels.is_empty() {
+        if new_channels.is_empty() {
+            None
+        } else {
+            let (tx, rx) = oneshot::channel();
+            *shutdown_guard = Some(tx);
+            Some(rx)
+        }
+    };
+
+    let Some(rx) = rx else {
         emit_connection_state(app, "disconnected").await;
         return;
-    }
-
-    let (tx, rx) = oneshot::channel();
-    *state.pusher_shutdown_tx.lock().await = Some(tx);
+    };
 
     let app_clone = app.clone();
     tokio::spawn(async move {
@@ -144,23 +149,22 @@ async fn connect_pusher(
 
     let (mut write, mut read) = ws_stream.split();
 
-    // Wait for pusher:connection_established
-    let mut connected = false;
-    while let Some(msg) = read.next().await {
-        let msg = msg.map_err(|e| KickError::WebSocket(e.to_string()))?;
-        if let Message::Text(text) = msg {
-            if text.contains("pusher:connection_established") {
-                connected = true;
-                break;
+    tokio::time::timeout(Duration::from_secs(10), async {
+        while let Some(msg) = read.next().await {
+            let msg = msg.map_err(|e| KickError::WebSocket(e.to_string()))?;
+            if let Message::Text(text) = msg {
+                if text.contains("pusher:connection_established") {
+                    return Ok(());
+                }
             }
         }
-    }
 
-    if !connected {
-        return Err(KickError::WebSocket(
+        Err(KickError::WebSocket(
             "Failed to receive connection_established".to_string(),
-        ));
-    }
+        ))
+    })
+    .await
+    .map_err(|_| KickError::WebSocket("Connection establishment timeout".to_string()))??;
 
     emit_connection_state(app, "connected").await;
     log::info!(

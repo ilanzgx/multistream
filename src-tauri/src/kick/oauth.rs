@@ -153,10 +153,14 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
         ));
     }
 
+    let Some(code) = code else {
+        let response = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Authorization code not found</h1></body></html>";
+        let _ = stream.write_all(response.as_bytes()).await;
+        return Err(KickError::OAuth("Authorization code not found".to_owned()));
+    };
+
     let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><head><title>Success</title></head><body style=\"background:#14161a;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;\"><h1>Authentication successful! You can close this window.</h1><script>window.close()</script></body></html>";
     let _ = stream.write_all(response.as_bytes()).await;
-
-    let code = code.ok_or_else(|| KickError::OAuth("Authorization code not found".to_owned()))?;
 
     let token_resp = http
         .post("https://id.kick.com/oauth/token")

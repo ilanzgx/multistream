@@ -94,10 +94,25 @@ pub async fn kick_send_message(
         .build()
         .map_err(KickError::Http)?;
 
-    // Send message
-    super::api::send_message(&http, &auth, broadcaster_user_id, &message).await?;
+    match super::api::send_message(&http, &auth, broadcaster_user_id, &message).await {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            if let KickError::OAuth(msg) = &e {
+                if msg.contains("Auth error sending message: 401")
+                    || msg.contains("Auth error sending message: 403")
+                {
+                    let new_auth = super::oauth::refresh_token(&http, &auth.refresh_token).await?;
+                    super::oauth::store_auth(&new_auth)?;
+                    *state.auth.lock().await = Some(new_auth.clone());
 
-    Ok(())
+                    super::api::send_message(&http, &new_auth, broadcaster_user_id, &message)
+                        .await?;
+                    return Ok(());
+                }
+            }
+            Err(e)
+        }
+    }
 }
 
 use std::collections::HashSet;
