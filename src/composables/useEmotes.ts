@@ -143,7 +143,7 @@ const _useEmotes = () => {
   ): ParsedToken[] => {
     const tokens: ParsedToken[] = [];
 
-    const twitchReplacements: { start: number; end: number; url: string; code: string }[] = [];
+    const emoteReplacements: { start: number; end: number; url: string; code: string }[] = [];
     if (twitchEmotesStr) {
       const emotes = twitchEmotesStr.split("/");
       for (const emote of emotes) {
@@ -158,7 +158,7 @@ const _useEmotes = () => {
           if (start < 0 || end >= text.length) continue;
 
           const code = text.substring(start, end + 1);
-          twitchReplacements.push({
+          emoteReplacements.push({
             start,
             end,
             code,
@@ -168,12 +168,27 @@ const _useEmotes = () => {
       }
     }
 
-    twitchReplacements.sort((a, b) => a.start - b.start);
+    const kickRegex = /\[emote:(\d+):([^\]]+)\]/g;
+    let match;
+    while ((match = kickRegex.exec(text)) !== null) {
+      const start = match.index;
+      const end = kickRegex.lastIndex - 1;
+      const id = match[1] || "";
+      const code = match[2] || "";
+      emoteReplacements.push({
+        start,
+        end,
+        code,
+        url: `https://files.kick.com/emotes/${id}/fullsize`,
+      });
+    }
+
+    emoteReplacements.sort((a, b) => a.start - b.start);
 
     let currentIndex = 0;
     const rawTokens: RawToken[] = [];
 
-    for (const rep of twitchReplacements) {
+    for (const rep of emoteReplacements) {
       if (rep.start > currentIndex) {
         rawTokens.push({ type: "text", content: text.substring(currentIndex, rep.start) });
       }
