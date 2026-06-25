@@ -52,7 +52,8 @@
       "openBrowser": "Открыть браузер вручную",
       "connected": "Подключено",
       "disconnect": "Отключить",
-      "disconnected": "Отключено"
+      "disconnected": "Отключено",
+      "logout": "Выйти"
     },
     "backup": {
       "title": "Данные и бэкап",

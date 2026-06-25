@@ -52,7 +52,8 @@
       "openBrowser": "Abrir Navegador Manualmente",
       "connected": "Conectado",
       "disconnect": "Desconectar",
-      "disconnected": "Desconectado"
+      "disconnected": "Desconectado",
+      "logout": "Cerrar sesión"
     },
     "backup": {
       "title": "Datos y Copia de seguridad",

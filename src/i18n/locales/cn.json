@@ -52,7 +52,8 @@
       "openBrowser": "手动打开浏览器",
       "connected": "已连接",
       "disconnect": "断开连接",
-      "disconnected": "未连接"
+      "disconnected": "未连接",
+      "logout": "登出"
     },
     "backup": {
       "title": "数据与备份",

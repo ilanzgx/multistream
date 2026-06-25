@@ -52,7 +52,8 @@
       "openBrowser": "Open Browser Manually",
       "connected": "Connected",
       "disconnect": "Disconnect",
-      "disconnected": "Disconnected"
+      "disconnected": "Disconnected",
+      "logout": "Logout"
     },
     "help": {
       "title": "Help",

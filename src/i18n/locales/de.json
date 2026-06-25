@@ -52,7 +52,8 @@
       "openBrowser": "Browser manuell öffnen",
       "connected": "Verbunden",
       "disconnect": "Trennen",
-      "disconnected": "Getrennt"
+      "disconnected": "Getrennt",
+      "logout": "Abmelden"
     },
     "backup": {
       "title": "Daten & Backup",

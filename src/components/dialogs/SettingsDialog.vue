@@ -394,7 +394,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         }}</span>
                         <button
                           class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
-                          title="Logout"
+                          :title="$t('settings.auth.logout')"
                           @click="twitchLogout"
                         >
                           <LogOut class="w-3.5 h-3.5" />
@@ -429,7 +429,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         }}</span>
                         <button
                           class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
-                          title="Logout"
+                          :title="$t('settings.auth.logout')"
                           @click="kickLogout"
                         >
                           <LogOut class="w-3.5 h-3.5" />

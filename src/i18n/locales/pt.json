@@ -52,7 +52,8 @@
       "openBrowser": "Abrir Navegador Manualmente",
       "connected": "Conectado",
       "disconnect": "Desconectar",
-      "disconnected": "Desconectado"
+      "disconnected": "Desconectado",
+      "logout": "Sair"
     },
     "help": {
       "title": "Ajuda",
