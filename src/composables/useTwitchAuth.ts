@@ -17,6 +17,23 @@ export interface DeviceFlowResponse {
   verification_uri: string;
 }
 
+async function cancelLogin() {
+  if (!isTauri()) return;
+  try {
+    await invoke("twitch_cancel_login");
+  } catch (e) {
+    console.error("Failed to cancel login", e);
+  }
+}
+
+async function logout() {
+  if (!isTauri()) return;
+  try {
+    await invoke("twitch_logout");
+  } catch (e) {
+    console.error("Failed to logout", e);
+  }
+}
 const _useTwitchAuth = () => {
   const authenticated = ref(false);
   const username = ref<string | null>(null);
@@ -64,24 +81,6 @@ const _useTwitchAuth = () => {
       return null;
     } finally {
       loading.value = false;
-    }
-  }
-
-  async function cancelLogin() {
-    if (!isTauri()) return;
-    try {
-      await invoke("twitch_cancel_login");
-    } catch (e) {
-      console.error("Failed to cancel Twitch auth flow:", e);
-    }
-  }
-
-  async function logout() {
-    if (!isTauri()) return;
-    try {
-      await invoke("twitch_logout");
-    } catch (e) {
-      console.error("Failed to logout from Twitch:", e);
     }
   }
 

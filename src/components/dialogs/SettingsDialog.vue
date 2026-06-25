@@ -150,20 +150,22 @@ const handleFileImport = (e: Event) => {
   const file = input.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (event) => {
+  reader.addEventListener("load", (event) => {
     try {
-      const data = JSON.parse(event.target?.result as string);
-      if (validateBackupData(data)) {
-        pendingBackupData.value = data;
-        showImportConfirm.value = true;
-      } else {
-        toast.error(t("settings.backup.importError"));
+      if (typeof event.target?.result === "string") {
+        const data = JSON.parse(event.target.result);
+        if (validateBackupData(data)) {
+          pendingBackupData.value = data;
+          showImportConfirm.value = true;
+        } else {
+          toast.error(t("settings.backup.importError"));
+        }
       }
     } catch (err) {
       toast.error(t("settings.backup.importError"));
     }
     input.value = "";
-  };
+  });
   reader.readAsText(file);
 };
 
