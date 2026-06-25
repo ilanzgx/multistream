@@ -20,18 +20,10 @@ const _useKickAuth = () => {
   let unlistenAuthChanged: UnlistenFn | null = null;
   let unlistenAuthError: UnlistenFn | null = null;
   let unlistenAuthUrl: UnlistenFn | null = null;
+  let initPromise: Promise<void> | null = null;
 
   async function init() {
     if (!isTauri()) return;
-
-    try {
-      const state = await invoke<KickAuthState>("kick_get_auth_state");
-      authenticated.value = state.authenticated;
-      username.value = state.username;
-    } catch {
-      authenticated.value = false;
-      username.value = null;
-    }
 
     if (!unlistenAuthChanged) {
       unlistenAuthChanged = await listen<KickAuthState>("kick-auth-changed", (event) => {
@@ -51,10 +43,30 @@ const _useKickAuth = () => {
         authUrl.value = event.payload;
       });
     }
+
+    try {
+      const state = await invoke<KickAuthState>("kick_get_auth_state");
+      authenticated.value = state.authenticated;
+      username.value = state.username;
+    } catch {
+      authenticated.value = false;
+      username.value = null;
+    }
+  }
+
+  function ensureInit() {
+    if (!initPromise) {
+      initPromise = init().catch((error) => {
+        initPromise = null;
+        throw error;
+      });
+    }
+    return initPromise;
   }
 
   async function startLogin() {
     if (!isTauri() || loading.value) return;
+    await ensureInit();
     loading.value = true;
     try {
       await invoke("kick_login");
@@ -76,6 +88,15 @@ const _useKickAuth = () => {
     }
   }
 
+  async function cancelLogin() {
+    if (!isTauri()) return;
+    try {
+      await invoke("kick_cancel_login");
+    } catch (e) {
+      console.error("Failed to cancel Kick auth flow:", e);
+    }
+  }
+
   onScopeDispose(() => {
     if (unlistenAuthChanged) unlistenAuthChanged();
     if (unlistenAuthError) unlistenAuthError();
@@ -83,7 +104,7 @@ const _useKickAuth = () => {
   });
 
   if (isTauri()) {
-    init().catch(console.error);
+    ensureInit().catch(console.error);
   }
 
   return {
@@ -92,6 +113,7 @@ const _useKickAuth = () => {
     loading,
     authUrl,
     startLogin,
+    cancelLogin,
     logout,
   };
 };
