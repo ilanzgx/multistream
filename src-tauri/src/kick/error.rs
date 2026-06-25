@@ -14,6 +14,9 @@ pub enum KickError {
     #[error("Token refresh failed")]
     TokenRefreshFailed,
 
+    #[error("WebSocket error: {0}")]
+    WebSocket(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }

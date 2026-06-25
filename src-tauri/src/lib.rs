@@ -14,7 +14,9 @@ use twitch::commands::{
 use twitch::state::TwitchState;
 
 mod kick;
-use kick::commands::{kick_get_auth_state, kick_login, kick_logout};
+use kick::commands::{
+    kick_get_auth_state, kick_login, kick_logout, kick_send_message, kick_set_channels,
+};
 use kick::state::KickState;
 
 // fixed port
@@ -127,6 +129,8 @@ pub fn run() {
             kick_login,
             kick_logout,
             kick_get_auth_state,
+            kick_send_message,
+            kick_set_channels,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
