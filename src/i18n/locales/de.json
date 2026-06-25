@@ -46,6 +46,10 @@
       "title": "Konten",
       "description": "Verbinden Sie Ihre Streaming-Konten",
       "connect": "Verbinden",
+      "kickConnect": "Mit Kick verbinden",
+      "authorizeBrowser": "Bitte autorisieren Sie die App in Ihrem Browser.",
+      "manualLink": "Wenn es sich nicht automatisch öffnet, klicken Sie auf den Link unten.",
+      "openBrowser": "Browser manuell öffnen",
       "connected": "Verbunden",
       "disconnect": "Trennen",
       "disconnected": "Getrennt"

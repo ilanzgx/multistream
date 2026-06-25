@@ -44,8 +44,12 @@
     },
     "auth": {
       "title": "账户",
-      "description": "连接您的直播账户",
+      "description": "连接您的流媒体帐户",
       "connect": "连接",
+      "kickConnect": "连接 Kick",
+      "authorizeBrowser": "请在您的浏览器中授权应用程序。",
+      "manualLink": "如果没有自动打开，请点击下面的链接。",
+      "openBrowser": "手动打开浏览器",
       "connected": "已连接",
       "disconnect": "断开连接",
       "disconnected": "未连接"
