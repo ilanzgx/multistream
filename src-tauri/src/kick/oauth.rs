@@ -1,11 +1,10 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::RngCore;
 use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use sha2::{Digest, Sha256};
-use std::io::{Read, Write};
-use std::net::TcpListener;
 use tauri::{AppHandle, Emitter};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
 use super::error::KickError;
 use super::state::KickAuthInfo;
@@ -64,7 +63,6 @@ pub struct KickUserResponse {
 #[derive(Debug, Deserialize)]
 pub struct KickUserData {
     pub name: String,
-    pub user_id: u64,
 }
 
 pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthInfo, KickError> {
@@ -80,18 +78,44 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
     let (verifier, challenge) = generate_pkce();
 
     let auth_url = format!(
-        "https://id.kick.com/oauth/authorize?response_type=code&client_id={}&redirect_uri={}&scope=user:read&code_challenge={}&code_challenge_method=S256&state=random123",
+        "https://id.kick.com/oauth/authorize?response_type=code&client_id={}&redirect_uri={}&scope=user:read+chat:write&code_challenge={}&code_challenge_method=S256&state=random123",
         client_id, REDIRECT_URI, challenge
     );
 
-    let listener = TcpListener::bind("127.0.0.1:14832")?;
+    let listener_result = tokio::net::TcpListener::bind("127.0.0.1:14832").await;
+    let listener = match listener_result {
+        Ok(l) => l,
+        Err(e) => {
+            if e.kind() == std::io::ErrorKind::AddrInUse {
+                return Err(KickError::OAuth("An authentication is already in progress. Check your browser or wait a minute and try again.".to_owned()));
+            }
+            return Err(KickError::OAuth(e.to_string()));
+        }
+    };
+
     let _ = app.emit("kick-auth-url", &auth_url);
 
-    let (mut stream, _) = listener.accept()?;
-    let mut buffer = [0; 2048];
-    stream.read(&mut buffer)?;
+    // Wait up to 2 minutes for a connection
+    let accept_result =
+        tokio::time::timeout(std::time::Duration::from_secs(120), listener.accept()).await;
 
-    let request = String::from_utf8_lossy(&buffer[..]);
+    let (mut stream, _) = match accept_result {
+        Ok(Ok(res)) => res,
+        Ok(Err(e)) => return Err(KickError::OAuth(e.to_string())),
+        Err(_) => {
+            return Err(KickError::OAuth(
+                "Authentication timeout (2 minutes).".to_string(),
+            ))
+        }
+    };
+
+    let mut buffer = [0; 2048];
+    let bytes_read = stream
+        .read(&mut buffer)
+        .await
+        .map_err(|e| KickError::OAuth(e.to_string()))?;
+
+    let request = String::from_utf8_lossy(&buffer[..bytes_read]);
     let first_line = request.lines().next().unwrap_or("");
     let mut parts = first_line.split_whitespace();
     parts.next(); // GET
@@ -111,8 +135,8 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
         None
     };
 
-    let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><head><title>Success</title></head><body style=\"background:#14161a;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;\"><h1>Autenticacao concluida! Pode fechar esta janela.</h1><script>window.close()</script></body></html>";
-    let _ = stream.write_all(response.as_bytes());
+    let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><head><title>Success</title></head><body style=\"background:#14161a;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;\"><h1>Authentication successful! You can close this window.</h1><script>window.close()</script></body></html>";
+    let _ = stream.write_all(response.as_bytes()).await;
 
     let code = code.ok_or_else(|| KickError::OAuth("Authorization code not found".to_owned()))?;
 
@@ -151,6 +175,7 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         username,
+        has_chat_write: true,
     })
 }
 
@@ -196,5 +221,6 @@ pub async fn refresh_token(http: &Client, refresh_token: &str) -> Result<KickAut
         access_token: tokens.access_token,
         refresh_token: tokens.refresh_token,
         username,
+        has_chat_write: true,
     })
 }
