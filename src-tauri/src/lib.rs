@@ -15,7 +15,8 @@ use twitch::state::TwitchState;
 
 mod kick;
 use kick::commands::{
-    kick_get_auth_state, kick_login, kick_logout, kick_send_message, kick_set_channels,
+    kick_cancel_login, kick_get_auth_state, kick_login, kick_logout, kick_send_message,
+    kick_set_channels,
 };
 use kick::state::KickState;
 
@@ -127,6 +128,7 @@ pub fn run() {
             twitch_get_connection_state,
             twitch_send_message,
             kick_login,
+            kick_cancel_login,
             kick_logout,
             kick_get_auth_state,
             kick_send_message,
@@ -136,8 +138,10 @@ pub fn run() {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
 
             let twitch_state = TwitchState::new();
+            app.manage(twitch_state);
+            let state = app.state::<TwitchState>();
             if let Some(stored_auth) = twitch::commands::init_stored_auth(app.handle()) {
-                *twitch_state.auth.try_lock().expect("lock on startup") = Some(stored_auth.clone());
+                *state.auth.try_lock().expect("lock on startup") = Some(stored_auth.clone());
 
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
@@ -188,11 +192,12 @@ pub fn run() {
                     }
                 });
             }
-            app.manage(twitch_state);
 
             let kick_state = KickState::new();
+            app.manage(kick_state);
+            let state = app.state::<KickState>();
             if let Some(stored_auth) = kick::commands::init_stored_auth() {
-                *kick_state.auth.try_lock().expect("lock on startup") = Some(stored_auth.clone());
+                *state.auth.try_lock().expect("lock on startup") = Some(stored_auth.clone());
 
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
@@ -219,7 +224,7 @@ pub fn run() {
                                     let _ = kick::oauth::store_auth(&refreshed);
                                     *state.auth.lock().await = Some(refreshed);
                                 }
-                                Err(_) => {
+                                Err(kick::error::KickError::TokenRefreshFailed) => {
                                     *state.auth.lock().await = None;
                                     kick::oauth::clear_auth();
                                     let _ = app_handle.emit(
@@ -230,13 +235,15 @@ pub fn run() {
                                         },
                                     );
                                 }
+                                Err(_) => {
+                                    // Network error during refresh - preserve credentials
+                                }
                             }
                         }
                         Err(_) => {}
                     }
                 });
             }
-            app.manage(kick_state);
 
             if cfg!(debug_assertions) {
                 app.handle().plugin(

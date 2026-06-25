@@ -28,6 +28,15 @@ pub async fn kick_login(app: AppHandle, state: State<'_, KickState>) -> Result<(
 }
 
 #[tauri::command]
+pub async fn kick_cancel_login() -> Result<(), KickError> {
+    if let Ok(mut stream) = tokio::net::TcpStream::connect("127.0.0.1:14832").await {
+        use tokio::io::AsyncWriteExt;
+        let _ = stream.write_all(b"GET /cancel HTTP/1.1\r\n\r\n").await;
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn kick_logout(app: AppHandle, state: State<'_, KickState>) -> Result<(), KickError> {
     *state.auth.lock().await = None;
 
