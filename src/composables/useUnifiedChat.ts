@@ -19,6 +19,7 @@ export interface UnifiedChatMessage {
   color: string | null;
   badges: string[];
   emotes: string | null;
+  platform?: "twitch" | "kick";
   isPending?: boolean;
 }
 
@@ -58,7 +59,12 @@ const _useUnifiedChat = () => {
     streams.value.filter((s) => s.platform === "twitch").map((s) => s.channel.toLowerCase())
   );
 
+  const kickChannels = computed(() =>
+    streams.value.filter((s) => s.platform === "kick").map((s) => s.channel.toLowerCase())
+  );
+
   let unlistenMessage: UnlistenFn | null = null;
+  let unlistenKickMessage: UnlistenFn | null = null;
   let unlistenState: UnlistenFn | null = null;
   let unlistenAuthExpired: UnlistenFn | null = null;
 
@@ -66,6 +72,7 @@ const _useUnifiedChat = () => {
     if (!isTauri()) return;
     try {
       const existing = await invoke<UnifiedChatMessage[]>("twitch_get_messages");
+      existing.forEach((m) => (m.platform = "twitch"));
       messages.value = existing.slice(-MAX_FRONTEND_MESSAGES);
     } catch {
       messages.value = [];
@@ -85,15 +92,25 @@ const _useUnifiedChat = () => {
     if (!isTauri() || !authenticated.value) return;
     try {
       await invoke("twitch_send_message", { channel, text });
-
-      // Optimistically add the message to the list to feel fast
-      // But Twitch IRC also reflects our own messages via WebSocket, so we might see it twice.
-      // Actually, standard Twitch IRC might not reflect our own messages unless we have echo-message tag enabled.
-      // For now, let's just let the Rust backend handle it and maybe we get it echoed, or we can push it optimistically.
-      // Since we don't have our own local badges and color readily available, let's not push optimistically yet
-      // to avoid weird UI glitches, or just push a minimal message if needed.
     } catch (e) {
-      console.error("[useUnifiedChat] failed to send message", e);
+      console.error("[useUnifiedChat] failed to send Twitch message", e);
+      throw e;
+    }
+  }
+
+  async function sendKickMessage(channelSlug: string, text: string) {
+    if (!isTauri()) return;
+    try {
+      // 1. Resolve Kick channel slug -> broadcaster user_id via Frontend (bypasses Cloudflare)
+      const res = await fetch(`https://kick.com/api/v1/channels/${channelSlug}`);
+      if (!res.ok) throw new Error(`Channel fetch failed: ${res.status}`);
+      const data = await res.json();
+      const userId = data.user_id;
+
+      // 2. Send authenticated message via Rust backend
+      await invoke("kick_send_message", { broadcasterUserId: userId, message: text });
+    } catch (e) {
+      console.error("[useUnifiedChat] failed to send Kick message", e);
       throw e;
     }
   }
@@ -115,6 +132,7 @@ const _useUnifiedChat = () => {
       "unified-chat-message",
       (event) => {
         const msg = event.payload;
+        msg.platform = "twitch";
 
         if (msg.id.startsWith("local-")) {
           msg.isPending = true;
@@ -122,6 +140,49 @@ const _useUnifiedChat = () => {
             const found = messages.value.find((m) => m && m.id === msg.id);
             if (found) found.isPending = false;
           }, 1000);
+        }
+
+        pendingMessages.push(msg);
+        if (!flushTimer) {
+          flushTimer = setTimeout(() => {
+            if (pendingMessages.length > 0) {
+              messages.value.push(...pendingMessages);
+              if (messages.value.length > MAX_FRONTEND_MESSAGES) {
+                messages.value.splice(0, messages.value.length - MAX_FRONTEND_MESSAGES);
+              }
+              pendingMessages = [];
+            }
+            flushTimer = null;
+          }, 50); // 50ms batching (20fps) to eliminate jitters
+        }
+      }
+    );
+
+    const localUnlistenKickMessage = await listen<UnifiedChatMessage>(
+      "kick-chat-message",
+      (event) => {
+        const msg = event.payload;
+        msg.platform = "kick";
+
+        if (msg.id.startsWith("local-")) {
+          msg.isPending = true;
+          setTimeout(() => {
+            const found = messages.value.find((m) => m && m.id === msg.id);
+            if (found) found.isPending = false;
+          }, 1000);
+        } else {
+          // De-duplicate local optimistic messages that were manually pushed by UnifiedChat.vue
+          const pendingIdx = messages.value.findIndex(
+            (m) =>
+              m.isPending &&
+              m.platform === "kick" &&
+              m.channel === msg.channel &&
+              m.username.toLowerCase() === msg.username.toLowerCase() &&
+              m.message === msg.message
+          );
+          if (pendingIdx !== -1) {
+            messages.value.splice(pendingIdx, 1);
+          }
         }
 
         pendingMessages.push(msg);
@@ -152,6 +213,7 @@ const _useUnifiedChat = () => {
     });
 
     unlistenMessage = localUnlistenMessage;
+    unlistenKickMessage = localUnlistenKickMessage;
     unlistenState = localUnlistenState;
     unlistenAuthExpired = localUnlistenAuthExpired;
   }
@@ -181,8 +243,33 @@ const _useUnifiedChat = () => {
     { deep: true, immediate: true }
   );
 
+  watch(
+    kickChannels,
+    (channels) => {
+      channels.forEach(async (channel) => {
+        if (!channelAvatars[channel]) {
+          try {
+            const res = await fetch(
+              `https://kick.com/api/v2/channels/${encodeURIComponent(channel)}`
+            );
+            if (res.ok) {
+              const data = await res.json();
+              if (data?.user?.profile_pic) {
+                channelAvatars[channel] = data.user.profile_pic;
+              }
+            }
+          } catch (e) {
+            console.error(`[useUnifiedChat] Failed to fetch avatar for Kick channel ${channel}`, e);
+          }
+        }
+      });
+    },
+    { deep: true, immediate: true }
+  );
+
   onScopeDispose(() => {
     unlistenMessage?.();
+    unlistenKickMessage?.();
     unlistenState?.();
     unlistenAuthExpired?.();
   });
@@ -206,7 +293,34 @@ const _useUnifiedChat = () => {
         m &&
         m.channel === channel &&
         m.username.toLowerCase() === currentUsername.toLowerCase() &&
-        m.isPending === true
+        m.isPending === true &&
+        m.platform === "twitch"
+      ) {
+        lastIdx = i;
+        break;
+      }
+    }
+
+    if (lastIdx !== -1) {
+      const removed = messages.value.splice(lastIdx, 1)[0];
+      if (removed) {
+        return removed.message;
+      }
+    }
+    return null;
+  }
+
+  function removeLastLocalKickMessage(channel: string, currentUsername: string): string | null {
+    // Same implementation but could differ if Kick uses different username casing rules
+    let lastIdx = -1;
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      const m = messages.value[i];
+      if (
+        m &&
+        m.channel.toLowerCase() === channel.toLowerCase() &&
+        m.username.toLowerCase() === currentUsername.toLowerCase() &&
+        m.isPending === true &&
+        m.platform === "kick"
       ) {
         lastIdx = i;
         break;
@@ -228,8 +342,11 @@ const _useUnifiedChat = () => {
     channelColor,
     channelAvatars,
     twitchChannels,
+    kickChannels,
     sendMessage,
+    sendKickMessage,
     removeLastLocalMessage,
+    removeLastLocalKickMessage,
   };
 };
 

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { watch, computed } from "vue";
-import { WifiOff, RefreshCw, MessageSquare, Twitch } from "lucide-vue-next";
+import { WifiOff, RefreshCw, Twitch } from "lucide-vue-next";
+import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 import { useEmotes } from "@/composables/useEmotes";
@@ -8,16 +9,15 @@ import { Button } from "@/components/ui/button";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { useI18n } from "vue-i18n";
 import { TwitchIcon } from "../icons";
-
+import LoginPrompt from "./LoginPrompt.vue";
 const { messages, connectionState, channelColor, channelAvatars, twitchChannels } =
   useUnifiedChat();
-const { authenticated, loading: authLoading } = useTwitchAuth();
+const { loading: authLoading } = useTwitchAuth();
 const { t } = useI18n();
 const { loadChannelEmotes } = useEmotes();
+const { unifiedChatState } = useUnifiedChatState();
 
 const reversedMessages = computed(() => [...messages.value].toReversed());
-const hasTwitchStreams = computed(() => twitchChannels.value.length > 0);
-
 function openAuthModal() {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "twitch-auth" }));
 }
@@ -41,14 +41,14 @@ watch(
       {{ t("chat.unified.reconnecting") }}
     </div>
 
-    <template v-if="!authenticated">
+    <template v-if="unifiedChatState.warningType === 'full'">
       <div class="flex-1 flex flex-col items-center justify-center gap-4 p-6 text-center">
         <div class="flex items-center justify-center w-12 h-12 rounded-xl">
           <TwitchIcon :size="36" :style="{ color: '#9146FF' }" />
         </div>
         <div class="text-center space-y-1">
           <p class="font-medium text-gray-200">{{ $t("chat.unified.connectTitle") }}</p>
-          <p class="text-sm text-gray-400">{{ $t("chat.unified.connectHint") }}</p>
+          <p class="text-sm text-gray-400">{{ $t(unifiedChatState.warningMessage) }}</p>
         </div>
         <div class="pt-2">
           <Button
@@ -64,15 +64,13 @@ watch(
       </div>
     </template>
 
-    <template v-else-if="!hasTwitchStreams">
-      <div class="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
-        <MessageSquare class="w-8 h-8 text-gray-600" />
-        <p class="text-sm text-gray-400">{{ t("chat.unified.noTwitchStreams") }}</p>
-        <p class="text-xs text-gray-600">{{ t("chat.unified.noTwitchStreamsHint") }}</p>
-      </div>
-    </template>
-
-    <template v-else-if="connectionState === 'disconnected' && messages.length === 0">
+    <template
+      v-else-if="
+        connectionState === 'disconnected' &&
+        messages.length === 0 &&
+        unifiedChatState.activePlatforms.length === 0
+      "
+    >
       <div class="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center">
         <WifiOff class="w-8 h-8 text-gray-600" />
         <p class="text-sm text-gray-400">{{ t("chat.unified.disconnected") }}</p>
@@ -81,14 +79,24 @@ watch(
 
     <template v-else>
       <div
-        class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-1 flex flex-col-reverse"
+        class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar pt-1 flex flex-col-reverse"
       >
+        <LoginPrompt
+          v-if="unifiedChatState.warningType === 'banner'"
+          platform="twitch"
+          position="top"
+          :subtitle-key="unifiedChatState.warningMessage"
+          :loading="authLoading"
+          @connect="openAuthModal"
+        />
+
         <UnifiedChatMessage
           v-for="msg in reversedMessages"
           :key="msg.id"
           :message="msg"
           :channel-color="channelColor(msg.channel)"
           :channel-avatar="channelAvatars[msg.channel]"
+          :show-platform-icon="true"
         />
       </div>
     </template>
