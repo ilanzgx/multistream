@@ -30,23 +30,22 @@ interface ConnectionStateEvent {
 }
 
 const CHANNEL_PALETTE = [
-  "#9146FF",
-  "#00B5AD",
-  "#E91E63",
-  "#FF6B35",
-  "#2196F3",
-  "#4CAF50",
-  "#FF9800",
-  "#9C27B0",
+  "#FF0055", // Neon Pink
+  "#00FFCC", // Cyan
+  "#FF9900", // Bright Orange
+  "#CCFF00", // Lime Yellow
+  "#0066FF", // Electric Blue
+  "#FF33FF", // Magenta
+  "#33FF00", // Neon Green
+  "#FF3300", // Bright Red
+  "#B366FF", // Bright Purple
+  "#00E5FF", // Cyan variant
+  "#FFD700", // Gold
+  "#FF0099", // Hot Pink
+  "#00FFAA", // Mint Green
+  "#FF6600", // Vivid Orange
+  "#7B61FF", // Blurple
 ] as const;
-
-function channelColor(channel: string): string {
-  let hash = 0;
-  for (let i = 0; i < channel.length; i++) {
-    hash = (hash * 31 + channel.charCodeAt(i)) >>> 0;
-  }
-  return CHANNEL_PALETTE[hash % CHANNEL_PALETTE.length]!;
-}
 
 const _useUnifiedChat = () => {
   const messages = ref<UnifiedChatMessage[]>([]);
@@ -54,6 +53,37 @@ const _useUnifiedChat = () => {
   const channelAvatars = reactive<Record<string, string>>({});
   const { streams } = useStreams();
   const { authenticated } = useTwitchAuth();
+
+  const assignedColors = new Map<string, string>();
+
+  function channelColor(channel: string): string {
+    const lowerChannel = channel.toLowerCase();
+    if (assignedColors.has(lowerChannel)) {
+      return assignedColors.get(lowerChannel)!;
+    }
+
+    const usedColors = new Set(assignedColors.values());
+    const available = CHANNEL_PALETTE.filter((c) => !usedColors.has(c));
+
+    let hash = 0;
+    for (let i = 0; i < lowerChannel.length; i++) {
+      hash = lowerChannel.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    hash ^= hash >>> 16;
+    hash ^= hash >>> 8;
+    hash ^= hash >>> 3;
+    const absHash = Math.abs(hash);
+
+    let chosenColor: string;
+    if (available.length > 0) {
+      chosenColor = available[absHash % available.length]!;
+    } else {
+      chosenColor = CHANNEL_PALETTE[absHash % CHANNEL_PALETTE.length]!;
+    }
+
+    assignedColors.set(lowerChannel, chosenColor);
+    return chosenColor;
+  }
 
   const twitchChannels = computed(() =>
     streams.value.filter((s) => s.platform === "twitch").map((s) => s.channel.toLowerCase())
