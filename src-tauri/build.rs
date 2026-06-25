@@ -6,6 +6,22 @@ use std::process::Command;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
+    let env_path = Path::new(".env");
+    if env_path.exists() {
+        println!("cargo:rerun-if-changed=.env");
+        if let Ok(contents) = fs::read_to_string(env_path) {
+            for line in contents.lines() {
+                let line = line.trim();
+                if line.is_empty() || line.starts_with('#') {
+                    continue;
+                }
+                if let Some((key, val)) = line.split_once('=') {
+                    println!("cargo:rustc-env={}={}", key.trim(), val.trim());
+                }
+            }
+        }
+    }
+
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
     let target = env::var("TARGET").unwrap_or_default();
