@@ -43,3 +43,4 @@ tokio-tungstenite = { version = "0.24", features = ["native-tls"] }
 cpal = "0.15"
 hound = "3.5"
 sha2 = "0.10"
+urlencoding = "2.1.3"
