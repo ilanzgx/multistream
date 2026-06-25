@@ -172,13 +172,13 @@
       "copied": "Copiado!"
     },
     "unified": {
-      "selectorLabel": "Chat Unificado da Twitch",
+      "selectorLabel": "Chat Unificado",
       "connectTitle": "Conectar com a Twitch",
       "connectHint": "Entre com sua conta para ver mensagens de todos os canais Twitch da sua grade em um único feed.",
       "connectButton": "Conectar",
       "reconnecting": "Reconectando…",
-      "noTwitchStreams": "Nenhuma stream da Twitch na sua grade.",
-      "noTwitchStreamsHint": "Adicione uma stream da Twitch para ver mensagens aqui.",
+      "noStreams": "Nenhuma stream na sua grade.",
+      "noStreamsHint": "Adicione uma stream para ver mensagens aqui.",
       "disconnected": "Chat desconectado.",
       "auth": {
         "expired": "O código de autorização expirou. Por favor, tente novamente.",
@@ -188,8 +188,15 @@
         "step2": "2. Insira este código para vincular sua conta",
         "waiting": "Aguardando autorização...",
         "cancel": "Cancelar"
-      }
-    }
+      },
+      "warningTwitchMissing": "Conecte sua conta da Twitch para habilitar o chat da Twitch.",
+      "warningTwitchLoginToMerge": "Conecte sua conta da Twitch para incluir chats da Twitch no Chat Unificado.",
+      "warningTwitchLogin": "Conecte sua conta da Twitch para habilitar o Chat Unificado."
+    },
+    "loginPrompt": "Faça login para interagir",
+    "loginPromptTwitch": "Conecte sua conta da Twitch para enviar mensagens neste canal.",
+    "loginPromptKick": "Conecte sua conta da Kick para enviar mensagens neste canal.",
+    "connectAction": "Conectar"
   },
   "common": {
     "close": "Fechar",
@@ -243,7 +250,7 @@
     "finish": "Começar",
     "step1": {
       "title": "Adicionar Streams",
-      "description": "Clique no botão '+' no menu lateral ou pressione a tecla {key} para adicionar uma stream da Twitch, Kick ou YouTube."
+      "description": "Clique no botão '+' no menu lateral ou pressione a tecla {key} para adicionar uma stream, Kick ou YouTube."
     },
     "step2": {
       "title": "Selecionar Chat",

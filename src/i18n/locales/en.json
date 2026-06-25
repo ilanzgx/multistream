@@ -172,13 +172,13 @@
       "copied": "Copied!"
     },
     "unified": {
-      "selectorLabel": "Unified Twitch Chat",
+      "selectorLabel": "Unified Chat",
       "connectTitle": "Connect with Twitch",
       "connectHint": "Sign in to see messages from all Twitch channels in your grid in a single feed.",
       "connectButton": "Connect",
       "reconnecting": "Reconnecting…",
-      "noTwitchStreams": "No Twitch streams in your grid.",
-      "noTwitchStreamsHint": "Add a Twitch stream to see messages here.",
+      "noStreams": "No streams in your grid.",
+      "noStreamsHint": "Add a stream to see messages here.",
       "disconnected": "Chat disconnected.",
       "auth": {
         "expired": "The authorization code has expired. Please try again.",
@@ -188,8 +188,15 @@
         "step2": "2. Enter this code to link your account",
         "waiting": "Waiting for authorization...",
         "cancel": "Cancel"
-      }
-    }
+      },
+      "warningTwitchMissing": "Connect your Twitch account to enable Twitch chat.",
+      "warningTwitchLoginToMerge": "Connect your Twitch account to include Twitch chats in Unified Chat.",
+      "warningTwitchLogin": "Connect your Twitch account to enable Unified Chat."
+    },
+    "loginPrompt": "Log in to interact",
+    "loginPromptTwitch": "Connect your Twitch account to send messages in this channel.",
+    "loginPromptKick": "Connect your Kick account to send messages in this channel.",
+    "connectAction": "Connect"
   },
   "common": {
     "close": "Close",
