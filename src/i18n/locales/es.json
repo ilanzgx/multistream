@@ -52,7 +52,8 @@
       "openBrowser": "Abrir Navegador Manualmente",
       "connected": "Conectado",
       "disconnect": "Desconectar",
-      "disconnected": "Desconectado"
+      "disconnected": "Desconectado",
+      "logout": "Cerrar sesión"
     },
     "backup": {
       "title": "Datos y Copia de seguridad",
@@ -172,13 +173,13 @@
       "copied": "¡Copiado!"
     },
     "unified": {
-      "selectorLabel": "Chat Unificado de Twitch",
+      "selectorLabel": "Chat Unificado",
       "connectTitle": "Conectar con Twitch",
       "connectHint": "Inicia sesión para ver los mensajes de todos los canales de Twitch de tu cuadrícula en un solo feed.",
       "connectButton": "Conectar",
       "reconnecting": "Reconectando…",
-      "noTwitchStreams": "No hay streams de Twitch en tu cuadrícula.",
-      "noTwitchStreamsHint": "Añade un stream de Twitch para ver mensajes aquí.",
+      "noStreams": "No hay streams de Twitch en tu cuadrícula.",
+      "noStreamsHint": "Añade un stream de Twitch para ver mensajes aquí.",
       "disconnected": "Chat desconectado.",
       "auth": {
         "expired": "El código de autorización ha expirado. Por favor, inténtalo de nuevo.",
@@ -188,8 +189,14 @@
         "step2": "2. Ingresa este código para vincular tu cuenta",
         "waiting": "Esperando autorización...",
         "cancel": "Cancelar"
-      }
-    }
+      },
+      "warningTwitchLoginToMerge": "Conecta tu cuenta de Twitch para incluir chats de Twitch en el Chat Unificado.",
+      "warningTwitchLogin": "Conecta tu cuenta de Twitch para habilitar el Chat Unificado."
+    },
+    "loginPrompt": "Inicia sesión para interactuar",
+    "loginPromptTwitch": "Conecta tu cuenta de Twitch para enviar mensajes en este canal.",
+    "loginPromptKick": "Conecta tu cuenta de Kick para enviar mensajes en este canal.",
+    "connectAction": "Conectar"
   },
   "common": {
     "close": "Cerrar",

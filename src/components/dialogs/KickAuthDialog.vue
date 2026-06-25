@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { startLogin, authenticated, authUrl } = useKickAuth();
+const { startLogin, cancelLogin, authenticated, authUrl } = useKickAuth();
 
 const authError = ref<string | null>(null);
 
@@ -33,9 +33,8 @@ async function startFlow() {
 }
 
 async function handleCancel() {
+  cancelLogin();
   emit("update:open", false);
-  // Optional: In a full implementation, we could invoke a "kick_cancel_login" command
-  // to terminate the TCP listener. For now, closing the dialog is sufficient.
 }
 
 async function handleOpenLink() {

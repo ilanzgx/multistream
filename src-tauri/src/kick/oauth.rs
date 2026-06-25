@@ -77,9 +77,13 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
 
     let (verifier, challenge) = generate_pkce();
 
+    let mut state_bytes = [0u8; 16];
+    rand::thread_rng().fill_bytes(&mut state_bytes);
+    let state = URL_SAFE_NO_PAD.encode(state_bytes);
+
     let auth_url = format!(
-        "https://id.kick.com/oauth/authorize?response_type=code&client_id={}&redirect_uri={}&scope=user:read+chat:write&code_challenge={}&code_challenge_method=S256&state=random123",
-        client_id, REDIRECT_URI, challenge
+        "https://id.kick.com/oauth/authorize?response_type=code&client_id={}&redirect_uri={}&scope=user:read+chat:write&code_challenge={}&code_challenge_method=S256&state={}",
+        client_id, REDIRECT_URI, challenge, state
     );
 
     let listener_result = tokio::net::TcpListener::bind("127.0.0.1:14832").await;
@@ -116,17 +120,23 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
         .map_err(|e| KickError::OAuth(e.to_string()))?;
 
     let request = String::from_utf8_lossy(&buffer[..bytes_read]);
+    if request.contains("GET /cancel") {
+        return Err(KickError::OAuth("Login cancelled by user".to_owned()));
+    }
     let first_line = request.lines().next().unwrap_or("");
     let mut parts = first_line.split_whitespace();
     parts.next(); // GET
     let path = parts.next().unwrap_or("");
 
+    let mut code_param = None;
+    let mut state_param = None;
     let code = if let Some(query) = path.split('?').nth(1) {
-        let mut code_param = None;
         for pair in query.split('&') {
             if let Some((k, v)) = pair.split_once('=') {
                 if k == "code" {
-                    code_param = Some(v.to_string());
+                    code_param = urlencoding::decode(v).map(|s| s.into_owned()).ok();
+                } else if k == "state" {
+                    state_param = urlencoding::decode(v).map(|s| s.into_owned()).ok();
                 }
             }
         }
@@ -135,10 +145,22 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
         None
     };
 
+    if state_param.as_deref() != Some(state.as_str()) {
+        let response = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Invalid state parameter (CSRF protection failed)</h1></body></html>";
+        let _ = stream.write_all(response.as_bytes()).await;
+        return Err(KickError::OAuth(
+            "Invalid state parameter (CSRF protection failed)".to_owned(),
+        ));
+    }
+
+    let Some(code) = code else {
+        let response = "HTTP/1.1 400 Bad Request\r\nContent-Type: text/html\r\n\r\n<html><body><h1>Authorization code not found</h1></body></html>";
+        let _ = stream.write_all(response.as_bytes()).await;
+        return Err(KickError::OAuth("Authorization code not found".to_owned()));
+    };
+
     let response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><head><title>Success</title></head><body style=\"background:#14161a;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;\"><h1>Authentication successful! You can close this window.</h1><script>window.close()</script></body></html>";
     let _ = stream.write_all(response.as_bytes()).await;
-
-    let code = code.ok_or_else(|| KickError::OAuth("Authorization code not found".to_owned()))?;
 
     let token_resp = http
         .post("https://id.kick.com/oauth/token")

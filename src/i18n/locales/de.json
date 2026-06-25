@@ -52,7 +52,8 @@
       "openBrowser": "Browser manuell öffnen",
       "connected": "Verbunden",
       "disconnect": "Trennen",
-      "disconnected": "Getrennt"
+      "disconnected": "Getrennt",
+      "logout": "Abmelden"
     },
     "backup": {
       "title": "Daten & Backup",
@@ -172,13 +173,13 @@
       "copied": "Kopiert!"
     },
     "unified": {
-      "selectorLabel": "Einheitlicher Twitch-Chat",
+      "selectorLabel": "Einheitlicher Chat",
       "connectTitle": "Mit Twitch verbinden",
       "connectHint": "Melde dich an, um Nachrichten aller Twitch-Kanäle in deinem Raster in einem Feed zu sehen.",
       "connectButton": "Verbinden",
       "reconnecting": "Verbindung wird wiederhergestellt…",
-      "noTwitchStreams": "Keine Twitch-Streams im Raster.",
-      "noTwitchStreamsHint": "Füge einen Twitch-Stream hinzu, um Nachrichten hier zu sehen.",
+      "noStreams": "Keine Twitch-Streams im Raster.",
+      "noStreamsHint": "Füge einen Twitch-Stream hinzu, um Nachrichten hier zu sehen.",
       "disconnected": "Chat getrennt.",
       "auth": {
         "expired": "Der Autorisierungscode ist abgelaufen. Bitte versuche es erneut.",
@@ -188,8 +189,14 @@
         "step2": "2. Gib diesen Code ein, um dein Konto zu verknüpfen",
         "waiting": "Warten auf Autorisierung...",
         "cancel": "Abbrechen"
-      }
-    }
+      },
+      "warningTwitchLoginToMerge": "Verbinde dein Twitch-Konto, um Twitch-Chats im vereinheitlichten Chat einzuschließen.",
+      "warningTwitchLogin": "Verbinde dein Twitch-Konto, um den vereinheitlichten Chat zu aktivieren."
+    },
+    "loginPrompt": "Melden Sie sich an, um zu interagieren",
+    "loginPromptTwitch": "Verbinden Sie Ihr Twitch-Konto, um Nachrichten in diesem Kanal zu senden.",
+    "loginPromptKick": "Verbinden Sie Ihr Kick-Konto, um Nachrichten in diesem Kanal zu senden.",
+    "connectAction": "Verbinden"
   },
   "common": {
     "close": "Schließen",

@@ -150,12 +150,16 @@ const handleFileImport = (e: Event) => {
   const file = input.files?.[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (event) => {
+  reader.addEventListener("load", (event) => {
     try {
-      const data = JSON.parse(event.target?.result as string);
-      if (validateBackupData(data)) {
-        pendingBackupData.value = data;
-        showImportConfirm.value = true;
+      if (typeof event.target?.result === "string") {
+        const data = JSON.parse(event.target.result);
+        if (validateBackupData(data)) {
+          pendingBackupData.value = data;
+          showImportConfirm.value = true;
+        } else {
+          toast.error(t("settings.backup.importError"));
+        }
       } else {
         toast.error(t("settings.backup.importError"));
       }
@@ -163,7 +167,11 @@ const handleFileImport = (e: Event) => {
       toast.error(t("settings.backup.importError"));
     }
     input.value = "";
-  };
+  });
+  reader.addEventListener("error", () => {
+    toast.error(t("settings.backup.importError"));
+    input.value = "";
+  });
   reader.readAsText(file);
 };
 
@@ -392,7 +400,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         }}</span>
                         <button
                           class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
-                          title="Logout"
+                          :title="$t('settings.auth.logout')"
                           @click="twitchLogout"
                         >
                           <LogOut class="w-3.5 h-3.5" />
@@ -427,7 +435,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         }}</span>
                         <button
                           class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
-                          title="Logout"
+                          :title="$t('settings.auth.logout')"
                           @click="kickLogout"
                         >
                           <LogOut class="w-3.5 h-3.5" />

@@ -125,12 +125,11 @@ function handleFrameShortcuts(e: MessageEvent) {
 }
 
 watch(streams, (newStreams, oldStreams) => {
-  if (selectedChat.value === UNIFIED_CHAT_ID) {
-    const hasTwitchStreams = newStreams.some((s) => s.platform === "twitch");
-    if (!hasTwitchStreams) {
-      setSelectedChat("");
-    }
-  } else if (selectedChat.value && !newStreams.some((s) => s.channel === selectedChat.value)) {
+  if (
+    selectedChat.value &&
+    selectedChat.value !== UNIFIED_CHAT_ID &&
+    !newStreams.some((s) => s.channel === selectedChat.value)
+  ) {
     setSelectedChat("");
   }
 

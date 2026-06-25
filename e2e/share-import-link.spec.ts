@@ -24,6 +24,7 @@ test.describe("Share and Import Link E2E Test", () => {
     await page.getByTestId("platform-kick").click();
     await page.getByTestId("channel-input").fill("xqc");
     await page.getByTestId("add-submit-btn").click();
+    await expect(page.getByRole("dialog")).not.toBeVisible();
     await expect(page.getByTestId("stream-item-xqc")).toBeVisible();
 
     // Act: open share dialog

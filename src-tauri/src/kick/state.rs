@@ -6,6 +6,8 @@ pub struct KickAuthInfo {
     pub access_token: String,
     pub refresh_token: String,
     pub username: String,
+    #[serde(default)]
+    pub has_chat_write: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -16,12 +18,14 @@ pub struct KickAuthState {
 
 pub struct KickState {
     pub auth: Mutex<Option<KickAuthInfo>>,
+    pub pusher_shutdown_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
 }
 
 impl KickState {
     pub fn new() -> Self {
         Self {
             auth: Mutex::new(None),
+            pusher_shutdown_tx: Mutex::new(None),
         }
     }
 }

@@ -52,7 +52,8 @@
       "openBrowser": "Открыть браузер вручную",
       "connected": "Подключено",
       "disconnect": "Отключить",
-      "disconnected": "Отключено"
+      "disconnected": "Отключено",
+      "logout": "Выйти"
     },
     "backup": {
       "title": "Данные и бэкап",
@@ -172,13 +173,13 @@
       "copied": "Скопировано!"
     },
     "unified": {
-      "selectorLabel": "Единый чат Twitch",
+      "selectorLabel": "Единый чат",
       "connectTitle": "Подключиться к Twitch",
       "connectHint": "Войдите, чтобы видеть сообщения из всех каналов Twitch в вашей сетке в едином ленте.",
       "connectButton": "Подключиться",
       "reconnecting": "Переподключение…",
-      "noTwitchStreams": "Нет потоков Twitch в вашей сетке.",
-      "noTwitchStreamsHint": "Добавьте поток Twitch, чтобы видеть сообщения здесь.",
+      "noStreams": "Нет потоков Twitch в вашей сетке.",
+      "noStreamsHint": "Добавьте поток Twitch, чтобы видеть сообщения здесь.",
       "disconnected": "Чат отключён.",
       "auth": {
         "expired": "Срок действия кода авторизации истек. Пожалуйста, попробуйте еще раз.",
@@ -188,8 +189,14 @@
         "step2": "2. Введите этот код, чтобы привязать ваш аккаунт",
         "waiting": "Ожидание авторизации...",
         "cancel": "Отмена"
-      }
-    }
+      },
+      "warningTwitchLoginToMerge": "Подключите аккаунт Twitch, чтобы добавить чаты Twitch в Единый чат.",
+      "warningTwitchLogin": "Подключите аккаунт Twitch, чтобы включить Единый чат."
+    },
+    "loginPrompt": "Войдите, чтобы взаимодействовать",
+    "loginPromptTwitch": "Подключите свою учетную запись Twitch, чтобы отправлять сообщения в этом канале.",
+    "loginPromptKick": "Подключите свою учетную запись Kick, чтобы отправлять сообщения в этом канале.",
+    "connectAction": "Подключить"
   },
   "common": {
     "close": "Закрыть",

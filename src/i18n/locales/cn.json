@@ -52,7 +52,8 @@
       "openBrowser": "手动打开浏览器",
       "connected": "已连接",
       "disconnect": "断开连接",
-      "disconnected": "未连接"
+      "disconnected": "未连接",
+      "logout": "登出"
     },
     "backup": {
       "title": "数据与备份",
@@ -172,13 +173,13 @@
       "copied": "已复制！"
     },
     "unified": {
-      "selectorLabel": "Twitch 统一聊天",
+      "selectorLabel": "统一聊天",
       "connectTitle": "连接 Twitch",
       "connectHint": "登录以在单一聊天流中查看网格中所有 Twitch 频道的消息。",
       "connectButton": "连接",
       "reconnecting": "正在重新连接…",
-      "noTwitchStreams": "网格中没有 Twitch 直播。",
-      "noTwitchStreamsHint": "添加 Twitch 直播以在此查看消息。",
+      "noStreams": "网格中没有 Twitch 直播。",
+      "noStreamsHint": "添加 Twitch 直播以在此查看消息。",
       "disconnected": "聊天已断开。",
       "auth": {
         "expired": "授权码已过期。请重试。",
@@ -188,8 +189,14 @@
         "step2": "2. 输入此代码以关联您的账户",
         "waiting": "等待授权中...",
         "cancel": "取消"
-      }
-    }
+      },
+      "warningTwitchLoginToMerge": "连接您的Twitch帐号以在统一聊天中包含Twitch聊天。",
+      "warningTwitchLogin": "连接您的Twitch帐号以启用统一聊天。"
+    },
+    "loginPrompt": "登录以互动",
+    "loginPromptTwitch": "连接您的 Twitch 帐户以在此频道中发送消息。",
+    "loginPromptKick": "连接您的 Kick 帐户以在此频道中发送消息。",
+    "connectAction": "连接"
   },
   "common": {
     "close": "关闭",

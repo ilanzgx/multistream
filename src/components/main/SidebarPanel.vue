@@ -3,13 +3,12 @@ import { ref, onMounted, onUnmounted, computed, defineAsyncComponent, watch } fr
 import { usePreferences } from "@/composables/usePreferences";
 import { useStreams } from "@/composables/useStreams";
 import { useTranscription } from "@/composables/useTranscription";
+import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
 import { Button } from "@/components/ui/button";
 const KickChat = defineAsyncComponent(() => import("@/components/chat/KickChat.vue"));
 const TwitchChat = defineAsyncComponent(() => import("@/components/chat/TwitchChat.vue"));
 const YoutubeChat = defineAsyncComponent(() => import("@/components/chat/YoutubeChat.vue"));
-const UnifiedTwitchChat = defineAsyncComponent(
-  () => import("@/components/chat/UnifiedTwitchChat.vue")
-);
+const UnifiedChat = defineAsyncComponent(() => import("@/components/chat/UnifiedChat.vue"));
 const TranscriptView = defineAsyncComponent(() => import("@/components/chat/TranscriptView.vue"));
 
 const AddDialog = defineAsyncComponent(() => import("@/components/dialogs/AddDialog.vue"));
@@ -93,6 +92,7 @@ const hasLoadedUnifiedChat = ref(false);
 const hasLoadedTranscript = ref(false);
 
 const { streams } = useStreams();
+const { unifiedChatState } = useUnifiedChatState();
 const { selectedChat, sidebarOpen } = usePreferences();
 
 watch(
@@ -108,6 +108,15 @@ watch(
     if (v === "transcript") hasLoadedTranscript.value = true;
   },
   { immediate: true }
+);
+
+watch(
+  () => streams.value.length,
+  (len) => {
+    if (len === 1 && selectedChat.value === UNIFIED_CHAT_ID && streams.value[0]) {
+      selectedChat.value = streams.value[0].channel;
+    }
+  }
 );
 const {
   isActive: transcriptionActive,
@@ -214,7 +223,18 @@ onUnmounted(() => {
             >
               <SelectValue :placeholder="$t('chat.selectPlaceholder')">
                 <div v-if="selectedChat === UNIFIED_CHAT_ID" class="flex items-center gap-2">
-                  <TwitchIcon class="w-4 h-4 shrink-0 text-[#bf94ff]" />
+                  <div class="flex items-center -space-x-1 shrink-0">
+                    <component
+                      :is="platformIcons[platform]"
+                      v-for="platform in unifiedChatState.activePlatforms"
+                      :key="platform"
+                      class="w-4 h-4"
+                      :class="{
+                        'text-[#bf94ff]': platform === 'twitch',
+                        'text-[#53fc18]': platform === 'kick',
+                      }"
+                    />
+                  </div>
                   <span class="truncate">{{ $t("chat.unified.selectorLabel") }}</span>
                 </div>
                 <div v-else-if="selectedStreamObj" class="flex items-center gap-2">
@@ -241,12 +261,23 @@ onUnmounted(() => {
                   </div>
                 </SelectItem>
                 <SelectItem
-                  v-if="streams.some((s) => s.platform === 'twitch')"
+                  v-if="unifiedChatState.showUnifiedChat"
                   :value="UNIFIED_CHAT_ID"
-                  class="text-[#bf94ff] focus:bg-[#2a2d33] focus:text-white cursor-pointer border-t border-[#2a2d33] mt-1 pt-1"
+                  class="text-white focus:bg-[#2a2d33] focus:text-white cursor-pointer border-t border-[#2a2d33] mt-1 pt-1"
                 >
                   <div class="flex items-center gap-2">
-                    <TwitchIcon class="w-4 h-4 shrink-0" />
+                    <div class="flex items-center -space-x-1 shrink-0">
+                      <component
+                        :is="platformIcons[platform]"
+                        v-for="platform in unifiedChatState.activePlatforms"
+                        :key="platform"
+                        class="w-4 h-4"
+                        :class="{
+                          'text-[#bf94ff]': platform === 'twitch',
+                          'text-[#53fc18]': platform === 'kick',
+                        }"
+                      />
+                    </div>
                     <span class="truncate">{{ $t("chat.unified.selectorLabel") }}</span>
                   </div>
                 </SelectItem>
@@ -277,10 +308,7 @@ onUnmounted(() => {
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />
-          <UnifiedTwitchChat
-            v-if="hasLoadedUnifiedChat"
-            v-show="selectedChat === UNIFIED_CHAT_ID"
-          />
+          <UnifiedChat v-if="hasLoadedUnifiedChat" v-show="selectedChat === UNIFIED_CHAT_ID" />
           <div
             v-if="streams.length === 0"
             class="absolute inset-0 flex items-center justify-center text-muted-foreground"
