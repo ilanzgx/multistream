@@ -46,6 +46,10 @@
       "title": "Cuentas",
       "description": "Conecta tus cuentas de streaming",
       "connect": "Conectar",
+      "kickConnect": "Conectar con Kick",
+      "authorizeBrowser": "Por favor, autoriza la aplicación en tu navegador.",
+      "manualLink": "Si no se abrió automáticamente, haz clic en el enlace de abajo.",
+      "openBrowser": "Abrir Navegador Manualmente",
       "connected": "Conectado",
       "disconnect": "Desconectar",
       "disconnected": "Desconectado"

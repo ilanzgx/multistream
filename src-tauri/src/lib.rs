@@ -13,6 +13,10 @@ use twitch::commands::{
 };
 use twitch::state::TwitchState;
 
+mod kick;
+use kick::commands::{kick_get_auth_state, kick_login, kick_logout};
+use kick::state::KickState;
+
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
 
@@ -120,6 +124,9 @@ pub fn run() {
             twitch_get_messages,
             twitch_get_connection_state,
             twitch_send_message,
+            kick_login,
+            kick_logout,
+            kick_get_auth_state,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
@@ -178,6 +185,54 @@ pub fn run() {
                 });
             }
             app.manage(twitch_state);
+
+            let kick_state = KickState::new();
+            if let Some(stored_auth) = kick::commands::init_stored_auth() {
+                *kick_state.auth.try_lock().expect("lock on startup") = Some(stored_auth.clone());
+
+                let app_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    let Ok(http) = reqwest::Client::builder().use_rustls_tls().build() else {
+                        return;
+                    };
+                    let state = app_handle.state::<KickState>();
+
+                    let user_resp = http
+                        .get("https://api.kick.com/public/v1/users")
+                        .bearer_auth(&stored_auth.access_token)
+                        .send()
+                        .await;
+
+                    match user_resp {
+                        Ok(resp) if resp.status().is_success() => {
+                            // Valid
+                        }
+                        Ok(_) => {
+                            match kick::oauth::refresh_token(&http, &stored_auth.refresh_token)
+                                .await
+                            {
+                                Ok(refreshed) => {
+                                    let _ = kick::oauth::store_auth(&refreshed);
+                                    *state.auth.lock().await = Some(refreshed);
+                                }
+                                Err(_) => {
+                                    *state.auth.lock().await = None;
+                                    kick::oauth::clear_auth();
+                                    let _ = app_handle.emit(
+                                        "kick-auth-changed",
+                                        kick::state::KickAuthState {
+                                            authenticated: false,
+                                            username: None,
+                                        },
+                                    );
+                                }
+                            }
+                        }
+                        Err(_) => {}
+                    }
+                });
+            }
+            app.manage(kick_state);
 
             if cfg!(debug_assertions) {
                 app.handle().plugin(
