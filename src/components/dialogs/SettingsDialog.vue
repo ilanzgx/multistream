@@ -45,12 +45,32 @@ const { notificationsEnabled } = usePreferences();
 const { locale, t } = useI18n();
 
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
-const { authenticated, username, logout } = useTwitchAuth();
+const {
+  authenticated: twitchAuthenticated,
+  username: twitchUsername,
+  logout: twitchLogout,
+} = useTwitchAuth();
+
+import { useKickAuth } from "@/composables/useKickAuth";
+const {
+  authenticated: kickAuthenticated,
+  username: kickUsername,
+  logout: kickLogout,
+} = useKickAuth();
 
 const openAuthModal = () => {
   window.dispatchEvent(
     new CustomEvent("multistream-show-dialog", {
       detail: "twitch-auth",
+    })
+  );
+  emit("update:open", false);
+};
+
+const openKickAuthModal = () => {
+  window.dispatchEvent(
+    new CustomEvent("multistream-show-dialog", {
+      detail: "kick-auth",
     })
   );
   emit("update:open", false);
@@ -361,19 +381,19 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                   <template v-for="platform in authPlatforms" :key="platform.id">
                     <template v-if="platform.id === 'twitch'">
                       <div
-                        v-if="authenticated"
+                        v-if="twitchAuthenticated"
                         class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#9146FF]/30 bg-[#9146FF]/10 text-xs font-medium transition-all duration-200"
                       >
                         <span :style="{ color: platform.color }" class="shrink-0">
                           <component :is="platform.icon" :size="14" />
                         </span>
                         <span class="text-white font-medium truncate max-w-[100px]">{{
-                          username
+                          twitchUsername
                         }}</span>
                         <button
                           class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
                           title="Logout"
-                          @click="logout"
+                          @click="twitchLogout"
                         >
                           <LogOut class="w-3.5 h-3.5" />
                         </button>
@@ -382,6 +402,41 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         v-else
                         class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200"
                         @click="openAuthModal"
+                      >
+                        <span :style="{ color: platform.color }" class="shrink-0">
+                          <component :is="platform.icon" :size="14" />
+                        </span>
+                        <span class="text-white font-medium">{{ platform.name }}</span>
+                        <span
+                          class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
+                        >
+                          {{ $t("chat.unified.connectButton") }}
+                        </span>
+                      </button>
+                    </template>
+                    <template v-else-if="platform.id === 'kick'">
+                      <div
+                        v-if="kickAuthenticated"
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#53FC18]/30 bg-[#53FC18]/10 text-xs font-medium transition-all duration-200"
+                      >
+                        <span :style="{ color: platform.color }" class="shrink-0">
+                          <component :is="platform.icon" :size="14" />
+                        </span>
+                        <span class="text-white font-medium truncate max-w-[100px]">{{
+                          kickUsername
+                        }}</span>
+                        <button
+                          class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
+                          title="Logout"
+                          @click="kickLogout"
+                        >
+                          <LogOut class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <button
+                        v-else
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200"
+                        @click="openKickAuthModal"
                       >
                         <span :style="{ color: platform.color }" class="shrink-0">
                           <component :is="platform.icon" :size="14" />

@@ -18,6 +18,9 @@ const OnboardingTour = defineAsyncComponent(
 const TwitchAuthDialog = defineAsyncComponent(
   () => import("./components/dialogs/TwitchAuthDialog.vue")
 );
+const KickAuthDialog = defineAsyncComponent(
+  () => import("./components/dialogs/KickAuthDialog.vue")
+);
 
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
@@ -26,9 +29,11 @@ import { parseUrlOptions } from "./lib/parseUrlOptions";
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
 const showTwitchAuth = ref(false);
+const showKickAuth = ref(false);
 
 const hasOpenedOnboarding = ref(false);
 const hasOpenedTwitchAuth = ref(false);
+const hasOpenedKickAuth = ref(false);
 
 watch(
   showOnboarding,
@@ -41,6 +46,13 @@ watch(
   showTwitchAuth,
   (val) => {
     if (val) hasOpenedTwitchAuth.value = true;
+  },
+  { immediate: true }
+);
+watch(
+  showKickAuth,
+  (val) => {
+    if (val) hasOpenedKickAuth.value = true;
   },
   { immediate: true }
 );
@@ -150,6 +162,8 @@ function handleDialogShowEvent(e: Event) {
     showOnboarding.value = true;
   } else if (evt.detail === "twitch-auth") {
     showTwitchAuth.value = true;
+  } else if (evt.detail === "kick-auth") {
+    showKickAuth.value = true;
   }
 }
 
@@ -251,5 +265,6 @@ onUnmounted(() => {
     />
 
     <TwitchAuthDialog v-if="hasOpenedTwitchAuth" v-model:open="showTwitchAuth" />
+    <KickAuthDialog v-if="hasOpenedKickAuth" v-model:open="showKickAuth" />
   </div>
 </template>
