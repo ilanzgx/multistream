@@ -10,10 +10,11 @@ vi.mock("@tauri-apps/api/event", () => ({
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useKickChat, type KickChatMessage } from "../useKickChat";
+import { useKickChat, __test_resetKickChatState, type KickChatMessage } from "../useKickChat";
 
 describe("useKickChat", () => {
   beforeEach(() => {
+    __test_resetKickChatState();
     vi.clearAllMocks();
     (listen as ReturnType<typeof vi.fn>).mockResolvedValue(vi.fn());
 

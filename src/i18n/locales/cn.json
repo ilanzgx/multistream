@@ -190,9 +190,8 @@
         "waiting": "等待授权中...",
         "cancel": "取消"
       },
-      "warningTwitchMissing": "Connect your Twitch account to enable Twitch chat.",
-      "warningTwitchLoginToMerge": "Connect your Twitch account to include Twitch chats in Unified Chat.",
-      "warningTwitchLogin": "Connect your Twitch account to enable Unified Chat."
+      "warningTwitchLoginToMerge": "连接您的Twitch帐号以在统一聊天中包含Twitch聊天。",
+      "warningTwitchLogin": "连接您的Twitch帐号以启用统一聊天。"
     },
     "loginPrompt": "登录以互动",
     "loginPromptTwitch": "连接您的 Twitch 帐户以在此频道中发送消息。",

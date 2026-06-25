@@ -37,7 +37,7 @@ interface BttvChannelResponse {
 
 type RawToken =
   | { type: "text"; content: string }
-  | { type: "twitch_emote"; content: string; code: string };
+  | { type: "emote"; content: string; code: string };
 
 const fetchTwitchId = async (username: string): Promise<string | null> => {
   try {
@@ -192,7 +192,7 @@ const _useEmotes = () => {
       if (rep.start > currentIndex) {
         rawTokens.push({ type: "text", content: text.substring(currentIndex, rep.start) });
       }
-      rawTokens.push({ type: "twitch_emote", content: rep.url, code: rep.code });
+      rawTokens.push({ type: "emote", content: rep.url, code: rep.code });
       currentIndex = rep.end + 1;
     }
 
@@ -207,7 +207,7 @@ const _useEmotes = () => {
     const channelMap = channelEmotes[channel];
 
     for (const rt of rawTokens) {
-      if (rt.type === "twitch_emote") {
+      if (rt.type === "emote") {
         tokens.push({ type: "emote", content: rt.content, code: rt.code });
         continue;
       }

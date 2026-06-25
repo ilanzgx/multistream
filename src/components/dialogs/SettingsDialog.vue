@@ -160,10 +160,16 @@ const handleFileImport = (e: Event) => {
         } else {
           toast.error(t("settings.backup.importError"));
         }
+      } else {
+        toast.error(t("settings.backup.importError"));
       }
     } catch (err) {
       toast.error(t("settings.backup.importError"));
     }
+    input.value = "";
+  });
+  reader.addEventListener("error", () => {
+    toast.error(t("settings.backup.importError"));
     input.value = "";
   });
   reader.readAsText(file);

@@ -190,7 +190,6 @@
         "waiting": "Waiting for authorization...",
         "cancel": "Cancel"
       },
-      "warningTwitchMissing": "Connect your Twitch account to enable Twitch chat.",
       "warningTwitchLoginToMerge": "Connect your Twitch account to include Twitch chats in Unified Chat.",
       "warningTwitchLogin": "Connect your Twitch account to enable Unified Chat."
     },

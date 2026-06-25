@@ -190,9 +190,8 @@
         "waiting": "Warten auf Autorisierung...",
         "cancel": "Abbrechen"
       },
-      "warningTwitchMissing": "Connect your Twitch account to enable Twitch chat.",
-      "warningTwitchLoginToMerge": "Connect your Twitch account to include Twitch chats in Unified Chat.",
-      "warningTwitchLogin": "Connect your Twitch account to enable Unified Chat."
+      "warningTwitchLoginToMerge": "Verbinde dein Twitch-Konto, um Twitch-Chats im vereinheitlichten Chat einzuschließen.",
+      "warningTwitchLogin": "Verbinde dein Twitch-Konto, um den vereinheitlichten Chat zu aktivieren."
     },
     "loginPrompt": "Melden Sie sich an, um zu interagieren",
     "loginPromptTwitch": "Verbinden Sie Ihr Twitch-Konto, um Nachrichten in diesem Kanal zu senden.",

@@ -190,9 +190,8 @@
         "waiting": "Ожидание авторизации...",
         "cancel": "Отмена"
       },
-      "warningTwitchMissing": "Connect your Twitch account to enable Twitch chat.",
-      "warningTwitchLoginToMerge": "Connect your Twitch account to include Twitch chats in Unified Chat.",
-      "warningTwitchLogin": "Connect your Twitch account to enable Unified Chat."
+      "warningTwitchLoginToMerge": "Подключите аккаунт Twitch, чтобы добавить чаты Twitch в Единый чат.",
+      "warningTwitchLogin": "Подключите аккаунт Twitch, чтобы включить Единый чат."
     },
     "loginPrompt": "Войдите, чтобы взаимодействовать",
     "loginPromptTwitch": "Подключите свою учетную запись Twitch, чтобы отправлять сообщения в этом канале.",

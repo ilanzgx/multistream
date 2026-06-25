@@ -21,6 +21,7 @@ const {
   leaveChannel,
   removeLastLocalMessage,
   addLocalMessage,
+  getBroadcasterUserId,
 } = useKickChat(props.channel);
 const { username, authenticated, loading: authLoading } = useKickAuth();
 const { t } = useI18n();
@@ -50,10 +51,13 @@ async function sendKickMessage(channel: string, message: string) {
   });
 
   try {
-    const res = await fetch(`https://kick.com/api/v1/channels/${channel}`);
-    if (!res.ok) throw new Error("Channel not found");
-    const data = await res.json();
-    const broadcaster_user_id = data.user_id;
+    let broadcaster_user_id = getBroadcasterUserId();
+    if (!broadcaster_user_id) {
+      const res = await fetch(`https://kick.com/api/v1/channels/${channel}`);
+      if (!res.ok) throw new Error("Channel not found");
+      const data = await res.json();
+      broadcaster_user_id = data.user_id;
+    }
 
     await invoke("kick_send_message", {
       broadcasterUserId: broadcaster_user_id,
@@ -78,6 +82,7 @@ async function handleSend() {
     newMessage.value = "";
   } catch (error) {
     console.error("Failed to send message", error);
+    toast.error(typeof error === "string" ? error : t("chat.sendError"));
   } finally {
     isSending.value = false;
   }

@@ -29,6 +29,7 @@ describe("useKickAuth", () => {
 
   afterEach(() => {
     scope.stop();
+    vi.unstubAllGlobals();
   });
 
   it("initialises as unauthenticated when backend returns false", async () => {

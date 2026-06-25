@@ -17,6 +17,13 @@ export interface KickChatMessage {
 }
 
 const activeKickChannels = new Map<string, number>(); // slug -> chatroom_id
+const activeBroadcasters = new Map<string, number>(); // slug -> broadcaster_user_id
+
+export function __test_resetKickChatState() {
+  activeKickChannels.clear();
+  activeBroadcasters.clear();
+}
+
 const messages = ref<KickChatMessage[]>([]);
 const connectionState = ref<"connected" | "disconnected" | "reconnecting">("disconnected");
 
@@ -68,6 +75,7 @@ export function useKickChat(channelSlug: string) {
       const chatroomId = data.chatroom.id;
 
       activeKickChannels.set(channelSlug, chatroomId);
+      activeBroadcasters.set(channelSlug, data.user_id);
       await updateSubscriptions();
     } catch (e) {
       console.error("Failed to fetch Kick chatroom ID for", channelSlug, e);
@@ -87,12 +95,19 @@ export function useKickChat(channelSlug: string) {
   }
 
   function removeLastLocalMessage(username: string): string | null {
-    const idx = messages.value.findIndex(
-      (m) =>
+    let idx = -1;
+    for (let i = messages.value.length - 1; i >= 0; i--) {
+      const m = messages.value[i];
+      if (
+        m &&
         m.channel === channelSlug &&
         m.username.toLowerCase() === username.toLowerCase() &&
         m.isPending
-    );
+      ) {
+        idx = i;
+        break;
+      }
+    }
     if (idx !== -1) {
       const msg = messages.value[idx];
       if (!msg) return null;
@@ -100,6 +115,10 @@ export function useKickChat(channelSlug: string) {
       return msg.message;
     }
     return null;
+  }
+
+  function getBroadcasterUserId() {
+    return activeBroadcasters.get(channelSlug) ?? null;
   }
 
   function addLocalMessage(msg: KickChatMessage) {
@@ -113,5 +132,6 @@ export function useKickChat(channelSlug: string) {
     leaveChannel,
     removeLastLocalMessage,
     addLocalMessage,
+    getBroadcasterUserId,
   };
 }
