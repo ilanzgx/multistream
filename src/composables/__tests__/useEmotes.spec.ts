@@ -146,6 +146,16 @@ describe("useEmotes", () => {
       if (url.includes("decapi.me/twitch/id/gaules")) {
         return { ok: true, text: async () => "123456" };
       }
+      if (url.includes("kick.com/emotes/gaules")) {
+        return {
+          ok: true,
+          json: async () => [
+            { id: "Global", emotes: [{ id: 100, name: "KickGlobal" }] },
+            { id: "Emoji", emotes: [{ id: 200, name: "emojiKick" }] },
+            { id: 999, emotes: [{ id: 300, name: "GaulesKick" }] },
+          ],
+        };
+      }
       if (url.includes("7tv.io/v3/users/twitch/123456")) {
         return {
           ok: true,
@@ -187,6 +197,33 @@ describe("useEmotes", () => {
       content: "https://cdn.betterttv.net/emote/bttv_sh_1/1x",
       code: "SharedBTTV",
     });
+  });
+
+  it("should fetch Kick emotes and encode messages correctly", async () => {
+    // Arrange
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url.includes("decapi.me/twitch/id/xqc")) {
+        return { ok: true, text: async () => "123" };
+      }
+      if (url.includes("kick.com/emotes/xqc")) {
+        return {
+          ok: true,
+          json: async () => [
+            { id: "Global", emotes: [{ id: 101, name: "KickG" }] },
+            { id: 668, emotes: [{ id: 301, name: "emojiLol" }] },
+          ],
+        };
+      }
+      return { ok: true, json: async () => ({}) };
+    });
+
+    // Act
+    await sut.loadChannelEmotes("xqc");
+
+    const encoded = sut.encodeKickMessage("Hello emojiLol and KickG test", "xqc");
+
+    // Assert
+    expect(encoded).toBe("Hello [emote:301:emojiLol] and [emote:101:KickG] test");
   });
 
   it("should ignore invalid fetch operations gracefully", async () => {

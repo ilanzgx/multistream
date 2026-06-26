@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Send, WifiOff, RefreshCw } from "lucide-vue-next";
 import { useKickChat } from "@/composables/useKickChat";
+import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
@@ -24,6 +25,7 @@ const {
   getBroadcasterUserId,
 } = useKickChat(props.channel);
 const { username, authenticated, loading: authLoading } = useKickAuth();
+const { encodeKickMessage } = useEmotes();
 const { t } = useI18n();
 
 function openAuthModal() {
@@ -38,12 +40,14 @@ const channelMessages = computed(() =>
 
 async function sendKickMessage(channel: string, message: string) {
   const pendingId = `pending-${Date.now()}`;
+  const encodedMessage = encodeKickMessage(message, channel);
+
   addLocalMessage({
     id: pendingId,
     channel,
     username: username.value || "You",
     display_name: username.value || "You",
-    message,
+    message: encodedMessage,
     timestamp_ms: Date.now(),
     badges: [],
     isPending: true,
@@ -61,7 +65,7 @@ async function sendKickMessage(channel: string, message: string) {
 
     await invoke("kick_send_message", {
       broadcasterUserId: broadcaster_user_id,
-      message,
+      message: encodedMessage,
     });
   } catch (error) {
     removeLastLocalMessage(username.value || "You");

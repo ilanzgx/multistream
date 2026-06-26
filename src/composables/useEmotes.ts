@@ -57,6 +57,10 @@ const _useEmotes = () => {
   const channelEmotes = reactive<Record<string, EmoteMap>>({});
   const globalEmotesLoaded = ref(false);
 
+  const kickEmotes = reactive<Record<string, Map<string, string>>>({});
+  const kickGlobalEmotes = ref<Map<string, string>>(new Map());
+  const kickGlobalEmotesLoaded = ref(false);
+
   const fetch7TVGlobal = async (): Promise<void> => {
     try {
       const res = await fetch("https://7tv.io/v3/emote-sets/global");
@@ -124,16 +128,51 @@ const _useEmotes = () => {
     }
   };
 
+  const fetchKickEmotes = async (channelSlug: string): Promise<void> => {
+    try {
+      const res = await fetch(`https://kick.com/emotes/${channelSlug}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      const map = new Map<string, string>();
+
+      for (const group of data) {
+        if (group.id === "Global" || group.id === "Emoji") {
+          if (!kickGlobalEmotesLoaded.value) {
+            group.emotes?.forEach((e: any) => {
+              kickGlobalEmotes.value.set(e.name, e.id.toString());
+            });
+          }
+        } else {
+          group.emotes?.forEach((e: any) => {
+            map.set(e.name, e.id.toString());
+          });
+        }
+      }
+
+      kickGlobalEmotesLoaded.value = true;
+      kickEmotes[channelSlug] = map;
+    } catch (e) {
+      console.error("Failed to load Kick channel emotes", e);
+    }
+  };
+
   const loadChannelEmotes = async (username: string): Promise<void> => {
     if (channelEmotes[username]) return;
-
-    const userId = await fetchTwitchId(username);
-    if (!userId) return;
 
     channelEmotes[username] = new Map();
     const map = channelEmotes[username];
 
-    await Promise.allSettled([fetch7TVChannel(userId, map), fetchBTTVChannel(userId, map)]);
+    const promises: Promise<void>[] = [];
+    promises.push(fetchKickEmotes(username));
+
+    const userId = await fetchTwitchId(username);
+    if (userId) {
+      promises.push(fetch7TVChannel(userId, map));
+      promises.push(fetchBTTVChannel(userId, map));
+    }
+
+    await Promise.allSettled(promises);
   };
 
   const parseMessage = (
@@ -252,11 +291,36 @@ const _useEmotes = () => {
     return mergedTokens;
   };
 
+  const encodeKickMessage = (text: string, channel: string): string => {
+    const channelMap = kickEmotes[channel];
+    const words = text.split(/(\s+)/);
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if (!word || word.trim().length === 0) continue;
+
+      let emoteId: string | undefined = undefined;
+
+      if (channelMap && channelMap.has(word)) {
+        emoteId = channelMap.get(word);
+      } else if (kickGlobalEmotes.value.has(word)) {
+        emoteId = kickGlobalEmotes.value.get(word);
+      }
+
+      if (emoteId) {
+        words[i] = `[emote:${emoteId}:${word}]`;
+      }
+    }
+
+    return words.join("");
+  };
+
   loadGlobalEmotes().catch(console.error);
 
   return {
     loadChannelEmotes,
     parseMessage,
+    encodeKickMessage,
   };
 };
 
