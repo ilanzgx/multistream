@@ -2,8 +2,9 @@
 import { ref, computed } from "vue";
 import { Send, WifiOff, RefreshCw } from "lucide-vue-next";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
+import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import ChatRichInput from "./ChatRichInput.vue";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { toast } from "vue-sonner";
@@ -22,6 +23,7 @@ const {
 } = useUnifiedChat();
 const { username } = useTwitchAuth();
 const { t } = useI18n();
+const { getEmoteDictionary } = useEmotes();
 
 const channelMessages = computed(() =>
   [...messages.value].filter((m) => m.channel === props.channel).toReversed()
@@ -108,17 +110,19 @@ onUnmounted(() => {
 
     <!-- Message Input Area -->
     <div class="p-3 border-t border-[#2a2d33] bg-[#0f1115] shrink-0">
-      <form class="flex gap-2" @submit.prevent="handleSend">
-        <Input
+      <form class="flex items-end gap-2" @submit.prevent="handleSend">
+        <ChatRichInput
           v-model="newMessage"
+          :emotes="getEmoteDictionary(channel, 'twitch')"
           :placeholder="t('chat.sendPlaceholder')"
-          class="flex-1 bg-[#1a1d24] border-[#2a2d33] text-sm text-gray-200 placeholder:text-gray-500 focus-visible:ring-[#9146FF]"
           :disabled="connectionState !== 'connected' || isSending"
+          class="focus:ring-[#9146FF]"
+          @submit="handleSend"
         />
         <Button
           type="submit"
           size="icon"
-          class="shrink-0 bg-[#9146FF] hover:bg-[#a970ff] text-white disabled:opacity-50"
+          class="shrink-0 h-[38px] w-[38px] bg-[#9146FF] hover:bg-[#a970ff] text-white disabled:opacity-50"
           :disabled="!newMessage.trim() || connectionState !== 'connected' || isSending"
         >
           <Send class="w-4 h-4" />

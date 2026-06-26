@@ -61,6 +61,21 @@ const _useEmotes = () => {
   const kickGlobalEmotes = ref<Map<string, string>>(new Map());
   const kickGlobalEmotesLoaded = ref(false);
 
+  const fetchTwitchGlobal = async (): Promise<void> => {
+    try {
+      const res = await fetch("https://emotes.adamcy.pl/v1/global/emotes/twitch");
+      if (!res.ok) return;
+      const data = await res.json();
+      data.forEach((e: any) => {
+        if (e.urls && e.urls.length > 0) {
+          globalEmotes.value.set(e.code, e.urls[0].url);
+        }
+      });
+    } catch (e) {
+      console.error("Failed to load Twitch global emotes", e);
+    }
+  };
+
   const fetch7TVGlobal = async (): Promise<void> => {
     try {
       const res = await fetch("https://7tv.io/v3/emote-sets/global");
@@ -89,7 +104,7 @@ const _useEmotes = () => {
 
   const loadGlobalEmotes = async (): Promise<void> => {
     if (globalEmotesLoaded.value) return;
-    await Promise.allSettled([fetch7TVGlobal(), fetchBTTVGlobal()]);
+    await Promise.allSettled([fetchTwitchGlobal(), fetch7TVGlobal(), fetchBTTVGlobal()]);
     globalEmotesLoaded.value = true;
   };
 
@@ -315,12 +330,40 @@ const _useEmotes = () => {
     return words.join("");
   };
 
+  const getEmoteDictionary = (
+    channel: string,
+    platform: "twitch" | "kick"
+  ): Map<string, string> => {
+    const dict = new Map<string, string>();
+
+    if (platform === "twitch") {
+      globalEmotes.value.forEach((url, code) => dict.set(code, url));
+      const channelMap = channelEmotes[channel];
+      if (channelMap) {
+        channelMap.forEach((url, code) => dict.set(code, url));
+      }
+    } else if (platform === "kick") {
+      kickGlobalEmotes.value.forEach((id, code) => {
+        dict.set(code, `https://files.kick.com/emotes/${id}/fullsize`);
+      });
+      const kickChannelMap = kickEmotes[channel];
+      if (kickChannelMap) {
+        kickChannelMap.forEach((id, code) => {
+          dict.set(code, `https://files.kick.com/emotes/${id}/fullsize`);
+        });
+      }
+    }
+
+    return dict;
+  };
+
   loadGlobalEmotes().catch(console.error);
 
   return {
     loadChannelEmotes,
     parseMessage,
     encodeKickMessage,
+    getEmoteDictionary,
   };
 };
 

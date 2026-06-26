@@ -4,7 +4,7 @@ import { Send, WifiOff, RefreshCw } from "lucide-vue-next";
 import { useKickChat } from "@/composables/useKickChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import ChatRichInput from "./ChatRichInput.vue";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
@@ -25,7 +25,7 @@ const {
   getBroadcasterUserId,
 } = useKickChat(props.channel);
 const { username, authenticated, loading: authLoading } = useKickAuth();
-const { encodeKickMessage } = useEmotes();
+const { encodeKickMessage, getEmoteDictionary } = useEmotes();
 const { t } = useI18n();
 
 function openAuthModal() {
@@ -162,17 +162,19 @@ onUnmounted(async () => {
     />
 
     <div v-else class="p-3 border-t border-[#2a2d33] bg-[#0f1115] shrink-0">
-      <form class="flex gap-2" @submit.prevent="handleSend">
-        <Input
+      <form class="flex items-end gap-2" @submit.prevent="handleSend">
+        <ChatRichInput
           v-model="newMessage"
+          :emotes="getEmoteDictionary(channel, 'kick')"
           :placeholder="t('chat.sendPlaceholder')"
-          class="flex-1 bg-[#1a1d24] border-[#2a2d33] text-sm text-gray-200 placeholder:text-gray-500 focus-visible:ring-[#53fc18]"
           :disabled="connectionState !== 'connected' || isSending"
+          class="focus:ring-[#53fc18]"
+          @submit="handleSend"
         />
         <Button
           type="submit"
           size="icon"
-          class="shrink-0 bg-[#53fc18] hover:bg-[#6afc35] text-[#0f1115] disabled:opacity-50"
+          class="shrink-0 h-[38px] w-[38px] bg-[#53fc18] hover:bg-[#6afc35] text-[#0f1115] disabled:opacity-50"
           :disabled="!newMessage.trim() || connectionState !== 'connected' || isSending"
         >
           <Send class="w-4 h-4" />
