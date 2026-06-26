@@ -2540,7 +2540,7 @@ dependencies = [
 
 [[package]]
 name = "multistream"
-version = "0.16.1"
+version = "0.16.2"
 dependencies = [
  "base64 0.22.1",
  "cpal",
