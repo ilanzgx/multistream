@@ -18,20 +18,28 @@ vi.mock("@/config/api", () => ({
   },
 }));
 
+vi.mock("../useLiveStatus", () => ({
+  useLiveStatus: () => ({
+    suggestedStreams: ref([]),
+  }),
+}));
+
 /** Helper: trigger watcher then flush the debounce and all promises */
 async function flush() {
-  await nextTick(); // let Vue flush the watchEffect
-  vi.advanceTimersByTime(300); // fire the debounce timer
-  await vi.runAllTimersAsync(); // drain timers and microtasks
-  await nextTick(); // flush reactive updates
+  await nextTick();
+  vi.advanceTimersByTime(300);
+  await vi.runAllTimersAsync();
+  await nextTick();
 }
 
 describe("useChannelSearch", () => {
   let fetchSpy: ReturnType<typeof vi.spyOn>;
+  let sut: ReturnType<typeof useChannelSearch>;
 
   beforeEach(() => {
     vi.useFakeTimers();
     fetchSpy = vi.spyOn(globalThis, "fetch");
+    sut = useChannelSearch();
   });
 
   afterEach(() => {
@@ -69,7 +77,7 @@ describe("useChannelSearch", () => {
       } as any);
 
       // Act
-      const { results, isLoading } = useChannelSearch(query, platform);
+      const { results, isLoading } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -110,7 +118,7 @@ describe("useChannelSearch", () => {
       } as any);
 
       // Act
-      const { results } = useChannelSearch(query, platform);
+      const { results } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -125,7 +133,7 @@ describe("useChannelSearch", () => {
       fetchSpy.mockResolvedValue({ ok: false, status: 500 } as any);
 
       // Act
-      const { results, isLoading } = useChannelSearch(query, platform);
+      const { results, isLoading } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -141,7 +149,7 @@ describe("useChannelSearch", () => {
       fetchSpy.mockRejectedValue(new Error("Network error"));
 
       // Act
-      const { results, isLoading } = useChannelSearch(query, platform);
+      const { results, isLoading } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -166,7 +174,7 @@ describe("useChannelSearch", () => {
       } as any);
 
       // Act
-      const { results, isLoading } = useChannelSearch(query, platform);
+      const { results, isLoading } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -192,7 +200,7 @@ describe("useChannelSearch", () => {
       } as any);
 
       // Act
-      const { results } = useChannelSearch(query, platform);
+      const { results } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -212,7 +220,7 @@ describe("useChannelSearch", () => {
       fetchSpy.mockResolvedValue({ ok: false, status: 404 } as any);
 
       // Act
-      const { results } = useChannelSearch(query, platform);
+      const { results } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -227,7 +235,7 @@ describe("useChannelSearch", () => {
       fetchSpy.mockResolvedValue({ ok: false, status: 500 } as any);
 
       // Act
-      const { results } = useChannelSearch(query, platform);
+      const { results } = sut.search(query, platform);
       await flush();
 
       // Assert
@@ -247,9 +255,8 @@ describe("useChannelSearch", () => {
       } as any);
 
       // Act
-      useChannelSearch(query, platform);
+      sut.search(query, platform);
 
-      // Simulate rapid typing within debounce window
       await nextTick();
       query.value = "ga";
       await nextTick();
@@ -258,7 +265,6 @@ describe("useChannelSearch", () => {
       query.value = "gaul";
       await nextTick();
 
-      // Advance past debounce — only final value's timer survives
       vi.advanceTimersByTime(300);
       await vi.runAllTimersAsync();
       await nextTick();
@@ -285,7 +291,7 @@ describe("useChannelSearch", () => {
         }),
       } as any);
 
-      const { results, isLoading, clear } = useChannelSearch(query, platform);
+      const { results, isLoading, clear } = sut.search(query, platform);
       await flush();
       expect(results.value).toHaveLength(1);
 
@@ -318,7 +324,7 @@ describe("useChannelSearch", () => {
         }),
       } as any);
 
-      const { results } = useChannelSearch(query, platform);
+      const { results } = sut.search(query, platform);
       await flush();
       expect(results.value).toHaveLength(1);
 
@@ -338,7 +344,7 @@ describe("useChannelSearch", () => {
       const platform = ref<"twitch" | "kick">("twitch");
 
       // Act
-      useChannelSearch(query, platform);
+      sut.search(query, platform);
       vi.advanceTimersByTime(500);
       await vi.runAllTimersAsync();
 
@@ -352,7 +358,7 @@ describe("useChannelSearch", () => {
       const platform = ref<any>("youtube");
 
       // Act
-      useChannelSearch(query, platform);
+      sut.search(query, platform);
       vi.advanceTimersByTime(500);
       await vi.runAllTimersAsync();
 

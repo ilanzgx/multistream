@@ -67,6 +67,12 @@ watch(
   (isOpen) => {
     if (isOpen) {
       checkAll();
+    } else {
+      clearSearch();
+      activeSearchIndex.value = -1;
+      channelName.value = "";
+      iframeUrl.value = "";
+      selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
     }
   }
 );
@@ -90,7 +96,7 @@ const {
   results: searchResults,
   isLoading: isSearching,
   clear: clearSearch,
-} = useChannelSearch(channelName, selectedPlatform);
+} = useChannelSearch().search(channelName, selectedPlatform);
 
 const activeSearchIndex = ref(-1);
 const isDropdownOpen = computed(
