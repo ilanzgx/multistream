@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "vue-sonner";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useElementSize } from "@vueuse/core";
+import { useProfilePicture } from "@/composables/useProfilePicture";
 
 const { requestRemoveStream, sessionStartTimes, now } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
@@ -77,13 +78,13 @@ const isMiniaturized = computed(() => !!focusedStreamId.value && !isFocused(prop
 
 const { getStatus } = useLiveStatus();
 const liveStatus = computed(() => getStatus(props.channel, props.platform));
+const { getProfilePicture } = useProfilePicture();
+const profilePictureUrl = getProfilePicture(props.channel, props.platform);
 
 const viewerCountDisplay = computed(() => {
   const status = liveStatus.value;
   if (!status || !status.isLive || status.viewerCount === undefined) return "offline/pending";
-  const num = status.viewerCount;
-  const hex = num.toString(16).toUpperCase();
-  return `${num.toLocaleString()} (0x${hex})`;
+  return status.viewerCount.toLocaleString();
 });
 
 const embedDomain = computed(() => {
@@ -98,6 +99,16 @@ const embedDomain = computed(() => {
 });
 
 const { width, height } = useElementSize(containerRef);
+
+const skeletonSize = computed(() => {
+  const w = width.value;
+  const h = height.value;
+  // Tiers adjusted for dense grid layouts (e.g. 9 streams at 1080p is ~532x330)
+  if (w < 250 || h < 200) return "xs";
+  if (w < 350 || h < 280) return "sm";
+  if (w < 450 || h < 380) return "md";
+  return "lg";
+});
 
 const hostEnvDisplay = computed(() => {
   if (typeof window === "undefined") return "unknown";
@@ -135,9 +146,12 @@ onMounted(() => {
   const iframe = containerRef.value?.querySelector("iframe");
   if (iframe) {
     iframe.addEventListener("load", () => {
-      setTimeout(() => {
-        isLoading.value = false;
-      }, 2000);
+      setTimeout(
+        () => {
+          isLoading.value = false;
+        },
+        props.platform === "kick" ? 3000 : 2000
+      );
     });
   }
 
@@ -193,14 +207,118 @@ const handleScreenshot = () => {
       >
         <div :class="['w-full h-full flex flex-col', isMiniaturized ? 'p-2 gap-2' : 'p-8 gap-4']">
           <!-- video area skeleton with progress bar -->
-          <div class="relative flex-1 w-full">
-            <Skeleton class="w-full h-full rounded-xl bg-white/5" />
+          <div class="relative flex-1 w-full rounded-xl overflow-hidden">
+            <Skeleton class="w-full h-full bg-white/5" />
             <!-- progress bar: thin animated strip at the top of the video area -->
-            <div class="absolute top-0 left-0 right-0 h-0.5 rounded-t-xl overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-0.5 overflow-hidden">
               <div
                 class="h-full w-1/3 rounded-full animate-[progress_2s_ease-in-out_infinite]"
                 :style="{ background: platformConfig?.color ?? '#ffffff', opacity: 0.5 }"
               />
+            </div>
+
+            <!-- centered profile picture or platform icon (subtle) -->
+            <div
+              class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none overflow-hidden"
+              :class="
+                skeletonSize === 'xs' ? 'gap-1' : skeletonSize === 'sm' ? 'gap-1.5' : 'gap-2.5'
+              "
+            >
+              <div
+                :class="[
+                  'rounded-full overflow-hidden flex items-center justify-center bg-white/5 opacity-15 shrink-0',
+                  skeletonSize === 'xs'
+                    ? 'size-6'
+                    : skeletonSize === 'sm'
+                      ? 'size-10'
+                      : skeletonSize === 'md'
+                        ? 'size-14'
+                        : 'size-20',
+                ]"
+              >
+                <img
+                  v-if="profilePictureUrl"
+                  :src="profilePictureUrl"
+                  :alt="props.channel"
+                  class="w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+                />
+                <component
+                  :is="platformConfig?.icon"
+                  v-else
+                  :size="
+                    skeletonSize === 'xs'
+                      ? 20
+                      : skeletonSize === 'sm'
+                        ? 32
+                        : skeletonSize === 'md'
+                          ? 48
+                          : 64
+                  "
+                  :style="{ color: platformConfig?.color }"
+                  class="opacity-100 scale-[0.6]"
+                />
+              </div>
+              <div
+                class="font-medium tracking-wide animate-pulse text-white/30 text-center px-4"
+                :class="
+                  skeletonSize === 'xs'
+                    ? 'text-[9px]'
+                    : skeletonSize === 'sm'
+                      ? 'text-[10px]'
+                      : 'text-xs'
+                "
+              >
+                {{ t("skeleton.loadingChannel", { channel: props.channel }) }}
+              </div>
+              <!-- Diagnostics Panel -->
+              <div
+                v-if="skeletonSize === 'lg' || skeletonSize === 'md'"
+                class="font-mono text-white/30 space-y-1.5 w-full px-4 flex flex-col items-center"
+                :class="skeletonSize === 'md' ? 'text-[8px]' : 'text-[10px]'"
+              >
+                <div class="w-fit max-w-full">
+                  <div
+                    class="text-[8px] text-white/15 uppercase tracking-widest border-b border-white/6 pb-1 mb-1.5 font-semibold text-left w-full"
+                  >
+                    [stream_diagnostics]
+                  </div>
+
+                  <div
+                    class="grid grid-cols-[max-content_minmax(0,1fr)] gap-x-6 gap-y-0.5 w-full text-left"
+                  >
+                    <span class="text-white/15 text-left">channel_id:</span>
+                    <span class="text-white/30 truncate text-right"
+                      >{{ props.platform }}_{{ props.channel }}</span
+                    >
+
+                    <span class="text-white/15 text-left">embed_src:</span>
+                    <span class="text-white/30 truncate text-right">{{ embedDomain }}</span>
+
+                    <span class="text-white/15 text-left">status:</span>
+                    <span class="text-green-500/50 truncate text-right">{{
+                      connectionStatus
+                    }}</span>
+
+                    <span class="text-white/15 text-left">viewers:</span>
+                    <span class="text-white/30 truncate text-right">{{ viewerCountDisplay }}</span>
+
+                    <template v-if="skeletonSize === 'lg'">
+                      <span class="text-white/15 text-left">viewport:</span>
+                      <span class="text-white/30 truncate text-right"
+                        >{{ Math.round(width) }}x{{ Math.round(height) }}</span
+                      >
+
+                      <div class="col-span-2 border-t border-white/6 my-0.5"></div>
+
+                      <span class="text-white/15 text-left">host_env:</span>
+                      <span class="text-white/30 truncate text-right">{{ hostEnvDisplay }}</span>
+
+                      <span class="text-white/15 text-left">build_ver:</span>
+                      <span class="text-white/30 truncate text-right">{{ appVersionDisplay }}</span>
+                    </template>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -225,69 +343,11 @@ const handleScreenshot = () => {
               <p class="h-4 text-sm font-medium text-white/30 leading-none tracking-wide">
                 {{ props.channel }}
               </p>
-              <!-- category still a skeleton -->
-              <Skeleton class="h-3 w-24 bg-white/5" />
-            </div>
-          </div>
-        </div>
-
-        <!-- centered platform icon (subtle) -->
-        <div
-          class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none gap-2.5"
-        >
-          <component
-            :is="platformConfig?.icon"
-            :size="isMiniaturized ? 32 : 80"
-            :style="{ color: platformConfig?.color }"
-            class="opacity-10"
-          />
-          <div
-            class="font-medium tracking-wide animate-pulse text-white/20 text-center"
-            :class="[
-              isMiniaturized ? 'text-[9px] max-w-17.5 sm:max-w-22.5 truncate px-1' : 'text-xs',
-            ]"
-          >
-            {{ t("skeleton.loadingChannel", { channel: props.channel }) }}
-          </div>
-          <!-- Diagnostics Panel -->
-          <div
-            v-if="!isMiniaturized"
-            class="mt-4 font-mono text-[10px] text-white/30 text-left space-y-1 min-w-53.75"
-          >
-            <div
-              class="text-[9px] text-white/15 uppercase tracking-widest border-b border-white/6 pb-1 mb-1 font-semibold"
-            >
-              [stream_diagnostics]
-            </div>
-            <div class="flex justify-between gap-4">
-              <span class="text-white/15">channel_id:</span>
-              <span class="text-white/30 truncate max-w-31.25"
-                >{{ props.platform }}_{{ props.channel }}</span
-              >
-            </div>
-            <div class="flex justify-between gap-4">
-              <span class="text-white/15">embed_src:</span>
-              <span class="text-white/30 truncate max-w-31.25">{{ embedDomain }}</span>
-            </div>
-            <div class="flex justify-between gap-4">
-              <span class="text-white/15">status:</span>
-              <span class="text-green-400/30">{{ connectionStatus }}</span>
-            </div>
-            <div class="flex justify-between gap-4">
-              <span class="text-white/15">viewers:</span>
-              <span class="text-white/30">{{ viewerCountDisplay }}</span>
-            </div>
-            <div class="flex justify-between gap-4">
-              <span class="text-white/15">viewport:</span>
-              <span class="text-white/30">{{ Math.round(width) }}x{{ Math.round(height) }}</span>
-            </div>
-            <div class="flex justify-between gap-4 border-t border-white/6 pt-1 mt-1">
-              <span class="text-white/15">host_env:</span>
-              <span class="text-white/30">{{ hostEnvDisplay }}</span>
-            </div>
-            <div class="flex justify-between gap-4">
-              <span class="text-white/15">build_ver:</span>
-              <span class="text-white/30">{{ appVersionDisplay }}</span>
+              <!-- category skeleton or real category -->
+              <Skeleton v-if="!liveStatus?.category" class="h-3 w-24 bg-white/5" />
+              <p v-else class="h-3 text-xs text-white/20 leading-none truncate max-w-[120px]">
+                {{ liveStatus.category }}
+              </p>
             </div>
           </div>
         </div>
@@ -353,7 +413,7 @@ const handleScreenshot = () => {
     <!-- watch timer bottom overlay bar - appears on hover -->
     <div
       :class="[
-        'absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[10px] sm:text-xs text-white/90 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 shadow-lg',
+        'absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] text-white/70 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 shadow-lg',
         isMiniaturized ? 'scale-90 bottom-1' : '',
       ]"
     >
