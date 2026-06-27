@@ -124,6 +124,22 @@ const _useEmotes = () => {
     }
   };
 
+  const fetch7TVChannelKick = async (channelSlug: string, map: EmoteMap): Promise<void> => {
+    try {
+      const res = await fetch(`https://7tv.io/v3/users/kick/${channelSlug}`);
+      if (!res.ok) return;
+      const data = (await res.json()) as SevenTvChannelResponse;
+      const emotes = data.emote_set?.emotes;
+      if (emotes) {
+        emotes.forEach((emote) => {
+          map.set(emote.name, `https://cdn.7tv.app/emote/${emote.id}/1x.webp`);
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load 7TV Kick channel emotes", e);
+    }
+  };
+
   const fetchBTTVChannel = async (userId: string, map: EmoteMap): Promise<void> => {
     try {
       const res = await fetch(`https://api.betterttv.net/3/cached/users/twitch/${userId}`);
@@ -178,8 +194,10 @@ const _useEmotes = () => {
     channelEmotes[username] = new Map();
     const map = channelEmotes[username];
 
-    const promises: Promise<void>[] = [];
-    promises.push(fetchKickEmotes(username));
+    const promises: Promise<void>[] = [
+      fetchKickEmotes(username),
+      fetch7TVChannelKick(username, map),
+    ];
 
     const userId = await fetchTwitchId(username);
     if (userId) {
@@ -343,6 +361,7 @@ const _useEmotes = () => {
         channelMap.forEach((url, code) => dict.set(code, url));
       }
     } else if (platform === "kick") {
+      globalEmotes.value.forEach((url, code) => dict.set(code, url));
       kickGlobalEmotes.value.forEach((id, code) => {
         dict.set(code, `https://files.kick.com/emotes/${id}/fullsize`);
       });
@@ -351,6 +370,10 @@ const _useEmotes = () => {
         kickChannelMap.forEach((id, code) => {
           dict.set(code, `https://files.kick.com/emotes/${id}/fullsize`);
         });
+      }
+      const thirdPartyMap = channelEmotes[channel];
+      if (thirdPartyMap) {
+        thirdPartyMap.forEach((url, code) => dict.set(code, url));
       }
     }
 

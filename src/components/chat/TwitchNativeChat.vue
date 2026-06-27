@@ -23,7 +23,7 @@ const {
 } = useUnifiedChat();
 const { username } = useTwitchAuth();
 const { t } = useI18n();
-const { getEmoteDictionary } = useEmotes();
+const { getEmoteDictionary, loadChannelEmotes } = useEmotes();
 
 const channelMessages = computed(() =>
   [...messages.value].filter((m) => m.channel === props.channel).toReversed()
@@ -52,6 +52,7 @@ let unlistenError: UnlistenFn | null = null;
 import { onMounted, onUnmounted } from "vue";
 
 onMounted(async () => {
+  await loadChannelEmotes(props.channel);
   unlistenError = await listen<{ channel: string; message: string }>(
     "twitch-chat-error",
     (event) => {

@@ -25,7 +25,7 @@ const {
   getBroadcasterUserId,
 } = useKickChat(props.channel);
 const { username, authenticated, loading: authLoading } = useKickAuth();
-const { encodeKickMessage, getEmoteDictionary } = useEmotes();
+const { encodeKickMessage, getEmoteDictionary, loadChannelEmotes } = useEmotes();
 const { t } = useI18n();
 
 function openAuthModal() {
@@ -95,7 +95,7 @@ async function handleSend() {
 let unlistenError: UnlistenFn | null = null;
 
 onMounted(async () => {
-  await joinChannel();
+  await Promise.all([joinChannel(), loadChannelEmotes(props.channel)]);
   unlistenError = await listen<{ channel: string; message: string }>("kick-chat-error", (event) => {
     const { channel, message } = event.payload;
     if (channel.toLowerCase() === props.channel.toLowerCase()) {
