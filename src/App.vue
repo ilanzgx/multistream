@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
-import { Menu } from "lucide-vue-next";
+import { Menu, X } from "lucide-vue-next";
 import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
-import { useUpdater } from "./composables/useUpdater";
+import { useUpdater, isTauri } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
 import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import "vue-sonner/style.css";
@@ -28,6 +28,7 @@ import { parseUrlOptions } from "./lib/parseUrlOptions";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
+const dismissedWebBanner = ref(false);
 const showTwitchAuth = ref(false);
 const showKickAuth = ref(false);
 
@@ -217,14 +218,38 @@ onUnmounted(() => {
 
 <template>
   <div class="flex h-screen overflow-hidden bg-[#191b1f]">
-    <!-- main -->
-    <main class="flex-1 overflow-y-auto bg-[#1f2227]">
-      <!-- stream grid -->
-      <StreamGrid v-if="streams.length > 0" />
+    <div class="flex flex-col flex-1 overflow-hidden relative">
+      <div
+        v-if="!isTauri() && !dismissedWebBanner"
+        class="w-full flex items-center justify-center gap-4 px-4 py-2 bg-[#14161a] border-b border-[#2a2d33] shrink-0 animate-in fade-in slide-in-from-top-2 duration-300"
+      >
+        <span class="text-[13px] text-[#e0e0e0] whitespace-nowrap">{{
+          $t("webBanner.title")
+        }}</span>
+        <div class="flex items-center gap-3 border-l border-[#2a2d33] pl-3">
+          <a
+            href="https://github.com/ilanzgx/multistream/releases"
+            target="_blank"
+            class="text-[13px] font-medium text-white hover:text-gray-300 transition-colors"
+            >{{ $t("webBanner.button") }}</a
+          >
+          <button
+            class="text-[#787774] hover:text-white transition-colors flex items-center justify-center"
+            @click="dismissedWebBanner = true"
+          >
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
 
-      <!-- empty state (no streams) -->
-      <EmptyState v-else @add="sidebarRef?.openAddDialog()" @tour="showOnboarding = true" />
-    </main>
+      <!-- main -->
+      <main class="flex-1 overflow-y-auto bg-[#1f2227]">
+        <!-- stream grid -->
+        <StreamGrid v-if="streams.length > 0" />
+
+        <EmptyState v-else @add="sidebarRef?.openAddDialog()" @tour="showOnboarding = true" />
+      </main>
+    </div>
 
     <!-- sidebar -->
     <SidebarPanel ref="sidebarRef" />

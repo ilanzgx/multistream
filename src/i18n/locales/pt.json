@@ -286,5 +286,9 @@
       "chat": "Alternar para o chat da stream {keys}",
       "screenshotTitle": "Screenshot"
     }
+  },
+  "webBanner": {
+    "title": "O Multistream roda melhor no app desktop.",
+    "button": "Baixar"
   }
 }

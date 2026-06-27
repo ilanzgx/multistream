@@ -286,5 +286,9 @@
       "chat": "Zum Stream-Chat {keys} wechseln",
       "screenshotTitle": "Screenshot"
     }
+  },
+  "webBanner": {
+    "title": "Multistream läuft besser als Desktop-App.",
+    "button": "Herunterladen"
   }
 }

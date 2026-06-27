@@ -286,5 +286,9 @@
       "chat": "Cambiar al chat de la transmisión {keys}",
       "screenshotTitle": "Captura de Pantalla"
     }
+  },
+  "webBanner": {
+    "title": "Multistream funciona mejor en la app de escritorio.",
+    "button": "Descargar"
   }
 }

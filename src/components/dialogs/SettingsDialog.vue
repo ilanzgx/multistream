@@ -221,7 +221,9 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
       </DialogHeader>
 
       <Tabs default-value="geral" class="flex flex-col flex-1 overflow-hidden mt-2">
-        <TabsList class="grid w-full grid-cols-4 bg-[#1e2127]">
+        <TabsList
+          :class="['grid w-full bg-[#1e2127]', isRunningInTauri ? 'grid-cols-4' : 'grid-cols-3']"
+        >
           <TabsTrigger
             value="geral"
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
@@ -245,6 +247,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             {{ $t("settings.tabs.connections") }}
           </TabsTrigger>
           <TabsTrigger
+            v-if="isRunningInTauri"
             value="recursos"
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
@@ -518,7 +521,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             </div>
           </TabsContent>
 
-          <TabsContent value="recursos" class="space-y-6 mt-0 outline-none">
+          <TabsContent v-if="isRunningInTauri" value="recursos" class="space-y-6 mt-0 outline-none">
             <!-- Live Transcription Section -->
             <div v-if="isRunningInTauri && isSupported" class="space-y-2">
               <div class="flex items-center gap-2 px-1">

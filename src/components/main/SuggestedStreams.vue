@@ -191,7 +191,7 @@ const formatViewers = (count?: number) => {
       <button
         v-for="stream in paginatedStreams"
         :key="`${stream.platform}:${stream.channel}`"
-        class="group relative flex flex-col w-40 overflow-hidden rounded-xl bg-[#14161a] border border-[#2a2d33] transition-all duration-300 hover:border-[#3a3f4b] hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 cursor-pointer text-left"
+        class="group relative flex flex-col w-40 overflow-hidden rounded-xl bg-[#14161a] border border-[#2a2d33] transition-all duration-300 hover:border-[#3a3f4b] hover:-translate-y-1 cursor-pointer text-left"
         @click="addStream(stream.channel, stream.platform)"
       >
         <!-- Thumbnail -->

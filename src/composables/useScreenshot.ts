@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, h } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
@@ -103,7 +103,11 @@ export function useScreenshot() {
           filename,
         });
         toast.success(`${t("toasts.screenshot.saved")}`, {
-          description: savedPath,
+          description: h(
+            "span",
+            { class: "text-[10px] text-gray-400 truncate block max-w-[250px]" },
+            savedPath
+          ) as any,
           duration: 3500,
         });
       } else {

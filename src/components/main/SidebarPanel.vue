@@ -4,6 +4,7 @@ import { usePreferences } from "@/composables/usePreferences";
 import { useStreams } from "@/composables/useStreams";
 import { useTranscription } from "@/composables/useTranscription";
 import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
+import { isTauri } from "@/composables/useUpdater";
 import { Button } from "@/components/ui/button";
 const KickChat = defineAsyncComponent(() => import("@/components/chat/KickChat.vue"));
 const TwitchChat = defineAsyncComponent(() => import("@/components/chat/TwitchChat.vue"));
@@ -198,7 +199,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <Tabs v-model="sidebarMode" class="w-full">
+        <Tabs v-if="isTauri()" v-model="sidebarMode" class="w-full">
           <TabsList class="grid w-full grid-cols-2 bg-[#1e2127]">
             <TabsTrigger
               value="chat"
@@ -311,17 +312,20 @@ onUnmounted(() => {
           <UnifiedChat v-if="hasLoadedUnifiedChat" v-show="selectedChat === UNIFIED_CHAT_ID" />
           <div
             v-if="streams.length === 0"
-            class="absolute inset-0 flex items-center justify-center text-muted-foreground"
+            class="absolute inset-0 flex items-center justify-center text-muted-foreground bg-[#0f1115]"
           >
-            <p class="text-center px-4 text-white">
-              {{ $t("chat.noStreams") }}<br />{{ $t("chat.noStreamsHint") }}
+            <p class="text-center px-4 text-sm text-gray-400">
+              {{ $t("chat.noStreams") }}<br />
+              <span class="text-xs text-gray-400 mt-1 inline-block">{{
+                $t("chat.noStreamsHint")
+              }}</span>
             </p>
           </div>
           <div
             v-else-if="!selectedChat"
-            class="absolute inset-0 flex items-center justify-center text-muted-foreground"
+            class="absolute inset-0 flex items-center justify-center text-muted-foreground bg-[#0f1115]"
           >
-            <p class="text-center px-4 text-white">
+            <p class="text-center px-4 text-sm text-gray-400">
               {{ $t("chat.selectPrompt") }}
             </p>
           </div>
