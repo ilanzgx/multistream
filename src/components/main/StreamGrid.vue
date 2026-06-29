@@ -4,14 +4,29 @@ import TwitchStream from "@/components/stream/TwitchStream.vue";
 import YoutubeStream from "@/components/stream/YoutubeStream.vue";
 import CustomStream from "@/components/stream/CustomStream.vue";
 import TranscriptionOverlay from "./TranscriptionOverlay.vue";
-import { useStreams } from "@/composables/useStreams";
+import { GripVertical } from "lucide-vue-next";
+import { useDragAndDrop } from "@/composables/useDragAndDrop";
+import { useStreams, type Stream } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { usePreferences } from "@/composables/usePreferences";
-import { computed, watch, nextTick } from "vue";
+import { computed, watch, nextTick, ref } from "vue";
 
 const { streams, gridClass, isLeaving, getStreamKey } = useStreams();
 const { focusedStreamId, isFocused } = useFocusedStream();
+const { draggingId, overId, isDragging, onMouseDown, onMouseEnter, onMouseLeave, onMouseUp, onGlobalMouseUp } =
+  useDragAndDrop();
 const { setSelectedChat } = usePreferences();
+
+const domStreams = ref<Stream[]>([]);
+
+watch(streams, (newStreams) => {
+  domStreams.value = domStreams.value.filter(ds => newStreams.some(s => s.id === ds.id));
+  newStreams.forEach(s => {
+    if (!domStreams.value.some(ds => ds.id === s.id)) {
+      domStreams.value.push(s);
+    }
+  });
+}, { deep: true, immediate: true });
 
 // auto-select the chat of the focused stream
 watch(focusedStreamId, async (newId) => {
@@ -101,44 +116,77 @@ const containerStyle = computed(() => {
  * Normal mode     → empty object, Tailwind handles it.
  */
 const getStreamStyle = (streamId: string) => {
-  if (!focusedStreamId.value) return {};
+  const index = streams.value.findIndex(s => s.id === streamId);
+  const baseStyle = { order: index };
+
+  if (!focusedStreamId.value) return baseStyle;
   if (isFocused(streamId)) {
     return {
+      ...baseStyle,
       gridColumn: "2",
       gridRow: `1 / ${nonFocusedCount.value + 1}`,
     };
   }
-  return { gridColumn: "1" };
+  return { ...baseStyle, gridColumn: "1" };
 };
 
 /**
  * Returns extra classes for each stream cell in normal (non-focus) mode.
  * Handles the 3-stream special case where the last item spans 2 columns.
  */
-const getStreamClass = (index: number) => {
+const getStreamClass = (streamId: string) => {
   if (focusedStreamId.value) return "";
+  const index = streams.value.findIndex(s => s.id === streamId);
   return streams.value.length === 3 && index === 2 ? "col-span-2 justify-self-center w-1/2" : "";
 };
 </script>
 
 <template>
   <div
-    class="h-full overflow-hidden"
-    :class="!focusedStreamId ? ['grid', gridClass, 'gap-0.5'] : ''"
-    :style="containerStyle"
-  >
+      class="h-full overflow-hidden select-none"
+      :class="!focusedStreamId ? ['grid', gridClass, 'gap-0.5'] : ''"
+      :style="containerStyle"
+      @mouseup="onGlobalMouseUp"
+    >
     <div
-      v-for="(stream, index) in streams"
+      v-for="stream in domStreams"
       :key="getStreamKey(stream)"
       :data-stream-id="stream.id"
       :data-testid="`stream-item-${stream.channel}`"
       :style="getStreamStyle(stream.id)"
       :class="[
-        getStreamClass(index),
-        'min-h-0 min-w-0 stream-item overflow-hidden rounded-sm relative',
+        getStreamClass(stream.id),
+        'min-h-0 min-w-0 stream-item overflow-hidden rounded-sm relative group/grid-item',
         isLeaving(stream.id) ? 'stream-leaving' : '',
+        draggingId === stream.id ? 'opacity-50' : '',
       ]"
+      @mouseenter="onMouseEnter(stream.id)"
+      @mouseleave="onMouseLeave"
+      @mouseup="onMouseUp(stream.id)"
     >
+      <div
+        v-if="isDragging"
+        :class="[
+          'absolute inset-0 z-40 transition-colors',
+          overId === stream.id && draggingId !== stream.id
+            ? 'bg-blue-500/10 ring-2 ring-blue-500'
+            : 'bg-transparent',
+        ]"
+      />
+
+      <div
+        :class="[
+          'absolute z-50 opacity-0 group-hover/grid-item:opacity-100 transition-opacity cursor-grab p-1.5 rounded-md bg-black/60 border border-white/10 hover:bg-black/80 text-white/50 hover:text-white',
+          focusedStreamId && !isFocused(stream.id)
+            ? 'top-1 left-1/2 -translate-x-1/2 scale-90'
+            : 'top-3 left-1/2 -translate-x-1/2',
+          isDragging ? 'cursor-grabbing' : '',
+        ]"
+        @mousedown.stop="onMouseDown(stream.id)"
+      >
+        <GripVertical class="size-4 pointer-events-none" />
+      </div>
+
       <TranscriptionOverlay v-if="isFocused(stream.id) || streams.length === 1" />
 
       <KickStream
