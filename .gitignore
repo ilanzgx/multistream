@@ -32,3 +32,4 @@ playwright-report/
 test-results/
 
 src-tauri/binaries/
+worktrees/
