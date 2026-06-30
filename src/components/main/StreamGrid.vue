@@ -10,12 +10,15 @@ import { useStreams, type Stream } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { usePreferences } from "@/composables/usePreferences";
 import { computed, watch, nextTick, ref } from "vue";
+import { useEventListener } from "@vueuse/core";
 
 const { streams, gridClass, isLeaving, getStreamKey } = useStreams();
 const { focusedStreamId, isFocused } = useFocusedStream();
 const { draggingId, overId, isDragging, onMouseDown, onMouseEnter, onMouseLeave, onMouseUp, onGlobalMouseUp } =
   useDragAndDrop();
 const { setSelectedChat } = usePreferences();
+
+useEventListener(window, "mouseup", onGlobalMouseUp);
 
 const domStreams = ref<Stream[]>([]);
 
@@ -121,10 +124,11 @@ const getStreamStyle = (streamId: string) => {
 
   if (!focusedStreamId.value) return baseStyle;
   if (isFocused(streamId)) {
+    const rows = Math.max(nonFocusedCount.value, 1);
     return {
       ...baseStyle,
       gridColumn: "2",
-      gridRow: `1 / ${nonFocusedCount.value + 1}`,
+      gridRow: `1 / ${rows + 1}`,
     };
   }
   return { ...baseStyle, gridColumn: "1" };
@@ -142,11 +146,10 @@ const getStreamClass = (streamId: string) => {
 </script>
 
 <template>
-  <div
+    <div
       class="h-full overflow-hidden select-none"
       :class="!focusedStreamId ? ['grid', gridClass, 'gap-0.5'] : ''"
       :style="containerStyle"
-      @mouseup="onGlobalMouseUp"
     >
     <div
       v-for="stream in domStreams"
