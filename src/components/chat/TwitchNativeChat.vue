@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref, computed } from "vue";
-import { Send, WifiOff, RefreshCw } from "lucide-vue-next";
+import { Send, WifiOff, RefreshCw } from "@lucide/vue";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";

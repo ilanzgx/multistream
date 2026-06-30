@@ -10,7 +10,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight } from "@lucide/vue";
 
 const { addStream } = useStreams();
 const { suggestedStreams, isLoadingSuggestions, fetchStreamsForCategory } = useLiveStatus();

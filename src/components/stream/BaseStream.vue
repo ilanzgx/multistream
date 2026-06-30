@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
-import { X, Heart, Maximize2, Camera } from "lucide-vue-next";
+import { X, Heart, Maximize2, Camera } from "@lucide/vue";
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";

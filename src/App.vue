@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
-import { Menu, X } from "lucide-vue-next";
+import { Menu, X } from "@lucide/vue";
 import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater, isTauri } from "./composables/useUpdater";

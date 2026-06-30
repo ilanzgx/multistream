@@ -4,7 +4,7 @@ import TwitchStream from "@/components/stream/TwitchStream.vue";
 import YoutubeStream from "@/components/stream/YoutubeStream.vue";
 import CustomStream from "@/components/stream/CustomStream.vue";
 import TranscriptionOverlay from "./TranscriptionOverlay.vue";
-import { GripVertical } from "lucide-vue-next";
+import { GripVertical } from "@lucide/vue";
 import { useDragAndDrop } from "@/composables/useDragAndDrop";
 import { useStreams, type Stream } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
@@ -14,22 +14,34 @@ import { useEventListener } from "@vueuse/core";
 
 const { streams, gridClass, isLeaving, getStreamKey } = useStreams();
 const { focusedStreamId, isFocused } = useFocusedStream();
-const { draggingId, overId, isDragging, onMouseDown, onMouseEnter, onMouseLeave, onMouseUp, onGlobalMouseUp } =
-  useDragAndDrop();
+const {
+  draggingId,
+  overId,
+  isDragging,
+  onMouseDown,
+  onMouseEnter,
+  onMouseLeave,
+  onMouseUp,
+  onGlobalMouseUp,
+} = useDragAndDrop();
 const { setSelectedChat } = usePreferences();
 
 useEventListener(window, "mouseup", onGlobalMouseUp);
 
 const domStreams = ref<Stream[]>([]);
 
-watch(streams, (newStreams) => {
-  domStreams.value = domStreams.value.filter(ds => newStreams.some(s => s.id === ds.id));
-  newStreams.forEach(s => {
-    if (!domStreams.value.some(ds => ds.id === s.id)) {
-      domStreams.value.push(s);
-    }
-  });
-}, { deep: true, immediate: true });
+watch(
+  streams,
+  (newStreams) => {
+    domStreams.value = domStreams.value.filter((ds) => newStreams.some((s) => s.id === ds.id));
+    newStreams.forEach((s) => {
+      if (!domStreams.value.some((ds) => ds.id === s.id)) {
+        domStreams.value.push(s);
+      }
+    });
+  },
+  { deep: true, immediate: true }
+);
 
 // auto-select the chat of the focused stream
 watch(focusedStreamId, async (newId) => {
@@ -119,7 +131,7 @@ const containerStyle = computed(() => {
  * Normal mode     → empty object, Tailwind handles it.
  */
 const getStreamStyle = (streamId: string) => {
-  const index = streams.value.findIndex(s => s.id === streamId);
+  const index = streams.value.findIndex((s) => s.id === streamId);
   const baseStyle = { order: index };
 
   if (!focusedStreamId.value) return baseStyle;
@@ -140,17 +152,17 @@ const getStreamStyle = (streamId: string) => {
  */
 const getStreamClass = (streamId: string) => {
   if (focusedStreamId.value) return "";
-  const index = streams.value.findIndex(s => s.id === streamId);
+  const index = streams.value.findIndex((s) => s.id === streamId);
   return streams.value.length === 3 && index === 2 ? "col-span-2 justify-self-center w-1/2" : "";
 };
 </script>
 
 <template>
-    <div
-      class="h-full overflow-hidden select-none"
-      :class="!focusedStreamId ? ['grid', gridClass, 'gap-0.5'] : ''"
-      :style="containerStyle"
-    >
+  <div
+    class="h-full overflow-hidden select-none"
+    :class="!focusedStreamId ? ['grid', gridClass, 'gap-0.5'] : ''"
+    :style="containerStyle"
+  >
     <div
       v-for="stream in domStreams"
       :key="getStreamKey(stream)"

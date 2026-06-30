@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { TwitchIcon, KickIcon, YoutubeIcon } from "@/components/icons";
-import { ChevronLeft, ChevronRight, Check, Mic, ArrowDown } from "lucide-vue-next";
+import { ChevronLeft, ChevronRight, Check, Mic, ArrowDown } from "@lucide/vue";
 import { useTranscription } from "@/composables/useTranscription";
 
 const props = withDefaults(

@@ -3,7 +3,7 @@ import { defineAsyncComponent } from "vue";
 const SuggestedStreams = defineAsyncComponent(
   () => import("@/components/main/SuggestedStreams.vue")
 );
-import { Plus } from "lucide-vue-next";
+import { Plus } from "@lucide/vue";
 import { PLATFORMS } from "@/config/platforms";
 
 const emit = defineEmits<{

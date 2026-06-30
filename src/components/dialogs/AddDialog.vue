@@ -18,7 +18,7 @@ import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useFavorites } from "@/composables/useFavorites";
 import { useChannelSearch } from "@/composables/useChannelSearch";
 import { PLATFORMS } from "@/config/platforms";
-import { History, Heart } from "lucide-vue-next";
+import { History, Heart } from "@lucide/vue";
 import { parseStreamUrl } from "@/lib/platformParser";
 
 // props

@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { watch, computed } from "vue";
-import { WifiOff, RefreshCw, Twitch } from "lucide-vue-next";
+import { WifiOff, RefreshCw } from "@lucide/vue";
 import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
@@ -57,7 +57,7 @@ watch(
             :disabled="authLoading"
             @click="openAuthModal"
           >
-            <Twitch class="w-4 h-4 mr-2" />
+            <TwitchIcon class="w-4 h-4 mr-2" />
             {{ t("chat.unified.connectButton") }}
           </Button>
         </div>

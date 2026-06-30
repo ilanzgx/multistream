@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { X } from "lucide-vue-next";
+import { X } from "@lucide/vue";
 import { PLATFORMS } from "@/config/platforms";
 import type { Platform } from "@/composables/useStreams";
 import { useLiveStatus } from "@/composables/useLiveStatus";

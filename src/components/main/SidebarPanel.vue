@@ -36,7 +36,7 @@ import {
   ImportIcon as Import,
   PanelRightClose,
   Loader2,
-} from "lucide-vue-next";
+} from "@lucide/vue";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Select,

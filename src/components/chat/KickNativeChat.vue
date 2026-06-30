@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
-import { Send, WifiOff, RefreshCw } from "lucide-vue-next";
+import { Send, WifiOff, RefreshCw } from "@lucide/vue";
 import { useKickChat } from "@/composables/useKickChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";

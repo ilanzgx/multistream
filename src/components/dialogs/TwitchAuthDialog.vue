@@ -8,7 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Twitch, Loader2, Copy, Check, ExternalLink } from "lucide-vue-next";
+import { Loader2, Copy, Check, ExternalLink } from "@lucide/vue";
+import TwitchIcon from "@/components/icons/TwitchIcon.vue";
 import { useTwitchAuth, type DeviceFlowResponse } from "@/composables/useTwitchAuth";
 import { useI18n } from "vue-i18n";
 import { useClipboard } from "@vueuse/core";
@@ -101,7 +102,7 @@ onUnmounted(() => {
     <DialogContent class="sm:max-w-md bg-[#14161a] border-[#2a2d33] text-white">
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2 text-white">
-          <Twitch class="w-5 h-5 text-[#bf94ff]" />
+          <TwitchIcon class="w-5 h-5 text-[#bf94ff]" />
           {{ t("chat.unified.connectTitle") }}
         </DialogTitle>
         <DialogDescription class="text-gray-400">

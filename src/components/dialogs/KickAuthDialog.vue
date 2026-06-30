@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink } from "lucide-vue-next";
+import { Loader2, ExternalLink } from "@lucide/vue";
 import { useKickAuth } from "@/composables/useKickAuth";
 import { useI18n } from "vue-i18n";
 import { open as openUrl } from "@tauri-apps/plugin-shell";

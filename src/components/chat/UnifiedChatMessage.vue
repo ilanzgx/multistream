@@ -2,7 +2,8 @@
 import { computed } from "vue";
 import type { UnifiedChatMessage } from "@/composables/useUnifiedChat";
 import { useEmotes } from "@/composables/useEmotes";
-import { Sword, Crown, Gem, Star, Twitch } from "lucide-vue-next";
+import { Sword, Crown, Gem, Star } from "@lucide/vue";
+import TwitchIcon from "@/components/icons/TwitchIcon.vue";
 import KickIcon from "@/components/icons/KickIcon.vue";
 
 const props = withDefaults(
@@ -96,7 +97,7 @@ const nameColor = computed(() => props.message.color || "#e5e7eb"); // Default t
       <p class="text-sm leading-relaxed break-words text-gray-300 flex-1 min-w-0">
         <!-- Platform Icon (Only shown in Unified Chat View) -->
         <span v-if="props.showPlatformIcon" class="inline-flex items-center mr-1.5 align-[-0.1em]">
-          <Twitch v-if="props.message.platform === 'twitch'" class="w-3 h-3 text-[#9146FF]" />
+          <TwitchIcon v-if="props.message.platform === 'twitch'" class="w-3 h-3 text-[#9146FF]" />
           <KickIcon
             v-else-if="props.message.platform === 'kick'"
             :size="12"
