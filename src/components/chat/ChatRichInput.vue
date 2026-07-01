@@ -2,10 +2,11 @@
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import EmotePicker from "./EmotePicker.vue";
 import type { PickerEmote } from "@/composables/useRecentEmotes";
+import { type EmoteData } from "@/composables/useEmotes";
 
 const props = defineProps<{
   modelValue: string;
-  emotes: Map<string, string>;
+  emotes: Map<string, EmoteData>;
   placeholder?: string;
   disabled?: boolean;
 }>();
@@ -133,8 +134,10 @@ function generateHtmlFromText(text: string): string {
   let html = "";
   for (const word of words) {
     if (word.trim() && props.emotes.has(word)) {
-      const url = props.emotes.get(word);
-      html += `<img src="${url}" data-emote-name="${word}" alt="${word}" class="inline-block h-[1.5em] align-middle mx-[2px]" contenteditable="false">`;
+      const url = props.emotes.get(word)?.url;
+      if (url) {
+        html += `<img src="${url}" data-emote-name="${word}" alt="${word}" class="inline-block h-[1.5em] align-middle mx-[2px]" contenteditable="false">`;
+      }
     } else {
       html += word
         .replace(/&/g, "&amp;")

@@ -196,7 +196,16 @@
     "loginPrompt": "登录以互动",
     "loginPromptTwitch": "连接您的 Twitch 帐户以在此频道中发送消息。",
     "loginPromptKick": "连接您的 Kick 帐户以在此频道中发送消息。",
-    "connectAction": "连接"
+    "connectAction": "连接",
+    "emotes": {
+      "searchEmote": "搜索表情...",
+      "noEmotesFound": "未找到表情",
+      "tabs": {
+        "recent": "最近",
+        "global": "全局",
+        "channel": "频道"
+      }
+    }
   },
   "common": {
     "close": "关闭",

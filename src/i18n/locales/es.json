@@ -196,7 +196,16 @@
     "loginPrompt": "Inicia sesión para interactuar",
     "loginPromptTwitch": "Conecta tu cuenta de Twitch para enviar mensajes en este canal.",
     "loginPromptKick": "Conecta tu cuenta de Kick para enviar mensajes en este canal.",
-    "connectAction": "Conectar"
+    "connectAction": "Conectar",
+    "emotes": {
+      "searchEmote": "Buscar emote...",
+      "noEmotesFound": "No se encontraron emotes",
+      "tabs": {
+        "recent": "Recientes",
+        "global": "Globales",
+        "channel": "Canal"
+      }
+    }
   },
   "common": {
     "close": "Cerrar",

@@ -278,8 +278,8 @@ describe("useEmotes", () => {
     expect(dict).toBeInstanceOf(Map);
 
     // To thoroughly test the filter, let's mock the internal Map if possible, or we can just rely on the contract.
-    for (const [_, url] of dict.entries()) {
-      expect(url).not.toContain("jtvnw.net");
+    for (const [_, data] of dict.entries()) {
+      expect(data.url).not.toContain("jtvnw.net");
     }
   });
 
@@ -309,6 +309,6 @@ describe("useEmotes", () => {
 
     // Assert
     expect(dict.has("Kappa")).toBe(true);
-    expect(dict.get("Kappa")).toContain("jtvnw.net");
+    expect(dict.get("Kappa")?.url).toContain("jtvnw.net");
   });
 });

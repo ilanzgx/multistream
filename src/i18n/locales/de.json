@@ -196,7 +196,16 @@
     "loginPrompt": "Melden Sie sich an, um zu interagieren",
     "loginPromptTwitch": "Verbinden Sie Ihr Twitch-Konto, um Nachrichten in diesem Kanal zu senden.",
     "loginPromptKick": "Verbinden Sie Ihr Kick-Konto, um Nachrichten in diesem Kanal zu senden.",
-    "connectAction": "Verbinden"
+    "connectAction": "Verbinden",
+    "emotes": {
+      "searchEmote": "Emote suchen...",
+      "noEmotesFound": "Keine Emotes gefunden",
+      "tabs": {
+        "recent": "Kürzlich",
+        "global": "Global",
+        "channel": "Kanal"
+      }
+    }
   },
   "common": {
     "close": "Schließen",

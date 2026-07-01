@@ -7,12 +7,16 @@ import {
   type PickerEmote,
   type EmoteProvider,
 } from "@/composables/useRecentEmotes";
+import { type EmoteData } from "@/composables/useEmotes";
 import { useVirtualList } from "@vueuse/core";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useI18n } from "vue-i18n";
+
+const { t } = useI18n();
 
 const props = defineProps<{
-  emotes: Map<string, string>;
+  emotes: Map<string, EmoteData>;
 }>();
 
 const emit = defineEmits<{
@@ -61,14 +65,13 @@ onUnmounted(() => {
 
 const parsedEmotes = computed<PickerEmote[]>(() => {
   const result: PickerEmote[] = [];
-  props.emotes.forEach((url, code) => {
-    let provider: EmoteProvider = "channel";
-    if (url.includes("7tv.app")) {
-      provider = "7tv";
-    } else if (url.includes("betterttv.net")) {
-      provider = "bttv";
-    }
-    result.push({ id: `${provider}-${code}`, name: code, url, provider });
+  props.emotes.forEach((data, code) => {
+    result.push({
+      id: `${data.provider}-${code}`,
+      name: code,
+      url: data.url,
+      provider: data.provider,
+    });
   });
   return result;
 });
@@ -102,9 +105,15 @@ const {
   list: virtualGrid,
   containerProps,
   wrapperProps,
+  scrollTo,
 } = useVirtualList(chunkedEmotes, {
   itemHeight: ROW_HEIGHT,
 });
+
+const setTab = (tab: EmoteProvider | "recent") => {
+  activeTab.value = tab;
+  scrollTo(0);
+};
 
 const handleSelect = (emote: PickerEmote) => {
   addRecent(emote);
@@ -124,13 +133,13 @@ const handleOpenChange = (open: boolean) => {
   }
 };
 
-const tabs: { value: EmoteProvider | "recent"; label: string }[] = [
-  { value: "recent", label: "Recentes" },
-  { value: "channel", label: "Canal" },
+const tabs = computed<{ value: EmoteProvider | "recent"; label: string }[]>(() => [
+  { value: "recent", label: t("chat.emotes.tabs.recent") },
+  { value: "global", label: t("chat.emotes.tabs.global") },
+  { value: "channel", label: t("chat.emotes.tabs.channel") },
   { value: "bttv", label: "BTTV" },
   { value: "7tv", label: "7TV" },
-  { value: "global", label: "Globais" },
-];
+]);
 </script>
 
 <template>
@@ -156,12 +165,12 @@ const tabs: { value: EmoteProvider | "recent"; label: string }[] = [
           align="end"
           :collision-boundary="boundary"
           :collision-padding="8"
-          :style="{ maxWidth: 'var(--radix-popover-content-available-width, 288px)' }"
+          :style="{ maxWidth: 'var(--reka-popover-content-available-width, 288px)' }"
         >
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Buscar emote..."
+            :placeholder="t('chat.emotes.searchEmote')"
             class="w-full bg-[#1a1d24] border border-[#2a2d33] rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#9146FF]"
             autofocus
           />
@@ -178,7 +187,7 @@ const tabs: { value: EmoteProvider | "recent"; label: string }[] = [
                   ? 'bg-[#2a2d33] text-white'
                   : 'text-gray-400 hover:text-gray-300'
               "
-              @click="activeTab = tab.value"
+              @click="setTab(tab.value)"
             >
               {{ tab.label }}
             </button>
@@ -224,7 +233,7 @@ const tabs: { value: EmoteProvider | "recent"; label: string }[] = [
               v-if="filteredEmotes.length === 0"
               class="flex items-center justify-center h-full text-xs text-gray-500"
             >
-              Nenhum emote encontrado
+              {{ t("chat.emotes.noEmotesFound") }}
             </div>
           </div>
         </PopoverContent>
