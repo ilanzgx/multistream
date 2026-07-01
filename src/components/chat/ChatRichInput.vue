@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from "vue";
+import EmotePicker from "./EmotePicker.vue";
+import type { PickerEmote } from "@/composables/useRecentEmotes";
 
 const props = defineProps<{
   modelValue: string;
@@ -14,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const editorRef = ref<HTMLElement | null>(null);
+const selectionOffsets = ref({ start: 0, end: 0 });
 
 function extractPlainText(node: Node): string {
   let text = "";
@@ -36,17 +39,24 @@ function extractPlainText(node: Node): string {
   return text.replace(/\n/g, ""); // Twitch chat doesn't support multiline, and stripping newlines fixes the trailing <br> issue
 }
 
-function getCaretCharacterOffsetWithin(element: HTMLElement) {
-  let caretOffset = 0;
+function getSelectionOffsetsWithin(element: HTMLElement) {
+  let start = 0;
+  let end = 0;
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0);
-    const preCaretRange = range.cloneRange();
-    preCaretRange.selectNodeContents(element);
-    preCaretRange.setEnd(range.endContainer, range.endOffset);
-    caretOffset = extractPlainText(preCaretRange.cloneContents()).length;
+
+    const preStartRange = range.cloneRange();
+    preStartRange.selectNodeContents(element);
+    preStartRange.setEnd(range.startContainer, range.startOffset);
+    start = extractPlainText(preStartRange.cloneContents()).length;
+
+    const preEndRange = range.cloneRange();
+    preEndRange.selectNodeContents(element);
+    preEndRange.setEnd(range.endContainer, range.endOffset);
+    end = extractPlainText(preEndRange.cloneContents()).length;
   }
-  return caretOffset;
+  return { start, end };
 }
 
 function setCaretPosition(element: HTMLElement, offset: number) {
@@ -143,9 +153,9 @@ function onInput() {
 
   const expectedHtml = generateHtmlFromText(plainText);
   if (editorRef.value.innerHTML !== expectedHtml) {
-    const caretOffset = getCaretCharacterOffsetWithin(editorRef.value);
+    const offsets = getSelectionOffsetsWithin(editorRef.value);
     editorRef.value.innerHTML = expectedHtml;
-    setCaretPosition(editorRef.value, caretOffset);
+    setCaretPosition(editorRef.value, offsets.end);
   }
 }
 
@@ -229,11 +239,57 @@ function handleSelectionChange() {
       img.classList.remove("bg-blue-500/40");
     }
   });
+
+  // Track caret offset when editor is focused
+  if (editorRef.value && editorRef.value.contains(sel.anchorNode)) {
+    selectionOffsets.value = getSelectionOffsetsWithin(editorRef.value);
+  }
+}
+
+function handleEmoteSelect(emote: PickerEmote) {
+  const currentText = props.modelValue || "";
+
+  // Need spaces around the emote unless it's at start/end
+  let insertText = emote.name;
+
+  // Add space before if needed
+  if (selectionOffsets.value.start > 0 && currentText[selectionOffsets.value.start - 1] !== " ") {
+    insertText = " " + insertText;
+  }
+
+  // Add space after if needed
+  if (
+    selectionOffsets.value.end < currentText.length &&
+    currentText[selectionOffsets.value.end] !== " "
+  ) {
+    insertText = insertText + " ";
+  } else if (selectionOffsets.value.end === currentText.length) {
+    insertText = insertText + " "; // always add a space at the end to make it easier to continue typing
+  }
+
+  const newText =
+    currentText.slice(0, selectionOffsets.value.start) +
+    insertText +
+    currentText.slice(selectionOffsets.value.end);
+
+  emit("update:modelValue", newText);
+
+  if (editorRef.value) {
+    editorRef.value.innerHTML = generateHtmlFromText(newText);
+    const newOffset = selectionOffsets.value.start + insertText.length;
+    selectionOffsets.value = { start: newOffset, end: newOffset };
+
+    // Focus back and set caret
+    setTimeout(() => {
+      editorRef.value?.focus();
+      setCaretPosition(editorRef.value!, newOffset);
+    }, 0);
+  }
 }
 
 onMounted(() => {
   if (props.modelValue && editorRef.value) {
-    editorRef.value.innerText = props.modelValue;
+    editorRef.value.innerHTML = generateHtmlFromText(props.modelValue);
   }
   document.addEventListener("selectionchange", handleSelectionChange);
 });
@@ -263,7 +319,7 @@ export default {
     <div
       ref="editorRef"
       contenteditable="true"
-      class="flex-1 w-full min-w-0 rounded-md border border-[#2a2d33] bg-[#1a1d24] px-3 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 disabled:opacity-50 break-words min-h-[38px] max-h-[120px] overflow-y-auto whitespace-pre-wrap"
+      class="flex-1 w-full min-w-0 rounded-md border border-[#2a2d33] bg-[#1a1d24] pl-3 pr-10 py-2 text-sm text-gray-200 focus:outline-none focus:ring-2 disabled:opacity-50 break-words min-h-[38px] max-h-[120px] overflow-y-auto whitespace-pre-wrap"
       :class="[{ 'opacity-50 pointer-events-none': disabled }, $attrs.class]"
       role="textbox"
       aria-multiline="true"
@@ -273,6 +329,10 @@ export default {
       @copy="onCopy"
       @cut="onCut"
     ></div>
+
+    <div class="absolute right-1 top-1/2 -translate-y-1/2">
+      <EmotePicker :emotes="emotes" @select="handleEmoteSelect" />
+    </div>
   </div>
 </template>
 
