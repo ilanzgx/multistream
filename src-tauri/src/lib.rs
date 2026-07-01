@@ -87,7 +87,7 @@ const METRICS: &str = include_str!("core/metrics.bin");
 // dont touch this, unless you know what you are doing
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default();
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_store::Builder::new().build());
 
     // load plugin_single_instance
     #[cfg(desktop)]
