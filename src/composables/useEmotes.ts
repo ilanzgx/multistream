@@ -2,6 +2,7 @@ import { ref, reactive } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 
 export type EmoteMap = Map<string, string>;
+export type EmoteData = { url: string; provider: "global" | "channel" | "7tv" | "bttv" };
 
 export type ParsedToken =
   | { type: "text"; content: string }
@@ -351,29 +352,41 @@ const _useEmotes = () => {
   const getEmoteDictionary = (
     channel: string,
     platform: "twitch" | "kick"
-  ): Map<string, string> => {
-    const dict = new Map<string, string>();
+  ): Map<string, EmoteData> => {
+    const dict = new Map<string, EmoteData>();
 
     if (platform === "twitch") {
-      globalEmotes.value.forEach((url, code) => dict.set(code, url));
+      globalEmotes.value.forEach((url, code) => dict.set(code, { url, provider: "global" }));
       const channelMap = channelEmotes[channel];
       if (channelMap) {
-        channelMap.forEach((url, code) => dict.set(code, url));
+        channelMap.forEach((url, code) => dict.set(code, { url, provider: "channel" }));
       }
     } else if (platform === "kick") {
-      globalEmotes.value.forEach((url, code) => dict.set(code, url));
+      globalEmotes.value.forEach((url, code) => {
+        if (!url.includes("jtvnw.net")) {
+          dict.set(code, { url, provider: "global" });
+        }
+      });
       kickGlobalEmotes.value.forEach((id, code) => {
-        dict.set(code, `https://files.kick.com/emotes/${id}/fullsize`);
+        dict.set(code, { url: `https://files.kick.com/emotes/${id}/fullsize`, provider: "global" });
       });
       const kickChannelMap = kickEmotes[channel];
       if (kickChannelMap) {
         kickChannelMap.forEach((id, code) => {
-          dict.set(code, `https://files.kick.com/emotes/${id}/fullsize`);
+          dict.set(code, {
+            url: `https://files.kick.com/emotes/${id}/fullsize`,
+            provider: "channel",
+          });
         });
       }
       const thirdPartyMap = channelEmotes[channel];
       if (thirdPartyMap) {
-        thirdPartyMap.forEach((url, code) => dict.set(code, url));
+        thirdPartyMap.forEach((url, code) => {
+          let provider: "7tv" | "bttv" | "channel" = "channel";
+          if (url.includes("7tv.app")) provider = "7tv";
+          else if (url.includes("betterttv.net")) provider = "bttv";
+          dict.set(code, { url, provider });
+        });
       }
     }
 

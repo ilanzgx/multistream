@@ -2,9 +2,13 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "enables the default permissions",
-  "windows": ["*"],
+  "windows": [
+    "*"
+  ],
   "remote": {
-    "urls": ["http://localhost:*"]
+    "urls": [
+      "http://localhost:*"
+    ]
   },
   "permissions": [
     "core:default",
@@ -22,15 +26,26 @@
     {
       "identifier": "http:allow-fetch",
       "allow": [
-        { "url": "https://api.twitch.tv/**" },
-        { "url": "https://gql.twitch.tv/**" },
-        { "url": "https://id.twitch.tv/**" },
-        { "url": "https://kick.com/api/**" },
-        { "url": "https://kick.com/stream/**" }
+        {
+          "url": "https://api.twitch.tv/**"
+        },
+        {
+          "url": "https://gql.twitch.tv/**"
+        },
+        {
+          "url": "https://id.twitch.tv/**"
+        },
+        {
+          "url": "https://kick.com/api/**"
+        },
+        {
+          "url": "https://kick.com/stream/**"
+        }
       ]
     },
     "shell:allow-open",
     "deep-link:default",
-    "deep-link:allow-get-current"
+    "deep-link:allow-get-current",
+    "store:default"
   ]
 }

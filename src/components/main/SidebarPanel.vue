@@ -289,7 +289,7 @@ onUnmounted(() => {
       </div>
 
       <!-- chat / transcript area -->
-      <div class="relative flex-1 overflow-hidden flex flex-col">
+      <div id="chat-sidebar-bounds" class="relative flex-1 overflow-hidden flex flex-col">
         <div v-show="sidebarMode === 'chat'" class="absolute inset-0">
           <KickChat
             v-for="stream in streams.filter((s) => s.platform === 'kick')"
