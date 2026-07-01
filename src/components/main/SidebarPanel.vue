@@ -153,7 +153,7 @@ onUnmounted(() => {
 
 <template>
   <aside
-    class="shadow-lg transition-all duration-200 flex flex-col overflow-hidden"
+    class="shadow-lg transition-all duration-200 flex flex-col overflow-hidden border-l border-[#2a2d33]"
     :class="sidebarOpen ? 'w-80' : 'w-0'"
   >
     <div

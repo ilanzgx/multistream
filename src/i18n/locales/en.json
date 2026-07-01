@@ -299,5 +299,11 @@
   "webBanner": {
     "title": "Multistream runs better on the desktop app.",
     "button": "Download"
+  },
+  "sidebar": {
+    "followedChannels": "Followed Channels",
+    "all": "All",
+    "loginTitle": "Connect your account",
+    "loginSubtitle": "See the channels you follow"
   }
 }

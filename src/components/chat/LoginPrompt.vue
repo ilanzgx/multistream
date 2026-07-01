@@ -6,7 +6,9 @@ defineProps<{
   platform: "twitch" | "kick";
   loading?: boolean;
   position?: "top" | "bottom";
+  titleKey?: string;
   subtitleKey?: string;
+  compact?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -16,19 +18,32 @@ const emit = defineEmits<{
 
 <template>
   <div
-    class="p-3 bg-[#14161a] shrink-0 flex items-center justify-between gap-3"
-    :class="position === 'top' ? 'border-b border-[#2a2d33]' : 'border-t border-[#2a2d33]'"
+    class="bg-[#14161a] shrink-0 flex items-center justify-between"
+    :class="[
+      position === 'top' ? 'border-b border-[#2a2d33]' : 'border-t border-[#2a2d33]',
+      compact ? 'p-2 gap-2' : 'p-3 gap-3',
+    ]"
   >
-    <div class="flex items-center gap-2.5 overflow-hidden">
+    <div class="flex items-center overflow-hidden" :class="compact ? 'gap-1.5' : 'gap-2.5'">
       <div
-        class="w-8 h-8 rounded-lg bg-[#1e2127] border border-[#2a2d33] flex items-center justify-center shrink-0"
+        class="rounded-lg bg-[#1e2127] border border-[#2a2d33] flex items-center justify-center shrink-0"
+        :class="compact ? 'w-6 h-6' : 'w-8 h-8'"
       >
-        <TwitchIcon v-if="platform === 'twitch'" :size="16" :style="{ color: '#9146FF' }" />
-        <KickIcon v-else :size="16" :style="{ color: '#53fc18' }" />
+        <TwitchIcon
+          v-if="platform === 'twitch'"
+          :size="compact ? 12 : 16"
+          :style="{ color: '#9146FF' }"
+        />
+        <KickIcon v-else :size="compact ? 12 : 16" :style="{ color: '#53fc18' }" />
       </div>
       <div class="flex flex-col overflow-hidden leading-tight">
-        <span class="text-xs font-medium text-gray-200 truncate">{{ $t("chat.loginPrompt") }}</span>
-        <span class="text-[10px] text-gray-400 truncate mt-0.5">
+        <span
+          class="font-medium text-gray-200 truncate"
+          :class="compact ? 'text-[11px]' : 'text-xs'"
+        >
+          {{ titleKey ? $t(titleKey) : $t("chat.loginPrompt") }}
+        </span>
+        <span class="text-gray-400 truncate mt-0.5" :class="compact ? 'text-[9px]' : 'text-[10px]'">
           {{
             subtitleKey
               ? $t(subtitleKey)
@@ -42,8 +57,9 @@ const emit = defineEmits<{
     <Button
       variant="outline"
       size="sm"
-      class="h-8 px-3.5 text-xs font-medium transition-all shrink-0 border-[#2a2d33] bg-[#1e2127]"
+      class="font-medium transition-all shrink-0 border-[#2a2d33] bg-[#1e2127]"
       :class="[
+        compact ? 'h-6 px-2 text-[10px]' : 'h-8 px-3.5 text-xs',
         platform === 'twitch'
           ? 'text-[#bf94ff] hover:bg-[#9146FF]/10 hover:text-white hover:border-[#9146FF]/40'
           : 'text-[#53fc18] hover:bg-[#53fc18]/10 hover:text-white hover:border-[#53fc18]/40',

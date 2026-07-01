@@ -16,6 +16,8 @@ export interface LiveStatus {
   viewerCount?: number;
   title?: string;
   category?: string;
+  avatarUrl?: string;
+  thumbnailUrl?: string;
 }
 
 export interface SuggestedStream {
@@ -94,6 +96,7 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
           viewerCount: userData.stream.viewersCount,
           title: userData.stream.title,
           category: userData.stream.game?.displayName,
+          thumbnailUrl: `https://static-cdn.jtvnw.net/previews-ttv/live_user_${ch.toLowerCase()}-320x180.jpg`,
         };
       }
     });
@@ -237,9 +240,14 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap | null> {
           viewerCount: data.livestream.viewer_count,
           title: data.livestream.session_title,
           category: data.livestream.categories?.[0]?.name,
+          avatarUrl: data.user?.profile_pic,
+          thumbnailUrl: data.livestream.thumbnail?.url || data.livestream.thumbnail?.src,
         };
       } else {
-        result[key] = { isLive: false };
+        result[key] = {
+          isLive: false,
+          avatarUrl: data?.user?.profile_pic,
+        };
       }
     } catch {
       failedCount++;

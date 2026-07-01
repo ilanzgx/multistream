@@ -3,13 +3,16 @@ use tauri::tray::TrayIconBuilder;
 use tauri::window::Color;
 use tauri::{Emitter, Manager};
 
+mod models;
+
 mod audio;
 use audio::transcriber::TranscriptionState;
 
 mod twitch;
 use twitch::commands::{
-    twitch_cancel_login, twitch_get_auth_state, twitch_get_connection_state, twitch_get_messages,
-    twitch_login, twitch_logout, twitch_send_message, twitch_set_channels,
+    twitch_cancel_login, twitch_get_auth_state, twitch_get_connection_state,
+    twitch_get_followed_streams, twitch_get_messages, twitch_login, twitch_logout,
+    twitch_send_message, twitch_set_channels,
 };
 use twitch::state::TwitchState;
 
@@ -133,6 +136,7 @@ pub fn run() {
             kick_get_auth_state,
             kick_send_message,
             kick_set_channels,
+            twitch_get_followed_streams,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
