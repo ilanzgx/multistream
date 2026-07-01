@@ -171,7 +171,7 @@ const tabs = computed<{ value: EmoteProvider | "recent"; label: string }[]>(() =
             v-model="searchQuery"
             type="text"
             :placeholder="t('chat.emotes.searchEmote')"
-            class="w-full bg-[#1a1d24] border border-[#2a2d33] rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-[#9146FF]"
+            class="w-full bg-[#1a1d24] border border-[#2a2d33] rounded px-2 py-1.5 text-sm focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500/50 transition-colors"
             autofocus
           />
 

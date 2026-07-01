@@ -5,6 +5,7 @@ import { useEmotes } from "@/composables/useEmotes";
 import { Sword, Crown, Gem, Star } from "@lucide/vue";
 import TwitchIcon from "@/components/icons/TwitchIcon.vue";
 import KickIcon from "@/components/icons/KickIcon.vue";
+import { open as openUrl } from "@tauri-apps/plugin-shell";
 
 const props = withDefaults(
   defineProps<{
@@ -59,6 +60,14 @@ const parsedBadges = computed(() => {
 });
 
 const nameColor = computed(() => props.message.color || "#e5e7eb"); // Default to gray-200
+
+const handleLinkClick = async (url: string) => {
+  try {
+    await openUrl(url);
+  } catch (e) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+};
 </script>
 
 <template>
@@ -126,6 +135,13 @@ const nameColor = computed(() => props.message.color || "#e5e7eb"); // Default t
         <!-- Tokens -->
         <template v-for="(token, index) in parsedTokens" :key="index">
           <span v-if="token.type === 'text'">{{ token.content }}</span>
+          <a
+            v-else-if="token.type === 'link'"
+            :href="token.url"
+            class="text-blue-400 hover:text-blue-300 hover:underline transition-colors break-all cursor-pointer"
+            @click.prevent.stop="handleLinkClick(token.url)"
+            >{{ token.content }}</a
+          >
           <img
             v-else
             :src="token.content"

@@ -6,7 +6,8 @@ export type EmoteData = { url: string; provider: "global" | "channel" | "7tv" | 
 
 export type ParsedToken =
   | { type: "text"; content: string }
-  | { type: "emote"; content: string; code: string };
+  | { type: "emote"; content: string; code: string }
+  | { type: "link"; content: string; url: string };
 
 // --- 3rd Party API Interfaces ---
 interface SevenTvEmote {
@@ -38,7 +39,10 @@ interface BttvChannelResponse {
 
 type RawToken =
   | { type: "text"; content: string }
-  | { type: "emote"; content: string; code: string };
+  | { type: "emote"; content: string; code: string }
+  | { type: "link"; content: string; url: string };
+
+const URL_REGEX = /(?:https?:\/\/|www\.)[^\s]+/gi;
 
 const fetchTwitchId = async (username: string): Promise<string | null> => {
   try {
@@ -322,7 +326,54 @@ const _useEmotes = () => {
       }
     }
 
-    return mergedTokens;
+    const finalTokens: ParsedToken[] = [];
+
+    for (const t of mergedTokens) {
+      if (t.type === "text") {
+        let lastIndex = 0;
+        let match;
+        URL_REGEX.lastIndex = 0;
+
+        while ((match = URL_REGEX.exec(t.content)) !== null) {
+          let url = match[0];
+          const start = match.index;
+
+          const trailingPunctuationMatch = url.match(/[.,;:!?)]+$/);
+          if (trailingPunctuationMatch) {
+            let punct = trailingPunctuationMatch[0];
+            // Don't strip closing parenthesis if the URL contains an opening parenthesis (e.g. Wikipedia links)
+            if (punct.includes(")") && url.includes("(")) {
+              punct = punct.replace(/\)+$/, "");
+            }
+            const trailingLen = punct.length;
+            if (trailingLen > 0) {
+              url = url.substring(0, url.length - trailingLen);
+              URL_REGEX.lastIndex -= trailingLen;
+            }
+          }
+
+          if (start > lastIndex) {
+            finalTokens.push({ type: "text", content: t.content.substring(lastIndex, start) });
+          }
+
+          let href = url;
+          if (href.toLowerCase().startsWith("www.")) {
+            href = "https://" + href;
+          }
+
+          finalTokens.push({ type: "link", content: url, url: href });
+          lastIndex = URL_REGEX.lastIndex;
+        }
+
+        if (lastIndex < t.content.length) {
+          finalTokens.push({ type: "text", content: t.content.substring(lastIndex) });
+        }
+      } else {
+        finalTokens.push(t);
+      }
+    }
+
+    return finalTokens;
   };
 
   const encodeKickMessage = (text: string, channel: string): string => {
