@@ -8,6 +8,7 @@ import { useLiveStatus } from "./composables/useLiveStatus";
 import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
+import FollowedChannelsSidebar from "./components/main/FollowedChannelsSidebar.vue";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
 const StreamGrid = defineAsyncComponent(() => import("./components/main/StreamGrid.vue"));
 const EmptyState = defineAsyncComponent(() => import("./components/main/EmptyState.vue"));
@@ -218,6 +219,9 @@ onUnmounted(() => {
 
 <template>
   <div class="flex h-screen overflow-hidden bg-[#191b1f]">
+    <!-- left sidebar -->
+    <FollowedChannelsSidebar />
+
     <div class="flex flex-col flex-1 overflow-hidden relative">
       <div
         v-if="!isTauri() && !dismissedWebBanner"
