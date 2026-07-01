@@ -299,5 +299,11 @@
   "webBanner": {
     "title": "O Multistream roda melhor no app desktop.",
     "button": "Baixar"
+  },
+  "sidebar": {
+    "followedChannels": "Canais seguidos",
+    "all": "Todos",
+    "loginTitle": "Conecte sua conta",
+    "loginSubtitle": "Veja os canais que você segue"
   }
 }

@@ -299,5 +299,11 @@
   "webBanner": {
     "title": "Multistream работает лучше в десктопном приложении.",
     "button": "Скачать"
+  },
+  "sidebar": {
+    "followedChannels": "Отслеживаемые каналы",
+    "all": "Все",
+    "loginTitle": "Подключите аккаунт",
+    "loginSubtitle": "Смотрите каналы, на которые вы подписаны"
   }
 }

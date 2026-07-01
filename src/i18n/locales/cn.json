@@ -299,5 +299,11 @@
   "webBanner": {
     "title": "Multistream 在桌面应用上运行得更好。",
     "button": "下载"
+  },
+  "sidebar": {
+    "followedChannels": "已关注频道",
+    "all": "全部",
+    "loginTitle": "连接您的账户",
+    "loginSubtitle": "查看您关注的频道"
   }
 }

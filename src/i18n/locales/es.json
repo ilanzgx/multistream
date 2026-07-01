@@ -299,5 +299,11 @@
   "webBanner": {
     "title": "Multistream funciona mejor en la app de escritorio.",
     "button": "Descargar"
+  },
+  "sidebar": {
+    "followedChannels": "Canales seguidos",
+    "all": "Todos",
+    "loginTitle": "Conecta tu cuenta",
+    "loginSubtitle": "Mira los canales que sigues"
   }
 }
