@@ -5,7 +5,7 @@ use super::error::TwitchError;
 use super::state::TwitchAuthInfo;
 
 pub const CLIENT_ID: &str = "y0twwqcd7k38sf5587sxoi5ca9ghid";
-const SCOPES: &str = "chat:read chat:edit";
+const SCOPES: &str = "chat:read chat:edit user:read:follows";
 const DEVICE_URL: &str = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL: &str = "https://id.twitch.tv/oauth2/token";
 const VALIDATE_URL: &str = "https://id.twitch.tv/oauth2/validate";

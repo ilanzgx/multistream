@@ -1,3 +1,5 @@
+use crate::models::FollowedChannel;
+use serde_json::Value;
 use std::collections::HashSet;
 
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -282,4 +284,200 @@ async fn try_refresh_if_needed(
 
 pub fn init_stored_auth(app: &AppHandle) -> Option<TwitchAuthInfo> {
     oauth::load_auth(app)
+}
+
+#[tauri::command]
+pub async fn twitch_get_followed_streams(
+    app: AppHandle,
+    state: State<'_, TwitchState>,
+) -> Result<Vec<FollowedChannel>, TwitchError> {
+    let auth = {
+        let auth_guard = state.auth.lock().await;
+        auth_guard.clone()
+    };
+
+    let auth =
+        auth.ok_or_else(|| TwitchError::OAuth("Not authenticated with Twitch".to_string()))?;
+
+    let http = reqwest::Client::builder()
+        .use_rustls_tls()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(TwitchError::Http)?;
+
+    let auth = try_refresh_if_needed(&app, auth, &state, &http).await?;
+
+    let streams_url = format!(
+        "https://api.twitch.tv/helix/streams/followed?user_id={}&first=100",
+        auth.user_id
+    );
+
+    let mut live_streams = Vec::new();
+    let mut after = String::new();
+
+    loop {
+        let url = if after.is_empty() {
+            streams_url.clone()
+        } else {
+            format!("{}&after={}", streams_url, after)
+        };
+
+        let res = http
+            .get(&url)
+            .bearer_auth(&auth.access_token)
+            .header("Client-Id", super::oauth::CLIENT_ID)
+            .send()
+            .await
+            .map_err(TwitchError::Http)?;
+
+        if !res.status().is_success() {
+            if res.status() == reqwest::StatusCode::UNAUTHORIZED
+                || res.status() == reqwest::StatusCode::FORBIDDEN
+            {
+                *state.auth.lock().await = None;
+                oauth::clear_auth(&app);
+                let _ = app.emit("twitch-auth-expired", ());
+                let _ = app.emit(
+                    "twitch-auth-changed",
+                    super::state::AuthState {
+                        authenticated: false,
+                        username: None,
+                    },
+                );
+            }
+            return Err(TwitchError::OAuth(format!(
+                "Failed to fetch streams: {}",
+                res.status()
+            )));
+        }
+
+        let json: Value = res.json().await.map_err(TwitchError::Http)?;
+
+        if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
+            if data.is_empty() {
+                break;
+            }
+            for item in data {
+                live_streams.push(item.clone());
+            }
+        } else {
+            break;
+        }
+
+        if let Some(cursor) = json
+            .get("pagination")
+            .and_then(|p| p.get("cursor"))
+            .and_then(|c| c.as_str())
+        {
+            after = cursor.to_string();
+        } else {
+            break;
+        }
+    }
+
+    let mut avatars = std::collections::HashMap::new();
+    for chunk in live_streams.chunks(100) {
+        let mut users_url = "https://api.twitch.tv/helix/users?".to_string();
+        for (i, item) in chunk.iter().enumerate() {
+            if let Some(user_id) = item.get("user_id").and_then(|s| s.as_str()) {
+                if i > 0 {
+                    users_url.push('&');
+                }
+                users_url.push_str(&format!("id={}", user_id));
+            }
+        }
+
+        if users_url.ends_with('?') {
+            continue;
+        }
+
+        let res = http
+            .get(&users_url)
+            .bearer_auth(&auth.access_token)
+            .header("Client-Id", super::oauth::CLIENT_ID)
+            .send()
+            .await;
+
+        if let Ok(r) = res {
+            if r.status().is_success() {
+                if let Ok(json) = r.json::<Value>().await {
+                    if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
+                        for item in data {
+                            if let (Some(id), Some(avatar)) = (
+                                item.get("id").and_then(|s| s.as_str()),
+                                item.get("profile_image_url").and_then(|s| s.as_str()),
+                            ) {
+                                avatars.insert(id.to_string(), avatar.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let mut result = Vec::new();
+    for live_info in live_streams {
+        let id = live_info
+            .get("user_id")
+            .and_then(|s| s.as_str())
+            .unwrap_or_default()
+            .to_string();
+        let name = live_info
+            .get("user_name")
+            .and_then(|s| s.as_str())
+            .unwrap_or_default()
+            .to_string();
+        let login = live_info
+            .get("user_login")
+            .and_then(|s| s.as_str())
+            .unwrap_or_default()
+            .to_string();
+
+        let is_live = true;
+        let viewer_count = live_info.get("viewer_count").and_then(|v| v.as_u64());
+        let game = live_info
+            .get("game_name")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        let mut thumbnail_url = live_info
+            .get("thumbnail_url")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        if let Some(url) = &mut thumbnail_url {
+            *url = url.replace("{width}", "320").replace("{height}", "180");
+        }
+
+        let title = live_info
+            .get("title")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let avatar_url = avatars.get(&id).cloned().unwrap_or_default();
+
+        result.push(FollowedChannel {
+            id: login,
+            platform: "twitch".to_string(),
+            display_name: name,
+            avatar_url,
+            is_live,
+            viewer_count,
+            game,
+            thumbnail_url,
+            title,
+        });
+    }
+
+    result.sort_by(|a, b| {
+        b.viewer_count
+            .unwrap_or(0)
+            .cmp(&a.viewer_count.unwrap_or(0))
+            .then_with(|| {
+                a.display_name
+                    .to_lowercase()
+                    .cmp(&b.display_name.to_lowercase())
+            })
+    });
+
+    Ok(result)
 }
