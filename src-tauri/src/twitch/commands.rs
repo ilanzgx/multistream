@@ -305,7 +305,23 @@ pub async fn twitch_get_followed_streams(
         .build()
         .map_err(TwitchError::Http)?;
 
-    let auth = try_refresh_if_needed(&app, auth, &state, &http).await?;
+    let auth = match try_refresh_if_needed(&app, auth, &state, &http).await {
+        Ok(auth) => auth,
+        Err(TwitchError::TokenRefreshFailed) => {
+            *state.auth.lock().await = None;
+            oauth::clear_auth(&app);
+            let _ = app.emit("twitch-auth-expired", ());
+            let _ = app.emit(
+                "twitch-auth-changed",
+                super::state::AuthState {
+                    authenticated: false,
+                    username: None,
+                },
+            );
+            return Err(TwitchError::TokenRefreshFailed);
+        }
+        Err(e) => return Err(e),
+    };
 
     let streams_url = format!(
         "https://api.twitch.tv/helix/streams/followed?user_id={}&first=100",
@@ -331,9 +347,7 @@ pub async fn twitch_get_followed_streams(
             .map_err(TwitchError::Http)?;
 
         if !res.status().is_success() {
-            if res.status() == reqwest::StatusCode::UNAUTHORIZED
-                || res.status() == reqwest::StatusCode::FORBIDDEN
-            {
+            if res.status() == reqwest::StatusCode::UNAUTHORIZED {
                 *state.auth.lock().await = None;
                 oauth::clear_auth(&app);
                 let _ = app.emit("twitch-auth-expired", ());

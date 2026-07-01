@@ -157,7 +157,7 @@ const togglePlatform = () => {
                   <img
                     :src="
                       channel.avatarUrl ||
-                      `https://ui-avatars.com/api/?name=${channel.displayName}&background=random`
+                      `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.displayName)}&background=random`
                     "
                     class="w-7 h-7 rounded-full border border-[#2a2d33] object-cover"
                   />

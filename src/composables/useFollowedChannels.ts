@@ -37,20 +37,22 @@ const _useFollowedChannels = () => {
     if (!kickAuthenticated.value) return [];
 
     const kickFavs = favorites.value.filter((f) => f.platform === "kick");
-    return kickFavs.map((f) => {
-      const status = statuses.value[`kick:${f.channel.toLowerCase()}`];
-      return {
-        id: f.channel,
-        platform: "kick",
-        displayName: f.channel,
-        avatarUrl: status?.avatarUrl ?? "",
-        isLive: status?.isLive ?? false,
-        viewerCount: status?.viewerCount ?? 0,
-        title: status?.title,
-        game: status?.category,
-        thumbnailUrl: status?.thumbnailUrl,
-      };
-    });
+    return kickFavs
+      .map((f) => {
+        const status = statuses.value[`kick:${f.channel.toLowerCase()}`];
+        return {
+          id: f.channel,
+          platform: "kick" as const,
+          displayName: f.channel,
+          avatarUrl: status?.avatarUrl ?? "",
+          isLive: status?.isLive ?? false,
+          viewerCount: status?.viewerCount ?? 0,
+          title: status?.title,
+          game: status?.category,
+          thumbnailUrl: status?.thumbnailUrl,
+        };
+      })
+      .filter((channel) => channel.isLive);
   });
 
   const channels = computed<FollowedChannel[]>(() => {
