@@ -233,6 +233,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
         title: "TRIBOMINERA",
         viewerCount: 50000,
         category: "CS:GO",
+        thumbnailUrl: "https://static-cdn.jtvnw.net/previews-ttv/live_user_gaules-320x180.jpg",
       });
 
       expect(sut.statuses.value["kick:alanzoka"]).toEqual({
