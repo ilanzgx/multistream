@@ -361,7 +361,11 @@ const _useEmotes = () => {
         channelMap.forEach((url, code) => dict.set(code, url));
       }
     } else if (platform === "kick") {
-      globalEmotes.value.forEach((url, code) => dict.set(code, url));
+      globalEmotes.value.forEach((url, code) => {
+        if (!url.includes("jtvnw.net")) {
+          dict.set(code, url);
+        }
+      });
       kickGlobalEmotes.value.forEach((id, code) => {
         dict.set(code, `https://files.kick.com/emotes/${id}/fullsize`);
       });
