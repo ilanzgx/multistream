@@ -10,6 +10,7 @@
     "tauri:dev": "bunx tauri dev",
     "tauri:build": "bunx tauri build",
     "version": "bun run scripts/sync-version.ts",
+    "typecheck": "bunx vue-tsc -b",
     "test": "vitest run --reporter=tree",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
@@ -38,6 +39,8 @@
     "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.0",
+    "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@tauri-apps/api": "^2.10.1",
@@ -70,5 +73,10 @@
       "eslint --fix"
     ],
     "*.rs": "cargo fmt --manifest-path src-tauri/Cargo.toml --"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
   }
 }

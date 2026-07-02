@@ -1,9 +1,9 @@
 #!/bin/sh
-echo "Building frontend..."
-bun run build
+echo "Type checking..."
+bunx vue-tsc -b
 
-echo "Running E2E tests..."
-bun run test:e2e
+echo "Running unit tests..."
+bun run test
 
 echo "Running cargo clippy..."
 cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
