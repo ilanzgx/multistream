@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, shallowRef } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
@@ -24,7 +24,7 @@ export function __test_resetKickChatState() {
   activeBroadcasters.clear();
 }
 
-const messages = ref<KickChatMessage[]>([]);
+const messages = shallowRef<KickChatMessage[]>([]);
 const connectionState = ref<"connected" | "disconnected" | "reconnecting">("disconnected");
 
 let isListening = false;
@@ -51,14 +51,16 @@ async function setupListeners() {
         m.username.toLowerCase() === msg.username.toLowerCase() &&
         m.message === msg.message
     );
+    const newMsgs = [...messages.value];
     if (pendingIdx !== -1) {
-      messages.value.splice(pendingIdx, 1);
+      newMsgs.splice(pendingIdx, 1);
     }
 
-    messages.value.push(msg);
-    if (messages.value.length > 500) {
-      messages.value.shift();
+    newMsgs.push(msg);
+    if (newMsgs.length > 500) {
+      newMsgs.shift();
     }
+    messages.value = newMsgs;
   }).catch(console.error);
 }
 
@@ -111,7 +113,9 @@ export function useKickChat(channelSlug: string) {
     if (idx !== -1) {
       const msg = messages.value[idx];
       if (!msg) return null;
-      messages.value.splice(idx, 1);
+      const newMsgs = [...messages.value];
+      newMsgs.splice(idx, 1);
+      messages.value = newMsgs;
       return msg.message;
     }
     return null;
@@ -122,7 +126,7 @@ export function useKickChat(channelSlug: string) {
   }
 
   function addLocalMessage(msg: KickChatMessage) {
-    messages.value.push(msg);
+    messages.value = [...messages.value, msg];
   }
 
   return {

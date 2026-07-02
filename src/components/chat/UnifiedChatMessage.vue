@@ -14,6 +14,7 @@ const props = withDefaults(
     channelAvatar?: string;
     compact?: boolean;
     showPlatformIcon?: boolean;
+    isPending?: boolean;
   }>(),
   {
     compact: false,
@@ -73,7 +74,7 @@ const handleLinkClick = async (url: string) => {
 <template>
   <div
     class="message-row relative px-3 py-1.5 hover:bg-white/[0.03] transition-colors"
-    :class="{ 'opacity-60': props.message.isPending }"
+    :class="{ 'opacity-60': props.isPending || props.message.isPending }"
   >
     <!-- Channel Color Left Indicator -->
     <div

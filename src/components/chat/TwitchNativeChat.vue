@@ -29,6 +29,8 @@ const channelMessages = computed(() =>
   [...messages.value].filter((m) => m.channel === props.channel).toReversed()
 );
 
+const channelEmotes = computed(() => getEmoteDictionary(props.channel, "twitch"));
+
 const newMessage = ref("");
 const isSending = ref(false);
 
@@ -103,6 +105,7 @@ onUnmounted(() => {
         v-for="msg in channelMessages"
         :key="msg.id"
         :message="msg"
+        :is-pending="msg.isPending"
         :channel-color="channelColor(msg.channel)"
         :channel-avatar="channelAvatars[msg.channel]"
         compact
@@ -114,7 +117,7 @@ onUnmounted(() => {
       <form class="flex items-end gap-2" @submit.prevent="handleSend">
         <ChatRichInput
           v-model="newMessage"
-          :emotes="getEmoteDictionary(channel, 'twitch')"
+          :emotes="channelEmotes"
           :placeholder="t('chat.sendPlaceholder')"
           :disabled="connectionState !== 'connected' || isSending"
           class="focus:ring-[#9146FF]"

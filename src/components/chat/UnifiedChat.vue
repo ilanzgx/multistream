@@ -94,6 +94,7 @@ watch(
           v-for="msg in reversedMessages"
           :key="msg.id"
           :message="msg"
+          :is-pending="msg.isPending"
           :channel-color="channelColor(msg.channel)"
           :channel-avatar="channelAvatars[msg.channel]"
           :show-platform-icon="true"

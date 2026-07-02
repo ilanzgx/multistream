@@ -1,4 +1,4 @@
-import { ref, reactive } from "vue";
+import { ref, shallowRef, shallowReactive, triggerRef } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 
 export type EmoteMap = Map<string, string>;
@@ -58,12 +58,12 @@ const fetchTwitchId = async (username: string): Promise<string | null> => {
 };
 
 const _useEmotes = () => {
-  const globalEmotes = ref<EmoteMap>(new Map());
-  const channelEmotes = reactive<Record<string, EmoteMap>>({});
+  const globalEmotes = shallowRef<EmoteMap>(new Map());
+  const channelEmotes = shallowReactive<Record<string, EmoteMap>>({});
   const globalEmotesLoaded = ref(false);
 
-  const kickEmotes = reactive<Record<string, Map<string, string>>>({});
-  const kickGlobalEmotes = ref<Map<string, string>>(new Map());
+  const kickEmotes = shallowReactive<Record<string, Map<string, string>>>({});
+  const kickGlobalEmotes = shallowRef<Map<string, string>>(new Map());
   const kickGlobalEmotesLoaded = ref(false);
 
   const fetchTwitchGlobal = async (): Promise<void> => {
@@ -110,6 +110,7 @@ const _useEmotes = () => {
   const loadGlobalEmotes = async (): Promise<void> => {
     if (globalEmotesLoaded.value) return;
     await Promise.allSettled([fetchTwitchGlobal(), fetch7TVGlobal(), fetchBTTVGlobal()]);
+    triggerRef(globalEmotes);
     globalEmotesLoaded.value = true;
   };
 
@@ -188,6 +189,7 @@ const _useEmotes = () => {
 
       kickGlobalEmotesLoaded.value = true;
       kickEmotes[channelSlug] = map;
+      triggerRef(kickGlobalEmotes);
     } catch (e) {
       console.error("Failed to load Kick channel emotes", e);
     }
@@ -211,6 +213,7 @@ const _useEmotes = () => {
     }
 
     await Promise.allSettled(promises);
+    channelEmotes[username] = new Map(map); // trigger shallowReactive
   };
 
   const parseMessage = (

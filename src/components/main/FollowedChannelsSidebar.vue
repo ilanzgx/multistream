@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { load } from "@tauri-apps/plugin-store";
 import {
   Tooltip,
@@ -21,6 +21,8 @@ const { channels, isLoading, platformFilter, refresh } = useFollowedChannels();
 const { addStream } = useStreams();
 const { t } = useI18n();
 const { authenticated: isTwitchAuth } = useTwitchAuth();
+
+const liveChannels = computed(() => channels.value.filter((c) => c.isLive));
 
 const openTwitchAuthDialog = () => {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "twitch-auth" }));
@@ -118,7 +120,7 @@ const togglePlatform = () => {
 
     <TooltipProvider :delay-duration="0">
       <div class="flex-1 overflow-y-auto py-1 flex flex-col gap-0.5 px-1.5 custom-scrollbar">
-        <template v-if="isLoading && channels.filter((c) => c.isLive).length === 0">
+        <template v-if="isLoading && liveChannels.length === 0">
           <div v-for="i in 10" :key="i" class="flex items-center gap-2 p-1 rounded-md">
             <div class="relative shrink-0">
               <Skeleton class="w-7 h-7 rounded-full border border-[#2a2d33] bg-[#1f2227]" />
@@ -142,11 +144,7 @@ const togglePlatform = () => {
           </div>
         </template>
 
-        <template
-          v-for="channel in channels.filter((c) => c.isLive)"
-          v-else
-          :key="channel.platform + '-' + channel.id"
-        >
+        <template v-for="channel in liveChannels" v-else :key="channel.platform + '-' + channel.id">
           <Tooltip>
             <TooltipTrigger as-child>
               <div

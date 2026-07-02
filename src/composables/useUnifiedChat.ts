@@ -1,4 +1,4 @@
-import { ref, computed, watch, onScopeDispose, reactive } from "vue";
+import { ref, shallowRef, computed, watch, onScopeDispose, reactive } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -48,7 +48,7 @@ const CHANNEL_PALETTE = [
 ] as const;
 
 const _useUnifiedChat = () => {
-  const messages = ref<UnifiedChatMessage[]>([]);
+  const messages = shallowRef<UnifiedChatMessage[]>([]);
   const connectionState = ref<ConnectionState>("disconnected");
   const channelAvatars = reactive<Record<string, string>>({});
   const { streams } = useStreams();
@@ -167,8 +167,12 @@ const _useUnifiedChat = () => {
         if (msg.id.startsWith("local-")) {
           msg.isPending = true;
           setTimeout(() => {
-            const found = messages.value.find((m) => m && m.id === msg.id);
-            if (found) found.isPending = false;
+            const idx = messages.value.findIndex((m) => m && m.id === msg.id);
+            if (idx !== -1) {
+              const newMsgs = [...messages.value];
+              newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
+              messages.value = newMsgs;
+            }
           }, 1000);
         }
 
@@ -176,10 +180,11 @@ const _useUnifiedChat = () => {
         if (!flushTimer) {
           flushTimer = setTimeout(() => {
             if (pendingMessages.length > 0) {
-              messages.value.push(...pendingMessages);
-              if (messages.value.length > MAX_FRONTEND_MESSAGES) {
-                messages.value.splice(0, messages.value.length - MAX_FRONTEND_MESSAGES);
+              const newMsgs = [...messages.value, ...pendingMessages];
+              if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
+                newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
               }
+              messages.value = newMsgs;
               pendingMessages = [];
             }
             flushTimer = null;
@@ -197,8 +202,12 @@ const _useUnifiedChat = () => {
         if (msg.id.startsWith("local-")) {
           msg.isPending = true;
           setTimeout(() => {
-            const found = messages.value.find((m) => m && m.id === msg.id);
-            if (found) found.isPending = false;
+            const idx = messages.value.findIndex((m) => m && m.id === msg.id);
+            if (idx !== -1) {
+              const newMsgs = [...messages.value];
+              newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
+              messages.value = newMsgs;
+            }
           }, 1000);
         } else {
           // De-duplicate local optimistic messages that were manually pushed by UnifiedChat.vue
@@ -211,7 +220,9 @@ const _useUnifiedChat = () => {
               m.message === msg.message
           );
           if (pendingIdx !== -1) {
-            messages.value.splice(pendingIdx, 1);
+            const newMsgs = [...messages.value];
+            newMsgs.splice(pendingIdx, 1);
+            messages.value = newMsgs;
           }
         }
 
@@ -219,10 +230,11 @@ const _useUnifiedChat = () => {
         if (!flushTimer) {
           flushTimer = setTimeout(() => {
             if (pendingMessages.length > 0) {
-              messages.value.push(...pendingMessages);
-              if (messages.value.length > MAX_FRONTEND_MESSAGES) {
-                messages.value.splice(0, messages.value.length - MAX_FRONTEND_MESSAGES);
+              const newMsgs = [...messages.value, ...pendingMessages];
+              if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
+                newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
               }
+              messages.value = newMsgs;
               pendingMessages = [];
             }
             flushTimer = null;
@@ -332,8 +344,10 @@ const _useUnifiedChat = () => {
     }
 
     if (lastIdx !== -1) {
-      const removed = messages.value.splice(lastIdx, 1)[0];
+      const newMsgs = [...messages.value];
+      const removed = newMsgs.splice(lastIdx, 1)[0];
       if (removed) {
+        messages.value = newMsgs;
         return removed.message;
       }
     }
@@ -358,8 +372,10 @@ const _useUnifiedChat = () => {
     }
 
     if (lastIdx !== -1) {
-      const removed = messages.value.splice(lastIdx, 1)[0];
+      const newMsgs = [...messages.value];
+      const removed = newMsgs.splice(lastIdx, 1)[0];
       if (removed) {
+        messages.value = newMsgs;
         return removed.message;
       }
     }

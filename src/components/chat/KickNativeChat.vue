@@ -38,6 +38,8 @@ const channelMessages = computed(() =>
     .toReversed()
 );
 
+const channelEmotes = computed(() => getEmoteDictionary(props.channel, "kick"));
+
 async function sendKickMessage(channel: string, message: string) {
   const pendingId = `pending-${Date.now()}`;
   const encodedMessage = encodeKickMessage(message, channel);
@@ -148,6 +150,7 @@ onUnmounted(async () => {
           color: msg.color ?? null,
           emotes: msg.emotes ?? null,
         }"
+        :is-pending="msg.isPending"
         :channel-color="'#53fc18'"
         compact
       />
@@ -165,7 +168,7 @@ onUnmounted(async () => {
       <form class="flex items-end gap-2" @submit.prevent="handleSend">
         <ChatRichInput
           v-model="newMessage"
-          :emotes="getEmoteDictionary(channel, 'kick')"
+          :emotes="channelEmotes"
           :placeholder="t('chat.sendPlaceholder')"
           :disabled="connectionState !== 'connected' || isSending"
           class="focus:ring-[#53fc18]"
