@@ -199,7 +199,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <Tabs v-if="isTauri()" v-model="sidebarMode" class="w-full">
+        <Tabs v-if="isTauri() && isSupported" v-model="sidebarMode" class="w-full">
           <TabsList class="grid w-full grid-cols-2 bg-[#1e2127]">
             <TabsTrigger
               value="chat"
