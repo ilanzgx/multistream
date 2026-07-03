@@ -46,6 +46,8 @@
     "shell:allow-open",
     "deep-link:default",
     "deep-link:allow-get-current",
-    "store:default"
+    "store:default",
+    "dialog:default",
+    "fs:default"
   ]
 }

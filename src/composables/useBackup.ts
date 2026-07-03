@@ -153,8 +153,40 @@ const _useBackup = () => {
     };
 
     const fileName = `multistream-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    const jsonString = JSON.stringify(backup, null, 2);
 
-    // Try HTML5 File System Access API first (supported by modern WebView2/Chromium)
+    // Use Tauri native save dialog and file system if running in desktop app
+    if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+      try {
+        const { save } = await import("@tauri-apps/plugin-dialog");
+        const { writeTextFile } = await import("@tauri-apps/plugin-fs");
+        const { downloadDir, join } = await import("@tauri-apps/api/path");
+
+        const dlDir = await downloadDir();
+        const initialPath = await join(dlDir, fileName);
+
+        const filePath = await save({
+          defaultPath: initialPath,
+          filters: [
+            {
+              name: "JSON",
+              extensions: ["json"],
+            },
+          ],
+        });
+
+        if (filePath) {
+          await writeTextFile(filePath, jsonString);
+          return true;
+        } else {
+          return false; // User cancelled
+        }
+      } catch (err: any) {
+        console.error("Tauri native save failed, falling back to legacy download:", err);
+      }
+    }
+
+    // Try HTML5 File System Access API next (supported by modern Chromium browsers)
     const hasSaveFilePicker = typeof window !== "undefined" && "showSaveFilePicker" in window;
     if (hasSaveFilePicker) {
       try {
@@ -170,7 +202,7 @@ const _useBackup = () => {
           ],
         });
         const writable = await handle.createWritable();
-        await writable.write(JSON.stringify(backup, null, 2));
+        await writable.write(jsonString);
         await writable.close();
         return true;
       } catch (err: any) {

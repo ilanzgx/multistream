@@ -90,9 +90,14 @@ const METRICS: &str = include_str!("core/metrics.bin");
 // dont touch this, unless you know what you are doing
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_store::Builder::new().build());
+    // 1. Initialize universal core plugins
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_store::Builder::new().build());
 
-    // load plugin_single_instance
+    // 2. Conditionally inject desktop-only plugins mid-chain
+    // This prevents compilation errors if the project targets mobile platforms later
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -102,7 +107,7 @@ pub fn run() {
         }));
     }
 
-    // load plugin_http, plugin_updater, plugin_process, plugin_localhost, plugin_notification, plugin_shell, plugin_deep_link
+    // 3. Chain the remaining cross-platform plugins and bind IPC commands
     builder
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_http::init())

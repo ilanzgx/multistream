@@ -145,25 +145,59 @@ const handleExport = async () => {
   }
 };
 
+const processImportContent = (content: string) => {
+  try {
+    const data = JSON.parse(content);
+    if (validateBackupData(data)) {
+      pendingBackupData.value = data;
+      showImportConfirm.value = true;
+    } else {
+      toast.error(t("settings.backup.importError"));
+    }
+  } catch (err) {
+    toast.error(t("settings.backup.importError"));
+  }
+};
+
+const handleImportClick = async () => {
+  if (isRunningInTauri && (window as any).__TAURI_INTERNALS__) {
+    try {
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const { readTextFile } = await import("@tauri-apps/plugin-fs");
+      const { downloadDir } = await import("@tauri-apps/api/path");
+
+      const dlDir = await downloadDir();
+
+      const filePath = await open({
+        defaultPath: dlDir,
+        multiple: false,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+
+      if (filePath && typeof filePath === "string") {
+        const content = await readTextFile(filePath);
+        processImportContent(content);
+        return;
+      } else {
+        return; // User cancelled
+      }
+    } catch (err: any) {
+      console.error("Tauri native open failed, falling back to html input:", err);
+    }
+  }
+  // Fallback to web native input
+  triggerFileInput();
+};
+
 const handleFileImport = (e: Event) => {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
   if (!file) return;
   const reader = new FileReader();
   reader.addEventListener("load", (event) => {
-    try {
-      if (typeof event.target?.result === "string") {
-        const data = JSON.parse(event.target.result);
-        if (validateBackupData(data)) {
-          pendingBackupData.value = data;
-          showImportConfirm.value = true;
-        } else {
-          toast.error(t("settings.backup.importError"));
-        }
-      } else {
-        toast.error(t("settings.backup.importError"));
-      }
-    } catch (err) {
+    if (typeof event.target?.result === "string") {
+      processImportContent(event.target.result);
+    } else {
       toast.error(t("settings.backup.importError"));
     }
     input.value = "";
@@ -222,7 +256,10 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
       <Tabs default-value="geral" class="flex flex-col flex-1 overflow-hidden mt-2">
         <TabsList
-          :class="['grid w-full bg-[#1e2127]', isRunningInTauri ? 'grid-cols-4' : 'grid-cols-3']"
+          :class="[
+            'grid w-full bg-[#1e2127]',
+            isRunningInTauri && isSupported ? 'grid-cols-4' : 'grid-cols-3',
+          ]"
         >
           <TabsTrigger
             value="geral"
@@ -247,7 +284,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             {{ $t("settings.tabs.connections") }}
           </TabsTrigger>
           <TabsTrigger
-            v-if="isRunningInTauri"
+            v-if="isRunningInTauri && isSupported"
             value="recursos"
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
@@ -503,7 +540,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                   variant="outline"
                   size="sm"
                   class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
-                  @click="triggerFileInput"
+                  @click="handleImportClick"
                 >
                   <Upload class="size-4 mr-2" />
                   {{ $t("settings.backup.importButton") }}
@@ -521,7 +558,11 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             </div>
           </TabsContent>
 
-          <TabsContent v-if="isRunningInTauri" value="recursos" class="space-y-6 mt-0 outline-none">
+          <TabsContent
+            v-if="isRunningInTauri && isSupported"
+            value="recursos"
+            class="space-y-6 mt-0 outline-none"
+          >
             <!-- Live Transcription Section -->
             <div v-if="isRunningInTauri && isSupported" class="space-y-2">
               <div class="flex items-center gap-2 px-1">
