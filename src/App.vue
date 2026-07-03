@@ -5,6 +5,7 @@ import { useStreams } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater, isTauri } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
+import { useMediaCodecs } from "./composables/useMediaCodecs";
 import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
@@ -64,6 +65,7 @@ const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnbo
   usePreferences();
 const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
+const { checkVideoCodecs } = useMediaCodecs();
 const { locale } = useI18n();
 
 function handleGlobalKeyDown(e: KeyboardEvent) {
@@ -187,6 +189,7 @@ onMounted(() => {
 
   // check for updates on startup
   checkForUpdates();
+  checkVideoCodecs();
 
   // start polling favorites live status (every 30s)
   startPolling();

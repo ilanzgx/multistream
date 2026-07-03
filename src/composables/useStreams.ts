@@ -4,6 +4,7 @@ import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { useRecents } from "./useRecents";
 import { useFocusedStream } from "./useFocusedStream";
+import { useMediaCodecs } from "./useMediaCodecs";
 import { WATCH_TIME_CONFIG } from "@/config/watchTime";
 
 export type Platform = "kick" | "twitch" | "youtube" | "custom";
@@ -22,6 +23,7 @@ const _useStreams = () => {
   const streams = useStorage<Stream[]>("streams", []);
   const { addRecent } = useRecents();
   const { clearFocus, focusedStreamId } = useFocusedStream();
+  const { checkVideoCodecs } = useMediaCodecs();
 
   // tracks streams currently animating out (two-phase removal)
   // prevents iframe destruction caused by immediate DOM removal/reflow
@@ -144,6 +146,8 @@ const _useStreams = () => {
       toast.warning(t("toasts.add.maxStreams"));
       return;
     }
+
+    checkVideoCodecs();
 
     const newId = crypto.randomUUID();
     streams.value = [

@@ -236,6 +236,9 @@
       "noStream": "No se encontró stream de video",
       "blocked": "Captura bloqueada por DRM de la plataforma",
       "timeout": "Tiempo agotado para capturar"
+    },
+    "codecs": {
+      "missing": "Falta de códecs multimedia detectada. Instale los códecs de su sistema (ej: ubuntu-restricted-extras o gstreamer-plugins) para ver transmisiones."
     }
   },
   "skeleton": {

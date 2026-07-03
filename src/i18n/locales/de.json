@@ -236,6 +236,9 @@
       "noStream": "Kein Video-Stream gefunden",
       "blocked": "Screenshot durch Plattform-DRM blockiert",
       "timeout": "Screenshot-Zeitüberschreitung"
+    },
+    "codecs": {
+      "missing": "Fehlende Medien-Codecs erkannt. Bitte installieren Sie Ihre System-Codecs (z. B. ubuntu-restricted-extras oder gstreamer-plugins), um Streams anzusehen."
     }
   },
   "skeleton": {

@@ -236,6 +236,9 @@
       "noStream": "No video stream found",
       "blocked": "Screenshot blocked by platform DRM",
       "timeout": "Screenshot timed out"
+    },
+    "codecs": {
+      "missing": "Missing media codecs detected. Please install your system codecs (e.g., ubuntu-restricted-extras or gstreamer-plugins) to watch streams."
     }
   },
   "skeleton": {

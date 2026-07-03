@@ -236,6 +236,9 @@
       "noStream": "未找到视频流",
       "blocked": "截图被平台DRM阻止",
       "timeout": "截图超时"
+    },
+    "codecs": {
+      "missing": "检测到缺失媒体编解码器。请安装您的系统编解码器（例如 ubuntu-restricted-extras 或 gstreamer-plugins）以观看直播。"
     }
   },
   "skeleton": {
