@@ -125,7 +125,8 @@ jobs:
           elif [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
             find "$BUNDLE_PATH" -name "*.AppImage" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage \; 2>/dev/null || true
             find "$BUNDLE_PATH" -name "*.deb" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.deb \; 2>/dev/null || true
-            find "$BUNDLE_PATH" -name "*.AppImage.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.sig \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.AppImage.tar.gz" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.tar.gz \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.AppImage.tar.gz.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.tar.gz.sig \; 2>/dev/null || true
           fi
 
           echo "=== Renamed artifacts ==="
@@ -277,8 +278,8 @@ jobs:
                 signature: readSig("Multistream-macos-x64.app.tar.gz.sig")
               },
               "linux-x86_64": {
-                url: `${baseUrl}/Multistream-linux-x64.AppImage`,
-                signature: readSig("Multistream-linux-x64.AppImage.sig")
+                url: `${baseUrl}/Multistream-linux-x64.AppImage.tar.gz`,
+                signature: readSig("Multistream-linux-x64.AppImage.tar.gz.sig")
               },
               "windows-x86_64": {
                 url: `${baseUrl}/Multistream-windows-x64-setup.exe`,
