@@ -1,11 +1,12 @@
 <script lang="ts" setup>
-import { watch, computed } from "vue";
+import { watch, computed, ref } from "vue";
 import { WifiOff, RefreshCw } from "@lucide/vue";
 import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { useI18n } from "vue-i18n";
 import { TwitchIcon } from "../icons";
@@ -22,6 +23,8 @@ function openAuthModal() {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "twitch-auth" }));
 }
 
+const isInitializing = ref(true);
+
 watch(
   twitchChannels,
   (channels) => {
@@ -29,10 +32,31 @@ watch(
   },
   { immediate: true, deep: true }
 );
+
+import { onMounted } from "vue";
+onMounted(() => {
+  setTimeout(() => {
+    isInitializing.value = false;
+  }, 800);
+});
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-[#0f1115]">
+  <div class="flex flex-col h-full bg-[#0f1115] relative">
+    <Transition name="fade">
+      <div
+        v-if="isInitializing"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#0f1115] p-6"
+      >
+        <TwitchIcon :size="48" :style="{ color: '#9146FF' }" class="opacity-30" />
+        <div class="flex flex-col gap-2 w-full">
+          <Skeleton class="h-2.5 w-3/4 mx-auto bg-white/5 rounded" />
+          <Skeleton class="h-2.5 w-1/2 mx-auto bg-white/5 rounded" />
+          <Skeleton class="h-2.5 w-2/3 mx-auto bg-white/5 rounded" />
+        </div>
+      </div>
+    </Transition>
+
     <div
       v-if="connectionState === 'reconnecting'"
       class="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-[11px] font-medium shrink-0"
@@ -117,5 +141,11 @@ watch(
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #3a3f4b;
+}
+.fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

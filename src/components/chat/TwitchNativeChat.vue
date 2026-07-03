@@ -4,12 +4,14 @@ import { Send, WifiOff, RefreshCw } from "@lucide/vue";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import ChatRichInput from "./ChatRichInput.vue";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { toast } from "vue-sonner";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 import { useI18n } from "vue-i18n";
+import { TwitchIcon } from "@/components/icons";
 
 const props = defineProps<{ channel: string }>();
 
@@ -33,6 +35,7 @@ const channelEmotes = computed(() => getEmoteDictionary(props.channel, "twitch")
 
 const newMessage = ref("");
 const isSending = ref(false);
+const isInitializing = ref(true);
 
 async function handleSend() {
   const text = newMessage.value.trim();
@@ -70,6 +73,10 @@ onMounted(async () => {
       }
     }
   );
+
+  setTimeout(() => {
+    isInitializing.value = false;
+  }, 800);
 });
 
 onUnmounted(() => {
@@ -80,7 +87,21 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full bg-[#0f1115]">
+  <div class="flex flex-col h-full bg-[#0f1115] relative">
+    <Transition name="fade">
+      <div
+        v-if="isInitializing"
+        class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#0f1115] p-6"
+      >
+        <TwitchIcon :size="48" :style="{ color: '#9146FF' }" class="opacity-30" />
+        <div class="flex flex-col gap-2 w-full">
+          <Skeleton class="h-2.5 w-3/4 mx-auto bg-white/5 rounded" />
+          <Skeleton class="h-2.5 w-1/2 mx-auto bg-white/5 rounded" />
+          <Skeleton class="h-2.5 w-2/3 mx-auto bg-white/5 rounded" />
+        </div>
+      </div>
+    </Transition>
+
     <div
       v-if="connectionState === 'reconnecting'"
       class="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-[11px] font-medium shrink-0"
@@ -90,7 +111,7 @@ onUnmounted(() => {
     </div>
 
     <div
-      v-if="connectionState === 'disconnected' && channelMessages.length === 0"
+      v-else-if="connectionState === 'disconnected' && channelMessages.length === 0"
       class="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center"
     >
       <WifiOff class="w-8 h-8 text-gray-600" />
@@ -149,5 +170,11 @@ onUnmounted(() => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #3a3f4b;
+}
+.fade-leave-active {
+  transition: opacity 0.4s ease;
+}
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

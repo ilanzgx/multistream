@@ -82,12 +82,14 @@ const togglePlatform = () => {
     :class="isOpen ? 'w-56' : 'w-14'"
   >
     <div
-      class="h-12 flex items-center px-2 border-b border-[#2a2d33] shrink-0"
+      class="h-12 flex items-center px-2 border-b border-[#1f2227] shrink-0"
       :class="isOpen ? 'justify-between' : 'justify-center'"
     >
-      <div v-if="isOpen" class="flex items-center gap-2 text-white font-medium">
+      <div v-if="isOpen" class="flex items-center gap-2">
         <Users class="w-4 h-4 text-gray-400" />
-        <span class="text-sm">{{ t("sidebar.followedChannels") }}</span>
+        <span class="text-[10px] font-semibold tracking-widest uppercase text-gray-400">{{
+          t("sidebar.followedChannels")
+        }}</span>
       </div>
 
       <button
@@ -101,10 +103,10 @@ const togglePlatform = () => {
 
     <div
       v-if="isOpen"
-      class="px-2 py-1.5 border-b border-[#2a2d33] flex items-center justify-between"
+      class="px-2 py-1.5 border-b border-[#1f2227] flex items-center justify-between"
     >
       <button
-        class="text-xs font-medium text-gray-400 hover:text-white uppercase transition-colors"
+        class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 hover:text-white transition-colors"
         @click="togglePlatform"
       >
         {{ platformFilter === "all" ? t("sidebar.all") : platformFilter }}
@@ -118,10 +120,10 @@ const togglePlatform = () => {
       </button>
     </div>
 
-    <TooltipProvider :delay-duration="0">
+    <TooltipProvider :delay-duration="0" :disable-hoverable-content="true">
       <div class="flex-1 overflow-y-auto py-1 flex flex-col gap-0.5 px-1.5 custom-scrollbar">
         <template v-if="isLoading && liveChannels.length === 0">
-          <div v-for="i in 10" :key="i" class="flex items-center gap-2 p-1 rounded-md">
+          <div v-for="i in 20" :key="i" class="flex items-center gap-2 p-1 rounded-md">
             <div class="relative shrink-0">
               <Skeleton class="w-7 h-7 rounded-full border border-[#2a2d33] bg-[#1f2227]" />
               <div
