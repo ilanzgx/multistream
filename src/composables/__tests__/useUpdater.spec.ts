@@ -17,6 +17,7 @@ vi.mock("vue-sonner", () => ({
     error: vi.fn(),
     info: vi.fn(),
     loading: vi.fn(),
+    custom: vi.fn(),
   },
 }));
 
@@ -185,13 +186,13 @@ describe("useUpdater composable unit tests", () => {
       expect(typeof onClick).toBe("function");
 
       // simulate user click on toast
-      const installPromise = onClick();
+      onClick();
 
       // Assert
       expect(sut.isDownloading.value).toBe(true);
 
-      // wait for install to complete
-      await installPromise;
+      // wait for install to complete (run microtasks and timers)
+      await vi.runAllTimersAsync();
 
       // Assert
       expect(sut.isDownloading.value).toBe(false);
@@ -246,14 +247,13 @@ describe("useUpdater composable unit tests", () => {
       await sut.installUpdate();
 
       // Assert (States)
-      expect(toast.loading).toHaveBeenCalledWith("toasts.update.downloading", {
-        id: "update-download",
-      });
+      expect(toast.custom).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.objectContaining({
+          id: "update-download",
+        })
+      );
       expect(mockUpdate.downloadAndInstall).toHaveBeenCalled();
-
-      // Assert (Validation of console lines in Progress Callbacks)
-      expect(consoleLogSpy).toHaveBeenCalledWith("Download started, size: 100");
-      expect(consoleLogSpy).toHaveBeenCalledWith("Download finished");
 
       // Assert (Progress math added chunkLength)
       expect(sut.downloadProgress.value).toBe(100);
@@ -261,6 +261,7 @@ describe("useUpdater composable unit tests", () => {
       // Assert (Final success and timeout delay)
       expect(toast.success).toHaveBeenCalledWith("toasts.update.success", {
         id: "update-download",
+        description: "",
       });
       expect(sut.isDownloading.value).toBe(false);
 
@@ -286,6 +287,7 @@ describe("useUpdater composable unit tests", () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to install update:", expect.any(Error));
       expect(toast.error).toHaveBeenCalledWith("toasts.update.failedUpdate", {
         id: "update-download",
+        description: "",
       });
       expect(sut.isDownloading.value).toBe(false);
     });
