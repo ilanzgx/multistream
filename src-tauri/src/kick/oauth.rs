@@ -52,7 +52,7 @@ pub fn generate_pkce() -> (String, String) {
 #[derive(Debug, Deserialize)]
 pub struct KickTokenResponse {
     pub access_token: String,
-    pub refresh_token: String,
+    pub refresh_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -195,13 +195,16 @@ pub async fn start_pkce_flow(app: &AppHandle, http: &Client) -> Result<KickAuthI
 
     Ok(KickAuthInfo {
         access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
+        refresh_token: tokens.refresh_token.unwrap_or_default(),
         username,
         has_chat_write: true,
     })
 }
 
-pub async fn refresh_token(http: &Client, refresh_token: &str) -> Result<KickAuthInfo, KickError> {
+pub async fn refresh_token(
+    http: &Client,
+    refresh_token_str: &str,
+) -> Result<KickAuthInfo, KickError> {
     let client_id = option_env!("KICK_CLIENT_ID").unwrap_or("");
     let client_secret = option_env!("KICK_CLIENT_SECRET").unwrap_or("");
 
@@ -211,16 +214,21 @@ pub async fn refresh_token(http: &Client, refresh_token: &str) -> Result<KickAut
             ("grant_type", "refresh_token"),
             ("client_id", client_id),
             ("client_secret", client_secret),
-            ("refresh_token", refresh_token),
+            ("refresh_token", refresh_token_str),
         ])
         .send()
         .await?;
 
-    if !token_resp.status().is_success() {
+    let status = token_resp.status();
+    if status.is_client_error() {
         return Err(KickError::TokenRefreshFailed);
     }
 
-    let tokens: KickTokenResponse = token_resp.json().await?;
+    let tokens: KickTokenResponse = token_resp
+        .error_for_status()
+        .map_err(KickError::Http)?
+        .json()
+        .await?;
 
     let user_resp = http
         .get("https://api.kick.com/public/v1/users")
@@ -228,11 +236,16 @@ pub async fn refresh_token(http: &Client, refresh_token: &str) -> Result<KickAut
         .send()
         .await?;
 
-    if !user_resp.status().is_success() {
+    let user_status = user_resp.status();
+    if user_status.is_client_error() {
         return Err(KickError::TokenRefreshFailed);
     }
 
-    let user_info: KickUserResponse = user_resp.json().await?;
+    let user_info: KickUserResponse = user_resp
+        .error_for_status()
+        .map_err(KickError::Http)?
+        .json()
+        .await?;
     let username = user_info
         .data
         .first()
@@ -241,7 +254,9 @@ pub async fn refresh_token(http: &Client, refresh_token: &str) -> Result<KickAut
 
     Ok(KickAuthInfo {
         access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
+        refresh_token: tokens
+            .refresh_token
+            .unwrap_or_else(|| refresh_token_str.to_string()),
         username,
         has_chat_write: true,
     })

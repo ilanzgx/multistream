@@ -23,7 +23,7 @@ pub struct DeviceFlowResponse {
 #[derive(Debug, Deserialize)]
 struct TokenResponse {
     access_token: String,
-    refresh_token: String,
+    refresh_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -77,16 +77,12 @@ pub async fn poll_device_token(
         .map_err(TwitchError::Http)?;
 
     if response.status() == 400 {
-        #[derive(Deserialize)]
-        struct ErrResp {
-            message: String,
-        }
         let body = response.text().await.unwrap_or_default();
-        if let Ok(err_resp) = serde_json::from_str::<ErrResp>(&body) {
-            let msg = err_resp.message.to_lowercase();
-            if msg.contains("authorization_pending") || msg.contains("authorization pending") {
-                return Ok(None);
-            }
+        let body_lower = body.to_lowercase();
+        if body_lower.contains("authorization_pending")
+            || body_lower.contains("authorization pending")
+        {
+            return Ok(None);
         }
         return Err(TwitchError::OAuth(format!("Polling failed: {}", body)));
     }
@@ -113,7 +109,7 @@ pub async fn poll_device_token(
 
     Ok(Some(TwitchAuthInfo {
         access_token: response.access_token,
-        refresh_token: response.refresh_token,
+        refresh_token: response.refresh_token.unwrap_or_default(),
         username: validate.login,
         user_id: validate.user_id,
     }))
@@ -121,19 +117,26 @@ pub async fn poll_device_token(
 
 pub async fn refresh_token(
     http: &reqwest::Client,
-    refresh_token: &str,
+    refresh_token_str: &str,
 ) -> Result<TwitchAuthInfo, TwitchError> {
-    let response: TokenResponse = http
+    let response = http
         .post(TOKEN_URL)
         .form(&[
             ("client_id", CLIENT_ID),
-            ("refresh_token", refresh_token),
+            ("refresh_token", refresh_token_str),
             ("grant_type", "refresh_token"),
         ])
         .send()
-        .await?
+        .await?;
+
+    let status = response.status();
+    if status.is_client_error() {
+        return Err(TwitchError::TokenRefreshFailed);
+    }
+
+    let response: TokenResponse = response
         .error_for_status()
-        .map_err(|_| TwitchError::TokenRefreshFailed)?
+        .map_err(TwitchError::Http)?
         .json()
         .await?;
 
@@ -149,7 +152,9 @@ pub async fn refresh_token(
 
     Ok(TwitchAuthInfo {
         access_token: response.access_token,
-        refresh_token: response.refresh_token,
+        refresh_token: response
+            .refresh_token
+            .unwrap_or_else(|| refresh_token_str.to_string()),
         username: validate.login,
         user_id: validate.user_id,
     })

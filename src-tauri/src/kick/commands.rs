@@ -76,6 +76,7 @@ pub fn init_stored_auth() -> Option<super::state::KickAuthInfo> {
 
 #[tauri::command]
 pub async fn kick_send_message(
+    app: AppHandle,
     broadcaster_user_id: u64,
     message: String,
     state: State<'_, KickState>,
@@ -101,13 +102,33 @@ pub async fn kick_send_message(
                 if msg.contains("Auth error sending message: 401")
                     || msg.contains("Auth error sending message: 403")
                 {
-                    let new_auth = super::oauth::refresh_token(&http, &auth.refresh_token).await?;
-                    super::oauth::store_auth(&new_auth)?;
-                    *state.auth.lock().await = Some(new_auth.clone());
-
-                    super::api::send_message(&http, &new_auth, broadcaster_user_id, &message)
-                        .await?;
-                    return Ok(());
+                    match super::oauth::refresh_token(&http, &auth.refresh_token).await {
+                        Ok(new_auth) => {
+                            super::oauth::store_auth(&new_auth)?;
+                            *state.auth.lock().await = Some(new_auth.clone());
+                            super::api::send_message(
+                                &http,
+                                &new_auth,
+                                broadcaster_user_id,
+                                &message,
+                            )
+                            .await?;
+                            return Ok(());
+                        }
+                        Err(KickError::TokenRefreshFailed) => {
+                            *state.auth.lock().await = None;
+                            super::oauth::clear_auth();
+                            let _ = app.emit(
+                                "kick-auth-changed",
+                                KickAuthState {
+                                    authenticated: false,
+                                    username: None,
+                                },
+                            );
+                            return Err(KickError::TokenRefreshFailed);
+                        }
+                        Err(e) => return Err(e),
+                    }
                 }
             }
             Err(e)
