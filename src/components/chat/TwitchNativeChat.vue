@@ -14,7 +14,7 @@ import { useI18n } from "vue-i18n";
 const props = defineProps<{ channel: string }>();
 
 const {
-  messages,
+  channelMessagesMap,
   connectionState,
   channelColor,
   channelAvatars,
@@ -26,7 +26,7 @@ const { t } = useI18n();
 const { getEmoteDictionary, loadChannelEmotes } = useEmotes();
 
 const channelMessages = computed(() =>
-  [...messages.value].filter((m) => m.channel === props.channel).toReversed()
+  (channelMessagesMap.value[props.channel.toLowerCase()] || []).toReversed()
 );
 
 const channelEmotes = computed(() => getEmoteDictionary(props.channel, "twitch"));

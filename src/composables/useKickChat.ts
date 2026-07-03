@@ -16,6 +16,8 @@ export interface KickChatMessage {
   platform?: "kick";
 }
 
+const MAX_FRONTEND_MESSAGES = 500;
+
 const activeKickChannels = new Map<string, number>(); // slug -> chatroom_id
 const activeBroadcasters = new Map<string, number>(); // slug -> broadcaster_user_id
 
@@ -24,7 +26,7 @@ export function __test_resetKickChatState() {
   activeBroadcasters.clear();
 }
 
-const messages = shallowRef<KickChatMessage[]>([]);
+const channelMessagesMap = shallowRef<Record<string, KickChatMessage[]>>({});
 const connectionState = ref<"connected" | "disconnected" | "reconnecting">("disconnected");
 
 let isListening = false;
@@ -44,23 +46,30 @@ async function setupListeners() {
     const msg = event.payload;
     msg.platform = "kick";
 
-    const pendingIdx = messages.value.findIndex(
+    const chan = msg.channel.toLowerCase();
+    const existing = channelMessagesMap.value[chan] || [];
+
+    const pendingIdx = existing.findIndex(
       (m) =>
         m.isPending &&
-        m.channel === msg.channel &&
         m.username.toLowerCase() === msg.username.toLowerCase() &&
         m.message === msg.message
     );
-    const newMsgs = [...messages.value];
+
+    const newMsgs = [...existing];
     if (pendingIdx !== -1) {
       newMsgs.splice(pendingIdx, 1);
     }
 
     newMsgs.push(msg);
-    if (newMsgs.length > 500) {
-      newMsgs.shift();
+    if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
+      newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
     }
-    messages.value = newMsgs;
+
+    channelMessagesMap.value = {
+      ...channelMessagesMap.value,
+      [chan]: newMsgs,
+    };
   }).catch(console.error);
 }
 
@@ -97,25 +106,25 @@ export function useKickChat(channelSlug: string) {
   }
 
   function removeLastLocalMessage(username: string): string | null {
+    const chan = channelSlug.toLowerCase();
+    const existing = channelMessagesMap.value[chan] || [];
     let idx = -1;
-    for (let i = messages.value.length - 1; i >= 0; i--) {
-      const m = messages.value[i];
-      if (
-        m &&
-        m.channel === channelSlug &&
-        m.username.toLowerCase() === username.toLowerCase() &&
-        m.isPending
-      ) {
+    for (let i = existing.length - 1; i >= 0; i--) {
+      const m = existing[i];
+      if (m && m.username.toLowerCase() === username.toLowerCase() && m.isPending) {
         idx = i;
         break;
       }
     }
     if (idx !== -1) {
-      const msg = messages.value[idx];
+      const msg = existing[idx];
       if (!msg) return null;
-      const newMsgs = [...messages.value];
+      const newMsgs = [...existing];
       newMsgs.splice(idx, 1);
-      messages.value = newMsgs;
+      channelMessagesMap.value = {
+        ...channelMessagesMap.value,
+        [chan]: newMsgs,
+      };
       return msg.message;
     }
     return null;
@@ -126,11 +135,16 @@ export function useKickChat(channelSlug: string) {
   }
 
   function addLocalMessage(msg: KickChatMessage) {
-    messages.value = [...messages.value, msg];
+    const chan = channelSlug.toLowerCase();
+    const existing = channelMessagesMap.value[chan] || [];
+    channelMessagesMap.value = {
+      ...channelMessagesMap.value,
+      [chan]: [...existing, msg],
+    };
   }
 
   return {
-    messages,
+    channelMessagesMap,
     connectionState,
     joinChannel,
     leaveChannel,

@@ -86,7 +86,8 @@ describe("useKickChat", () => {
   it("adds and removes local optimistic messages", () => {
     // Arrange
     const channelSlug = "testchannel";
-    const { addLocalMessage, removeLastLocalMessage, messages } = useKickChat(channelSlug);
+    const { addLocalMessage, removeLastLocalMessage, channelMessagesMap } =
+      useKickChat(channelSlug);
 
     const testMessage: KickChatMessage = {
       id: "local-1",
@@ -104,14 +105,14 @@ describe("useKickChat", () => {
     addLocalMessage(testMessage);
 
     // Assert
-    expect(messages.value).toContainEqual(testMessage);
+    expect(channelMessagesMap.value[channelSlug.toLowerCase()]).toContainEqual(testMessage);
 
     // Act 2
     const removedText = removeLastLocalMessage("user1");
 
     // Assert 2
     expect(removedText).toBe("Hello world");
-    expect(messages.value).not.toContainEqual(testMessage);
+    expect(channelMessagesMap.value[channelSlug.toLowerCase()]).not.toContainEqual(testMessage);
   });
 
   it("returns null if trying to remove local message for unknown user", () => {

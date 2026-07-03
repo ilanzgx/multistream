@@ -16,7 +16,7 @@ import LoginPrompt from "./LoginPrompt.vue";
 const props = defineProps<{ channel: string }>();
 
 const {
-  messages,
+  channelMessagesMap,
   connectionState,
   joinChannel,
   leaveChannel,
@@ -33,9 +33,7 @@ function openAuthModal() {
 }
 
 const channelMessages = computed(() =>
-  [...messages.value]
-    .filter((m) => m.channel.toLowerCase() === props.channel.toLowerCase())
-    .toReversed()
+  (channelMessagesMap.value[props.channel.toLowerCase()] || []).toReversed()
 );
 
 const channelEmotes = computed(() => getEmoteDictionary(props.channel, "kick"));

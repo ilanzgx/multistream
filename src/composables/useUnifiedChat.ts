@@ -49,6 +49,7 @@ const CHANNEL_PALETTE = [
 
 const _useUnifiedChat = () => {
   const messages = shallowRef<UnifiedChatMessage[]>([]);
+  const channelMessagesMap = shallowRef<Record<string, UnifiedChatMessage[]>>({});
   const connectionState = ref<ConnectionState>("disconnected");
   const channelAvatars = reactive<Record<string, string>>({});
   const { streams } = useStreams();
@@ -173,6 +174,19 @@ const _useUnifiedChat = () => {
               newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
               messages.value = newMsgs;
             }
+
+            const chan = msg.channel.toLowerCase();
+            const cArr = channelMessagesMap.value[chan];
+            if (cArr) {
+              const cIdx = cArr.findIndex((m) => m && m.id === msg.id);
+              if (cIdx !== -1) {
+                const newMap = { ...channelMessagesMap.value };
+                const newArr = [...cArr];
+                newArr[cIdx] = { ...newArr[cIdx], isPending: false } as UnifiedChatMessage;
+                newMap[chan] = newArr;
+                channelMessagesMap.value = newMap;
+              }
+            }
           }, 1000);
         }
 
@@ -185,6 +199,32 @@ const _useUnifiedChat = () => {
                 newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
               }
               messages.value = newMsgs;
+
+              const newMap = { ...channelMessagesMap.value };
+              let mapChanged = false;
+              const byChannel = pendingMessages.reduce(
+                (acc, msg) => {
+                  const chan = msg.channel.toLowerCase();
+                  if (!acc[chan]) acc[chan] = [];
+                  acc[chan].push(msg);
+                  return acc;
+                },
+                {} as Record<string, UnifiedChatMessage[]>
+              );
+
+              for (const [chan, msgs] of Object.entries(byChannel)) {
+                const updated = [...(newMap[chan] || []), ...msgs];
+                if (updated.length > MAX_FRONTEND_MESSAGES) {
+                  updated.splice(0, updated.length - MAX_FRONTEND_MESSAGES);
+                }
+                newMap[chan] = updated;
+                mapChanged = true;
+              }
+
+              if (mapChanged) {
+                channelMessagesMap.value = newMap;
+              }
+
               pendingMessages = [];
             }
             flushTimer = null;
@@ -208,6 +248,19 @@ const _useUnifiedChat = () => {
               newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
               messages.value = newMsgs;
             }
+
+            const chan = msg.channel.toLowerCase();
+            const cArr = channelMessagesMap.value[chan];
+            if (cArr) {
+              const cIdx = cArr.findIndex((m) => m && m.id === msg.id);
+              if (cIdx !== -1) {
+                const newMap = { ...channelMessagesMap.value };
+                const newArr = [...cArr];
+                newArr[cIdx] = { ...newArr[cIdx], isPending: false } as UnifiedChatMessage;
+                newMap[chan] = newArr;
+                channelMessagesMap.value = newMap;
+              }
+            }
           }, 1000);
         } else {
           // De-duplicate local optimistic messages that were manually pushed by UnifiedChat.vue
@@ -224,6 +277,25 @@ const _useUnifiedChat = () => {
             newMsgs.splice(pendingIdx, 1);
             messages.value = newMsgs;
           }
+
+          const chan = msg.channel.toLowerCase();
+          const cArr = channelMessagesMap.value[chan];
+          if (cArr) {
+            const pendingCIdx = cArr.findIndex(
+              (m) =>
+                m.isPending &&
+                m.platform === "kick" &&
+                m.username.toLowerCase() === msg.username.toLowerCase() &&
+                m.message === msg.message
+            );
+            if (pendingCIdx !== -1) {
+              const newMap = { ...channelMessagesMap.value };
+              const newArr = [...cArr];
+              newArr.splice(pendingCIdx, 1);
+              newMap[chan] = newArr;
+              channelMessagesMap.value = newMap;
+            }
+          }
         }
 
         pendingMessages.push(msg);
@@ -235,6 +307,32 @@ const _useUnifiedChat = () => {
                 newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
               }
               messages.value = newMsgs;
+
+              const newMap = { ...channelMessagesMap.value };
+              let mapChanged = false;
+              const byChannel = pendingMessages.reduce(
+                (acc, msg) => {
+                  const chan = msg.channel.toLowerCase();
+                  if (!acc[chan]) acc[chan] = [];
+                  acc[chan].push(msg);
+                  return acc;
+                },
+                {} as Record<string, UnifiedChatMessage[]>
+              );
+
+              for (const [chan, msgs] of Object.entries(byChannel)) {
+                const updated = [...(newMap[chan] || []), ...msgs];
+                if (updated.length > MAX_FRONTEND_MESSAGES) {
+                  updated.splice(0, updated.length - MAX_FRONTEND_MESSAGES);
+                }
+                newMap[chan] = updated;
+                mapChanged = true;
+              }
+
+              if (mapChanged) {
+                channelMessagesMap.value = newMap;
+              }
+
               pendingMessages = [];
             }
             flushTimer = null;
@@ -348,6 +446,20 @@ const _useUnifiedChat = () => {
       const removed = newMsgs.splice(lastIdx, 1)[0];
       if (removed) {
         messages.value = newMsgs;
+
+        const chan = channel.toLowerCase();
+        const cArr = channelMessagesMap.value[chan];
+        if (cArr) {
+          const cIdx = cArr.findIndex((m) => m && m.id === removed.id);
+          if (cIdx !== -1) {
+            const newMap = { ...channelMessagesMap.value };
+            const newArr = [...cArr];
+            newArr.splice(cIdx, 1);
+            newMap[chan] = newArr;
+            channelMessagesMap.value = newMap;
+          }
+        }
+
         return removed.message;
       }
     }
@@ -376,6 +488,20 @@ const _useUnifiedChat = () => {
       const removed = newMsgs.splice(lastIdx, 1)[0];
       if (removed) {
         messages.value = newMsgs;
+
+        const chan = channel.toLowerCase();
+        const cArr = channelMessagesMap.value[chan];
+        if (cArr) {
+          const cIdx = cArr.findIndex((m) => m && m.id === removed.id);
+          if (cIdx !== -1) {
+            const newMap = { ...channelMessagesMap.value };
+            const newArr = [...cArr];
+            newArr.splice(cIdx, 1);
+            newMap[chan] = newArr;
+            channelMessagesMap.value = newMap;
+          }
+        }
+
         return removed.message;
       }
     }
@@ -384,6 +510,7 @@ const _useUnifiedChat = () => {
 
   return {
     messages,
+    channelMessagesMap,
     connectionState,
     channelColor,
     channelAvatars,
