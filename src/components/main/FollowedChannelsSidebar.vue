@@ -186,14 +186,16 @@ const formatViewers = (count: number) => {
                 @click.stop="onAddClick(channel)"
               >
                 <div class="relative shrink-0">
-                  <img
-                    loading="lazy"
-                    :src="
-                      channel.avatarUrl ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.displayName)}&background=random`
-                    "
-                    class="w-7 h-7 rounded-full border border-[#2a2d33] object-cover"
-                  />
+                  <div class="avatar-border rounded-full" :class="{ followed: channel.isFollowed }">
+                    <img
+                      loading="lazy"
+                      :src="
+                        channel.avatarUrl ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.displayName)}&background=random`
+                      "
+                      class="w-7 h-7 rounded-full block object-cover"
+                    />
+                  </div>
                   <div
                     class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[#14161a] flex items-center justify-center bg-[#0f1115]"
                   >
@@ -278,5 +280,27 @@ const formatViewers = (count: number) => {
 }
 .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background: #3a3f4b;
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.avatar-border {
+  padding: 1.5px;
+  background: #2a2d33;
+}
+
+.avatar-border.followed {
+  background: conic-gradient(from var(--border-angle), #9146ff, #c4b5fd, #38bdf8, #9146ff);
+  animation: border-spin 4s linear infinite;
+}
+
+@keyframes border-spin {
+  to {
+    --border-angle: 360deg;
+  }
 }
 </style>

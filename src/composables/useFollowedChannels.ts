@@ -20,6 +20,8 @@ export interface FollowedChannel {
   game?: string;
   thumbnailUrl?: string;
   title?: string;
+  isFavorite?: boolean;
+  isFollowed?: boolean;
 }
 
 const _useFollowedChannels = () => {
@@ -50,13 +52,45 @@ const _useFollowedChannels = () => {
           title: status?.title,
           game: status?.category,
           thumbnailUrl: status?.thumbnailUrl,
+          isFavorite: true,
+        };
+      })
+      .filter((channel) => channel.isLive);
+  });
+
+  const twitchFavChannels = computed<FollowedChannel[]>(() => {
+    const twitchFavs = favorites.value.filter((f) => f.platform === "twitch");
+    const followedIds = new Set(twitchChannels.value.map((c) => c.id.toLowerCase()));
+
+    return twitchFavs
+      .filter((f) => !followedIds.has(f.channel.toLowerCase()))
+      .map((f) => {
+        const status = statuses.value[`twitch:${f.channel.toLowerCase()}`];
+        return {
+          id: f.channel,
+          platform: "twitch" as const,
+          displayName: f.channel,
+          avatarUrl: status?.avatarUrl ?? "",
+          isLive: status?.isLive ?? false,
+          viewerCount: status?.viewerCount ?? 0,
+          title: status?.title,
+          game: status?.category,
+          thumbnailUrl: status?.thumbnailUrl,
+          isFavorite: true,
         };
       })
       .filter((channel) => channel.isLive);
   });
 
   const channels = computed<FollowedChannel[]>(() => {
-    const combined = [...twitchChannels.value, ...kickChannels.value];
+    const twitchFollowed = twitchChannels.value.map((c) => {
+      const isFav = favorites.value.some(
+        (f) => f.platform === "twitch" && f.channel.toLowerCase() === c.id.toLowerCase()
+      );
+      return { ...c, isFollowed: true, ...(isFav && { isFavorite: true }) };
+    });
+
+    const combined = [...twitchFollowed, ...twitchFavChannels.value, ...kickChannels.value];
 
     combined.sort((a, b) => {
       const viewersA = a.viewerCount || 0;
