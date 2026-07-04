@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { load } from "@tauri-apps/plugin-store";
+import { load, type Store } from "@tauri-apps/plugin-store";
 import {
   Tooltip,
   TooltipContent,
@@ -19,7 +19,7 @@ import { useStreams } from "../../composables/useStreams";
 import { isTauri } from "../../composables/useUpdater";
 const { channels, isLoading, platformFilter, refresh } = useFollowedChannels();
 const { addStream } = useStreams();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { authenticated: isTwitchAuth } = useTwitchAuth();
 
 const liveChannels = computed(() => channels.value.filter((c) => c.isLive));
@@ -28,19 +28,25 @@ const openTwitchAuthDialog = () => {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "twitch-auth" }));
 };
 
-const isOpen = ref(false);
-let store: any = null;
+const isOpen = ref<boolean | undefined>(false);
+const isStoreLoaded = ref(false);
+let store: Store | null = null;
 
 const initStore = async () => {
-  if (!isTauri()) return;
+  if (!isTauri()) {
+    isStoreLoaded.value = true;
+    return;
+  }
   try {
     store = await load("sidebar.json", { autoSave: true } as any);
-    const stored = await store.get("left-sidebar-open");
+    const stored = await store.get<boolean>("left-sidebar-open");
     if (stored !== null) {
-      isOpen.value = stored as boolean;
+      isOpen.value = stored;
     }
   } catch (e) {
     console.error("Failed to load store", e);
+  } finally {
+    isStoreLoaded.value = true;
   }
 };
 
@@ -63,23 +69,17 @@ const onAddClick = (channel: FollowedChannel) => {
 };
 
 const formatViewers = (count: number) => {
-  if (count >= 1000) {
-    return (count / 1000).toFixed(1) + "k";
-  }
-  return count.toString();
-};
-
-const togglePlatform = () => {
-  if (platformFilter.value === "all") platformFilter.value = "twitch";
-  else if (platformFilter.value === "twitch") platformFilter.value = "kick";
-  else platformFilter.value = "all";
+  return new Intl.NumberFormat(locale.value, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(count);
 };
 </script>
 
 <template>
   <div
-    class="flex-shrink-0 transition-all duration-300 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative"
-    :class="isOpen ? 'w-56' : 'w-14'"
+    class="flex-shrink-0 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative"
+    :class="[isOpen ? 'w-56' : 'w-14', isStoreLoaded ? 'transition-all duration-300' : '']"
   >
     <div
       class="h-12 flex items-center px-2 border-b border-[#1f2227] shrink-0"
@@ -105,12 +105,44 @@ const togglePlatform = () => {
       v-if="isOpen"
       class="px-2 py-1.5 border-b border-[#1f2227] flex items-center justify-between"
     >
-      <button
-        class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 hover:text-white transition-colors"
-        @click="togglePlatform"
-      >
-        {{ platformFilter === "all" ? t("sidebar.all") : platformFilter }}
-      </button>
+      <div class="flex items-center gap-1">
+        <button
+          class="px-1.5 py-1 rounded text-[10px] font-bold tracking-wider uppercase transition-colors"
+          :class="
+            platformFilter === 'all'
+              ? 'text-white bg-[#1f2227]'
+              : 'text-gray-500 hover:text-gray-300'
+          "
+          :title="t('sidebar.all')"
+          @click="platformFilter = 'all'"
+        >
+          ALL
+        </button>
+        <button
+          class="p-1 rounded transition-colors"
+          :class="
+            platformFilter === 'twitch'
+              ? 'text-[#9146FF] bg-[#9146ff]/10'
+              : 'text-gray-500 hover:text-gray-300'
+          "
+          title="Twitch"
+          @click="platformFilter = 'twitch'"
+        >
+          <TwitchIcon class="w-3.5 h-3.5" />
+        </button>
+        <button
+          class="p-1 rounded transition-colors"
+          :class="
+            platformFilter === 'kick'
+              ? 'text-[#53FC18] bg-[#53fc18]/10'
+              : 'text-gray-500 hover:text-gray-300'
+          "
+          title="Kick"
+          @click="platformFilter = 'kick'"
+        >
+          <KickIcon class="w-3.5 h-3.5" />
+        </button>
+      </div>
       <button
         class="text-gray-500 hover:text-gray-300 transition-colors p-1 -mr-1 rounded-md"
         :class="{ 'pointer-events-none': isLoading }"
@@ -155,6 +187,7 @@ const togglePlatform = () => {
               >
                 <div class="relative shrink-0">
                   <img
+                    loading="lazy"
                     :src="
                       channel.avatarUrl ||
                       `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.displayName)}&background=random`
@@ -204,6 +237,7 @@ const togglePlatform = () => {
             >
               <img
                 v-if="channel.thumbnailUrl"
+                loading="lazy"
                 :src="channel.thumbnailUrl"
                 referrerpolicy="no-referrer"
                 class="w-full aspect-video object-cover"
