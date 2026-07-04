@@ -50,6 +50,7 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
     .map(
       (ch, i) => `
     c${i}: user(login: "${ch.toLowerCase()}") {
+      profileImageURL(width: 70)
       stream {
         title
         viewersCount
@@ -96,8 +97,11 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
           viewerCount: userData.stream.viewersCount,
           title: userData.stream.title,
           category: userData.stream.game?.displayName,
+          avatarUrl: userData.profileImageURL,
           thumbnailUrl: `https://static-cdn.jtvnw.net/previews-ttv/live_user_${ch.toLowerCase()}-320x180.jpg`,
         };
+      } else if (userData?.profileImageURL) {
+        result[key] = { isLive: false, avatarUrl: userData.profileImageURL };
       }
     });
 
