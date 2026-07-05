@@ -282,25 +282,12 @@ const formatViewers = (count: number) => {
   background: #3a3f4b;
 }
 
-@property --border-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
 .avatar-border {
   padding: 1.5px;
   background: #2a2d33;
 }
 
 .avatar-border.followed {
-  background: conic-gradient(from var(--border-angle), #9146ff, #c4b5fd, #38bdf8, #9146ff);
-  animation: border-spin 4s linear infinite;
-}
-
-@keyframes border-spin {
-  to {
-    --border-angle: 360deg;
-  }
+  background: #9146ff;
 }
 </style>
