@@ -100,6 +100,7 @@ const METRICS: &str = include_str!("core/metrics.bin");
 pub fn run() {
     // 1. Initialize universal core plugins
     let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build());
@@ -346,7 +347,13 @@ pub fn run() {
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => show_main_window(app),
-                    "quit" => app.exit(0),
+                    "quit" => {
+                        let app_clone = app.clone();
+                        tauri::async_runtime::block_on(async move {
+                            recording::commands::shutdown_all_recordings(&app_clone).await;
+                        });
+                        app.exit(0);
+                    }
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {

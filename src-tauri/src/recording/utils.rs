@@ -15,11 +15,19 @@ pub fn build_stream_url(platform: &str, channel: &str) -> String {
 }
 
 pub fn streamlink_args(url: &str, quality: &str, output: &Path) -> Vec<String> {
+    let resolved_quality = match quality {
+        "1080p" => "1080p60,1080p,1080p50,best",
+        "720p" => "720p60,720p,720p50,best",
+        "480p" => "480p,worst",
+        "audio_only" => "audio_only,audio",
+        _ => quality, // "best", "worst", etc.
+    };
+
     vec![
         "-m".to_string(),
         "streamlink".to_string(),
         url.to_string(),
-        quality.to_string(),
+        resolved_quality.to_string(),
         "--output".to_string(),
         output.to_string_lossy().to_string(),
         "--force".to_string(),

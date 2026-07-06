@@ -257,24 +257,15 @@ pub async fn list_recordings(
 
 #[tauri::command]
 pub async fn open_recording_folder(
-    state: State<'_, RecordingManager>,
-    stream_id: String,
+    app: AppHandle,
+    _stream_id: String,
 ) -> Result<(), RecordingError> {
-    validate_stream_id(&stream_id)?;
-
-    let folder = {
-        let entries = state.entries.lock().await;
-        let entry = entries
-            .get(&stream_id)
-            .ok_or(RecordingError::NotRecording)?;
-        entry
-            .temp_path
-            .parent()
-            .map(|p| p.to_path_buf())
-            .ok_or_else(|| RecordingError::PathError("cannot resolve parent dir".into()))?
-    };
-
-    open_folder_in_os(&folder)
+    use tauri_plugin_opener::OpenerExt;
+    let folder = super::paths::recording_dir()?;
+    app.opener()
+        .open_path(folder.to_string_lossy().to_string(), None::<String>)
+        .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -393,6 +384,16 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
             kill_futs.push(async move {
                 let mut guard = child_arc.lock().await;
                 if let Some(child) = guard.take() {
+                    #[cfg(target_os = "windows")]
+                    {
+                        use std::os::windows::process::CommandExt;
+                        let pid = child.pid();
+                        let _ = std::process::Command::new("taskkill")
+                            .args(["/F", "/T", "/PID", &pid.to_string()])
+                            .creation_flags(0x08000000)
+                            .spawn()
+                            .and_then(|mut c| c.wait());
+                    }
                     let _ = child.kill();
                 }
             });
@@ -400,19 +401,26 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
     }
     futures_util::future::join_all(kill_futs).await;
 
-    let remux_futs: Vec<_> = stream_ids
-        .iter()
-        .cloned()
-        .map(|sid| {
-            let app = app.clone();
-            async move {
-                tokio::time::timeout(Duration::from_secs(30), run_remux(app, sid))
-                    .await
-                    .ok();
+    // Wait for the background tasks to finish remuxing and remove the entries
+    let start_time = std::time::Instant::now();
+    loop {
+        if start_time.elapsed() > Duration::from_secs(30) {
+            break;
+        }
+        let entries = state.entries.lock().await;
+        let mut all_done = true;
+        for sid in &stream_ids {
+            if entries.contains_key(sid) {
+                all_done = false;
+                break;
             }
-        })
-        .collect();
-    futures_util::future::join_all(remux_futs).await;
+        }
+        if all_done {
+            break;
+        }
+        drop(entries);
+        tokio::time::sleep(Duration::from_millis(500)).await;
+    }
 }
 
 async fn run_remux(app: AppHandle, stream_id: String) {
@@ -509,30 +517,5 @@ async fn run_ffmpeg_remux(
         }
     }
 
-    Ok(())
-}
-
-fn open_folder_in_os(path: &std::path::Path) -> Result<(), RecordingError> {
-    #[cfg(target_os = "windows")]
-    {
-        std::process::Command::new("explorer")
-            .arg(path)
-            .spawn()
-            .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
-    }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(path)
-            .spawn()
-            .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
-    }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(path)
-            .spawn()
-            .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
-    }
     Ok(())
 }
