@@ -44,6 +44,13 @@
       ]
     },
     "shell:allow-open",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        { "name": "streamlink", "sidecar": true },
+        { "name": "ffmpeg", "sidecar": true }
+      ]
+    },
     "deep-link:default",
     "deep-link:allow-get-current",
     "store:default",
