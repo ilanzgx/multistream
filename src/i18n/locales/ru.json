@@ -116,10 +116,41 @@
       "showTourButton": "Показать тур по приложению"
     },
     "tabs": {
-      "general": "Общие",
+      "general": "Основные",
       "data": "Данные",
       "connections": "Соединения",
-      "resources": "Функции"
+      "resources": "Функции",
+      "recording": "Запись"
+    },
+    "recording": {
+      "tabLabel": "Запись",
+      "enableTitle": "Локальная запись",
+      "enableFeatureToggle": "Включить функцию локальной записи",
+      "downloadDependencies": "Загрузить зависимости",
+      "enableDescription": "Записывайте стримы напрямую из источника с помощью Streamlink. Файлы сохраняются в папку Видео.",
+      "unavailableOS": "Запись доступна только на Windows, macOS и Linux.",
+      "qualityTitle": "Качество по умолчанию",
+      "qualityPrefix": "Качество: ",
+      "qualityDescription": "Предпочтительное качество стрима. Переключается на лучшее доступное, если выбранное недоступно.",
+      "qualityBest": "Лучшее доступное",
+      "quality1080p": "1080p",
+      "quality720p": "720p",
+      "quality480p": "480p",
+      "qualityWorst": "Наименьшее (маленький файл)",
+      "orphanTitle": "Незавершённые записи",
+      "orphanDescription": "Эти записи были прерваны. Вы можете конвертировать их в MP4 или удалить.",
+      "orphanConvert": "Конвертировать в MP4",
+      "orphanDismiss": "Отклонить",
+      "starting": "Начало записи...",
+      "stopping": "Остановка записи...",
+      "remuxing": "Конвертация в MP4...",
+      "saved": "Запись сохранена",
+      "openFolder": "Открыть папку",
+      "remuxFailed": "Конвертация не удалась. Необработанная запись сохранена.",
+      "streamEnded": "Стрим завершён. Сохранение записи...",
+      "streamError": "Ошибка записи: {error}",
+      "customNotSupported": "Запись не поддерживается для пользовательских стримов.",
+      "orphanFound": "Найдено {count} незавершённых записей"
     }
   },
   "share": {
