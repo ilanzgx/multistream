@@ -89,11 +89,7 @@ fn main() {
             }
         }
 
-        // ----- streamlink -----
-        download_streamlink(out_dir);
 
-        // ----- ffmpeg -----
-        download_ffmpeg(out_dir);
     } else {
         // Create dummy files for unsupported platforms so tauri_build doesn't fail
         for name in [
@@ -119,66 +115,4 @@ fn main() {
     }
 
     tauri_build::build();
-}
-
-fn download_streamlink(out_dir: &Path) {
-    // Disabled: Streamlink is built manually using PyInstaller
-    // and committed to the binaries folder.
-}
-
-fn download_ffmpeg(out_dir: &Path) {
-    let bin_name = "ffmpeg-x86_64-pc-windows-msvc.exe";
-    let bin_path = out_dir.join(bin_name);
-
-    let is_empty = fs::metadata(&bin_path)
-        .map(|m| m.len() == 0)
-        .unwrap_or(true);
-
-    if !is_empty {
-        return;
-    }
-
-    println!("cargo:warning=Downloading FFmpeg precompiled binary for Windows x64...");
-
-    let url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
-    let zip_path = out_dir.join("ffmpeg-temp.zip");
-    let temp_extract = out_dir.join("ffmpeg_temp_ext");
-
-    let status = Command::new("curl")
-        .args(["-L", "-o", zip_path.to_str().unwrap(), url])
-        .status()
-        .expect("Failed to execute curl for ffmpeg");
-
-    if status.success() {
-        let _ = fs::create_dir_all(&temp_extract);
-        let status = Command::new("tar")
-            .current_dir(out_dir)
-            .args(["-xf", "ffmpeg-temp.zip", "-C", "ffmpeg_temp_ext"])
-            .status()
-            .expect("Failed to execute tar for ffmpeg");
-
-        if status.success() {
-            let mut found = false;
-            for entry in walkdir::WalkDir::new(&temp_extract)
-                .into_iter()
-                .filter_map(|e| e.ok())
-            {
-                if entry.file_name().to_string_lossy() == "ffmpeg.exe" {
-                    fs::rename(entry.path(), &bin_path).expect("Failed to move ffmpeg.exe");
-                    found = true;
-                    break;
-                }
-            }
-            if !found {
-                panic!("ffmpeg.exe was not found in the downloaded archive.");
-            }
-        } else {
-            panic!("Failed to extract ffmpeg archive");
-        }
-
-        let _ = fs::remove_file(zip_path);
-        let _ = fs::remove_dir_all(temp_extract);
-    } else {
-        panic!("Failed to download ffmpeg archive");
-    }
 }

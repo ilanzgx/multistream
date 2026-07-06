@@ -17,8 +17,6 @@ pub enum RecordingStatus {
     Recording,
     Stopping,
     Remuxing,
-    Done,
-    Error,
 }
 
 #[derive(Debug, Clone)]

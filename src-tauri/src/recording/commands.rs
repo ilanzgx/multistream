@@ -11,9 +11,9 @@ use super::disk::check_disk_space;
 use super::error::RecordingError;
 use super::orphan::OrphanRecording;
 use super::paths::{final_path, temp_path};
-use super::sidecar::{
-    build_stream_url, ffmpeg_remux_args, ffmpeg_sidecar_name, is_recording_supported,
-    streamlink_args, streamlink_sidecar_name,
+use super::utils::{
+    build_stream_url, ffmpeg_remux_args, is_recording_supported,
+    streamlink_args,
 };
 use super::state::{RecordingEntry, RecordingManager, RecordingStatus, StopReason};
 use super::validation::{
@@ -95,10 +95,10 @@ pub async fn start_recording(
     let url = build_stream_url(&platform, &channel);
     let args = streamlink_args(&url, &quality, &ts_path);
 
+    let python_exe = crate::recording::installer::get_python_exe(&app);
     let (mut rx, child) = app
         .shell()
-        .sidecar(streamlink_sidecar_name())
-        .map_err(|e| RecordingError::SidecarNotFound(e.to_string()))?
+        .command(python_exe.to_string_lossy().to_string())
         .args(&args)
         .spawn()
         .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
@@ -487,11 +487,11 @@ async fn run_ffmpeg_remux(
     ts_path: &std::path::Path,
     mp4_path: &std::path::Path,
 ) -> Result<(), RecordingError> {
+    let ffmpeg_exe = crate::recording::installer::get_ffmpeg_exe(app);
     let args = ffmpeg_remux_args(ts_path, mp4_path);
     let (mut rx, _child) = app
         .shell()
-        .sidecar(ffmpeg_sidecar_name())
-        .map_err(|e| RecordingError::SidecarNotFound(e.to_string()))?
+        .command(ffmpeg_exe.to_string_lossy().to_string())
         .args(&args)
         .spawn()
         .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;

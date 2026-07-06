@@ -29,6 +29,7 @@ use recording::commands::{
     dismiss_orphan_recording, is_recording, is_recording_supported_cmd, list_recordings,
     open_recording_folder, recover_orphan_recording, start_recording, stop_recording,
 };
+use recording::installer::{recording_check_dependencies, recording_install_dependencies};
 
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
@@ -157,6 +158,8 @@ pub fn run() {
             recover_orphan_recording,
             dismiss_orphan_recording,
             is_recording_supported_cmd,
+            recording_check_dependencies,
+            recording_install_dependencies,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));

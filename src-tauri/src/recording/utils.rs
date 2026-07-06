@@ -4,13 +4,6 @@ pub fn is_recording_supported() -> bool {
     cfg!(all(target_os = "windows", target_arch = "x86_64"))
 }
 
-pub fn streamlink_sidecar_name() -> &'static str {
-    "streamlink"
-}
-
-pub fn ffmpeg_sidecar_name() -> &'static str {
-    "ffmpeg"
-}
 
 pub fn build_stream_url(platform: &str, channel: &str) -> String {
     match platform {
@@ -23,6 +16,8 @@ pub fn build_stream_url(platform: &str, channel: &str) -> String {
 
 pub fn streamlink_args(url: &str, quality: &str, output: &Path) -> Vec<String> {
     vec![
+        "-m".to_string(),
+        "streamlink".to_string(),
         url.to_string(),
         quality.to_string(),
         "--output".to_string(),

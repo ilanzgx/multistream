@@ -6,8 +6,6 @@ pub enum RecordingError {
     UnsupportedPlatform(String),
     #[error("Recording is not yet available on this operating system")]
     UnsupportedOs,
-    #[error("Sidecar binary not found: {0}")]
-    SidecarNotFound(String),
     #[error("Failed to spawn process: {0}")]
     SpawnFailed(String),
     #[error("A recording is already active for this stream")]
