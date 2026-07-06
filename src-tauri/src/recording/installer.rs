@@ -71,7 +71,7 @@ fn extract_zip(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
         } else {
             if let Some(p) = outpath.parent() {
                 if !p.exists() {
-                    fs::create_dir_all(&p).map_err(|e| e.to_string())?;
+                    fs::create_dir_all(p).map_err(|e| e.to_string())?;
                 }
             }
             let mut outfile = fs::File::create(&outpath).map_err(|e| e.to_string())?;
