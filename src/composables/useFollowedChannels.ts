@@ -36,8 +36,6 @@ const _useFollowedChannels = () => {
   let pollInterval: ReturnType<typeof setInterval> | null = null;
 
   const kickChannels = computed<FollowedChannel[]>(() => {
-    if (!kickAuthenticated.value) return [];
-
     const kickFavs = favorites.value.filter((f) => f.platform === "kick");
     return kickFavs
       .map((f) => {
