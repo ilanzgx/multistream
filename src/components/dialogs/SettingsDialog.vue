@@ -16,6 +16,7 @@ import { usePreferences } from "@/composables/usePreferences";
 import {
   RefreshCw,
   Download,
+  Users,
   Globe,
   Bell,
   Database,
@@ -29,6 +30,8 @@ import {
   Captions,
   X,
   LogOut,
+  Video,
+  Settings2,
 } from "@lucide/vue";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
@@ -41,9 +44,35 @@ import { useTranscription, CHUNK_STEPS } from "@/composables/useTranscription";
 import { Slider } from "@/components/ui/slider";
 
 const { checkForUpdates, isChecking } = useUpdater();
-const { notificationsEnabled } = usePreferences();
+const { notificationsEnabled, recordingEnabled, recordingQuality } = usePreferences();
 const { locale, t } = useI18n();
 
+import { useRecording } from "@/composables/useRecording";
+const {
+  orphans,
+  recoverOrphan,
+  dismissOrphan,
+  isDependenciesInstalled,
+  isDownloadingDependencies,
+  downloadDependenciesProgress,
+  downloadDependenciesStep,
+  checkDependencies,
+  installDependencies,
+} = useRecording();
+
+import { invoke } from "@tauri-apps/api/core";
+import { ref as vueRef, onMounted } from "vue";
+const isRecordingSupported = vueRef<boolean>(false);
+onMounted(() => {
+  if (isRunningInTauri) {
+    invoke<boolean>("is_recording_supported_cmd").then((v) => {
+      isRecordingSupported.value = v;
+      if (props.open && v) {
+        checkDependencies();
+      }
+    });
+  }
+});
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 const {
   authenticated: twitchAuthenticated,
@@ -107,7 +136,7 @@ const changeLanguage = (lang: string) => {
   localStorage.setItem("locale", lang);
 };
 
-defineProps<{
+const props = defineProps<{
   open?: boolean;
 }>();
 
@@ -238,6 +267,16 @@ watch(notificationsEnabled, (enabled) => {
 
 // all platforms except custom
 const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
+
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen && isRunningInTauri && isRecordingSupported.value) {
+      checkDependencies();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
@@ -258,7 +297,11 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
         <TabsList
           :class="[
             'grid w-full bg-[#1e2127]',
-            isRunningInTauri && isSupported ? 'grid-cols-4' : 'grid-cols-3',
+            isRunningInTauri && isSupported && isRecordingSupported
+              ? 'grid-cols-5'
+              : isRunningInTauri && (isSupported || isRecordingSupported)
+                ? 'grid-cols-4'
+                : 'grid-cols-3',
           ]"
         >
           <TabsTrigger
@@ -290,6 +333,14 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
           >
             <Puzzle class="size-4" />
             {{ $t("settings.tabs.resources") }}
+          </TabsTrigger>
+          <TabsTrigger
+            v-if="isRunningInTauri"
+            value="gravacao"
+            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+          >
+            <Video class="size-4" />
+            {{ $t("settings.recording.tabLabel") }}
           </TabsTrigger>
         </TabsList>
 
@@ -399,21 +450,7 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
             <!-- Accounts / Platforms Section -->
             <div class="space-y-2 relative">
               <div class="flex items-center gap-2 px-1">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  class="size-4 text-gray-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
+                <Users class="size-4 text-gray-400 shrink-0" />
                 <div>
                   <div class="flex items-center gap-2">
                     <h3 class="text-white text-sm font-medium">{{ $t("settings.auth.title") }}</h3>
@@ -748,6 +785,154 @@ const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
                         </Button>
                       </template>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <!-- Recording Tab -->
+          <TabsContent v-if="isRunningInTauri" value="gravacao" class="space-y-6 mt-0 outline-none">
+            <!-- Enable Recording -->
+            <div class="space-y-2">
+              <div class="flex items-center gap-2 px-1">
+                <Video class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.recording.enableTitle") }}
+                  </h3>
+                  <p class="text-gray-400 text-xs">
+                    {{ $t("settings.recording.enableDescription") }}
+                  </p>
+                </div>
+              </div>
+              <div
+                class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-between"
+              >
+                <span class="text-sm text-white font-medium">
+                  {{ $t("settings.recording.enableFeatureToggle") }}
+                </span>
+                <Switch
+                  v-if="isDependenciesInstalled"
+                  v-model="recordingEnabled"
+                  :disabled="!isRecordingSupported"
+                />
+                <Button
+                  v-else-if="!isDownloadingDependencies"
+                  size="sm"
+                  variant="outline"
+                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33]"
+                  :disabled="!isRecordingSupported"
+                  @click="installDependencies"
+                >
+                  <Download class="size-4 mr-1.5" />
+                  {{ $t("settings.recording.downloadDependencies") }}
+                </Button>
+                <div v-else class="flex flex-col items-end gap-1 w-[240px]">
+                  <div class="flex justify-between w-full text-[9px] text-gray-400 font-mono">
+                    <span class="truncate max-w-[200px]">{{ downloadDependenciesStep }}</span>
+                    <span>{{ downloadDependenciesProgress }}%</span>
+                  </div>
+                  <div class="h-1.5 w-full bg-[#2a2d33] rounded-full overflow-hidden">
+                    <div
+                      class="h-full bg-blue-500 transition-all duration-300"
+                      :style="{ width: `${downloadDependenciesProgress}%` }"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <p v-if="!isRecordingSupported" class="text-xs text-amber-400/80 px-1">
+                {{ $t("settings.recording.unavailableOS") }}
+              </p>
+            </div>
+
+            <!-- Quality -->
+            <div
+              class="space-y-2"
+              :class="{
+                'opacity-50 pointer-events-none': !recordingEnabled || !isDependenciesInstalled,
+              }"
+            >
+              <div class="flex items-center gap-2 px-1">
+                <Settings2 class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.recording.qualityTitle") }}
+                  </h3>
+                  <p class="text-gray-400 text-xs">
+                    {{ $t("settings.recording.qualityDescription") }}
+                  </p>
+                </div>
+              </div>
+              <div
+                class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-start"
+              >
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 w-full">
+                  <button
+                    v-for="quality in [
+                      { id: 'best', label: $t('settings.recording.qualityBest') },
+                      { id: '1080p', label: $t('settings.recording.quality1080p') },
+                      { id: '720p', label: $t('settings.recording.quality720p') },
+                      { id: '480p', label: $t('settings.recording.quality480p') },
+                      { id: 'worst', label: $t('settings.recording.qualityWorst') },
+                    ]"
+                    :key="quality.id"
+                    class="flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer w-full"
+                    :class="
+                      recordingQuality === quality.id
+                        ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                    "
+                    @click="recordingQuality = quality.id"
+                  >
+                    <span>{{ quality.label }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Orphan Recovery -->
+            <div v-if="orphans.length > 0" class="space-y-2">
+              <div class="flex items-center gap-2 px-1">
+                <div>
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.recording.orphanTitle") }}
+                  </h3>
+                  <p class="text-gray-400 text-xs">
+                    {{ $t("settings.recording.orphanDescription") }}
+                  </p>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <div
+                  v-for="orphan in orphans"
+                  :key="orphan.id"
+                  class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-between gap-2"
+                >
+                  <div class="min-w-0">
+                    <p class="text-sm text-white font-medium truncate">
+                      {{ orphan.channel }}
+                    </p>
+                    <p class="text-xs text-gray-400 truncate">
+                      {{ orphan.filename }}
+                    </p>
+                  </div>
+                  <div class="flex gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      class="bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs h-7"
+                      @click="recoverOrphan(orphan.id)"
+                    >
+                      {{ $t("settings.recording.orphanConvert") }}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 text-xs h-7"
+                      @click="dismissOrphan(orphan.id)"
+                    >
+                      {{ $t("settings.recording.orphanDismiss") }}
+                    </Button>
                   </div>
                 </div>
               </div>
