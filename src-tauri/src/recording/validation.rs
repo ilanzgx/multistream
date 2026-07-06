@@ -2,7 +2,7 @@ use super::error::RecordingError;
 
 const ALLOWED_PLATFORMS: &[&str] = &["twitch", "kick", "youtube"];
 
-const ALLOWED_QUALITY_PREFIXES: &[&str] = &[
+const ALLOWED_QUALITIES: &[&str] = &[
     "best", "worst", "1080p", "720p", "480p", "360p", "audio_only",
 ];
 
@@ -32,10 +32,7 @@ pub fn validate_platform(platform: &str) -> Result<&str, RecordingError> {
 }
 
 pub fn validate_quality(quality: &str) -> Result<&str, RecordingError> {
-    if ALLOWED_QUALITY_PREFIXES
-        .iter()
-        .any(|prefix| quality == *prefix || quality.starts_with(prefix))
-    {
+    if ALLOWED_QUALITIES.contains(&quality) {
         Ok(quality)
     } else {
         Err(RecordingError::InvalidInput(format!(

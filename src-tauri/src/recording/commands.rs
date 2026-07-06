@@ -88,14 +88,15 @@ pub async fn start_recording(
         }
     }
 
-    let ts_path = temp_path(&channel)?;
+    let ts_path = temp_path(&platform, &channel)?;
     check_disk_space(ts_path.parent().unwrap_or(&ts_path))?;
     let mp4_path = final_path(&ts_path);
 
     let url = build_stream_url(&platform, &channel);
     let args = streamlink_args(&url, &quality, &ts_path);
 
-    let python_exe = crate::recording::installer::get_python_exe(&app);
+    let python_exe = crate::recording::installer::get_python_exe(&app)
+        .map_err(RecordingError::SpawnFailed)?;
     let (mut rx, child) = app
         .shell()
         .command(python_exe.to_string_lossy().to_string())
@@ -495,7 +496,8 @@ async fn run_ffmpeg_remux(
     ts_path: &std::path::Path,
     mp4_path: &std::path::Path,
 ) -> Result<(), RecordingError> {
-    let ffmpeg_exe = crate::recording::installer::get_ffmpeg_exe(app);
+    let ffmpeg_exe = crate::recording::installer::get_ffmpeg_exe(app)
+        .map_err(RecordingError::SpawnFailed)?;
     let args = ffmpeg_remux_args(ts_path, mp4_path);
     let (mut rx, _child) = app
         .shell()
@@ -517,5 +519,7 @@ async fn run_ffmpeg_remux(
         }
     }
 
-    Ok(())
+    Err(RecordingError::SpawnFailed(
+        "ffmpeg terminated without reporting an exit status".into(),
+    ))
 }

@@ -297,9 +297,9 @@ watch(
         <TabsList
           :class="[
             'grid w-full bg-[#1e2127]',
-            isRunningInTauri && isSupported && isRecordingSupported
+            isRunningInTauri && isSupported
               ? 'grid-cols-5'
-              : isRunningInTauri && (isSupported || isRecordingSupported)
+              : isRunningInTauri
                 ? 'grid-cols-4'
                 : 'grid-cols-3',
           ]"

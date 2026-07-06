@@ -21,21 +21,24 @@ fn emit_progress(app: &AppHandle, step: &str, progress: u8) {
     });
 }
 
-pub fn get_recording_env_dir(app: &AppHandle) -> PathBuf {
-    app.path().app_data_dir().unwrap().join("recording_env")
+pub fn get_recording_env_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {}", e))
+        .map(|p| p.join("recording_env"))
 }
 
-pub fn get_python_exe(app: &AppHandle) -> PathBuf {
-    get_recording_env_dir(app).join("python.exe")
+pub fn get_python_exe(app: &AppHandle) -> Result<PathBuf, String> {
+    get_recording_env_dir(app).map(|p| p.join("python.exe"))
 }
 
-pub fn get_ffmpeg_exe(app: &AppHandle) -> PathBuf {
-    get_recording_env_dir(app).join("ffmpeg.exe")
+pub fn get_ffmpeg_exe(app: &AppHandle) -> Result<PathBuf, String> {
+    get_recording_env_dir(app).map(|p| p.join("ffmpeg.exe"))
 }
 
 #[tauri::command]
 pub async fn recording_check_dependencies(app: tauri::AppHandle) -> Result<bool, String> {
-    let env_dir = get_recording_env_dir(&app);
+    let env_dir = get_recording_env_dir(&app)?;
     let python_exe = env_dir.join("python.exe");
     let ffmpeg_exe = env_dir.join("ffmpeg.exe");
     let streamlink_exe = env_dir.join("Scripts").join("streamlink.exe");
@@ -101,7 +104,7 @@ fn extract_ffmpeg(bytes: &[u8], target_dir: &Path) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(), String> {
-    let env_dir = get_recording_env_dir(&app);
+    let env_dir = get_recording_env_dir(&app)?;
     if !env_dir.exists() {
         fs::create_dir_all(&env_dir).map_err(|e| e.to_string())?;
     }

@@ -180,14 +180,14 @@ const _useRecording = () => {
   const actionLocks = new Set<string>();
 
   async function startRecording(stream: Stream, quality: string = "best"): Promise<void> {
-    if (actionLocks.has(stream.id)) return;
-    actionLocks.add(stream.id);
-    setTimeout(() => actionLocks.delete(stream.id), 5500);
-
     if (stream.platform === "custom") {
       toast.error(t("settings.recording.customNotSupported"));
       return;
     }
+
+    if (actionLocks.has(stream.id)) return;
+    actionLocks.add(stream.id);
+    setTimeout(() => actionLocks.delete(stream.id), 5500);
 
     recordings.set(stream.id, {
       streamId: stream.id,

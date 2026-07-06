@@ -18,10 +18,10 @@ pub fn recording_dir() -> Result<PathBuf, RecordingError> {
     Ok(dir)
 }
 
-pub fn temp_path(channel: &str) -> Result<PathBuf, RecordingError> {
+pub fn temp_path(platform: &str, channel: &str) -> Result<PathBuf, RecordingError> {
     let dir = recording_dir()?;
     let now = Local::now();
-    let stem = format!("{}_{}", channel, now.format("%Y-%m-%d_%H-%M-%S"));
+    let stem = format!("{}_{}_{}", platform, channel, now.format("%Y-%m-%d_%H-%M-%S"));
     Ok(dir.join(format!("{stem}.ts")))
 }
 
