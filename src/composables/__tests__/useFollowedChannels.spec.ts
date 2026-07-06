@@ -94,7 +94,7 @@ describe("useFollowedChannels", () => {
 
     // Assert
     expect(invoke).toHaveBeenCalledWith("twitch_get_followed_streams");
-    expect(channels.value).toEqual(mockTwitchData);
+    expect(channels.value).toEqual([{ ...mockTwitchData[0], isFollowed: true }]);
   });
 
   it("should populate kick channels from favorites and statuses when kick is authenticated", () => {
@@ -127,6 +127,7 @@ describe("useFollowedChannels", () => {
       title: "Test Kick Stream",
       game: "Just Chatting",
       thumbnailUrl: "http://thumb.com/kick",
+      isFavorite: true,
     });
   });
 
