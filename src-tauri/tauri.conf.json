@@ -28,7 +28,9 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/whisper-cli"
+      "binaries/whisper-cli",
+      "binaries/streamlink",
+      "binaries/ffmpeg"
     ],
     "resources": [
       "binaries/*.dll"
