@@ -25,7 +25,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { startLogin, cancelLogin, authenticated } = useTwitchAuth();
-const { copy, copied } = useClipboard();
+const { copy: copyUrl, copied: urlCopied } = useClipboard();
+const { copy: copyCode, copied: codeCopied } = useClipboard();
 
 const deviceFlow = ref<DeviceFlowResponse | null>(null);
 const authError = ref<string | null>(null);
@@ -132,14 +133,25 @@ onUnmounted(() => {
         <template v-else-if="deviceFlow">
           <div class="text-center space-y-2 w-full">
             <p class="text-sm text-gray-400">{{ t("chat.unified.auth.step1") }}</p>
-            <Button
-              variant="outline"
-              class="w-full border-[#2a2d33] text-[#bf94ff] hover:bg-[#2a2d33] hover:text-white hover:border-[#2a2d33] transition-all bg-transparent"
-              @click="handleOpenLink"
-            >
-              {{ deviceFlow.verification_uri }}
-              <ExternalLink class="w-4 h-4 ml-2" />
-            </Button>
+            <div class="flex items-center gap-2 w-full">
+              <Button
+                variant="outline"
+                class="flex-1 border-[#2a2d33] text-[#bf94ff] hover:bg-[#2a2d33] hover:text-white hover:border-[#2a2d33] transition-all bg-transparent truncate"
+                @click="handleOpenLink"
+              >
+                <span class="truncate">{{ deviceFlow.verification_uri }}</span>
+                <ExternalLink class="w-4 h-4 ml-2 shrink-0" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                class="border-[#2a2d33] bg-transparent hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors shrink-0"
+                @click="copyUrl(deviceFlow.verification_uri)"
+              >
+                <Check v-if="urlCopied" class="w-4 h-4 text-green-400" />
+                <Copy v-else class="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           <div class="text-center w-full space-y-2">
@@ -153,10 +165,10 @@ onUnmounted(() => {
               <Button
                 variant="outline"
                 size="icon"
-                class="border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors"
-                @click="copy(deviceFlow.user_code)"
+                class="border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors shrink-0"
+                @click="copyCode(deviceFlow.user_code)"
               >
-                <Check v-if="copied" class="w-4 h-4 text-green-400" />
+                <Check v-if="codeCopied" class="w-4 h-4 text-green-400" />
                 <Copy v-else class="w-4 h-4" />
               </Button>
             </div>

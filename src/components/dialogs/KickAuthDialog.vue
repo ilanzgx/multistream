@@ -8,9 +8,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, ExternalLink } from "@lucide/vue";
+import { Loader2, ExternalLink, Copy, Check } from "@lucide/vue";
 import { useKickAuth } from "@/composables/useKickAuth";
 import { useI18n } from "vue-i18n";
+import { useClipboard } from "@vueuse/core";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import KickIcon from "@/components/icons/KickIcon.vue";
 
@@ -24,6 +25,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const { startLogin, cancelLogin, authenticated, authUrl } = useKickAuth();
+const { copy, copied } = useClipboard();
 
 const authError = ref<string | null>(null);
 
@@ -62,13 +64,6 @@ watch(authenticated, (isAuth) => {
     if (props.open) {
       emit("update:open", false);
     }
-  }
-});
-
-// Auto-open browser when authUrl is available
-watch(authUrl, (url) => {
-  if (url) {
-    handleOpenLink();
   }
 });
 
@@ -118,14 +113,25 @@ onUnmounted(() => {
           <div class="text-center space-y-2 w-full">
             <p class="text-sm text-gray-400">{{ t("settings.auth.authorizeBrowser") }}</p>
             <p class="text-xs text-gray-500 mb-4">{{ t("settings.auth.manualLink") }}</p>
-            <Button
-              variant="outline"
-              class="w-full border-[#2a2d33] text-[#53FC18] hover:bg-[#2a2d33] hover:text-[#53FC18] hover:border-[#2a2d33] transition-all bg-transparent truncate"
-              @click="handleOpenLink"
-            >
-              {{ t("settings.auth.openBrowser") }}
-              <ExternalLink class="w-4 h-4 ml-2" />
-            </Button>
+            <div class="flex items-center gap-2 w-full">
+              <Button
+                variant="outline"
+                class="flex-1 border-[#2a2d33] text-[#53FC18] hover:bg-[#2a2d33] hover:text-[#53FC18] hover:border-[#2a2d33] transition-all bg-transparent truncate"
+                @click="handleOpenLink"
+              >
+                {{ t("settings.auth.openBrowser") }}
+                <ExternalLink class="w-4 h-4 ml-2 shrink-0" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                class="border-[#2a2d33] bg-transparent hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors shrink-0"
+                @click="copy(authUrl)"
+              >
+                <Check v-if="copied" class="w-4 h-4 text-green-400" />
+                <Copy v-else class="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           <div class="flex items-center justify-center gap-3 pt-4 text-gray-400">
