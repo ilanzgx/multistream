@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import type { Stream } from "./useStreams";
+import { usePreferences } from "./usePreferences";
 
 export interface RecordingState {
   streamId: string;
@@ -46,9 +47,7 @@ function ensureTicker() {
 }
 
 function stopTickerIfIdle() {
-  const anyRecording = [...recordings.values()].some(
-    (e) => e.status === "recording"
-  );
+  const anyRecording = [...recordings.values()].some((e) => e.status === "recording");
   if (!anyRecording && tickerHandle !== null) {
     clearInterval(tickerHandle);
     tickerHandle = null;
@@ -106,7 +105,13 @@ const _useRecording = () => {
     toast.success(t("settings.recording.saved"), {
       action: {
         label: t("settings.recording.openFolder"),
-        onClick: () => invoke("open_recording_folder", { streamId: payload.streamId }),
+        onClick: () => {
+          const { recordingPath } = usePreferences();
+          invoke("open_recording_folder", {
+            streamId: payload.streamId,
+            outputDir: recordingPath.value || null,
+          });
+        },
       },
     });
   });
@@ -120,7 +125,13 @@ const _useRecording = () => {
       toast.warning(t("settings.recording.remuxFailed"), {
         action: {
           label: t("settings.recording.openFolder"),
-          onClick: () => invoke("open_recording_folder", { streamId: payload.streamId }),
+          onClick: () => {
+            const { recordingPath } = usePreferences();
+            invoke("open_recording_folder", {
+              streamId: payload.streamId,
+              outputDir: recordingPath.value || null,
+            });
+          },
         },
       });
     }
@@ -203,11 +214,14 @@ const _useRecording = () => {
     const prefixText = prefix !== "settings.recording.qualityPrefix" ? prefix : "Quality: ";
     toast.info(`${t("settings.recording.starting")} ${prefixText}${qualityLabel}`);
     try {
+      const { recordingPath } = usePreferences();
+      const outputDir = recordingPath.value || null;
       await invoke("start_recording", {
         streamId: stream.id,
         channel: stream.channel,
         platform: stream.platform,
         quality,
+        outputDir,
       });
     } catch (e) {
       recordings.delete(stream.id);
@@ -238,7 +252,9 @@ const _useRecording = () => {
   }
 
   async function openFolder(streamId: string): Promise<void> {
-    await invoke("open_recording_folder", { streamId });
+    const { recordingPath } = usePreferences();
+    const outputDir = recordingPath.value || null;
+    await invoke("open_recording_folder", { streamId, outputDir });
   }
 
   async function recoverOrphan(orphanId: string): Promise<void> {
@@ -262,6 +278,12 @@ const _useRecording = () => {
   async function checkDependencies(): Promise<boolean> {
     try {
       isDependenciesInstalled.value = await invoke<boolean>("recording_check_dependencies");
+      if (isDependenciesInstalled.value) {
+        const { recordingPath } = usePreferences();
+        orphans.value = await invoke<OrphanRecording[]>("scan_orphans", {
+          outputDir: recordingPath.value || null,
+        });
+      }
       return isDependenciesInstalled.value;
     } catch (e) {
       console.error("Failed to check recording dependencies:", e);
@@ -274,7 +296,7 @@ const _useRecording = () => {
     isDownloadingDependencies.value = true;
     downloadDependenciesProgress.value = 0;
     downloadDependenciesStep.value = "Starting download...";
-    
+
     try {
       await invoke("recording_install_dependencies");
       isDependenciesInstalled.value = true;

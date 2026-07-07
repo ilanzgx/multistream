@@ -32,6 +32,11 @@ import {
   LogOut,
   Video,
   Settings2,
+  FolderOpen,
+  RotateCcw,
+  ChevronsUp,
+  Monitor,
+  ChevronsDown,
 } from "@lucide/vue";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
@@ -44,7 +49,8 @@ import { useTranscription, CHUNK_STEPS } from "@/composables/useTranscription";
 import { Slider } from "@/components/ui/slider";
 
 const { checkForUpdates, isChecking } = useUpdater();
-const { notificationsEnabled, recordingEnabled, recordingQuality } = usePreferences();
+const { notificationsEnabled, recordingEnabled, recordingQuality, recordingPath } =
+  usePreferences();
 const { locale, t } = useI18n();
 
 import { useRecording } from "@/composables/useRecording";
@@ -103,6 +109,33 @@ const openKickAuthModal = () => {
     })
   );
   emit("update:open", false);
+};
+
+const handleSelectRecordingPath = async () => {
+  if (isRunningInTauri) {
+    try {
+      const { open } = await import("@tauri-apps/plugin-dialog");
+      const selected = await open({
+        directory: true,
+        multiple: false,
+      });
+      if (selected && typeof selected === "string") {
+        const pathStr = selected.trim();
+        if (
+          !pathStr.toLowerCase().endsWith("multistream") &&
+          !pathStr.toLowerCase().endsWith("multistream/") &&
+          !pathStr.toLowerCase().endsWith("multistream\\")
+        ) {
+          const { join } = await import("@tauri-apps/api/path");
+          recordingPath.value = await join(pathStr, "Multistream");
+        } else {
+          recordingPath.value = pathStr;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to open dialog:", e);
+    }
+  }
 };
 
 const {
@@ -792,9 +825,13 @@ watch(
           </TabsContent>
 
           <!-- Recording Tab -->
-          <TabsContent v-if="isRunningInTauri && isRecordingSupported" value="gravacao" class="space-y-6 mt-0 outline-none">
+          <TabsContent
+            v-if="isRunningInTauri && isRecordingSupported"
+            value="gravacao"
+            class="space-y-6 mt-0 outline-none"
+          >
             <!-- Enable Recording -->
-            <div class="space-y-2">
+            <div class="flex items-center justify-between">
               <div class="flex items-center gap-2 px-1">
                 <Video class="size-4 text-gray-400 shrink-0" />
                 <div>
@@ -804,14 +841,12 @@ watch(
                   <p class="text-gray-400 text-xs">
                     {{ $t("settings.recording.enableDescription") }}
                   </p>
+                  <p v-if="!isRecordingSupported" class="text-[11px] text-amber-400/80 mt-1">
+                    {{ $t("settings.recording.unavailableOS") }}
+                  </p>
                 </div>
               </div>
-              <div
-                class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-between"
-              >
-                <span class="text-sm text-white font-medium">
-                  {{ $t("settings.recording.enableFeatureToggle") }}
-                </span>
+              <div class="flex items-center gap-3 shrink-0">
                 <Switch
                   v-if="isDependenciesInstalled"
                   v-model="recordingEnabled"
@@ -828,9 +863,9 @@ watch(
                   <Download class="size-4 mr-1.5" />
                   {{ $t("settings.recording.downloadDependencies") }}
                 </Button>
-                <div v-else class="flex flex-col items-end gap-1 w-[240px]">
+                <div v-else class="flex flex-col items-end gap-1 w-[180px]">
                   <div class="flex justify-between w-full text-[9px] text-gray-400 font-mono">
-                    <span class="truncate max-w-[200px]">{{ downloadDependenciesStep }}</span>
+                    <span class="truncate max-w-[140px]">{{ downloadDependenciesStep }}</span>
                     <span>{{ downloadDependenciesProgress }}%</span>
                   </div>
                   <div class="h-1.5 w-full bg-[#2a2d33] rounded-full overflow-hidden">
@@ -841,9 +876,6 @@ watch(
                   </div>
                 </div>
               </div>
-              <p v-if="!isRecordingSupported" class="text-xs text-amber-400/80 px-1">
-                {{ $t("settings.recording.unavailableOS") }}
-              </p>
             </div>
 
             <!-- Quality -->
@@ -870,14 +902,18 @@ watch(
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 w-full">
                   <button
                     v-for="quality in [
-                      { id: 'best', label: $t('settings.recording.qualityBest') },
-                      { id: '1080p', label: $t('settings.recording.quality1080p') },
-                      { id: '720p', label: $t('settings.recording.quality720p') },
-                      { id: '480p', label: $t('settings.recording.quality480p') },
-                      { id: 'worst', label: $t('settings.recording.qualityWorst') },
+                      { id: 'best', label: $t('settings.recording.qualityBest'), icon: ChevronsUp },
+                      { id: '1080p', label: $t('settings.recording.quality1080p'), icon: Monitor },
+                      { id: '720p', label: $t('settings.recording.quality720p'), icon: Monitor },
+                      { id: '480p', label: $t('settings.recording.quality480p'), icon: Monitor },
+                      {
+                        id: 'worst',
+                        label: $t('settings.recording.qualityWorst'),
+                        icon: ChevronsDown,
+                      },
                     ]"
                     :key="quality.id"
-                    class="flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer w-full"
+                    class="flex flex-1 items-center justify-center gap-2 px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer min-w-[60px]"
                     :class="
                       recordingQuality === quality.id
                         ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
@@ -885,9 +921,62 @@ watch(
                     "
                     @click="recordingQuality = quality.id"
                   >
-                    <span>{{ quality.label }}</span>
+                    <component
+                      :is="quality.icon"
+                      class="size-3.5 shrink-0"
+                      :class="recordingQuality === quality.id ? 'text-white' : 'text-gray-500'"
+                    />
+                    <span class="whitespace-normal leading-tight text-left text-[11px] min-w-0">{{
+                      quality.label
+                    }}</span>
                   </button>
                 </div>
+              </div>
+            </div>
+
+            <!-- Save Location -->
+            <div
+              class="flex items-center justify-between"
+              :class="{
+                'opacity-50 pointer-events-none': !recordingEnabled || !isDependenciesInstalled,
+              }"
+            >
+              <div class="flex items-center gap-2 px-1 min-w-0">
+                <FolderOpen class="size-4 text-gray-400 shrink-0" />
+                <div class="min-w-0 pr-4">
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.recording.pathTitle") }}
+                  </h3>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <p class="text-gray-400 text-xs">
+                      {{ $t("settings.recording.pathDescription") }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="flex shrink-0 gap-2 items-center">
+                <Button
+                  v-if="recordingPath"
+                  variant="outline"
+                  size="sm"
+                  class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:border-[#3a3f4b] hover:bg-[#2a2d33]/50 px-2 shrink-0"
+                  :title="$t('settings.recording.resetFolder')"
+                  @click="recordingPath = ''"
+                >
+                  <RotateCcw class="size-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="border-[#2a2d33] bg-[#2a2d33]/30 text-gray-300 hover:text-white hover:bg-[#3a3f4b] hover:border-[#4a4f5b] max-w-[250px]"
+                  :title="recordingPath || $t('settings.recording.selectFolder')"
+                  @click="handleSelectRecordingPath"
+                >
+                  <FolderOpen class="size-4 mr-2 shrink-0" />
+                  <span class="truncate text-[11px] mt-0.5">
+                    {{ recordingPath || $t("settings.recording.selectFolder") }}
+                  </span>
+                </Button>
               </div>
             </div>
 
@@ -920,7 +1009,7 @@ watch(
                   <div class="flex gap-2 shrink-0">
                     <Button
                       size="sm"
-                      class="bg-[#ea580c] hover:bg-[#c2410c] text-white text-xs h-7"
+                      class="bg-white text-black hover:bg-gray-200 text-xs h-7"
                       @click="recoverOrphan(orphan.id)"
                     >
                       {{ $t("settings.recording.orphanConvert") }}

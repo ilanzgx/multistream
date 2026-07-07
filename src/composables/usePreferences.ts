@@ -7,6 +7,7 @@ export interface Preferences {
   onboardingCompleted: boolean;
   recordingEnabled: boolean;
   recordingQuality: string;
+  recordingPath: string;
 }
 
 const defaultPreferences: Preferences = {
@@ -16,6 +17,7 @@ const defaultPreferences: Preferences = {
   onboardingCompleted: false,
   recordingEnabled: false,
   recordingQuality: "best",
+  recordingPath: "",
 };
 
 const _usePreferences = () => {
@@ -61,6 +63,11 @@ const _usePreferences = () => {
     defaultPreferences.recordingQuality
   );
 
+  const recordingPath = useStorage<string>(
+    "preferences.recordingPath",
+    defaultPreferences.recordingPath
+  );
+
   /**
    * @brief Set the selected chat
    *
@@ -69,6 +76,14 @@ const _usePreferences = () => {
    */
   const setSelectedChat = (chatId: string) => {
     selectedChat.value = chatId;
+  };
+
+  const setRecordingQuality = (quality: string) => {
+    recordingQuality.value = quality;
+  };
+
+  const setRecordingPath = (path: string) => {
+    recordingPath.value = path;
   };
 
   /**
@@ -112,6 +127,7 @@ const _usePreferences = () => {
     onboardingCompleted.value = defaultPreferences.onboardingCompleted;
     recordingEnabled.value = defaultPreferences.recordingEnabled;
     recordingQuality.value = defaultPreferences.recordingQuality;
+    recordingPath.value = defaultPreferences.recordingPath;
   };
 
   return {
@@ -122,12 +138,15 @@ const _usePreferences = () => {
     onboardingCompleted,
     recordingEnabled,
     recordingQuality,
+    recordingPath,
 
     // actions
     setSelectedChat,
     toggleSidebar,
     setSidebarOpen,
     setOnboardingCompleted,
+    setRecordingQuality,
+    setRecordingPath,
     resetPreferences,
   };
 };
