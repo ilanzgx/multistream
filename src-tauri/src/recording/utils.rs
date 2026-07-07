@@ -4,7 +4,6 @@ pub fn is_recording_supported() -> bool {
     cfg!(all(target_os = "windows", target_arch = "x86_64"))
 }
 
-
 pub fn build_stream_url(platform: &str, channel: &str) -> String {
     match platform {
         "twitch" => format!("https://twitch.tv/{channel}"),

@@ -3,7 +3,13 @@ use super::error::RecordingError;
 const ALLOWED_PLATFORMS: &[&str] = &["twitch", "kick", "youtube"];
 
 const ALLOWED_QUALITIES: &[&str] = &[
-    "best", "worst", "1080p", "720p", "480p", "360p", "audio_only",
+    "best",
+    "worst",
+    "1080p",
+    "720p",
+    "480p",
+    "360p",
+    "audio_only",
 ];
 
 pub fn validate_channel(channel: &str) -> Result<&str, RecordingError> {

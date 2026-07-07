@@ -88,8 +88,6 @@ fn main() {
                 panic!("Failed to download whisper.cpp archive");
             }
         }
-
-
     } else {
         // Create dummy files for unsupported platforms so tauri_build doesn't fail
         for name in [

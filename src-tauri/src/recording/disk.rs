@@ -19,7 +19,11 @@ pub fn check_disk_space(dir: &Path) -> Result<(), RecordingError> {
 fn available_space(dir: &Path) -> Option<u64> {
     use std::os::windows::ffi::OsStrExt;
 
-    let path_wide: Vec<u16> = dir.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    let path_wide: Vec<u16> = dir
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
 
     let mut free_bytes_available: u64 = 0;
     let mut total_number_of_bytes: u64 = 0;
@@ -34,7 +38,11 @@ fn available_space(dir: &Path) -> Option<u64> {
         )
     };
 
-    if ok != 0 { Some(free_bytes_available) } else { None }
+    if ok != 0 {
+        Some(free_bytes_available)
+    } else {
+        None
+    }
 }
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
