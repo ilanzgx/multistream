@@ -11,11 +11,8 @@ use super::disk::check_disk_space;
 use super::error::RecordingError;
 use super::orphan::OrphanRecording;
 use super::paths::{final_path, temp_path};
-use super::utils::{
-    build_stream_url, ffmpeg_remux_args, is_recording_supported,
-    streamlink_args,
-};
 use super::state::{RecordingEntry, RecordingManager, RecordingStatus, StopReason};
+use super::utils::{build_stream_url, ffmpeg_remux_args, is_recording_supported, streamlink_args};
 use super::validation::{
     validate_channel, validate_orphan_id, validate_platform, validate_quality, validate_stream_id,
 };
@@ -57,12 +54,6 @@ pub struct RecordingInfo {
     status: RecordingStatus,
 }
 
-#[derive(Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct OrphansFoundPayload {
-    orphans: Vec<OrphanRecording>,
-}
-
 #[tauri::command]
 pub async fn start_recording(
     app: AppHandle,
@@ -71,6 +62,7 @@ pub async fn start_recording(
     channel: String,
     platform: String,
     quality: String,
+    output_dir: Option<String>,
 ) -> Result<(), RecordingError> {
     validate_stream_id(&stream_id)?;
     validate_channel(&channel)?;
@@ -88,15 +80,15 @@ pub async fn start_recording(
         }
     }
 
-    let ts_path = temp_path(&platform, &channel)?;
+    let ts_path = temp_path(&platform, &channel, output_dir)?;
     check_disk_space(ts_path.parent().unwrap_or(&ts_path))?;
     let mp4_path = final_path(&ts_path);
 
     let url = build_stream_url(&platform, &channel);
     let args = streamlink_args(&url, &quality, &ts_path);
 
-    let python_exe = crate::recording::installer::get_python_exe(&app)
-        .map_err(RecordingError::SpawnFailed)?;
+    let python_exe =
+        crate::recording::installer::get_python_exe(&app).map_err(RecordingError::SpawnFailed)?;
     let (mut rx, child) = app
         .shell()
         .command(python_exe.to_string_lossy().to_string())
@@ -236,8 +228,27 @@ pub async fn is_recording(
     let entries = state.entries.lock().await;
     Ok(entries
         .get(&stream_id)
-        .map(|e| matches!(e.status, RecordingStatus::Recording | RecordingStatus::Starting))
+        .map(|e| {
+            matches!(
+                e.status,
+                RecordingStatus::Recording | RecordingStatus::Starting
+            )
+        })
         .unwrap_or(false))
+}
+
+#[tauri::command]
+pub async fn scan_orphans(
+    _app: AppHandle,
+    state: State<'_, RecordingManager>,
+    output_dir: Option<String>,
+) -> Result<Vec<OrphanRecording>, RecordingError> {
+    let orphans = super::orphan::scan_orphans(output_dir);
+    {
+        let mut guard = state.orphans.lock().await;
+        *guard = orphans.clone();
+    }
+    Ok(orphans)
 }
 
 #[tauri::command]
@@ -260,9 +271,10 @@ pub async fn list_recordings(
 pub async fn open_recording_folder(
     app: AppHandle,
     _stream_id: String,
+    output_dir: Option<String>,
 ) -> Result<(), RecordingError> {
     use tauri_plugin_opener::OpenerExt;
-    let folder = super::paths::recording_dir()?;
+    let folder = super::paths::recording_dir(output_dir)?;
     app.opener()
         .open_path(folder.to_string_lossy().to_string(), None::<String>)
         .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
@@ -342,19 +354,6 @@ pub async fn dismiss_orphan_recording(
 #[tauri::command]
 pub fn is_recording_supported_cmd() -> bool {
     is_recording_supported()
-}
-
-pub async fn emit_orphans_if_any(app: &AppHandle) {
-    let state = app.state::<RecordingManager>();
-    let orphans = super::orphan::scan_orphans();
-    if orphans.is_empty() {
-        return;
-    }
-    {
-        let mut guard = state.orphans.lock().await;
-        *guard = orphans.clone();
-    }
-    let _ = app.emit("recording:orphans-found", OrphansFoundPayload { orphans });
 }
 
 pub async fn shutdown_all_recordings(app: &AppHandle) {
@@ -496,8 +495,8 @@ async fn run_ffmpeg_remux(
     ts_path: &std::path::Path,
     mp4_path: &std::path::Path,
 ) -> Result<(), RecordingError> {
-    let ffmpeg_exe = crate::recording::installer::get_ffmpeg_exe(app)
-        .map_err(RecordingError::SpawnFailed)?;
+    let ffmpeg_exe =
+        crate::recording::installer::get_ffmpeg_exe(app).map_err(RecordingError::SpawnFailed)?;
     let args = ffmpeg_remux_args(ts_path, mp4_path);
     let (mut rx, _child) = app
         .shell()

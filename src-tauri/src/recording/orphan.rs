@@ -15,8 +15,8 @@ pub struct OrphanRecording {
     pub full_path: std::path::PathBuf,
 }
 
-pub fn scan_orphans() -> Vec<OrphanRecording> {
-    let Some(root) = orphan_scan_root() else {
+pub fn scan_orphans(base_dir: Option<String>) -> Vec<OrphanRecording> {
+    let Some(root) = orphan_scan_root(base_dir) else {
         return Vec::new();
     };
 
@@ -49,11 +49,7 @@ fn collect_orphans(dir: &std::path::Path, out: &mut Vec<OrphanRecording>) {
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_default();
 
-        let channel = filename
-            .split('_')
-            .next()
-            .unwrap_or("unknown")
-            .to_string();
+        let channel = filename.split('_').next().unwrap_or("unknown").to_string();
 
         let size_bytes = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
 

@@ -24,12 +24,12 @@ use kick::commands::{
 use kick::state::KickState;
 
 mod recording;
-use recording::RecordingManager;
 use recording::commands::{
     dismiss_orphan_recording, is_recording, is_recording_supported_cmd, list_recordings,
-    open_recording_folder, recover_orphan_recording, start_recording, stop_recording,
+    open_recording_folder, recover_orphan_recording, scan_orphans, start_recording, stop_recording,
 };
 use recording::installer::{recording_check_dependencies, recording_install_dependencies};
+use recording::RecordingManager;
 
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
@@ -161,16 +161,11 @@ pub fn run() {
             is_recording_supported_cmd,
             recording_check_dependencies,
             recording_install_dependencies,
+            scan_orphans,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
             app.manage(RecordingManager::new());
-
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                recording::commands::emit_orphans_if_any(&app_handle).await;
-            });
-
             let twitch_state = TwitchState::new();
             app.manage(twitch_state);
             let state = app.state::<TwitchState>();
