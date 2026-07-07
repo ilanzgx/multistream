@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { useRecents } from "./useRecents";
 import { useFocusedStream } from "./useFocusedStream";
 import { useMediaCodecs } from "./useMediaCodecs";
+import { useRecording } from "./useRecording";
 import { WATCH_TIME_CONFIG } from "@/config/watchTime";
 
 export type Platform = "kick" | "twitch" | "youtube" | "custom";
@@ -178,6 +179,11 @@ const _useStreams = () => {
   const removeStream = (id: string) => {
     const stream = streams.value.find((s) => s.id === id);
     if (!stream) return;
+
+    const { isRecording, stopRecording } = useRecording();
+    if (isRecording(id)) {
+      stopRecording(id);
+    }
 
     streams.value = streams.value.filter((s) => s.id !== id);
 

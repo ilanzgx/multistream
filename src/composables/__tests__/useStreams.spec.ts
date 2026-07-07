@@ -17,9 +17,16 @@ vi.mock("vue-sonner", () => ({
   },
 }));
 
-vi.mock("./useRecents", () => ({
+vi.mock("../useRecents", () => ({
   useRecents: () => ({
     addRecent: vi.fn(),
+  }),
+}));
+
+vi.mock("../useRecording", () => ({
+  useRecording: () => ({
+    isRecording: vi.fn(() => false),
+    stopRecording: vi.fn(),
   }),
 }));
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
-import { X, Heart, Maximize2, Camera } from "@lucide/vue";
+import { X, Heart, Maximize2, Camera, Circle, CircleStop } from "@lucide/vue";
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
@@ -11,12 +11,16 @@ import { toast } from "vue-sonner";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useElementSize } from "@vueuse/core";
 import { useProfilePicture } from "@/composables/useProfilePicture";
+import { useRecording } from "@/composables/useRecording";
+import { usePreferences } from "@/composables/usePreferences";
 
 const { requestRemoveStream, sessionStartTimes, now } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
 const { toggleFocus, isFocused, clearFocus, focusedStreamId } = useFocusedStream();
 const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
+const { recordingEnabled, recordingQuality } = usePreferences();
+const { startRecording, stopRecording, isRecording, getState } = useRecording();
 
 const formatWatchTime = (ms: number): string => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -395,6 +399,33 @@ const handleScreenshot = () => {
       >
         <Camera :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
+      <!-- record button -->
+      <template v-if="recordingEnabled && props.platform !== 'custom'">
+        <button
+          :data-testid="`record-stream-${props.channel}`"
+          :class="[
+            'relative pointer-events-auto flex flex-col items-center justify-center rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
+            isMiniaturized ? 'size-5' : 'size-8',
+            isRecording(props.channelid)
+              ? 'bg-red-500/80 text-white border-red-400/50 hover:bg-red-600/80'
+              : 'bg-black/60 text-white/80 border-white/10 hover:bg-red-500/80 hover:text-white hover:border-red-400/50',
+          ]"
+          @click="
+            isRecording(props.channelid)
+              ? stopRecording(props.channelid)
+              : startRecording(
+                  { id: props.channelid, channel: props.channel, platform: props.platform },
+                  recordingQuality || 'best'
+                )
+          "
+        >
+          <CircleStop
+            v-if="isRecording(props.channelid)"
+            :class="isMiniaturized ? 'size-3' : 'size-4'"
+          />
+          <Circle v-else :class="isMiniaturized ? 'size-3' : 'size-4'" />
+        </button>
+      </template>
       <!-- focus mode button -->
       <button
         :class="[
@@ -413,13 +444,24 @@ const handleScreenshot = () => {
     <!-- watch timer bottom overlay bar - appears on hover -->
     <div
       :class="[
-        'absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] text-white/70 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 shadow-lg',
+        'absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] text-white/70 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 shadow-lg flex items-center gap-2',
         isMiniaturized ? 'scale-90 bottom-1' : '',
       ]"
     >
-      <span class="font-medium tracking-wide"
-        >{{ t("stream.watching") }}: {{ displayWatchTime }}</span
+      <span
+        v-if="getState(props.channelid)?.status === 'recording'"
+        class="flex items-center gap-1 text-red-400 font-medium tabular-nums"
       >
+        <Circle class="size-2 animate-pulse fill-red-400 text-red-400" />
+        {{ formatWatchTime((getState(props.channelid)?.elapsed ?? 0) * 1000) }}
+      </span>
+      <div
+        v-if="getState(props.channelid)?.status === 'recording'"
+        class="w-px h-3 bg-white/10"
+      ></div>
+      <span class="font-medium tracking-wide tabular-nums">
+        {{ t("stream.watching") }}: {{ displayWatchTime }}
+      </span>
     </div>
 
     <slot />

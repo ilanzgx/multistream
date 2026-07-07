@@ -23,6 +23,14 @@ use kick::commands::{
 };
 use kick::state::KickState;
 
+mod recording;
+use recording::RecordingManager;
+use recording::commands::{
+    dismiss_orphan_recording, is_recording, is_recording_supported_cmd, list_recordings,
+    open_recording_folder, recover_orphan_recording, start_recording, stop_recording,
+};
+use recording::installer::{recording_check_dependencies, recording_install_dependencies};
+
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
 
@@ -92,6 +100,7 @@ const METRICS: &str = include_str!("core/metrics.bin");
 pub fn run() {
     // 1. Initialize universal core plugins
     let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build());
@@ -142,9 +151,25 @@ pub fn run() {
             kick_send_message,
             kick_set_channels,
             twitch_get_followed_streams,
+            start_recording,
+            stop_recording,
+            is_recording,
+            list_recordings,
+            open_recording_folder,
+            recover_orphan_recording,
+            dismiss_orphan_recording,
+            is_recording_supported_cmd,
+            recording_check_dependencies,
+            recording_install_dependencies,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
+            app.manage(RecordingManager::new());
+
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                recording::commands::emit_orphans_if_any(&app_handle).await;
+            });
 
             let twitch_state = TwitchState::new();
             app.manage(twitch_state);
@@ -322,7 +347,13 @@ pub fn run() {
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => show_main_window(app),
-                    "quit" => app.exit(0),
+                    "quit" => {
+                        let app_clone = app.clone();
+                        tauri::async_runtime::block_on(async move {
+                            recording::commands::shutdown_all_recordings(&app_clone).await;
+                        });
+                        app.exit(0);
+                    }
                     _ => {}
                 })
                 .on_tray_icon_event(|tray, event| {
@@ -338,6 +369,16 @@ pub fn run() {
                 .build(app)?;
 
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::Destroyed = event {
+                if window.app_handle().webview_windows().is_empty() {
+                    let app = window.app_handle().clone();
+                    tauri::async_runtime::block_on(async move {
+                        recording::commands::shutdown_all_recordings(&app).await;
+                    });
+                }
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

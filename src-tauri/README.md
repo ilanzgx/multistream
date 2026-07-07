@@ -1,4 +1,4 @@
-﻿# Multistream — Rust Backend (`src-tauri`)
+# Multistream — Rust Backend (`src-tauri`)
 
 Backend of the Multistream application, built with [Tauri 2](https://v2.tauri.app/) and Rust. Responsible for OAuth authentication, real-time chat, audio transcription, and exposing IPC commands to the Vue frontend.
 
@@ -12,6 +12,7 @@ Backend of the Multistream application, built with [Tauri 2](https://v2.tauri.ap
 4. [Global Commands (`lib.rs`)](#4-global-commands-librs)
 5. [Auto-update](#5-auto-update)
 6. [Build Script (`build.rs`)](#6-build-script-buildrs)
+7. [Local Stream Recording](#7-local-stream-recording)
 
 ---
 
@@ -281,3 +282,55 @@ On other targets, creates empty placeholder files so the Tauri bundler does not 
 ### `tauri_build::build()`
 
 Generates capability schemas and prepares the Tauri security manifest. Must be the last call in the script.
+
+---
+
+## 7. Local Stream Recording
+
+Local stream recording is powered by [Streamlink](https://streamlink.github.io/) (and `ffmpeg` for remuxing), executed natively via `std::process::Command`.
+
+### Architecture Insight: Why not use Tauri Sidecars?
+
+To maintain Multistream's core philosophy of being incredibly lightweight and performant, we intentionally avoided bundling Streamlink, Python, and FFmpeg as [Tauri Sidecars](https://v2.tauri.app/concept/sidecar/). 
+
+Bundling these executables would bloat the initial application installer by hundreds of megabytes. Instead, we use an **On-Demand Portable Environment**:
+- The dependencies are only downloaded if the user explicitly enables the Recording feature.
+- When enabled, the app downloads a standalone Python embed, installs the `streamlink` pip package, and fetches a standalone `ffmpeg.exe`.
+- Everything is kept isolated in `%APPDATA%\multistream\recording_env`.
+- We then interact with them directly via Rust's native `std::process::Command`, avoiding any heavy wrappers (like Node.js servers) and maintaining near-zero overhead.
+
+### Recording Process
+
+```text
+start_recording
+  └─ Checks if the `recording_env` exists and is valid.
+  └─ Resolves the correct platform URL (e.g., `twitch.tv/<channel>`).
+  └─ Spawns the Streamlink process:
+       streamlink <url> <quality> --output <Videos>/Multistream/<platform>/<channel>_...ts
+  └─ Saves the `Child` process handle in a global `Arc<Mutex<HashMap<String, Child>>>`.
+  └─ Spawns a background thread to wait for the process to exit and handle remuxing.
+```
+
+When a recording stops, the `.ts` file is automatically remuxed into an `.mp4` file using the portable `ffmpeg`, and the original `.ts` file is deleted. If the app closes abruptly, the `.ts` file remains as an "orphan". 
+
+### Orphan Recovery
+
+`get_orphan_recordings` scans the Videos directory for `.ts` files. The user can choose to convert them to `.mp4` (`remux_orphan_recording`) or discard them (`delete_orphan_recording`).
+
+### Folder Management
+
+`open_recording_folder` uses `tauri-plugin-opener` to natively open the `Videos/Multistream` directory in the OS file explorer without triggering deprecation warnings or blocking the main thread.
+
+### IPC Commands
+
+| Command | Description |
+|---|---|
+| `is_recording_supported` | `true` if OS is Windows, macOS, or Linux |
+| `check_recording_dependencies` | Checks if Streamlink and FFmpeg are present |
+| `install_recording_dependencies` | Downloads and sets up the portable environment |
+| `start_recording` | Spawns Streamlink for a given channel and quality |
+| `stop_recording` | Kills the Streamlink process |
+| `get_orphan_recordings` | Returns a list of incomplete `.ts` files |
+| `remux_orphan_recording` | Converts a `.ts` file to `.mp4` using FFmpeg |
+| `delete_orphan_recording` | Deletes a `.ts` file |
+| `open_recording_folder` | Opens the target directory in the OS explorer |

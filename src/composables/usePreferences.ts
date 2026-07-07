@@ -5,6 +5,8 @@ export interface Preferences {
   sidebarOpen: boolean;
   notificationsEnabled: boolean;
   onboardingCompleted: boolean;
+  recordingEnabled: boolean;
+  recordingQuality: string;
 }
 
 const defaultPreferences: Preferences = {
@@ -12,6 +14,8 @@ const defaultPreferences: Preferences = {
   sidebarOpen: true,
   notificationsEnabled: true,
   onboardingCompleted: false,
+  recordingEnabled: false,
+  recordingQuality: "best",
 };
 
 const _usePreferences = () => {
@@ -45,6 +49,16 @@ const _usePreferences = () => {
   const onboardingCompleted = useStorage<boolean>(
     "preferences.onboardingCompleted",
     defaultPreferences.onboardingCompleted
+  );
+
+  const recordingEnabled = useStorage<boolean>(
+    "preferences.recordingEnabled",
+    defaultPreferences.recordingEnabled
+  );
+
+  const recordingQuality = useStorage<string>(
+    "preferences.recordingQuality",
+    defaultPreferences.recordingQuality
   );
 
   /**
@@ -96,6 +110,8 @@ const _usePreferences = () => {
     sidebarOpen.value = defaultPreferences.sidebarOpen;
     notificationsEnabled.value = defaultPreferences.notificationsEnabled;
     onboardingCompleted.value = defaultPreferences.onboardingCompleted;
+    recordingEnabled.value = defaultPreferences.recordingEnabled;
+    recordingQuality.value = defaultPreferences.recordingQuality;
   };
 
   return {
@@ -104,6 +120,8 @@ const _usePreferences = () => {
     sidebarOpen,
     notificationsEnabled,
     onboardingCompleted,
+    recordingEnabled,
+    recordingQuality,
 
     // actions
     setSelectedChat,
