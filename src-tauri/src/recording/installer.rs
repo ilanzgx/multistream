@@ -6,7 +6,23 @@ use zip::ZipArchive;
 
 const PYTHON_URL: &str = "https://www.python.org/ftp/python/3.11.8/python-3.11.8-embed-amd64.zip";
 const GET_PIP_URL: &str = "https://bootstrap.pypa.io/get-pip.py";
-const FFMPEG_URL: &str = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
+const FFMPEG_URL: &str = "https://github.com/GyanD/codexffmpeg/releases/download/7.1/ffmpeg-7.1-essentials_build.zip";
+
+const PYTHON_SHA256: &str = "6347068ca56bf4dd6319f7ef5695f5a03f1ade3e9aa2d6a095ab27faa77a1290";
+const GET_PIP_SHA256: &str = "a341e1a43e38001c551a1508a73ff23636a11970b61d901d9a1cad2a18f57055";
+const FFMPEG_SHA256: &str = "fa7d4d7e795db0e2503f49f105f46ed5852386f0cfdd819899be3b65ebde24fc";
+
+fn verify_hash(bytes: &[u8], expected_hash: &str) -> Result<(), String> {
+    use sha2::{Sha256, Digest};
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    let result = hasher.finalize();
+    let hex_result = format!("{:x}", result);
+    if hex_result != expected_hash {
+        return Err(format!("Hash mismatch. Expected {}, got {}", expected_hash, hex_result));
+    }
+    Ok(())
+}
 
 #[derive(Clone, serde::Serialize)]
 struct InstallProgress {
@@ -112,6 +128,7 @@ pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(),
     // 1. Download and extract Python
     emit_progress(&app, "Downloading Python Environment...", 10);
     let python_bytes = download_file(PYTHON_URL).await?;
+    verify_hash(&python_bytes, PYTHON_SHA256)?;
     
     emit_progress(&app, "Extracting Python...", 30);
     extract_zip(&python_bytes, &env_dir)?;
@@ -119,14 +136,15 @@ pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(),
     // Fix python311._pth to enable 'import site' for pip
     let pth_path = env_dir.join("python311._pth");
     if pth_path.exists() {
-        let content = fs::read_to_string(&pth_path).unwrap_or_default();
+        let content = fs::read_to_string(&pth_path).map_err(|e| format!("Failed to read _pth: {e}"))?;
         let new_content = content.replace("#import site", "import site");
-        fs::write(&pth_path, new_content).unwrap_or_default();
+        fs::write(&pth_path, new_content).map_err(|e| format!("Failed to write _pth: {e}"))?;
     }
 
     // 2. Download get-pip.py
     emit_progress(&app, "Downloading pip...", 50);
     let pip_bytes = download_file(GET_PIP_URL).await?;
+    verify_hash(&pip_bytes, GET_PIP_SHA256)?;
     let get_pip_path = env_dir.join("get-pip.py");
     fs::write(&get_pip_path, pip_bytes).map_err(|e| e.to_string())?;
 
@@ -166,8 +184,9 @@ pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(),
     // 5. Download and extract FFmpeg
     emit_progress(&app, "Downloading FFmpeg (this may take a while)...", 80);
     let ffmpeg_bytes = download_file(FFMPEG_URL).await?;
+    verify_hash(&ffmpeg_bytes, FFMPEG_SHA256)?;
     
-    emit_progress(&app, "Extracting FFmpeg...", 95);
+    emit_progress(&app, "Extracting FFmpeg...", 90);
     extract_ffmpeg(&ffmpeg_bytes, &env_dir)?;
 
     emit_progress(&app, "Done!", 100);

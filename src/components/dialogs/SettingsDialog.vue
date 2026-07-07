@@ -297,9 +297,9 @@ watch(
         <TabsList
           :class="[
             'grid w-full bg-[#1e2127]',
-            isRunningInTauri && isSupported
+            isRunningInTauri && isSupported && isRecordingSupported
               ? 'grid-cols-5'
-              : isRunningInTauri
+              : (isRunningInTauri && isSupported) || (isRunningInTauri && isRecordingSupported)
                 ? 'grid-cols-4'
                 : 'grid-cols-3',
           ]"
@@ -335,7 +335,7 @@ watch(
             {{ $t("settings.tabs.resources") }}
           </TabsTrigger>
           <TabsTrigger
-            v-if="isRunningInTauri"
+            v-if="isRunningInTauri && isRecordingSupported"
             value="gravacao"
             class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
           >
@@ -792,7 +792,7 @@ watch(
           </TabsContent>
 
           <!-- Recording Tab -->
-          <TabsContent v-if="isRunningInTauri" value="gravacao" class="space-y-6 mt-0 outline-none">
+          <TabsContent v-if="isRunningInTauri && isRecordingSupported" value="gravacao" class="space-y-6 mt-0 outline-none">
             <!-- Enable Recording -->
             <div class="space-y-2">
               <div class="flex items-center gap-2 px-1">
