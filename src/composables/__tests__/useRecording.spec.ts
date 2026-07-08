@@ -84,6 +84,7 @@ describe("useRecording", () => {
       channel: mockStream.channel,
       platform: mockStream.platform,
       quality: "1080p",
+      outputDir: null,
     });
     scope.stop();
   });
@@ -127,7 +128,10 @@ describe("useRecording", () => {
     await openFolder(mockStream.id);
 
     // Assert
-    expect(invoke).toHaveBeenCalledWith("open_recording_folder", { streamId: mockStream.id });
+    expect(invoke).toHaveBeenCalledWith("open_recording_folder", {
+      streamId: mockStream.id,
+      outputDir: null,
+    });
     scope.stop();
   });
 
@@ -149,9 +153,7 @@ describe("useRecording", () => {
     // Arrange
     const scope = effectScope();
     const { dismissOrphan, orphans } = scope.run(() => useRecording())!;
-    orphans.value = [
-      { id: "orphan1", channel: "test", filename: "test.ts", sizeBytes: 100 },
-    ];
+    orphans.value = [{ id: "orphan1", channel: "test", filename: "test.ts", sizeBytes: 100 }];
 
     // Act
     await dismissOrphan("orphan1");
