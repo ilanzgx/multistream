@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref, computed } from "vue";
-import { Send, WifiOff, RefreshCw } from "@lucide/vue";
+import { Send, WifiOff, RefreshCw, ArrowDown } from "@lucide/vue";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,22 @@ const channelEmotes = computed(() => getEmoteDictionary(props.channel, "twitch")
 const newMessage = ref("");
 const isSending = ref(false);
 const isInitializing = ref(true);
+
+const scrollContainer = ref<HTMLElement | null>(null);
+const isScrolledUp = ref(false);
+
+function handleScroll() {
+  if (scrollContainer.value) {
+    isScrolledUp.value = Math.abs(scrollContainer.value.scrollTop) > 50;
+  }
+}
+
+function scrollToBottom() {
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = 0;
+    isScrolledUp.value = false;
+  }
+}
 
 async function handleSend() {
   const text = newMessage.value.trim();
@@ -118,19 +134,36 @@ onUnmounted(() => {
       <p class="text-sm text-gray-400">{{ t("chat.unified.disconnected") }}</p>
     </div>
 
-    <div
-      v-else
-      class="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar py-1 flex flex-col-reverse"
-    >
-      <UnifiedChatMessage
-        v-for="msg in channelMessages"
-        :key="msg.id"
-        :message="msg"
-        :is-pending="msg.isPending"
-        :channel-color="channelColor(msg.channel)"
-        :channel-avatar="channelAvatars[msg.channel]"
-        compact
-      />
+    <div v-else class="flex-1 relative min-h-0">
+      <div
+        ref="scrollContainer"
+        class="absolute inset-0 overflow-y-auto overflow-x-hidden custom-scrollbar py-1 flex flex-col-reverse"
+        @scroll="handleScroll"
+      >
+        <UnifiedChatMessage
+          v-for="msg in channelMessages"
+          :key="msg.id"
+          :message="msg"
+          :is-pending="msg.isPending"
+          :channel-color="channelColor(msg.channel)"
+          :channel-avatar="channelAvatars[msg.channel]"
+          compact
+        />
+      </div>
+
+      <Transition name="fade">
+        <div v-if="isScrolledUp" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20">
+          <Button
+            variant="secondary"
+            size="sm"
+            class="bg-[#1f232b]/95 hover:bg-[#2a2d33] text-gray-200 border border-white/10 shadow-lg rounded-full px-4 flex items-center gap-2 font-medium backdrop-blur-sm"
+            @click="scrollToBottom"
+          >
+            {{ t("chat.resume") }}
+            <ArrowDown class="w-4 h-4" />
+          </Button>
+        </div>
+      </Transition>
     </div>
 
     <!-- Message Input Area -->

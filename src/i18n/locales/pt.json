@@ -196,6 +196,7 @@
     "noStreams": "Nenhuma stream disponível.",
     "noStreamsHint": "Adicione uma stream para ver o chat.",
     "sendPlaceholder": "Enviar mensagem...",
+    "resume": "Chat ao vivo",
     "tabs": {
       "chat": "Chat",
       "transcript": "Transcrição"

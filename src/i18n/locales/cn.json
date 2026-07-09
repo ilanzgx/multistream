@@ -196,6 +196,7 @@
     "noStreams": "没有可用的直播。",
     "noStreamsHint": "添加一个直播以查看聊天。",
     "sendPlaceholder": "发送消息...",
+    "resume": "实时聊天",
     "tabs": {
       "chat": "聊天",
       "transcript": "转录"
