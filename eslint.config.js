@@ -17,6 +17,8 @@ export default tseslint.config(
       "**/*.log",
       "scripts/sync-version.ts",
       ".github/",
+      "playwright-report/",
+      "test-results/",
     ],
   },
   eslint.configs.recommended,
