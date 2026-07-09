@@ -219,7 +219,17 @@ async fn connect_irc(
                 };
 
                 match msg {
-                    Message::Text(text) => handle_irc_message(app, &text).await?,
+                    Message::Text(text) => {
+                        for line in text.lines() {
+                            if line.starts_with("PING ") {
+                                log::debug!("[twitch-irc] PING received, sending PONG");
+                                let pong = line.replace("PING", "PONG");
+                                write.send(Message::Text(pong)).await
+                                    .map_err(|e| TwitchError::WebSocket(e.to_string()))?;
+                            }
+                        }
+                        handle_irc_message(app, &text).await?;
+                    }
                     Message::Ping(payload) => {
                         write.send(Message::Pong(payload)).await
                             .map_err(|e| TwitchError::WebSocket(e.to_string()))?;
