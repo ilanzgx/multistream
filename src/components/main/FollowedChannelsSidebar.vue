@@ -116,7 +116,7 @@ const formatViewers = (count: number) => {
           :title="t('sidebar.all')"
           @click="platformFilter = 'all'"
         >
-          ALL
+          {{ t("sidebar.all") }}
         </button>
         <button
           class="p-1 rounded transition-colors"
