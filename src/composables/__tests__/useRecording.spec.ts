@@ -144,7 +144,9 @@ describe("useRecording", () => {
     await recoverOrphan("orphan1");
 
     // Assert
-    expect(toast.info).toHaveBeenCalledWith("settings.recording.remuxing");
+    expect(toast.info).toHaveBeenCalledWith("settings.recording.remuxing", {
+      description: "settings.recording.remuxingDescription",
+    });
     expect(invoke).toHaveBeenCalledWith("recover_orphan_recording", { orphanId: "orphan1" });
     scope.stop();
   });

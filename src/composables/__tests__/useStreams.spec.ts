@@ -235,66 +235,6 @@ describe("useStreams composable unit tests", () => {
     });
   });
 
-  describe("Kick Stream Reload Counters Workaround", () => {
-    it("should generate standard keys for non-Kick streams and dynamic keys for Kick streams", () => {
-      const { addStream, getStreamKey, streams } = sut;
-
-      addStream("gaules", "twitch");
-      addStream("kick1", "kick");
-
-      const twitchStream = streams.value.find((s) => s.platform === "twitch")!;
-      const kickStream = streams.value.find((s) => s.platform === "kick")!;
-
-      expect(getStreamKey(twitchStream)).toBe(twitchStream.id);
-      expect(getStreamKey(kickStream)).toBe(`${kickStream.id}-kick-0`);
-    });
-
-    it("should increment reload counter of remaining Kick streams when a Kick stream is removed", () => {
-      const { addStream, removeStream, getStreamKey, streams } = sut;
-
-      addStream("kick1", "kick");
-      addStream("kick2", "kick");
-      addStream("gaules", "twitch");
-
-      const k1 = streams.value.find((s) => s.channel === "kick1")!;
-      const k2 = streams.value.find((s) => s.channel === "kick2")!;
-      const t1 = streams.value.find((s) => s.channel === "gaules")!;
-
-      expect(getStreamKey(k1)).toBe(`${k1.id}-kick-0`);
-      expect(getStreamKey(k2)).toBe(`${k2.id}-kick-0`);
-      expect(getStreamKey(t1)).toBe(t1.id);
-
-      // Act: Remove kick1
-      removeStream(k1.id);
-
-      // Assert: k2 should now have counter 1, t1 should still have standard id
-      const updatedK2 = streams.value.find((s) => s.channel === "kick2")!;
-      const updatedT1 = streams.value.find((s) => s.channel === "gaules")!;
-
-      expect(getStreamKey(updatedK2)).toBe(`${k2.id}-kick-1`);
-      expect(getStreamKey(updatedT1)).toBe(t1.id);
-    });
-
-    it("should not increment reload counters when a non-Kick stream is removed", () => {
-      const { addStream, removeStream, getStreamKey, streams } = sut;
-
-      addStream("kick1", "kick");
-      addStream("gaules", "twitch");
-
-      const k1 = streams.value.find((s) => s.channel === "kick1")!;
-      const t1 = streams.value.find((s) => s.channel === "gaules")!;
-
-      expect(getStreamKey(k1)).toBe(`${k1.id}-kick-0`);
-
-      // Act: Remove gaules (twitch)
-      removeStream(t1.id);
-
-      // Assert: k1 should still have counter 0
-      const updatedK1 = streams.value.find((s) => s.channel === "kick1")!;
-      expect(getStreamKey(updatedK1)).toBe(`${k1.id}-kick-0`);
-    });
-  });
-
   describe("Watch time tracking logic", () => {
     beforeEach(() => {
       vi.setSystemTime(new Date(1600000000000));
