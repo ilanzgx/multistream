@@ -65,6 +65,13 @@ watch(
         existing._isDead = false;
       }
     });
+
+    // 3. Garbage Collector: Remove dead streams if their platform has NO active streams
+    const activePlatforms = new Set(newStreams.map((s) => s.platform));
+
+    domStreams.value = domStreams.value.filter(
+      (ds) => !ds._isDead || activePlatforms.has(ds.platform)
+    );
   },
   { deep: true, immediate: true }
 );
