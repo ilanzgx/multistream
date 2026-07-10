@@ -149,6 +149,7 @@
       "starting": "Starting recording...",
       "stopping": "Stopping recording...",
       "remuxing": "Converting to MP4...",
+      "remuxingDescription": "This may take a while depending on the file size.",
       "saved": "Recording saved",
       "openFolder": "Open Folder",
       "remuxFailed": "Conversion failed. Raw recording preserved.",

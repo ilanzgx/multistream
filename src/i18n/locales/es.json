@@ -149,6 +149,7 @@
       "starting": "Iniciando grabación...",
       "stopping": "Deteniendo grabación...",
       "remuxing": "Convirtiendo a MP4...",
+      "remuxingDescription": "Esto puede tardar un tiempo dependiendo del tamaño del archivo.",
       "saved": "Grabación guardada",
       "openFolder": "Abrir Carpeta",
       "remuxFailed": "Conversión fallida. Grabación sin procesar conservada.",

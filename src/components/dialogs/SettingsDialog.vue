@@ -64,6 +64,7 @@ const {
   downloadDependenciesStep,
   checkDependencies,
   installDependencies,
+  openFolder,
 } = useRecording();
 
 import { invoke } from "@tauri-apps/api/core";
@@ -955,6 +956,15 @@ watch(
                 </div>
               </div>
               <div class="flex shrink-0 gap-2 items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:border-[#3a3f4b] hover:bg-[#2a2d33]/50 px-2 shrink-0"
+                  :title="$t('settings.recording.openFolder')"
+                  @click="openFolder('')"
+                >
+                  <FolderOpen class="size-4" />
+                </Button>
                 <Button
                   v-if="recordingPath"
                   variant="outline"

@@ -97,6 +97,9 @@ const _useRecording = () => {
   const unlisten3 = listen<{ streamId: string }>("recording:remux-started", ({ payload }) => {
     const entry = recordings.get(payload.streamId);
     if (entry) entry.status = "remuxing";
+    toast.info(t("settings.recording.remuxing"), {
+      description: t("settings.recording.remuxingDescription"),
+    });
   });
 
   const unlisten4 = listen<{ streamId: string }>("recording:remux-finished", ({ payload }) => {
@@ -258,7 +261,9 @@ const _useRecording = () => {
   }
 
   async function recoverOrphan(orphanId: string): Promise<void> {
-    toast.info(t("settings.recording.remuxing"));
+    toast.info(t("settings.recording.remuxing"), {
+      description: t("settings.recording.remuxingDescription"),
+    });
     try {
       await invoke("recover_orphan_recording", { orphanId });
     } catch (e) {

@@ -149,6 +149,7 @@
       "starting": "Aufnahme wird gestartet...",
       "stopping": "Aufnahme wird gestoppt...",
       "remuxing": "Konvertierung in MP4...",
+      "remuxingDescription": "Dies kann je nach Dateigröße eine Weile dauern.",
       "saved": "Aufnahme gespeichert",
       "openFolder": "Ordner öffnen",
       "remuxFailed": "Konvertierung fehlgeschlagen. Rohe Aufnahme gespeichert.",

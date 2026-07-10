@@ -149,6 +149,7 @@
       "starting": "正在开始录制...",
       "stopping": "正在停止录制...",
       "remuxing": "正在转换为 MP4...",
+      "remuxingDescription": "这可能需要一些时间，具体取决于文件大小。",
       "saved": "录制已保存",
       "openFolder": "打开文件夹",
       "remuxFailed": "转换失败。原始录制已保留。",

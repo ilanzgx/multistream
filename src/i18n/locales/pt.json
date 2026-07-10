@@ -149,6 +149,7 @@
       "starting": "Iniciando gravação...",
       "stopping": "Parando gravação...",
       "remuxing": "Convertendo para MP4...",
+      "remuxingDescription": "Isso pode levar um tempo dependendo do tamanho do arquivo.",
       "saved": "Gravação salva",
       "openFolder": "Abrir Pasta",
       "remuxFailed": "Conversão falhou. Gravação bruta preservada.",
