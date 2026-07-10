@@ -27,6 +27,7 @@ const KickAuthDialog = defineAsyncComponent(
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
+import { PLATFORMS } from "@/config/platforms";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);

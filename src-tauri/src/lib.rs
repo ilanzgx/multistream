@@ -295,6 +295,54 @@ pub fn run() {
 
             let player_injector = format!("eval(atob('{}'));", CORE_ENGINE);
             let metrics_injector = format!("eval(atob('{}'));", METRICS);
+            let graveyard_script = r#"
+                window.addEventListener('message', (e) => {
+                    if (e.data?.type === 'MULTISTREAM_GRAVEYARD_SUSPEND') {
+                        // Aggressive graveyard mode
+                        window.__isGraveyard = true;
+                        
+                        // 1. Destroy ability to play any media
+                        HTMLMediaElement.prototype.play = function() {
+                            return Promise.reject(new Error("Graveyard mode"));
+                        };
+                        
+                        // 2. Silence and pause currently playing media
+                        const silenceMedia = (v) => {
+                            if (v.tagName === 'VIDEO' || v.tagName === 'AUDIO') {
+                                v.muted = true;
+                                v.volume = 0;
+                                v.pause();
+                                v.removeAttribute('autoplay');
+                            }
+                        };
+                        
+                        document.querySelectorAll('video, audio').forEach(silenceMedia);
+
+                        // 3. Destroy future AudioContexts
+                        if (window.AudioContext || window.webkitAudioContext) {
+                            const AC = window.AudioContext || window.webkitAudioContext;
+                            AC.prototype.createGain = function() {
+                                // Create a native gain node, but lock it at 0
+                                const gain = new AC().createGain();
+                                gain.gain.value = 0;
+                                Object.defineProperty(gain.gain, 'value', { get: () => 0, set: () => {} });
+                                return gain;
+                            };
+                        }
+
+                        // 4. Watch the DOM to choke any video that spawns late
+                        const observer = new MutationObserver((mutations) => {
+                            mutations.forEach(m => {
+                                m.addedNodes.forEach(n => {
+                                    if (n.tagName === 'VIDEO' || n.tagName === 'AUDIO') silenceMedia(n);
+                                    if (n.querySelectorAll) n.querySelectorAll('video, audio').forEach(silenceMedia);
+                                });
+                            });
+                        });
+                        observer.observe(document.documentElement, { childList: true, subtree: true });
+                    }
+                });
+            "#;
 
             // create the window manually so can set user_agent
             // And inject scripts to global window
@@ -315,6 +363,7 @@ pub fn run() {
                 )
                 .initialization_script_for_all_frames(&player_injector)
                 .initialization_script_for_all_frames(&metrics_injector)
+                .initialization_script_for_all_frames(graveyard_script)
                 .initialization_script_for_all_frames(SCREENSHOT_SCRIPT)
                 .initialization_script_for_all_frames(KEYBOARD_SCRIPT)
                 .build()?;

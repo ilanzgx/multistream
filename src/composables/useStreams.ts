@@ -194,16 +194,6 @@ const _useStreams = () => {
     toast.success(`${stream.channel} ${t("toasts.remove")}`);
 
     flushStreamWatchTime(stream);
-
-    // If a Kick stream was removed, increment reload counters of remaining Kick streams
-    // to trigger an automatic reload of their iframes, restoring audio and process stability.
-    if (stream.platform === "kick") {
-      streams.value.forEach((s) => {
-        if (s.platform === "kick") {
-          kickReloadCounters[s.id] = (kickReloadCounters[s.id] || 0) + 1;
-        }
-      });
-    }
   };
 
   /**
@@ -231,17 +221,8 @@ const _useStreams = () => {
 
   /**
    * @brief Get unique Vue render key for a stream
-   *
-   * For Kick streams, appends a reload counter suffix to force re-rendering/reloading
-   * the iframe when another Kick stream has been removed.
    */
-  const getStreamKey = (stream: Stream) => {
-    if (stream.platform === "kick") {
-      const counter = kickReloadCounters[stream.id] || 0;
-      return `${stream.id}-kick-${counter}`;
-    }
-    return stream.id;
-  };
+  const getStreamKey = (stream: Stream) => stream.id;
 
   /**
    * @brief Clear all streams

@@ -28,15 +28,41 @@ const { setSelectedChat } = usePreferences();
 
 useEventListener(window, "mouseup", onGlobalMouseUp);
 
-const domStreams = ref<Stream[]>([]);
+type DomStream = Stream & { _isDead?: boolean };
+const domStreams = ref<DomStream[]>([]);
+
+const pauseIframe = (id: string) => {
+  const iframe = document.querySelector(`[data-stream-id="${id}"] iframe`) as HTMLIFrameElement;
+  if (iframe && iframe.contentWindow) {
+    // CRITICAL: DO NOT use the word "pause" in this message type (e.g. MULTISTREAM_GRAVEYARD_PAUSE)!
+    // Some injected third-party scripts actively hook window.addEventListener('message')
+    // and aggressively drop ANY cross-frame message containing the substring "pause"
+    // in its keys/values. If you use "pause", this graveyard mechanism will be
+    // completely ignored and the audio will keep playing in the background.
+    iframe.contentWindow.postMessage({ type: "MULTISTREAM_GRAVEYARD_SUSPEND" }, "*");
+  }
+};
 
 watch(
   streams,
   (newStreams) => {
-    domStreams.value = domStreams.value.filter((ds) => newStreams.some((s) => s.id === ds.id));
+    // 1. Mark removed streams as dead (DO NOT remove from array)
+    domStreams.value.forEach((ds) => {
+      const isStillAlive = newStreams.some((s) => s.id === ds.id);
+      if (!isStillAlive && !ds._isDead) {
+        ds._isDead = true;
+        pauseIframe(ds.id);
+      }
+    });
+
+    // 2. Add new streams
     newStreams.forEach((s) => {
-      if (!domStreams.value.some((ds) => ds.id === s.id)) {
-        domStreams.value.push(s);
+      const existing = domStreams.value.find((ds) => ds.id === s.id);
+      if (!existing) {
+        domStreams.value.push({ ...s, _isDead: false });
+      } else if (existing._isDead) {
+        // If it was dead and came back (unlikely to have the same ID, but for safety)
+        existing._isDead = false;
       }
     });
   },
@@ -165,6 +191,7 @@ const getStreamClass = (streamId: string) => {
   >
     <div
       v-for="stream in domStreams"
+      v-show="!stream._isDead"
       :key="getStreamKey(stream)"
       :data-stream-id="stream.id"
       :data-testid="`stream-item-${stream.channel}`"
