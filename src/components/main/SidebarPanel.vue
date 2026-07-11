@@ -114,7 +114,19 @@ watch(
 watch(
   () => streams.value.length,
   (len) => {
-    if (len === 1 && selectedChat.value === UNIFIED_CHAT_ID && streams.value[0]) {
+    if (len === 0) return;
+
+    const current = selectedChat.value;
+
+    if (len === 1 && current === UNIFIED_CHAT_ID && streams.value[0]) {
+      selectedChat.value = `${streams.value[0].platform}:${streams.value[0].channel}`;
+      return;
+    }
+
+    const isValidStream = streams.value.some((s) => `${s.platform}:${s.channel}` === current);
+    const isUnified = current === UNIFIED_CHAT_ID;
+
+    if (!isUnified && !isValidStream && streams.value[0]) {
       selectedChat.value = `${streams.value[0].platform}:${streams.value[0].channel}`;
     }
   }
