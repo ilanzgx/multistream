@@ -35,6 +35,13 @@
     ]
   },
   "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": [
+          "multistream"
+        ]
+      }
+    },
     "updater": {
       "endpoints": [
         "https://github.com/ilanzgx/multistream/releases/latest/download/latest.json"

@@ -176,7 +176,8 @@
     "importButton": "Importieren",
     "invalidLink": "Ungültiger Freigabelink",
     "invalidCustom": "Benutzerdefinierte Streams konnten nicht verarbeitet werden",
-    "success": "Streams erfolgreich importiert"
+    "success": "Streams erfolgreich importiert",
+    "deepLinkSuccess": "Streams erfolgreich über Deep Link importiert!"
   },
   "hide": {
     "tooltip": "Ausblenden"

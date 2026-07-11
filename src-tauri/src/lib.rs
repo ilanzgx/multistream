@@ -109,9 +109,21 @@ pub fn run() {
     // This prevents compilation errors if the project targets mobile platforms later
     #[cfg(desktop)]
     {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
                 let _ = window.set_focus();
+
+                let mut deep_links = Vec::new();
+                for arg in args {
+                    if arg.starts_with("multistream://") {
+                        deep_links.push(arg.clone());
+                    }
+                }
+                if !deep_links.is_empty() {
+                    let _ = app.emit("deep-link://new-url", deep_links);
+                }
             }
         }));
     }

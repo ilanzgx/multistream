@@ -176,7 +176,8 @@
     "importButton": "导入",
     "invalidLink": "无效的分享链接",
     "invalidCustom": "无法解析自定义直播",
-    "success": "直播导入成功"
+    "success": "直播导入成功",
+    "deepLinkSuccess": "通过 Deep Link 成功导入直播！"
   },
   "hide": {
     "tooltip": "隐藏"

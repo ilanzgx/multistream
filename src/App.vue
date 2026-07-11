@@ -7,6 +7,7 @@ import { useUpdater, isTauri } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
 import { useMediaCodecs } from "./composables/useMediaCodecs";
 import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
+import { useDeepLink } from "./composables/useDeepLink";
 import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
 import FollowedChannelsSidebar from "./components/main/FollowedChannelsSidebar.vue";
@@ -67,6 +68,8 @@ const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
 const { checkVideoCodecs } = useMediaCodecs();
 const { locale } = useI18n();
+
+useDeepLink();
 
 function handleGlobalKeyDown(e: KeyboardEvent) {
   const target = e.target as HTMLElement;

@@ -176,7 +176,8 @@
     "importButton": "Importar",
     "invalidLink": "Link de compartilhamento inválido",
     "invalidCustom": "Falha ao processar streams customizadas",
-    "success": "Streams importadas com sucesso"
+    "success": "Streams importadas com sucesso",
+    "deepLinkSuccess": "Streams importadas com sucesso via Deep Link!"
   },
   "hide": {
     "tooltip": "Ocultar"
