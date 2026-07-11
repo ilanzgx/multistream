@@ -115,7 +115,7 @@ watch(
   () => streams.value.length,
   (len) => {
     if (len === 1 && selectedChat.value === UNIFIED_CHAT_ID && streams.value[0]) {
-      selectedChat.value = streams.value[0].channel;
+      selectedChat.value = `${streams.value[0].platform}:${streams.value[0].channel}`;
     }
   }
 );
@@ -126,7 +126,7 @@ const {
 } = useTranscription();
 
 const selectedStreamObj = computed(() =>
-  streams.value.find((s) => s.channel === selectedChat.value)
+  streams.value.find((s) => `${s.platform}:${s.channel}` === selectedChat.value)
 );
 
 function openAddDialog() {
@@ -253,7 +253,7 @@ onUnmounted(() => {
                 <SelectItem
                   v-for="stream in streams"
                   :key="stream.id"
-                  :value="stream.channel"
+                  :value="`${stream.platform}:${stream.channel}`"
                   class="text-white focus:bg-[#2a2d33] focus:text-white cursor-pointer"
                 >
                   <div class="flex items-center gap-2">
@@ -293,19 +293,19 @@ onUnmounted(() => {
         <div v-show="sidebarMode === 'chat'" class="absolute inset-0">
           <KickChat
             v-for="stream in streams.filter((s) => s.platform === 'kick')"
-            v-show="selectedChat === stream.channel"
+            v-show="selectedChat === `${stream.platform}:${stream.channel}`"
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />
           <TwitchChat
             v-for="stream in streams.filter((s) => s.platform === 'twitch')"
-            v-show="selectedChat === stream.channel"
+            v-show="selectedChat === `${stream.platform}:${stream.channel}`"
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />
           <YoutubeChat
             v-for="stream in streams.filter((s) => s.platform === 'youtube')"
-            v-show="selectedChat === stream.channel"
+            v-show="selectedChat === `${stream.platform}:${stream.channel}`"
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />

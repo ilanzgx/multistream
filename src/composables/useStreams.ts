@@ -30,9 +30,6 @@ const _useStreams = () => {
   // prevents iframe destruction caused by immediate DOM removal/reflow
   const leavingIds = reactive(new Set<string>());
 
-  // tracks reload key suffixes for Kick streams to force re-render/reload when another Kick stream is removed
-  const kickReloadCounters = reactive<Record<string, number>>({});
-
   // Session watch time tracking
   const sessionStartTimes = reactive<Record<string, number>>({});
 

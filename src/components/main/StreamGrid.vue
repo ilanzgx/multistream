@@ -80,7 +80,7 @@ watch(
 watch(focusedStreamId, async (newId) => {
   if (!newId) return;
   const stream = streams.value.find((s) => s.id === newId);
-  if (stream) setSelectedChat(stream.channel);
+  if (stream) setSelectedChat(`${stream.platform}:${stream.channel}`);
 });
 
 // FLIP animation: streams physically slide to their new focus positions

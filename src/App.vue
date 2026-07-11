@@ -27,7 +27,6 @@ const KickAuthDialog = defineAsyncComponent(
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
-import { PLATFORMS } from "@/config/platforms";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
@@ -79,7 +78,7 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
   if (num >= 1 && num <= 9) {
     const stream = streams.value[num - 1];
     if (stream) {
-      setSelectedChat(stream.channel);
+      setSelectedChat(`${stream.platform}:${stream.channel}`);
     }
     return;
   }
@@ -108,7 +107,7 @@ function handleFrameShortcuts(e: MessageEvent) {
   if (num >= 1 && num <= 9) {
     const stream = streams.value[num - 1];
     if (stream) {
-      setSelectedChat(stream.channel);
+      setSelectedChat(`${stream.platform}:${stream.channel}`);
     }
     return;
   }
@@ -133,7 +132,7 @@ watch(streams, (newStreams, oldStreams) => {
   if (
     selectedChat.value &&
     selectedChat.value !== UNIFIED_CHAT_ID &&
-    !newStreams.some((s) => s.channel === selectedChat.value)
+    !newStreams.some((s) => `${s.platform}:${s.channel}` === selectedChat.value)
   ) {
     setSelectedChat("");
   }
@@ -146,7 +145,12 @@ watch(streams, (newStreams, oldStreams) => {
     ((oldStreams.length === 0 && newStreams.length === 1) ||
       (oldStreams.length > 1 && newStreams.length === 1))
   ) {
-    setSelectedChat(newStreams[0]?.channel || "");
+    const first = newStreams[0];
+    if (first) {
+      setSelectedChat(`${first.platform}:${first.channel}`);
+    } else {
+      setSelectedChat("");
+    }
   }
 
   if (newStreams.length === 0) {
