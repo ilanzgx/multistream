@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://usemultistream.vercel.app/sitemap.xml

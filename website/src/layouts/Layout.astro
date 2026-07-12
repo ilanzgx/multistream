@@ -1,0 +1,78 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+	description: string;
+	lang?: string;
+}
+
+const { title, description, lang = 'en' } = Astro.props;
+
+// Determine alternative language URL
+const currentUrl = new URL(Astro.url);
+const otherLang = lang === 'en' ? 'pt-br' : 'en';
+const altUrl = new URL(currentUrl.pathname.replace(`/${lang}/`, `/${otherLang}/`), currentUrl.origin);
+---
+
+<!doctype html>
+<html lang={lang} class="scroll-smooth bg-[#F7F6F3] text-[#111111] dark:bg-[#0f1115] dark:text-[#EAEAEA]">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="icon" type="image/png" href="/favicon.png" />
+		<meta name="generator" content={Astro.generator} />
+
+		<!-- Hreflang Tags for International SEO -->
+		<link rel="alternate" hreflang="en" href={new URL(`/en/`, currentUrl.origin)} />
+		<link rel="alternate" hreflang="pt-br" href={new URL(`/pt-br/`, currentUrl.origin)} />
+		<link rel="alternate" hreflang="x-default" href={new URL(`/en/`, currentUrl.origin)} />
+
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={Astro.url} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+
+		<!-- Twitter -->
+		<meta property="twitter:card" content="summary_large_image" />
+		<meta property="twitter:url" content={Astro.url} />
+		<meta property="twitter:title" content={title} />
+		<meta property="twitter:description" content={description} />
+
+		<!-- Theme Color -->
+		<meta name="theme-color" content="#0f1115" />
+	</head>
+	<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/20">
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	/* Minimalist custom scrollbar */
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	::-webkit-scrollbar-thumb {
+		background: rgba(120, 119, 116, 0.2);
+		border-radius: 4px;
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: rgba(120, 119, 116, 0.4);
+	}
+
+	/* A11y: Keyboard Focus Indicator */
+	*:focus {
+		outline: none;
+	}
+	*:focus-visible {
+		outline: 2px solid currentColor;
+		outline-offset: 2px;
+	}
+</style>

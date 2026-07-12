@@ -1,0 +1,101 @@
+---
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section class="w-full py-24 px-6 bg-[#F7F6F3] border-t border-[rgba(0,0,0,0.06)] dark:bg-[#0c0d10] dark:border-white/5">
+  <div class="max-w-3xl mx-auto">
+    <h2 class="text-2xl font-bold text-[#111111] dark:text-white mb-16 text-center tracking-tight">
+      {t('changelog.title')}
+    </h2>
+
+    <div id="changelog-container" data-empty={t('changelog.empty')} class="space-y-12">
+      <p id="changelog-loading" aria-live="polite" class="text-gray-600 dark:text-gray-400 text-center animate-pulse">
+        {t('changelog.loading')}
+      </p>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const container = document.getElementById('changelog-container');
+    const loading = document.getElementById('changelog-loading');
+
+    if (!container || !loading) return;
+    const emptyMsg = container.getAttribute('data-empty') || 'No releases found.';
+
+    try {
+      const res = await fetch('https://api.github.com/repos/ilanzgx/multistream/releases');
+      if (!res.ok) throw new Error('API Error');
+      const releases = await res.json();
+
+      loading.remove();
+
+      if (!releases || releases.length === 0) {
+        container.innerHTML = `<p class="text-gray-500 text-center">${emptyMsg}</p>`;
+        return;
+      }
+
+      // Get the 3 most recent
+      const latest = releases.slice(0, 3);
+      let html = '';
+
+      for (const release of latest) {
+        // Try to separate version from title, e.g.: "v0.18.1 - New feature"
+        const titleParts = release.name ? release.name.split(' - ') : [release.tag_name, ''];
+        const version = titleParts[0] || release.tag_name;
+        const title = titleParts.slice(1).join(' - ') || new Date(release.published_at).toLocaleDateString();
+
+        // Simple HTML escape function to prevent XSS
+        const escapeHtml = (unsafe: string) => {
+          return unsafe
+               .replace(/&/g, "&amp;")
+               .replace(/</g, "&lt;")
+               .replace(/>/g, "&gt;")
+               .replace(/"/g, "&quot;")
+               .replace(/'/g, "&#039;");
+        };
+
+        const bodyLines = (release.body || '').split('\n')
+          .map((line: string) => line.trim())
+          .filter((line: string) => line.startsWith('-') || line.startsWith('*'))
+          .map((line: string) => {
+            let text = line.substring(1).trim();
+            text = escapeHtml(text);
+            text = text.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-[#111111] dark:text-[#EAEAEA]">$1</strong>');
+            text = text.replace(/`([^`]+)`/g, '<code class="bg-[rgba(0,0,0,0.05)] dark:bg-white/5 px-1 rounded text-[#111111] dark:text-gray-300 font-mono text-sm">$1</code>');
+            return text;
+          });
+
+        const itemsHtml = bodyLines.map((line: string) => `
+          <li class="flex gap-3">
+            <span class="text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0">—</span>
+            <span>${line}</span>
+          </li>
+        `).join('');
+
+        html += `
+          <div class="relative pl-8 border-l border-[rgba(0,0,0,0.1)] dark:border-white/10">
+            <div class="absolute -left-1.5 top-2 w-3 h-3 rounded-full bg-[#111111] dark:bg-[#EAEAEA]"></div>
+            <div class="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-4">
+              <h3 class="text-xl font-bold text-[#111111] dark:text-gray-200">${version}</h3>
+              <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">${title}</span>
+            </div>
+            ${itemsHtml ? `<ul class="space-y-3 text-[#111111] dark:text-gray-400">${itemsHtml}</ul>` : ''}
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+
+    } catch (e) {
+      if (loading) {
+        loading.textContent = 'Unable to fetch recent updates from GitHub.';
+        loading.classList.remove('animate-pulse');
+      }
+    }
+  });
+</script>

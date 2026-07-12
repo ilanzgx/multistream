@@ -1,0 +1,186 @@
+---
+import { getLangFromUrl, useTranslations } from '../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+---
+
+<section class="w-full pt-20 pb-16 flex flex-col items-center justify-center text-center px-6">
+  <div id="hero-content" class="max-w-3xl flex flex-col items-center">
+    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-[#111111] dark:text-[#EAEAEA] mb-6 leading-tight">
+      {t('hero.title')}
+    </h1>
+    <p class="text-lg md:text-xl text-gray-600 dark:text-[#A0A0A0] mb-10 max-w-2xl leading-relaxed">
+      {t('hero.subtitle')}
+    </p>
+
+    <div class="flex flex-col sm:flex-row flex-wrap items-center gap-4 w-full justify-center">
+      <a id="btn-win" href="https://github.com/ilanzgx/multistream/releases/latest" class="w-full sm:w-auto px-6 py-3.5 bg-[#111111] text-[#FFFFFF] hover:bg-black dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+        <img src="/windows-icon.svg" alt="Windows" class="w-5 h-5 invert dark:invert-0 opacity-90" aria-hidden="true" />
+        {t('hero.download_win')}
+      </a>
+      <a id="btn-linux" href="https://github.com/ilanzgx/multistream/releases/latest" class="w-full sm:w-auto px-6 py-3.5 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20">
+        <img src="/linux-icon.svg" alt="Linux" class="w-5 h-5 dark:invert opacity-90" aria-hidden="true" />
+        {t('hero.download_linux')}
+      </a>
+      <a id="btn-mac" href="https://github.com/ilanzgx/multistream/releases/latest" class="w-full sm:w-auto px-6 py-3.5 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20">
+        <img src="/macos-icon.svg" alt="Mac" class="w-5 h-5 dark:invert opacity-90" aria-hidden="true" />
+        {t('hero.download_mac')}
+      </a>
+    </div>
+
+    <button id="btn-all-downloads" class="mt-6 cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white transition-colors">
+      Ver todas as opções (.msi, AppImage, Intel Mac)
+    </button>
+  </div>
+
+  <div id="deep-link-content" class="hidden max-w-2xl w-full p-8 rounded-xl bg-[#E1F3FE] border border-[#1F6C9F]/20 dark:bg-[#14161a] dark:border-[rgba(255,255,255,0.05)] flex flex-col items-center mt-4">
+    <div class="w-16 h-16 rounded-full bg-[#1F6C9F]/10 dark:bg-white/5 flex items-center justify-center mb-4 text-[#1F6C9F] dark:text-gray-300">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    </div>
+    <h2 class="text-2xl font-bold text-[#111111] dark:text-[#EAEAEA] mb-2">{t('hero.deep_link_title')}</h2>
+    <p class="text-gray-600 dark:text-gray-400 mb-8">{t('hero.deep_link_subtitle')}</p>
+    <a id="deep-link-btn" href="#" class="px-10 py-4 bg-[#1F6C9F] hover:bg-[#154e73] text-white dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-semibold rounded-lg transition-transform hover:scale-[0.98] active:scale-95 animate-pulse flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+      {t('hero.deep_link_button')}
+    </a>
+  </div>
+
+  <!-- Downloads Modal -->
+  <div id="downloads-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#F7F6F3]/80 dark:bg-[#0c0d10]/80 backdrop-blur-sm opacity-0 transition-opacity duration-200">
+    <div class="bg-white dark:bg-[#14161a] border border-[rgba(0,0,0,0.08)] dark:border-white/10 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-200" id="downloads-modal-card">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold text-[#111111] dark:text-white">Downloads Avançados</h2>
+        <button id="close-modal" class="text-gray-600 hover:text-[#111111] dark:text-gray-400 dark:hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="space-y-6 text-left">
+        <div>
+          <h4 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2"><img src="/windows-icon.svg" class="w-4 h-4 dark:invert opacity-70" /> Windows</h4>
+          <div class="flex flex-col gap-2">
+            <a id="modal-win-exe" href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">Instalador Padrão (.exe)</a>
+            <a id="modal-win-msi" href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">Instalador MSI (.msi)</a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2"><img src="/macos-icon.svg" class="w-4 h-4 dark:invert opacity-70" /> macOS</h4>
+          <div class="flex flex-col gap-2">
+            <a id="modal-mac-arm" href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">Apple Silicon (.dmg)</a>
+            <a id="modal-mac-x64" href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">Intel (.dmg)</a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2"><img src="/linux-icon.svg" class="w-4 h-4 dark:invert opacity-70" /> Linux</h4>
+          <div class="flex flex-col gap-2">
+            <a id="modal-linux-deb" href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">Debian/Ubuntu (.deb)</a>
+            <a id="modal-linux-appimage" href="#" class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">AppImage (Portátil)</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  // Pure JavaScript, 0 bytes overhead from frameworks
+  document.addEventListener("DOMContentLoaded", () => {
+    // 1. Deep link logic
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get('action');
+    const streams = params.get('streams');
+
+    if (action === 'share' && streams) {
+      const hero = document.getElementById('hero-content');
+      const deeplink = document.getElementById('deep-link-content');
+      const btn = document.getElementById('deep-link-btn');
+
+      if (hero && deeplink && btn) {
+        hero.classList.add('hidden');
+        deeplink.classList.remove('hidden');
+        btn.setAttribute('href', `multistream://share?streams=${streams}`);
+        setTimeout(() => {
+           window.location.href = `multistream://share?streams=${streams}`;
+        }, 500);
+      }
+    }
+
+    // 2. Modal Logic
+    const modal = document.getElementById('downloads-modal');
+    const modalCard = document.getElementById('downloads-modal-card');
+    const btnAll = document.getElementById('btn-all-downloads');
+    const btnClose = document.getElementById('close-modal');
+
+    const openModal = () => {
+      if (!modal || !modalCard) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      // Small delay to allow the opacity animation to run after removing display:none
+      requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modalCard.classList.remove('scale-95');
+        modalCard.classList.add('scale-100');
+      });
+    };
+
+    const closeModal = () => {
+      if (!modal || !modalCard) return;
+      modal.classList.add('opacity-0');
+      modalCard.classList.remove('scale-100');
+      modalCard.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }, 200);
+    };
+
+    if (btnAll) btnAll.addEventListener('click', openModal);
+    if (btnClose) btnClose.addEventListener('click', closeModal);
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+    }
+
+    // 3. Dynamic Download Links logic
+    fetch('https://api.github.com/repos/ilanzgx/multistream/releases/latest')
+      .then(res => res.json())
+      .then(release => {
+        if (!release || !release.assets) return;
+
+        const winBtn = document.getElementById('btn-win');
+        const linuxBtn = document.getElementById('btn-linux');
+        const macBtn = document.getElementById('btn-mac');
+
+        // Modal buttons
+        const modalWinExe = document.getElementById('modal-win-exe');
+        const modalWinMsi = document.getElementById('modal-win-msi');
+        const modalMacArm = document.getElementById('modal-mac-arm');
+        const modalMacX64 = document.getElementById('modal-mac-x64');
+        const modalLinuxDeb = document.getElementById('modal-linux-deb');
+        const modalLinuxAppImage = document.getElementById('modal-linux-appimage');
+
+        release.assets.forEach((asset: any) => {
+          const name = asset.name.toLowerCase();
+          const url = asset.browser_download_url;
+
+          // Main Defaults
+          if (name.endsWith('.exe') && winBtn) winBtn.setAttribute('href', url);
+          if (name.endsWith('.deb') && linuxBtn) linuxBtn.setAttribute('href', url);
+          if (name.includes('arm64') && name.endsWith('.dmg') && macBtn) macBtn.setAttribute('href', url);
+
+          // Modal Links
+          if (name.endsWith('.exe') && modalWinExe) modalWinExe.setAttribute('href', url);
+          if (name.endsWith('.msi') && modalWinMsi) modalWinMsi.setAttribute('href', url);
+          if (name.includes('arm64') && name.endsWith('.dmg') && modalMacArm) modalMacArm.setAttribute('href', url);
+          if (name.includes('x64') && name.endsWith('.dmg') && modalMacX64) modalMacX64.setAttribute('href', url);
+          if (name.endsWith('.deb') && modalLinuxDeb) modalLinuxDeb.setAttribute('href', url);
+          if (name.endsWith('.appimage') && modalLinuxAppImage) modalLinuxAppImage.setAttribute('href', url);
+        });
+      })
+      .catch(err => console.error("Failed to fetch latest release:", err));
+  });
+</script>

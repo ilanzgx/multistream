@@ -1,0 +1,71 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Hero from '../../components/Hero.astro';
+import Changelog from '../../components/Changelog.astro';
+import { getLangFromUrl, useTranslations } from '../../i18n/utils';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'en' } },
+    { params: { lang: 'pt-br' } }
+  ];
+}
+
+const { lang } = Astro.params;
+const t = useTranslations(lang as any);
+---
+
+<Layout title="Multistream - Watch Multiple Streams Locally" description={t('hero.subtitle')} lang={lang}>
+  <Header />
+  <main class="flex-1 flex flex-col items-center">
+    <Hero />
+    <section class="w-full py-16 bg-[#F7F6F3] dark:bg-[#0f1115]">
+      <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
+          <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-[#111111] dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-[#111111] dark:text-white mb-2">{t('features.local')}</h2>
+          <p class="text-gray-600 dark:text-gray-400" set:html={t('features.local.desc')} />
+        </div>
+
+        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
+          <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-[#111111] dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-[#111111] dark:text-white mb-2">{t('features.ai')}</h2>
+          <p class="text-gray-600 dark:text-gray-400" set:html={t('features.ai.desc')} />
+        </div>
+
+        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
+          <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-[#111111] dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-[#111111] dark:text-white mb-2">{t('features.unified')}</h2>
+          <p class="text-gray-600 dark:text-gray-400" set:html={t('features.unified.desc')} />
+        </div>
+
+        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
+          <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-[#111111] dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2" ry="2"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-[#111111] dark:text-white mb-2">{t('features.recording')}</h2>
+          <p class="text-gray-600 dark:text-gray-400" set:html={t('features.recording.desc')} />
+        </div>
+
+        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
+          <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
+            <svg class="w-6 h-6 text-[#111111] dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <h2 class="text-xl font-bold text-[#111111] dark:text-white mb-2">{t('features.auth')}</h2>
+          <p class="text-gray-600 dark:text-gray-400" set:html={t('features.auth.desc')} />
+        </div>
+      </div>
+    </section>
+    <Changelog />
+  </main>
+  <footer class="w-full py-8 border-t border-[rgba(0,0,0,0.06)] bg-[#F7F6F3] text-center text-gray-600 dark:border-white/5 dark:bg-[#0c0d10] dark:text-gray-400 text-sm">
+    <p set:html={t('footer.credits')} />
+  </footer>
+</Layout>
