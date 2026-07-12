@@ -32,8 +32,12 @@ const shareLink = computed(() => {
     return t("share.noStreams");
   }
 
-  const url = "multistream://share";
-  const params: string[] = [];
+  const url =
+    window.location.hostname === "localhost" || window.location.hostname === "tauri.localhost"
+      ? "https://usemultistream.vercel.app"
+      : window.location.origin;
+
+  const params: string[] = ["action=share"];
 
   // regular streams (kick, twitch, youtube)
   const regularStreams = streams.value.filter((s) => s.platform !== "custom");
