@@ -53,7 +53,12 @@
       "connected": "Conectado",
       "disconnect": "Desconectar",
       "disconnected": "Desconectado",
-      "logout": "Sair"
+      "logout": "Sair",
+      "features": {
+        "readChat": "Ler mensagens do chat",
+        "sendChat": "Enviar mensagens no chat",
+        "followedChannels": "Lista de canais seguidos"
+      }
     },
     "help": {
       "title": "Ajuda",

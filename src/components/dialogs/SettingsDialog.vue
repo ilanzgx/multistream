@@ -497,7 +497,11 @@ watch(
               </div>
               <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
-                  <template v-for="platform in authPlatforms" :key="platform.id">
+                  <div
+                    v-for="platform in authPlatforms"
+                    :key="platform.id"
+                    class="flex flex-col gap-2"
+                  >
                     <template v-if="platform.id === 'twitch'">
                       <div
                         v-if="twitchAuthenticated"
@@ -519,7 +523,7 @@ watch(
                       </div>
                       <button
                         v-else
-                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200"
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200 w-full"
                         @click="openAuthModal"
                       >
                         <span :style="{ color: platform.color }" class="shrink-0">
@@ -532,7 +536,23 @@ watch(
                           {{ $t("chat.unified.connectButton") }}
                         </span>
                       </button>
+
+                      <ul class="text-[10px] text-gray-400 space-y-1 ml-1">
+                        <li class="flex items-center gap-1.5">
+                          <Check class="size-3 text-gray-400" />
+                          {{ $t("settings.auth.features.readChat") }}
+                        </li>
+                        <li class="flex items-center gap-1.5">
+                          <Check class="size-3 text-gray-400" />
+                          {{ $t("settings.auth.features.sendChat") }}
+                        </li>
+                        <li class="flex items-center gap-1.5">
+                          <Check class="size-3 text-gray-400" />
+                          {{ $t("settings.auth.features.followedChannels") }}
+                        </li>
+                      </ul>
                     </template>
+
                     <template v-else-if="platform.id === 'kick'">
                       <div
                         v-if="kickAuthenticated"
@@ -554,7 +574,7 @@ watch(
                       </div>
                       <button
                         v-else
-                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200"
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200 w-full"
                         @click="openKickAuthModal"
                       >
                         <span :style="{ color: platform.color }" class="shrink-0">
@@ -567,23 +587,36 @@ watch(
                           {{ $t("chat.unified.connectButton") }}
                         </span>
                       </button>
+
+                      <ul class="text-[10px] text-gray-400 space-y-1 ml-1">
+                        <li class="flex items-center gap-1.5">
+                          <Check class="size-3 text-gray-400" />
+                          {{ $t("settings.auth.features.readChat") }}
+                        </li>
+                        <li class="flex items-center gap-1.5">
+                          <Check class="size-3 text-gray-400" />
+                          {{ $t("settings.auth.features.sendChat") }}
+                        </li>
+                      </ul>
                     </template>
-                    <button
-                      v-else
-                      class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] text-xs font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-35"
-                      disabled
-                    >
-                      <span :style="{ color: platform.color }" class="shrink-0">
-                        <component :is="platform.icon" :size="14" />
-                      </span>
-                      <span class="text-white font-medium">{{ platform.name }}</span>
-                      <span
-                        class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-400 bg-white/5 border border-white/5"
+
+                    <template v-else>
+                      <button
+                        class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] text-xs font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-35 w-full"
+                        disabled
                       >
-                        {{ $t("settings.auth.disconnected") }}
-                      </span>
-                    </button>
-                  </template>
+                        <span :style="{ color: platform.color }" class="shrink-0">
+                          <component :is="platform.icon" :size="14" />
+                        </span>
+                        <span class="text-white font-medium">{{ platform.name }}</span>
+                        <span
+                          class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-400 bg-white/5 border border-white/5"
+                        >
+                          {{ $t("common.comingSoon") }}
+                        </span>
+                      </button>
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>

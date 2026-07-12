@@ -53,7 +53,12 @@
       "connected": "Conectado",
       "disconnect": "Desconectar",
       "disconnected": "Desconectado",
-      "logout": "Cerrar sesión"
+      "logout": "Cerrar sesión",
+      "features": {
+        "readChat": "Leer mensajes del chat",
+        "sendChat": "Enviar mensajes en el chat",
+        "followedChannels": "Lista de canales seguidos"
+      }
     },
     "backup": {
       "title": "Datos y Copia de seguridad",

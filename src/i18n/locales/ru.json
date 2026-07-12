@@ -53,7 +53,12 @@
       "connected": "Подключено",
       "disconnect": "Отключить",
       "disconnected": "Отключено",
-      "logout": "Выйти"
+      "logout": "Выйти",
+      "features": {
+        "readChat": "Читать сообщения чата",
+        "sendChat": "Отправлять сообщения в чат",
+        "followedChannels": "Список отслеживаемых каналов"
+      }
     },
     "backup": {
       "title": "Данные и бэкап",

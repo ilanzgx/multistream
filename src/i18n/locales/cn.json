@@ -53,7 +53,12 @@
       "connected": "已连接",
       "disconnect": "断开连接",
       "disconnected": "未连接",
-      "logout": "登出"
+      "logout": "登出",
+      "features": {
+        "readChat": "读取聊天消息",
+        "sendChat": "发送聊天消息",
+        "followedChannels": "关注频道列表"
+      }
     },
     "backup": {
       "title": "数据与备份",

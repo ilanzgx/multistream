@@ -53,7 +53,12 @@
       "connected": "Connected",
       "disconnect": "Disconnect",
       "disconnected": "Disconnected",
-      "logout": "Logout"
+      "logout": "Logout",
+      "features": {
+        "readChat": "Read chat messages",
+        "sendChat": "Send chat messages",
+        "followedChannels": "Followed channels list"
+      }
     },
     "help": {
       "title": "Help",
