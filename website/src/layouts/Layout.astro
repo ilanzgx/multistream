@@ -1,4 +1,6 @@
 ---
+import Analytics from '@vercel/analytics/astro'
+import SpeedInsights from '@vercel/speed-insights/astro'
 import '../styles/global.css';
 
 interface Props {
@@ -47,6 +49,8 @@ const altUrl = new URL(currentUrl.pathname.replace(`/${lang}/`, `/${otherLang}/`
 	</head>
 	<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/20">
 		<slot />
+		<Analytics />
+		<SpeedInsights />
 	</body>
 </html>
 
