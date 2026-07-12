@@ -40,10 +40,13 @@ const t = useTranslations(lang);
     </div>
     <h2 class="text-2xl font-bold text-[#111111] dark:text-[#EAEAEA] mb-2">{t('hero.deep_link_title')}</h2>
     <p class="text-gray-600 dark:text-gray-400 mb-8">{t('hero.deep_link_subtitle')}</p>
-    <a id="deep-link-btn" href="#" class="px-10 py-4 bg-[#1F6C9F] hover:bg-[#154e73] text-white dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-semibold rounded-lg transition-transform hover:scale-[0.98] active:scale-95 animate-pulse flex items-center gap-2">
+    <a id="deep-link-btn" href="#" class="px-10 py-4 bg-[#1F6C9F] hover:bg-[#154e73] text-white dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-semibold rounded-lg transition-transform hover:scale-[0.98] active:scale-95 animate-pulse-subtle flex items-center gap-2">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
       {t('hero.deep_link_button')}
     </a>
+    <button id="deep-link-cancel-btn" class="mt-6 text-sm cursor-pointer font-medium text-gray-500 hover:text-[#111111] dark:text-gray-400 dark:hover:text-white transition-colors underline underline-offset-4">
+      {t('hero.deep_link_no_app')}
+    </button>
   </div>
 
   <!-- Downloads Modal -->
@@ -97,6 +100,7 @@ const t = useTranslations(lang);
       const hero = document.getElementById('hero-content');
       const deeplink = document.getElementById('deep-link-content');
       const btn = document.getElementById('deep-link-btn');
+      const cancelBtn = document.getElementById('deep-link-cancel-btn');
 
       if (hero && deeplink && btn) {
         hero.classList.add('hidden');
@@ -105,6 +109,24 @@ const t = useTranslations(lang);
         setTimeout(() => {
            window.location.href = `multistream://share?streams=${streams}`;
         }, 500);
+
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', () => {
+            deeplink.classList.add('hidden');
+            hero.classList.remove('hidden');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          });
+        }
+
+        const headerLogo = document.getElementById('header-logo');
+        if (headerLogo) {
+          headerLogo.addEventListener('click', (e) => {
+            e.preventDefault();
+            deeplink.classList.add('hidden');
+            hero.classList.remove('hidden');
+            window.history.replaceState({}, document.title, window.location.pathname);
+          });
+        }
       }
     }
 

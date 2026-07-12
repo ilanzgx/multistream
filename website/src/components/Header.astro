@@ -24,12 +24,12 @@ const otherLangLabel = lang === 'en' ? 'PT-BR' : 'EN';
 
 <header class="w-full border-b border-[rgba(0,0,0,0.06)] dark:border-white/5 bg-white/80 dark:bg-[#0f1115]/80 backdrop-blur-md sticky top-0 z-50">
   <div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
-    <div class="flex items-center gap-3">
+    <a href={`/${lang}/`} id="header-logo" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
       <div class="w-8 h-8 rounded-lg bg-[#111111] text-[#FFFFFF] dark:bg-[#EAEAEA] dark:text-[#111111] flex items-center justify-center font-bold text-xl border border-[rgba(0,0,0,0.06)] dark:border-[#EAEAEA]">
         M
       </div>
       <span class="font-semibold text-lg tracking-tight text-[#111111] dark:text-[#EAEAEA]">Multistream</span>
-    </div>
+    </a>
 
     <nav class="flex items-center gap-6">
       <a
