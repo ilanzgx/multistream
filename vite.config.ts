@@ -12,6 +12,9 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     host: "127.0.0.1",
+    watch: {
+      ignored: ["**/website/**"],
+    },
   },
   envPrefix: ["VITE_", "TAURI_"],
   resolve: {
