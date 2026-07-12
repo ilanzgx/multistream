@@ -127,3 +127,20 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  website:
+    name: Landing Page (Astro)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        working-directory: ./website
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        working-directory: ./website
+        run: bun run build
