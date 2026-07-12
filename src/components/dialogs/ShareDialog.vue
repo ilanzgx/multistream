@@ -14,7 +14,7 @@ import { useStreams } from "@/composables/useStreams";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // props
 const props = defineProps<{
@@ -32,10 +32,15 @@ const shareLink = computed(() => {
     return t("share.noStreams");
   }
 
-  const url =
+  const baseUrl =
     window.location.hostname === "localhost" || window.location.hostname === "tauri.localhost"
       ? "https://usemultistream.vercel.app"
       : window.location.origin;
+
+  // Map app locale to website supported locales
+  const websiteLocale = locale.value === "pt" || locale.value === "pt-br" ? "pt-br" : "en";
+
+  const url = `${baseUrl}/${websiteLocale}/`;
 
   const params: string[] = ["action=share"];
 
