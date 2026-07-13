@@ -46,6 +46,18 @@ const altUrl = new URL(currentUrl.pathname.replace(`/${lang}/`, `/${otherLang}/`
 
 		<!-- Theme Color -->
 		<meta name="theme-color" content="#0f1115" />
+
+		<!-- Theme Init (Prevent FOUC) -->
+		<script is:inline>
+			(function() {
+				const theme = localStorage.getItem('theme');
+				if (theme === 'light') {
+					document.documentElement.classList.remove('dark');
+				} else {
+					document.documentElement.classList.add('dark');
+				}
+			})();
+		</script>
 	</head>
 	<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/20">
 		<slot />

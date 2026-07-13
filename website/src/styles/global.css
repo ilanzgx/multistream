@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --animate-pulse-subtle: pulse-subtle 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
