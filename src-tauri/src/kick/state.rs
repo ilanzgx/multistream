@@ -16,11 +16,12 @@ pub struct KickAuthState {
     pub username: Option<String>,
 }
 
+type OAuthCallbackSender = tokio::sync::oneshot::Sender<Result<(String, String), String>>;
+
 pub struct KickState {
     pub auth: Mutex<Option<KickAuthInfo>>,
     pub pusher_shutdown_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
-    pub oauth_callback_tx:
-        Mutex<Option<tokio::sync::oneshot::Sender<Result<(String, String), String>>>>,
+    pub oauth_callback_tx: Mutex<Option<OAuthCallbackSender>>,
 }
 
 impl KickState {
