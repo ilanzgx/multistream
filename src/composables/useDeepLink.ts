@@ -1,5 +1,6 @@
 import { onMounted, onUnmounted } from "vue";
 import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
+import { invoke } from "@tauri-apps/api/core";
 import { useStreams } from "./useStreams";
 import { parseUrlOptions } from "../lib/parseUrlOptions";
 import { toast } from "vue-sonner";
@@ -15,13 +16,21 @@ export function useDeepLink() {
       try {
         const url = new URL(link);
 
-        // Handle Share/Open Links
         if (url.protocol === "multistream:" && url.host === "share") {
           const parsedStreams = parseUrlOptions(url.search);
           if (parsedStreams && parsedStreams.length > 0) {
             clearStreams();
             parsedStreams.forEach((s) => addStream(s.channel, s.platform, s.iframeUrl));
             toast.success(i18n.global.t("import.deepLinkSuccess"));
+          }
+        }
+
+        if (url.protocol === "multistream:" && url.host === "kick-callback") {
+          const params = new URLSearchParams(url.search);
+          const code = params.get("code");
+          const state = params.get("state");
+          if (code && state) {
+            await invoke("kick_handle_callback", { code, oauthState: state });
           }
         }
       } catch (e) {

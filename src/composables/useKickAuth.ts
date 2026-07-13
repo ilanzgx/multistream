@@ -2,6 +2,7 @@ import { ref, computed, onScopeDispose } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { useI18n } from "vue-i18n";
 import { isTauri } from "./useUpdater";
 
 export interface KickAuthState {
@@ -10,6 +11,7 @@ export interface KickAuthState {
 }
 
 const _useKickAuth = () => {
+  const { locale } = useI18n();
   const authenticated = ref(false);
   const username = ref<string | null>(null);
   const loading = ref(false);
@@ -69,7 +71,7 @@ const _useKickAuth = () => {
     await ensureInit();
     loading.value = true;
     try {
-      await invoke("kick_login");
+      await invoke("kick_login", { locale: locale.value });
     } catch (e) {
       console.error("Failed to start Kick auth flow:", e);
       window.dispatchEvent(new CustomEvent("kick-auth-error", { detail: String(e) }));

@@ -49,6 +49,14 @@ const t = useTranslations(lang);
     </button>
   </div>
 
+  <div id="kick-callback-content" class="hidden max-w-2xl w-full p-8 rounded-xl bg-[#E1F3FE] border border-[#1F6C9F]/20 dark:bg-[#14161a] dark:border-[rgba(255,255,255,0.05)] flex flex-col items-center mt-4">
+    <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 text-green-500 dark:text-green-400">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+    </div>
+    <h2 class="text-2xl font-bold text-[#111111] dark:text-[#EAEAEA] mb-2">{t('hero.kick_callback_title')}</h2>
+    <p class="text-gray-600 dark:text-gray-400">{t('hero.kick_callback_subtitle')}</p>
+  </div>
+
   <!-- Downloads Modal -->
   <div id="downloads-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#F7F6F3]/80 dark:bg-[#0c0d10]/80 backdrop-blur-sm opacity-0 transition-opacity duration-200">
     <div class="bg-white dark:bg-[#14161a] border border-[rgba(0,0,0,0.08)] dark:border-white/10 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-200" id="downloads-modal-card">
@@ -128,6 +136,22 @@ const t = useTranslations(lang);
           });
         }
       }
+    }
+
+    // Kick OAuth callback: detected by code + state params (no action param sent by Kick)
+    const code = params.get('code');
+    const oauthState = params.get('state');
+    if (code && oauthState && action !== 'share') {
+      const hero = document.getElementById('hero-content');
+      const kickCallback = document.getElementById('kick-callback-content');
+
+      if (hero && kickCallback) {
+        hero.classList.add('hidden');
+        kickCallback.classList.remove('hidden');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      window.location.href = `multistream://kick-callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(oauthState)}`;
     }
 
     // 2. Modal Logic
