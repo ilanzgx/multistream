@@ -1,11 +1,17 @@
 use tauri::{AppHandle, Emitter, State};
 
+use std::collections::HashSet;
+
 use super::error::KickError;
 use super::oauth;
 use super::state::{KickAuthState, KickState};
 
 #[tauri::command]
-pub async fn kick_login(app: AppHandle, state: State<'_, KickState>) -> Result<(), KickError> {
+pub async fn kick_login(
+    app: AppHandle,
+    state: State<'_, KickState>,
+    locale: Option<String>,
+) -> Result<(), KickError> {
     let http = reqwest::Client::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36")
         .use_rustls_tls()
@@ -13,25 +19,62 @@ pub async fn kick_login(app: AppHandle, state: State<'_, KickState>) -> Result<(
         .build()
         .map_err(KickError::Http)?;
 
-    let auth_info = oauth::start_pkce_flow(&app, &http).await?;
+    let locale_str = locale.as_deref().unwrap_or("en");
+
+    let (callback_tx, callback_rx) =
+        tokio::sync::oneshot::channel::<Result<(String, String), String>>();
+
+    {
+        let mut tx_guard = state.oauth_callback_tx.lock().await;
+        if tx_guard.is_some() {
+            return Err(KickError::OAuth(
+                "An authentication is already in progress.".to_owned(),
+            ));
+        }
+        *tx_guard = Some(callback_tx);
+    }
+
+    let auth_info = oauth::start_pkce_flow(&app, &http, locale_str, callback_rx).await;
+
+    *state.oauth_callback_tx.lock().await = None;
+
+    let auth_info = auth_info?;
 
     oauth::store_auth(&auth_info)?;
     *state.auth.lock().await = Some(auth_info.clone());
 
-    let auth_state = KickAuthState {
-        authenticated: true,
-        username: Some(auth_info.username.clone()),
-    };
-    let _ = app.emit("kick-auth-changed", auth_state);
+    let _ = app.emit(
+        "kick-auth-changed",
+        KickAuthState {
+            authenticated: true,
+            username: Some(auth_info.username.clone()),
+        },
+    );
 
     Ok(())
 }
 
 #[tauri::command]
-pub async fn kick_cancel_login() -> Result<(), KickError> {
-    if let Ok(mut stream) = tokio::net::TcpStream::connect("127.0.0.1:14832").await {
-        use tokio::io::AsyncWriteExt;
-        let _ = stream.write_all(b"GET /cancel HTTP/1.1\r\n\r\n").await;
+pub async fn kick_cancel_login(state: State<'_, KickState>) -> Result<(), KickError> {
+    let tx = state.oauth_callback_tx.lock().await.take();
+    if let Some(tx) = tx {
+        let _ = tx.send(Err("Login cancelled by user".to_owned()));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn kick_handle_callback(
+    app: AppHandle,
+    state: State<'_, KickState>,
+    code: String,
+    oauth_state: String,
+) -> Result<(), KickError> {
+    let tx = state.oauth_callback_tx.lock().await.take();
+    if let Some(tx) = tx {
+        let _ = tx.send(Ok((code, oauth_state)));
+    } else {
+        let _ = app.emit("kick-auth-error", "OAuth callback arrived after timeout");
     }
     Ok(())
 }
@@ -66,7 +109,6 @@ pub fn init_stored_auth() -> Option<super::state::KickAuthInfo> {
         if auth.has_chat_write {
             return Some(auth);
         } else {
-            // Se tiver o token antigo sem chat:write, descarta e exige novo login
             oauth::clear_auth();
             return None;
         }
@@ -136,12 +178,10 @@ pub async fn kick_send_message(
     }
 }
 
-use std::collections::HashSet;
-
 #[tauri::command]
 pub async fn kick_set_channels(
     app: AppHandle,
-    channels: Vec<(String, u64)>, // Array of (slug, chatroom_id)
+    channels: Vec<(String, u64)>,
 ) -> Result<(), KickError> {
     let channels_set: HashSet<(String, u64)> = channels.into_iter().collect();
     super::pusher::update_kick_subscriptions(&app, channels_set).await;

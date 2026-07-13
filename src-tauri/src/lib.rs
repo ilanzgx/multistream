@@ -18,8 +18,8 @@ use twitch::state::TwitchState;
 
 mod kick;
 use kick::commands::{
-    kick_cancel_login, kick_get_auth_state, kick_login, kick_logout, kick_send_message,
-    kick_set_channels,
+    kick_cancel_login, kick_get_auth_state, kick_handle_callback, kick_login, kick_logout,
+    kick_send_message, kick_set_channels,
 };
 use kick::state::KickState;
 
@@ -158,6 +158,7 @@ pub fn run() {
             twitch_send_message,
             kick_login,
             kick_cancel_login,
+            kick_handle_callback,
             kick_logout,
             kick_get_auth_state,
             kick_send_message,

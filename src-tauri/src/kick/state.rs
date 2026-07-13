@@ -19,6 +19,8 @@ pub struct KickAuthState {
 pub struct KickState {
     pub auth: Mutex<Option<KickAuthInfo>>,
     pub pusher_shutdown_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
+    pub oauth_callback_tx:
+        Mutex<Option<tokio::sync::oneshot::Sender<Result<(String, String), String>>>>,
 }
 
 impl KickState {
@@ -26,6 +28,7 @@ impl KickState {
         Self {
             auth: Mutex::new(None),
             pusher_shutdown_tx: Mutex::new(None),
+            oauth_callback_tx: Mutex::new(None),
         }
     }
 }
