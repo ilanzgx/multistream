@@ -281,6 +281,10 @@ jobs:
                 url: `${baseUrl}/Multistream-linux-x64.AppImage.tar.gz`,
                 signature: readSig("Multistream-linux-x64.AppImage.tar.gz.sig")
               },
+              "linux-x86_64-appimage": {
+                url: `${baseUrl}/Multistream-linux-x64.AppImage.tar.gz`,
+                signature: readSig("Multistream-linux-x64.AppImage.tar.gz.sig")
+              },
               "windows-x86_64": {
                 url: `${baseUrl}/Multistream-windows-x64-setup.exe`,
                 signature: readSig("Multistream-windows-x64-setup.exe.sig")
