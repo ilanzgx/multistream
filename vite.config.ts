@@ -13,7 +13,13 @@ export default defineConfig({
     strictPort: true,
     host: "127.0.0.1",
     watch: {
-      ignored: ["**/website/**"],
+      ignored: [
+        "**/website/**",
+        "**/coverage/**",
+        "**/playwright-report/**",
+        "**/test-results/**",
+        "**/tests-results/**",
+      ],
     },
   },
   envPrefix: ["VITE_", "TAURI_"],

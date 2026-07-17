@@ -10,6 +10,19 @@ vi.mock("vue-i18n", () => ({
   }),
 }));
 
+vi.mock("@tauri-apps/plugin-dialog", () => ({
+  save: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/plugin-fs", () => ({
+  writeTextFile: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/path", () => ({
+  downloadDir: vi.fn(),
+  join: vi.fn(),
+}));
+
 describe("useBackup composable unit tests", () => {
   let scope: EffectScope;
   let backupComposable: ReturnType<typeof useBackup>;
@@ -103,6 +116,47 @@ describe("useBackup composable unit tests", () => {
       expect(validateBackupData(invalidHistory)).toBe(false);
       expect(validateBackupData(invalidHistoryArray)).toBe(false);
     });
+
+    it("should reject backup with invalid favorite or recent structure", () => {
+      // Arrange
+      const invalidFavorite = {
+        ...validBackup,
+        favorites: [{ channel: "test", platform: "twitch" }] as any, // missing addedAt
+      };
+
+      const invalidRecentIframe = {
+        ...validBackup,
+        recents: [{ channel: "test", platform: "kick", addedAt: 123, iframeUrl: 123 }] as any, // invalid iframeUrl
+      };
+
+      const invalidStreamIframe = {
+        ...validBackup,
+        streams: [{ id: "1", channel: "test", platform: "kick", iframeUrl: 123 }] as any,
+      };
+
+      const invalidFavoritePlatform = {
+        ...validBackup,
+        favorites: [{ channel: "test", platform: "invalid", addedAt: 123 }] as any,
+      };
+
+      const invalidFavoriteIframe = {
+        ...validBackup,
+        favorites: [{ channel: "test", platform: "kick", addedAt: 123, iframeUrl: 123 }] as any,
+      };
+
+      const invalidRecentPlatform = {
+        ...validBackup,
+        recents: [{ channel: "test", platform: "invalid", addedAt: 123 }] as any,
+      };
+
+      // Act & Assert
+      expect(validateBackupData(invalidFavorite)).toBe(false);
+      expect(validateBackupData(invalidRecentIframe)).toBe(false);
+      expect(validateBackupData(invalidStreamIframe)).toBe(false);
+      expect(validateBackupData(invalidFavoritePlatform)).toBe(false);
+      expect(validateBackupData(invalidFavoriteIframe)).toBe(false);
+      expect(validateBackupData(invalidRecentPlatform)).toBe(false);
+    });
   });
 
   describe("importConfig", () => {
@@ -135,6 +189,119 @@ describe("useBackup composable unit tests", () => {
   });
 
   describe("exportConfig", () => {
+    describe("Tauri native save", () => {
+      let tauriDialog: any;
+      let tauriFs: any;
+      let tauriPath: any;
+
+      beforeEach(async () => {
+        (globalThis as any).window = { __TAURI_INTERNALS__: {} };
+        tauriDialog = await import("@tauri-apps/plugin-dialog");
+        tauriFs = await import("@tauri-apps/plugin-fs");
+        tauriPath = await import("@tauri-apps/api/path");
+      });
+
+      afterEach(() => {
+        delete (globalThis as any).window;
+        vi.clearAllMocks();
+      });
+
+      it("should use Tauri native save and writeTextFile successfully", async () => {
+        // Arrange
+        const { exportConfig } = backupComposable;
+        tauriPath.downloadDir.mockResolvedValue("/downloads");
+        tauriPath.join.mockResolvedValue("/downloads/file.json");
+        tauriDialog.save.mockResolvedValue("/chosen/path.json");
+        tauriFs.writeTextFile.mockResolvedValue(undefined);
+
+        // Act
+        const result = await exportConfig();
+
+        // Assert
+        expect(result).toBe(true);
+        expect(tauriPath.downloadDir).toHaveBeenCalled();
+        expect(tauriDialog.save).toHaveBeenCalled();
+        expect(tauriFs.writeTextFile).toHaveBeenCalledWith("/chosen/path.json", expect.any(String));
+      });
+
+      it("should handle downloadDir failure but still open save dialog", async () => {
+        // Arrange
+        const { exportConfig } = backupComposable;
+        tauriPath.downloadDir.mockRejectedValue(new Error("No download dir"));
+        tauriDialog.save.mockResolvedValue("/chosen/path.json");
+        tauriFs.writeTextFile.mockResolvedValue(undefined);
+
+        // Act
+        const result = await exportConfig();
+
+        // Assert
+        expect(result).toBe(true);
+        expect(tauriDialog.save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            defaultPath: expect.stringContaining("multistream-backup"),
+          })
+        );
+        expect(tauriFs.writeTextFile).toHaveBeenCalled();
+      });
+
+      it("should return false if user cancels native save dialog", async () => {
+        // Arrange
+        const { exportConfig } = backupComposable;
+        tauriPath.downloadDir.mockResolvedValue("/downloads");
+        tauriDialog.save.mockResolvedValue(null);
+
+        // Act
+        const result = await exportConfig();
+
+        // Assert
+        expect(result).toBe(false);
+        expect(tauriFs.writeTextFile).not.toHaveBeenCalled();
+      });
+
+      it("should throw error if writeTextFile fails", async () => {
+        // Arrange
+        const { exportConfig } = backupComposable;
+        tauriPath.downloadDir.mockResolvedValue("/downloads");
+        tauriDialog.save.mockResolvedValue("/chosen/path.json");
+        tauriFs.writeTextFile.mockRejectedValue(new Error("Permission denied"));
+
+        // Act & Assert
+        await expect(exportConfig()).rejects.toThrow(
+          "Failed to save file: Error: Permission denied"
+        );
+      });
+
+      it("should fall back to legacy download if Tauri native save block throws an unexpected error", async () => {
+        // Arrange
+        const { exportConfig } = backupComposable;
+
+        // Mock save to throw to simulate plugin failure, escaping the inner try/catch
+        tauriDialog.save.mockRejectedValue(new Error("Simulated plugin error"));
+
+        const clickMock = vi.fn();
+        const mockLink = {
+          setAttribute: vi.fn(),
+          click: clickMock,
+          remove: vi.fn(),
+          href: "",
+          download: "",
+        };
+        globalThis.document = {
+          createElement: vi.fn().mockReturnValue(mockLink),
+          body: { appendChild: vi.fn(), removeChild: vi.fn() },
+        } as any;
+        globalThis.URL.createObjectURL = vi.fn(() => "blob:url");
+        globalThis.URL.revokeObjectURL = vi.fn();
+
+        // Act
+        const result = await exportConfig();
+
+        // Assert
+        expect(result).toBe(true);
+        expect(clickMock).toHaveBeenCalled(); // Legacy download triggered
+      });
+    });
+
     it("should package data and trigger a file download", async () => {
       const {
         exportConfig,
@@ -242,6 +409,42 @@ describe("useBackup composable unit tests", () => {
 
       // Assert - Should return false if user cancelled
       expect(result).toBe(false);
+
+      delete (globalThis as any).window;
+    });
+
+    it("should fall back to legacy download if showSaveFilePicker throws non-AbortError", async () => {
+      // Arrange
+      const { exportConfig } = backupComposable;
+
+      const genericError = new Error("Some Error");
+      genericError.name = "SomeError";
+
+      (globalThis as any).window = {
+        showSaveFilePicker: vi.fn().mockRejectedValue(genericError),
+      };
+
+      const clickMock = vi.fn();
+      const mockLink = {
+        setAttribute: vi.fn(),
+        click: clickMock,
+        remove: vi.fn(),
+        href: "",
+        download: "",
+      };
+      globalThis.document = {
+        createElement: vi.fn().mockReturnValue(mockLink),
+        body: { appendChild: vi.fn(), removeChild: vi.fn() },
+      } as any;
+      globalThis.URL.createObjectURL = vi.fn(() => "blob:url");
+      globalThis.URL.revokeObjectURL = vi.fn();
+
+      // Act
+      const result = await exportConfig();
+
+      // Assert
+      expect(result).toBe(true);
+      expect(clickMock).toHaveBeenCalled();
 
       delete (globalThis as any).window;
     });

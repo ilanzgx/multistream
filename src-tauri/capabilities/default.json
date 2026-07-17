@@ -48,6 +48,7 @@
     "deep-link:allow-get-current",
     "store:default",
     "dialog:default",
-    "fs:default"
+    "fs:default",
+    "fs:allow-write-text-file"
   ]
 }

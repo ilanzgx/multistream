@@ -160,10 +160,16 @@ const _useBackup = () => {
       try {
         const { save } = await import("@tauri-apps/plugin-dialog");
         const { writeTextFile } = await import("@tauri-apps/plugin-fs");
-        const { downloadDir, join } = await import("@tauri-apps/api/path");
 
-        const dlDir = await downloadDir();
-        const initialPath = await join(dlDir, fileName);
+        let initialPath: string | undefined = undefined;
+        try {
+          const { downloadDir, join } = await import("@tauri-apps/api/path");
+          const dlDir = await downloadDir();
+          initialPath = await join(dlDir, fileName);
+        } catch (pathErr) {
+          console.warn("Could not get download dir for initial path:", pathErr);
+          initialPath = fileName;
+        }
 
         const filePath = await save({
           defaultPath: initialPath,
@@ -176,12 +182,22 @@ const _useBackup = () => {
         });
 
         if (filePath) {
-          await writeTextFile(filePath, jsonString);
-          return true;
+          try {
+            await writeTextFile(filePath, jsonString);
+            return true;
+          } catch (writeErr) {
+            console.error("Failed to write file at chosen path:", writeErr);
+            // If the native write failed, we shouldn't silently fallback to the browser download
+            // which ignores the user's chosen folder. Just return false or throw.
+            throw new Error(`Failed to save file: ${writeErr}`, { cause: writeErr });
+          }
         } else {
           return false; // User cancelled
         }
       } catch (err: any) {
+        if (err instanceof Error && err.message.startsWith("Failed to save file:")) {
+          throw err;
+        }
         console.error("Tauri native save failed, falling back to legacy download:", err);
       }
     }
