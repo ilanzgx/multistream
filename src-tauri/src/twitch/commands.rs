@@ -341,7 +341,7 @@ pub async fn twitch_get_followed_streams(
         let res = http
             .get(&url)
             .bearer_auth(&auth.access_token)
-            .header("Client-Id", super::oauth::CLIENT_ID)
+            .header("Client-Id", super::oauth::client_id())
             .send()
             .await
             .map_err(TwitchError::Http)?;
@@ -408,7 +408,7 @@ pub async fn twitch_get_followed_streams(
         let res = http
             .get(&users_url)
             .bearer_auth(&auth.access_token)
-            .header("Client-Id", super::oauth::CLIENT_ID)
+            .header("Client-Id", super::oauth::client_id())
             .send()
             .await;
 

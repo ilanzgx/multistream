@@ -313,12 +313,12 @@ pub fn run() {
                     if (e.data?.type === 'MULTISTREAM_GRAVEYARD_SUSPEND') {
                         // Aggressive graveyard mode
                         window.__isGraveyard = true;
-                        
+
                         // 1. Destroy ability to play any media
                         HTMLMediaElement.prototype.play = function() {
                             return Promise.reject(new Error("Graveyard mode"));
                         };
-                        
+
                         // 2. Silence and pause currently playing media
                         const silenceMedia = (v) => {
                             if (v.tagName === 'VIDEO' || v.tagName === 'AUDIO') {
@@ -328,7 +328,7 @@ pub fn run() {
                                 v.removeAttribute('autoplay');
                             }
                         };
-                        
+
                         document.querySelectorAll('video, audio').forEach(silenceMedia);
 
                         // 3. Destroy future AudioContexts

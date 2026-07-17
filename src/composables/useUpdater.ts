@@ -1,4 +1,5 @@
 import { ref, h } from "vue";
+import { isTauri as _isTauri } from "@tauri-apps/api/core";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "vue-sonner";
@@ -15,7 +16,13 @@ const contentLength = ref(0);
 let currentUpdate: Update | null = null;
 
 export function isTauri(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+  if (typeof window === "undefined") return false;
+  return Boolean(
+    _isTauri() ||
+    "__TAURI_INTERNALS__" in window ||
+    "__TAURI_IPC__" in window ||
+    "__TAURI__" in window
+  );
 }
 
 export function useUpdater() {

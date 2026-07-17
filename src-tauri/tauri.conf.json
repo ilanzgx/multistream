@@ -1,10 +1,10 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Multistream",
-  "version": "0.18.4",
+  "version": "0.18.5",
   "identifier": "com.ilanzgx.multistream",
   "build": {
-    "removeUnusedCommands": true,
+    "removeUnusedCommands": false,
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "bun run dev",

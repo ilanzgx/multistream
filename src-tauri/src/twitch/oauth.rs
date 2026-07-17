@@ -4,7 +4,9 @@ use tauri::AppHandle;
 use super::error::TwitchError;
 use super::state::TwitchAuthInfo;
 
-pub const CLIENT_ID: &str = "y0twwqcd7k38sf5587sxoi5ca9ghid";
+pub fn client_id() -> &'static str {
+    option_env!("TWITCH_CLIENT_ID").unwrap_or("")
+}
 const SCOPES: &str = "chat:read chat:edit user:read:follows";
 const DEVICE_URL: &str = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL: &str = "https://id.twitch.tv/oauth2/token";
@@ -33,7 +35,13 @@ struct ValidateResponse {
 }
 
 pub async fn start_device_flow(http: &reqwest::Client) -> Result<DeviceFlowResponse, TwitchError> {
-    let form_data = [("client_id", CLIENT_ID), ("scopes", SCOPES)];
+    if client_id().is_empty() {
+        return Err(TwitchError::OAuth(
+            "TWITCH_CLIENT_ID is missing at compile time.".to_owned(),
+        ));
+    }
+
+    let form_data = [("client_id", client_id()), ("scopes", SCOPES)];
 
     let response = http
         .post(DEVICE_URL)
@@ -63,7 +71,7 @@ pub async fn poll_device_token(
     device_code: &str,
 ) -> Result<Option<TwitchAuthInfo>, TwitchError> {
     let form_data = [
-        ("client_id", CLIENT_ID),
+        ("client_id", client_id()),
         ("scopes", SCOPES),
         ("device_code", device_code),
         ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
@@ -119,10 +127,16 @@ pub async fn refresh_token(
     http: &reqwest::Client,
     refresh_token_str: &str,
 ) -> Result<TwitchAuthInfo, TwitchError> {
+    if client_id().is_empty() {
+        return Err(TwitchError::OAuth(
+            "TWITCH_CLIENT_ID is missing at compile time.".to_owned(),
+        ));
+    }
+
     let response = http
         .post(TOKEN_URL)
         .form(&[
-            ("client_id", CLIENT_ID),
+            ("client_id", client_id()),
             ("refresh_token", refresh_token_str),
             ("grant_type", "refresh_token"),
         ])
