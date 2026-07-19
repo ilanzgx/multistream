@@ -70,7 +70,7 @@ watch(
     const activePlatforms = new Set(newStreams.map((s) => s.platform));
 
     domStreams.value = domStreams.value.filter(
-      (ds) => !ds._isDead || activePlatforms.has(ds.platform)
+      (ds) => !ds._isDead || (ds.platform !== "custom" && activePlatforms.has(ds.platform))
     );
   },
   { deep: true, immediate: true }
