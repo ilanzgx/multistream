@@ -119,10 +119,12 @@ pub async fn send_notification(
     {
         use tauri_winrt_notification::{IconCrop, Toast};
 
-        let mut toast = Toast::new(Toast::POWERSHELL_APP_ID)
-            .title(&title)
-            .text1(&body)
-            .sound(None);
+        #[cfg(debug_assertions)]
+        let aumid = Toast::POWERSHELL_APP_ID;
+        #[cfg(not(debug_assertions))]
+        let aumid = "com.ilanzgx.multistream";
+
+        let mut toast = Toast::new(aumid).title(&title).text1(&body).sound(None);
 
         if let Some(path) = &icon_path {
             toast = toast.icon(path, IconCrop::Circular, "avatar");
