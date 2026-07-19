@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Multistream",
-  "version": "0.18.6",
+  "version": "0.18.7",
   "identifier": "com.ilanzgx.multistream",
   "build": {
     "removeUnusedCommands": false,
