@@ -290,13 +290,16 @@
     "loadingChannel": "正在加载 {channel}..."
   },
   "notifications": {
-    "welcome": "🔴 收藏主播正在直播",
+    "welcome": "收藏主播正在直播",
     "welcomeBody": "{channels} 正在直播！",
+    "welcomeBodyMore": "{channels} 和其他 {count} 个收藏主播正在直播！",
     "welcomeBodySingle": "{channel} 正在直播！",
-    "live": "🔴 {channel} 开始直播了！",
-    "liveBody": "{title} • {category}",
+    "live": "{channel} 开始直播了！",
+    "liveBody": "[{category}] {title}",
     "liveBodyTitleOnly": "{title}",
-    "liveBodyFallback": "{channel} 在 {platform}"
+    "liveBodyFallback": "{channel} 在 {platform}",
+    "actionWatch": "观看直播",
+    "actionIgnore": "忽略"
   },
   "onboarding": {
     "title": "欢迎使用 Multistream",

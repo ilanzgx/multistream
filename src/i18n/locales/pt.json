@@ -290,13 +290,16 @@
     "loadingChannel": "Carregando {channel}..."
   },
   "notifications": {
-    "welcome": "🔴 Favoritos ao vivo",
+    "welcome": "Favoritos ao vivo",
     "welcomeBody": "{channels} estão ao vivo agora!",
+    "welcomeBodyMore": "{channels} e mais {count} favoritos estão ao vivo!",
     "welcomeBodySingle": "{channel} está ao vivo agora!",
-    "live": "🔴 {channel} entrou ao vivo!",
-    "liveBody": "{title} • {category}",
+    "live": "{channel} entrou ao vivo!",
+    "liveBody": "[{category}] {title}",
     "liveBodyTitleOnly": "{title}",
-    "liveBodyFallback": "{channel} em {platform}"
+    "liveBodyFallback": "{channel} em {platform}",
+    "actionWatch": "Assistir Stream",
+    "actionIgnore": "Ignorar"
   },
   "onboarding": {
     "title": "Bem-vindo ao Multistream",

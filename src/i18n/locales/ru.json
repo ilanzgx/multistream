@@ -290,13 +290,16 @@
     "loadingChannel": "Загрузка {channel}..."
   },
   "notifications": {
-    "welcome": "🔴 Избранные стримеры онлайн",
+    "welcome": "Избранные стримеры онлайн",
     "welcomeBody": "{channels} сейчас в эфире!",
+    "welcomeBodyMore": "{channels} и еще {count} избранных в эфире!",
     "welcomeBodySingle": "{channel} сейчас в эфире!",
-    "live": "🔴 {channel} начал трансляцию!",
-    "liveBody": "{title} • {category}",
+    "live": "{channel} начал трансляцию!",
+    "liveBody": "[{category}] {title}",
     "liveBodyTitleOnly": "{title}",
-    "liveBodyFallback": "{channel} на {platform}"
+    "liveBodyFallback": "{channel} на {platform}",
+    "actionWatch": "Смотреть стрим",
+    "actionIgnore": "Игнорировать"
   },
   "onboarding": {
     "title": "Добро пожаловать в Multistream",
