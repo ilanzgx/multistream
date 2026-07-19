@@ -248,9 +248,10 @@ describe("useUpdater composable unit tests", () => {
 
       // Assert (States)
       expect(toast.custom).toHaveBeenCalledWith(
-        expect.any(Function),
+        expect.any(Object),
         expect.objectContaining({
           id: "update-download",
+          class: "bg-transparent border-none shadow-none !p-0",
         })
       );
       expect(mockUpdate.downloadAndInstall).toHaveBeenCalled();

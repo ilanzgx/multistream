@@ -87,13 +87,13 @@ export function useUpdater() {
 
     try {
       toast.custom(
-        () =>
-          h(UpdateProgress, {
-            downloaded: downloadProgress.value,
-            total: contentLength.value,
-          }),
+        h(UpdateProgress, {
+          downloaded: downloadProgress.value,
+          total: contentLength.value,
+        }),
         {
           id: "update-download",
+          class: "bg-transparent border-none shadow-none !p-0",
         }
       );
 
@@ -109,25 +109,25 @@ export function useUpdater() {
             lastToastUpdate = now;
 
             toast.custom(
-              () =>
-                h(UpdateProgress, {
-                  downloaded: downloadProgress.value,
-                  total: contentLength.value,
-                }),
+              h(UpdateProgress, {
+                downloaded: downloadProgress.value,
+                total: contentLength.value,
+              }),
               {
                 id: "update-download",
+                class: "bg-transparent border-none shadow-none !p-0",
               }
             );
           }
         } else if (event.event === "Finished") {
           toast.custom(
-            () =>
-              h(UpdateProgress, {
-                downloaded: contentLength.value, // Force 100%
-                total: contentLength.value,
-              }),
+            h(UpdateProgress, {
+              downloaded: contentLength.value, // Force 100%
+              total: contentLength.value,
+            }),
             {
               id: "update-download",
+              class: "bg-transparent border-none shadow-none !p-0",
             }
           );
         }
