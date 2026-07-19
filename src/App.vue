@@ -187,13 +187,17 @@ onMounted(async () => {
   window.addEventListener("multistream-show-dialog", handleDialogShowEvent);
 
   if (isTauri()) {
-    unlistenWatch = await listen<{ channel: string; platform: Platform }>(
-      "notification-watch",
-      (event) => {
-        const { channel, platform } = event.payload;
-        addStream(channel, platform);
-      }
-    );
+    try {
+      unlistenWatch = await listen<{ channel: string; platform: Platform }>(
+        "notification-watch",
+        (event) => {
+          const { channel, platform } = event.payload;
+          addStream(channel, platform);
+        }
+      );
+    } catch (e) {
+      console.warn("Failed to register notification listener:", e);
+    }
   }
 
   if (!onboardingCompleted.value) {

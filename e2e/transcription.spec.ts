@@ -20,6 +20,7 @@ test.describe("Live Transcription UI E2E Test", () => {
           return Promise.resolve();
         },
         listen: () => Promise.resolve(() => {}),
+        transformCallback: () => 1,
       };
     });
 
