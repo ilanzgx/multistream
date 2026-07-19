@@ -1,5 +1,5 @@
 #[tauri::command]
-#[allow(unused_variables, unused_imports)]
+#[allow(unused_variables, unused_imports, clippy::too_many_arguments)]
 pub async fn send_notification(
     app: tauri::AppHandle,
     title: String,
