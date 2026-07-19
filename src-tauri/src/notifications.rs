@@ -99,11 +99,10 @@ pub async fn send_notification(
 
     #[cfg(target_os = "macos")]
     {
-        use notify_rust::{Hint, Notification};
+        use notify_rust::Notification;
 
         let mut notification = Notification::new();
         notification.summary(&title).body(&body);
-        notification.hint(Hint::SuppressSound(true));
 
         if let Some(path) = &icon_path {
             if let Some(path_str) = path.to_str() {
