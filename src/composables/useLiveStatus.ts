@@ -632,22 +632,46 @@ const _useLiveStatus = () => {
         }
 
         if (newLiveChannels.length > 0) {
-          // If many channels went live at once or it's the first check, consolidate notifications
-          if (isFirstCheck || newLiveChannels.length > 3) {
+          // If it's the first check, consolidate notifications into a welcome message
+          if (isFirstCheck) {
+            // Sort by viewer count (descending)
+            newLiveChannels.sort(
+              (a, b) => (b.status?.viewerCount || 0) - (a.status?.viewerCount || 0)
+            );
+
             if (newLiveChannels.length === 1) {
-              const { fav } = newLiveChannels[0]!;
+              const { fav, status } = newLiveChannels[0]!;
               invoke("send_notification", {
                 title: t("notifications.welcome"),
                 body: t("notifications.welcomeBodySingle", {
                   channel: fav.channel,
                 }),
+                avatarUrl: status?.avatarUrl || null,
+                watchText: t("notifications.actionWatch"),
+                ignoreText: t("notifications.actionIgnore"),
+                channel: fav.channel,
+                platform: fav.platform,
               }).catch(() => {});
             } else {
-              const names = newLiveChannels.map((c) => c.fav.channel).join(", ");
-              invoke("send_notification", {
-                title: t("notifications.welcome"),
-                body: t("notifications.welcomeBody", { channels: names }),
-              }).catch(() => {});
+              const MAX_STREAMS = 12;
+              const topStreams = newLiveChannels.slice(0, MAX_STREAMS);
+              const names = topStreams.map((c) => c.fav.channel).join(", ");
+              const remainingCount = newLiveChannels.length - MAX_STREAMS;
+
+              if (remainingCount > 0) {
+                invoke("send_notification", {
+                  title: t("notifications.welcome"),
+                  body: t("notifications.welcomeBodyMore", {
+                    channels: names,
+                    count: remainingCount,
+                  }),
+                }).catch(() => {});
+              } else {
+                invoke("send_notification", {
+                  title: t("notifications.welcome"),
+                  body: t("notifications.welcomeBody", { channels: names }),
+                }).catch(() => {});
+              }
             }
           } else {
             // Individual notifications for small number of updates
@@ -671,7 +695,15 @@ const _useLiveStatus = () => {
                 });
               }
 
-              invoke("send_notification", { title, body }).catch(() => {});
+              invoke("send_notification", {
+                title,
+                body,
+                avatarUrl: status?.avatarUrl || null,
+                watchText: t("notifications.actionWatch"),
+                ignoreText: t("notifications.actionIgnore"),
+                channel: fav.channel,
+                platform: fav.platform,
+              }).catch(() => {});
             }
           }
         }

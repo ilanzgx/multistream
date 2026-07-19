@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
 import { Menu, X } from "@lucide/vue";
-import { useStreams } from "./composables/useStreams";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { useStreams, type Platform } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
 import { useUpdater, isTauri } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
@@ -178,10 +179,22 @@ function handleDialogShowEvent(e: Event) {
   }
 }
 
-onMounted(() => {
+let unlistenWatch: UnlistenFn | null = null;
+
+onMounted(async () => {
   window.addEventListener("keydown", handleGlobalKeyDown);
   window.addEventListener("message", handleFrameShortcuts);
   window.addEventListener("multistream-show-dialog", handleDialogShowEvent);
+
+  if (isTauri()) {
+    unlistenWatch = await listen<{ channel: string; platform: Platform }>(
+      "notification-watch",
+      (event) => {
+        const { channel, platform } = event.payload;
+        addStream(channel, platform);
+      }
+    );
+  }
 
   if (!onboardingCompleted.value) {
     showOnboarding.value = true;
@@ -225,6 +238,10 @@ onUnmounted(() => {
   window.removeEventListener("keydown", handleGlobalKeyDown);
   window.removeEventListener("message", handleFrameShortcuts);
   window.removeEventListener("multistream-show-dialog", handleDialogShowEvent);
+
+  if (unlistenWatch) {
+    unlistenWatch();
+  }
 });
 </script>
 
