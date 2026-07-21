@@ -14,6 +14,8 @@ use super::state::{
 
 const IRC_URL: &str = "wss://irc-ws.chat.twitch.tv:443";
 const JOIN_DELAY_MS: u64 = 350;
+const HEARTBEAT_INTERVAL_SECS: u64 = 60;
+const HEARTBEAT_TIMEOUT_SECS: u64 = 360;
 
 #[derive(Debug, Serialize, Clone)]
 pub struct ConnectionStateEvent {
@@ -105,15 +107,16 @@ pub async fn run_irc_loop(
     let mut attempt: u32 = 0;
 
     loop {
-        emit_connection_state(
-            &app,
-            if attempt == 0 {
-                ConnectionState::Disconnected
-            } else {
-                ConnectionState::Reconnecting
-            },
-        )
-        .await;
+        let state_label = if attempt == 0 {
+            ConnectionState::Disconnected
+        } else {
+            ConnectionState::Reconnecting
+        };
+        log::info!(
+            "[twitch-irc] run_irc_loop iteration: attempt={attempt}, state={state_label:?}, channels={:?}",
+            channels
+        );
+        emit_connection_state(&app, state_label).await;
 
         match connect_irc(
             &app,
@@ -130,14 +133,14 @@ pub async fn run_irc_loop(
                 emit_connection_state(&app, ConnectionState::Disconnected).await;
                 break;
             }
-            Err(TwitchError::OAuth(_)) => {
-                log::warn!("[twitch-irc] auth failure, stopping loop");
+            Err(TwitchError::OAuth(ref msg)) => {
+                log::warn!("[twitch-irc] auth failure ({msg}), stopping loop");
                 emit_connection_state(&app, ConnectionState::Disconnected).await;
                 let _ = app.emit("twitch-auth-expired", ());
                 break;
             }
             Err(e) => {
-                log::warn!("[twitch-irc] connection error: {e}");
+                log::warn!("[twitch-irc] connect_irc returned error: {e}");
             }
         }
 
@@ -148,11 +151,13 @@ pub async fn run_irc_loop(
         tokio::select! {
             _ = tokio::time::sleep(delay) => {}
             _ = &mut shutdown_rx => {
+                log::info!("[twitch-irc] shutdown received during backoff, exiting");
                 emit_connection_state(&app, ConnectionState::Disconnected).await;
                 break;
             }
         }
     }
+    log::info!("[twitch-irc] run_irc_loop exiting");
 }
 
 fn backoff_delay(attempt: u32) -> Duration {
@@ -175,12 +180,14 @@ async fn connect_irc(
     shutdown_rx: &mut oneshot::Receiver<()>,
     outbound_rx: &mut tokio::sync::mpsc::Receiver<OutboundIrcMessage>,
 ) -> Result<(), TwitchError> {
+    log::info!("[twitch-irc] connecting to {IRC_URL}...");
     let connect_future = connect_async(IRC_URL);
     let (ws_stream, _) = match tokio::time::timeout(Duration::from_secs(10), connect_future).await {
         Ok(Ok(result)) => result,
         Ok(Err(e)) => return Err(TwitchError::WebSocket(e.to_string())),
         Err(_) => return Err(TwitchError::WebSocket("Connection timeout".to_string())),
     };
+    log::info!("[twitch-irc] WebSocket connected, sending auth...");
 
     let (mut write, mut read) = ws_stream.split();
 
@@ -209,109 +216,204 @@ async fn connect_irc(
     emit_connection_state(app, ConnectionState::Connected).await;
     log::info!("[twitch-irc] connected, joined {} channels", channels.len());
 
+    let mut last_read_activity = tokio::time::Instant::now();
+    let mut heartbeat = tokio::time::interval(Duration::from_secs(HEARTBEAT_INTERVAL_SECS));
+    heartbeat.tick().await;
+
+    let mut loop_iteration: u64 = 0;
+    let mut total_messages_received: u64 = 0;
+    let mut total_pings_received: u64 = 0;
+    let mut total_pongs_sent: u64 = 0;
+    let mut total_outbound_sent: u64 = 0;
+    let mut total_notices_received: u64 = 0;
+
     loop {
+        loop_iteration += 1;
         tokio::select! {
             msg = read.next() => {
+                let elapsed_since_last = last_read_activity.elapsed();
+                last_read_activity = tokio::time::Instant::now();
+
                 let msg = match msg {
                     Some(Ok(m)) => m,
-                    Some(Err(e)) => return Err(TwitchError::WebSocket(e.to_string())),
-                    None => return Err(TwitchError::WebSocket("stream closed".to_owned())),
+                    Some(Err(e)) => {
+                        log::error!(
+                            "[twitch-irc] read error at iteration={loop_iteration}, \
+                             msgs_rx={total_messages_received}, pings={total_pings_received}, \
+                             outbound={total_outbound_sent}, notices={total_notices_received}, \
+                             idle={elapsed_since_last:?}: {e}"
+                        );
+                        return Err(TwitchError::WebSocket(e.to_string()));
+                    }
+                    None => {
+                        log::error!(
+                            "[twitch-irc] stream returned None (closed) at iteration={loop_iteration}, \
+                             msgs_rx={total_messages_received}, pings={total_pings_received}, \
+                             outbound={total_outbound_sent}, notices={total_notices_received}, \
+                             idle={elapsed_since_last:?}"
+                        );
+                        return Err(TwitchError::WebSocket("stream closed".to_owned()));
+                    }
                 };
 
                 match msg {
                     Message::Text(text) => {
+                        total_messages_received += 1;
+
                         for line in text.lines() {
-                            if line.starts_with("PING ") {
-                                log::debug!("[twitch-irc] PING received, sending PONG");
+                            if line.starts_with("PING") {
+                                total_pings_received += 1;
+                                log::info!(
+                                    "[twitch-irc] PING #{total_pings_received} received \
+                                     (idle={elapsed_since_last:?}, iteration={loop_iteration})"
+                                );
                                 let pong = line.replace("PING", "PONG");
-                                write.send(Message::Text(pong)).await
-                                    .map_err(|e| TwitchError::WebSocket(e.to_string()))?;
+                                match write.send(Message::Text(pong)).await {
+                                    Ok(()) => {
+                                        total_pongs_sent += 1;
+                                    }
+                                    Err(e) => {
+                                        log::error!(
+                                            "[twitch-irc] PONG write failed at iteration={loop_iteration}: {e}"
+                                        );
+                                        return Err(TwitchError::WebSocket(e.to_string()));
+                                    }
+                                }
+                                continue;
+                            }
+
+                            if line.contains("NOTICE") {
+                                total_notices_received += 1;
+
+                                if line.contains("Login authentication failed") {
+                                    log::error!("[twitch-irc] fatal NOTICE: Login authentication failed");
+                                    return Err(TwitchError::OAuth("IRC auth failed".to_owned()));
+                                }
+
+                                let is_msg_error = line.contains("msg-id=msg_") || !line.starts_with('@');
+                                if is_msg_error {
+                                    if let (Some(hash_idx), Some(colon_idx)) = (line.find(" #"), line.rfind(" :")) {
+                                        if hash_idx < colon_idx {
+                                            let channel = &line[hash_idx + 2..colon_idx]
+                                                .split_whitespace()
+                                                .next()
+                                                .unwrap_or("");
+                                            let notice_text = &line[colon_idx + 2..];
+
+                                            #[derive(serde::Serialize, Clone)]
+                                            struct TwitchChatErrorEvent {
+                                                channel: String,
+                                                message: String,
+                                            }
+
+                                            let _ = app.emit(
+                                                "twitch-chat-error",
+                                                TwitchChatErrorEvent {
+                                                    channel: channel.to_string(),
+                                                    message: notice_text.to_string(),
+                                                },
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+
+                            if line.contains("PRIVMSG") {
+                                if let Some(chat_msg) = parse_privmsg(line) {
+                                    push_message(app, chat_msg.clone()).await;
+                                    let _ = app.emit("unified-chat-message", chat_msg);
+                                }
                             }
                         }
-                        handle_irc_message(app, &text).await?;
                     }
                     Message::Ping(payload) => {
-                        write.send(Message::Pong(payload)).await
-                            .map_err(|e| TwitchError::WebSocket(e.to_string()))?;
+                        total_pings_received += 1;
+                        log::info!(
+                            "[twitch-irc] WS-level Ping #{total_pings_received} \
+                             (idle={elapsed_since_last:?}, iteration={loop_iteration})"
+                        );
+                        match write.send(Message::Pong(payload)).await {
+                            Ok(()) => {
+                                total_pongs_sent += 1;
+                                log::debug!("[twitch-irc] WS-level Pong #{total_pongs_sent} sent");
+                            }
+                            Err(e) => {
+                                log::error!(
+                                    "[twitch-irc] WS Pong write failed at iteration={loop_iteration}: {e}"
+                                );
+                                return Err(TwitchError::WebSocket(e.to_string()));
+                            }
+                        }
                     }
-                    Message::Close(_) => {
+                    Message::Close(frame) => {
+                        log::warn!(
+                            "[twitch-irc] server sent Close frame at iteration={loop_iteration}, \
+                             msgs_rx={total_messages_received}, frame={frame:?}"
+                        );
                         return Err(TwitchError::WebSocket("server closed connection".to_owned()));
                     }
-                    _ => {}
+                    other => {
+                        log::debug!("[twitch-irc] unhandled WS message type: {other:?}");
+                    }
                 }
             }
             msg = outbound_rx.recv() => {
-                if let Some(out_msg) = msg {
-                    let line = format!("PRIVMSG #{} :{}", out_msg.channel, out_msg.text);
-                    if let Err(e) = write.send(Message::Text(line)).await {
-                        log::warn!("[twitch-irc] failed to send message: {e}");
+                match msg {
+                    Some(out_msg) => {
+                        total_outbound_sent += 1;
+                        log::info!(
+                            "[twitch-irc] outbound #{total_outbound_sent}: \
+                             PRIVMSG #{} (iteration={loop_iteration}, \
+                             msgs_rx={total_messages_received})",
+                            out_msg.channel
+                        );
+                        let line = format!("PRIVMSG #{} :{}", out_msg.channel, out_msg.text);
+                        if let Err(e) = write.send(Message::Text(line)).await {
+                            log::error!(
+                                "[twitch-irc] outbound write failed at iteration={loop_iteration}, \
+                                 outbound #{total_outbound_sent}: {e}"
+                            );
+                        }
+                    }
+                    None => {
+                        log::warn!(
+                            "[twitch-irc] outbound_rx.recv() returned None \
+                             (sender dropped) at iteration={loop_iteration}, \
+                             msgs_rx={total_messages_received}, outbound={total_outbound_sent}"
+                        );
+                        return Err(TwitchError::WebSocket("outbound channel closed".to_owned()));
                     }
                 }
             }
+            _ = heartbeat.tick() => {
+                let idle = last_read_activity.elapsed();
+                let timeout = Duration::from_secs(HEARTBEAT_TIMEOUT_SECS);
+                log::info!(
+                    "[twitch-irc] heartbeat check: idle={idle:?}, timeout={timeout:?}, \
+                     iteration={loop_iteration}, msgs_rx={total_messages_received}, \
+                     pings={total_pings_received}, pongs={total_pongs_sent}, \
+                     outbound={total_outbound_sent}, notices={total_notices_received}"
+                );
+                if idle > timeout {
+                    log::error!(
+                        "[twitch-irc] no data received for {idle:?} (> {timeout:?}), \
+                         assuming dead connection. iteration={loop_iteration}"
+                    );
+                    return Err(TwitchError::WebSocket(
+                        format!("no data received for {idle:?}, connection presumed dead")
+                    ));
+                }
+            }
             _ = &mut *shutdown_rx => {
+                log::info!(
+                    "[twitch-irc] shutdown signal received at iteration={loop_iteration}, \
+                     msgs_rx={total_messages_received}, outbound={total_outbound_sent}"
+                );
                 let _ = write.send(Message::Close(None)).await;
                 return Ok(());
             }
         }
     }
-}
-
-async fn handle_irc_message(app: &AppHandle, text: &str) -> Result<(), TwitchError> {
-    for line in text.lines() {
-        if line.starts_with("PING") {
-            log::debug!("[twitch-irc] PING received");
-            continue;
-        }
-
-        if !line.contains("PRIVMSG") {
-            // log::info!("[twitch-irc-recv] {}", line);
-        }
-
-        if line.contains("NOTICE") {
-            if line.contains("Login authentication failed") {
-                return Err(TwitchError::OAuth("IRC auth failed".to_owned()));
-            }
-
-            // Twitch sends NOTICE for room state changes (e.g. slow mode on)
-            // AND for message failures. Message failures always have a msg-id starting with msg_
-            // e.g. @msg-id=msg_banned :tmi.twitch.tv NOTICE #xqc :You are banned.
-            let is_msg_error = line.contains("msg-id=msg_") || !line.starts_with('@');
-
-            if is_msg_error {
-                if let (Some(hash_idx), Some(colon_idx)) = (line.find(" #"), line.rfind(" :")) {
-                    if hash_idx < colon_idx {
-                        let channel = &line[hash_idx + 2..colon_idx]
-                            .split_whitespace()
-                            .next()
-                            .unwrap_or("");
-                        let text = &line[colon_idx + 2..];
-
-                        #[derive(serde::Serialize, Clone)]
-                        struct TwitchChatErrorEvent {
-                            channel: String,
-                            message: String,
-                        }
-
-                        let _ = app.emit(
-                            "twitch-chat-error",
-                            TwitchChatErrorEvent {
-                                channel: channel.to_string(),
-                                message: text.to_string(),
-                            },
-                        );
-                    }
-                }
-            }
-        }
-
-        if line.contains("PRIVMSG") {
-            if let Some(msg) = parse_privmsg(line) {
-                push_message(app, msg.clone()).await;
-                let _ = app.emit("unified-chat-message", msg);
-            }
-        }
-    }
-    Ok(())
 }
 
 async fn push_message(app: &AppHandle, msg: UnifiedChatMessage) {
@@ -334,16 +436,23 @@ pub async fn update_subscriptions(
         return;
     };
 
+    log::info!(
+        "[twitch-irc] update_subscriptions called: new_channels={:?}",
+        new_channels
+    );
+
     state.subscriptions.lock().await.grid_channels = new_channels.clone();
 
     {
         let mut shutdown_guard = state.irc_shutdown_tx.lock().await;
         if let Some(tx) = shutdown_guard.take() {
+            log::info!("[twitch-irc] sending shutdown to previous IRC loop");
             let _ = tx.send(());
         }
     }
 
     if new_channels.is_empty() {
+        log::info!("[twitch-irc] no channels, setting disconnected");
         emit_connection_state(app, ConnectionState::Disconnected).await;
         return;
     }
@@ -355,6 +464,7 @@ pub async fn update_subscriptions(
     *state.irc_outbound_tx.lock().await = Some(out_tx);
 
     let app_clone = app.clone();
+    log::info!("[twitch-irc] spawning new IRC loop for {:?}", new_channels);
     tokio::spawn(async move {
         run_irc_loop(app_clone, access_token, username, new_channels, rx, out_rx).await;
     });

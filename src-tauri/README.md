@@ -44,9 +44,14 @@ Credentials are saved to `%APPDATA%\multistream\twitch_auth.json`. Loaded on app
 
 After authenticating, `twitch_set_channels` connects to `wss://irc-ws.chat.twitch.tv:443` with the `twitch.tv/tags` and `twitch.tv/commands` capabilities. The IRC loop runs in a separate task with **exponential backoff + jitter** (0s → ~2s → ~4s → ... → ~60s cap):
 
+- `PING` / `PRIVMSG` / `NOTICE` are all processed in a **single pass** over each incoming WebSocket frame
 - `PRIVMSG` → parses tags (id, color, badges, emotes) → emits `unified-chat-message`
 - `NOTICE msg-id=msg_*` → emits `twitch-chat-error` (signals optimistic message rollback in the frontend)
 - `NOTICE Login authentication failed` → stops the loop, emits `twitch-auth-expired`
+
+**Heartbeat:** A timer checks every 60s whether any data was received in the last 6 minutes (Twitch sends `PING` every ~5 min). If the connection is idle beyond this threshold, it is presumed dead and the loop triggers a reconnect.
+
+**Outbound channel:** If the `mpsc` sender is dropped (e.g. `update_subscriptions` replaced it), `outbound_rx.recv()` returns `None` and the loop exits cleanly to reconnect.
 
 Outbound messages (`twitch_send_message`) are sent via an `mpsc` channel to the IRC loop. The message is injected into the local buffer and emitted to the frontend immediately (optimistic UI); the server confirms or rejects it via `NOTICE`.
 
