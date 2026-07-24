@@ -251,6 +251,13 @@
       }
     }
   },
+  "confirm": {
+    "deleteOrphan": {
+      "title": "Aufnahme löschen",
+      "description": "Diese Aufnahmedatei wird dauerhaft von der Festplatte gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirm": "Löschen"
+    }
+  },
   "common": {
     "close": "Schließen",
     "comingSoon": "Demnächst"

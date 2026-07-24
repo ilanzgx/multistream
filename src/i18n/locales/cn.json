@@ -251,6 +251,13 @@
       }
     }
   },
+  "confirm": {
+    "deleteOrphan": {
+      "title": "删除录制",
+      "description": "此录制文件将从磁盘永久删除。此操作无法撤销。",
+      "confirm": "删除"
+    }
+  },
   "common": {
     "close": "关闭",
     "comingSoon": "即将推出"

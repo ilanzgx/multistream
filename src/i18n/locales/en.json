@@ -251,6 +251,13 @@
       }
     }
   },
+  "confirm": {
+    "deleteOrphan": {
+      "title": "Delete Recording",
+      "description": "This recording file will be permanently deleted from disk. This action cannot be undone.",
+      "confirm": "Delete"
+    }
+  },
   "common": {
     "close": "Close",
     "comingSoon": "Coming soon"

@@ -251,6 +251,13 @@
       }
     }
   },
+  "confirm": {
+    "deleteOrphan": {
+      "title": "Eliminar Grabación",
+      "description": "Este archivo de grabación se eliminará permanentemente del disco. Esta acción no se puede deshacer.",
+      "confirm": "Eliminar"
+    }
+  },
   "common": {
     "close": "Cerrar",
     "comingSoon": "Próximamente"
