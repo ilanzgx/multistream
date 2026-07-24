@@ -124,7 +124,7 @@
       "general": "常规",
       "data": "数据",
       "connections": "连接",
-      "resources": "功能",
+      "resources": "转录",
       "recording": "录制"
     },
     "recording": {
@@ -137,11 +137,11 @@
       "qualityTitle": "默认画质",
       "qualityPrefix": "画质: ",
       "qualityDescription": "首选流画质。如果未找到，则回退到最佳可用画质。",
-      "qualityBest": "最佳可用",
+      "qualityBest": "最佳",
       "quality1080p": "1080p",
       "quality720p": "720p",
       "quality480p": "480p",
-      "qualityWorst": "最低（文件最小）",
+      "qualityWorst": "最低",
       "pathTitle": "目录",
       "pathDescription": "选择录制的保存位置。留空以使用默认的视频文件夹。",
       "selectFolder": "选择文件夹",
@@ -326,8 +326,11 @@
       "chatActive": "聊天激活"
     },
     "step3": {
-      "title": "Twitch 聊天",
-      "description": "直接在应用中聊天！登录 Twitch 以在单独的聊天中发送消息，或使用统一聊天同时查看所有直播的消息。"
+      "title": "连接账户 (Twitch 与 Kick)",
+      "description": "登录您的 Twitch 和 Kick 账户，直接在聊天中发送消息并同步您的设置。",
+      "feature1": "直接在 Twitch 和 Kick 聊天中发送消息",
+      "feature2": "完整支持第三方表情 (BTTV 与 7TV)",
+      "feature3": "与统一聊天无缝整合"
     },
     "step4": {
       "title": "按类别推荐直播",
@@ -345,12 +348,20 @@
       "note": "所有处理都在您的计算机本地运行。性能取决于您的 CPU 和所选的模型。"
     },
     "step6": {
-      "title": "键盘快捷键",
-      "description": "使用这些快捷键高效控制您的直播和聊天：",
-      "add": "打开添加直播对话框",
-      "screenshot": "对焦点的直播进行截图",
-      "chat": "切换到直播聊天 {keys}",
-      "screenshotTitle": "截图"
+      "title": "本地录制",
+      "description": "直接从源头录制高质量直播流，并自动转换为 MP4 格式。",
+      "feature1": "直接捕获源视频，无画质损失",
+      "feature2": "自动转换为 MP4",
+      "feature3": "自定义保存文件夹",
+      "note": "录制文件直接保存到您的磁盘，随时可在设置中访问。"
+    },
+    "step7": {
+      "title": "快捷键",
+      "description": "使用这些快捷键高效控制您的流和聊天：",
+      "add": "打开添加流对话框",
+      "screenshot": "获取焦点流的截屏",
+      "chat": "切换到流聊天 {keys}",
+      "screenshotTitle": "截屏"
     }
   },
   "webBanner": {

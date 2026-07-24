@@ -124,7 +124,7 @@
       "general": "General",
       "data": "Datos",
       "connections": "Conexiones",
-      "resources": "Características",
+      "resources": "Transcripción",
       "recording": "Grabación"
     },
     "recording": {
@@ -137,11 +137,11 @@
       "qualityTitle": "Calidad Predeterminada",
       "qualityPrefix": "Calidad: ",
       "qualityDescription": "Calidad de stream preferida. Usa la mejor disponible si no se encuentra.",
-      "qualityBest": "Mejor disponible",
+      "qualityBest": "Mejor",
       "quality1080p": "1080p",
       "quality720p": "720p",
       "quality480p": "480p",
-      "qualityWorst": "Menor (archivo más pequeño)",
+      "qualityWorst": "Peor",
       "pathTitle": "Directorio",
       "pathDescription": "Elige dónde guardar las grabaciones. Déjalo en blanco para usar la carpeta de Videos predeterminada.",
       "selectFolder": "Seleccionar carpeta",
@@ -326,8 +326,11 @@
       "chatActive": "Chat Activo"
     },
     "step3": {
-      "title": "Chat de Twitch",
-      "description": "¡Chatea directamente en la app! Inicia sesión en Twitch para enviar mensajes en los chats individuales, o sigue todo al mismo tiempo en el chat unificado."
+      "title": "Conectar Cuentas (Twitch y Kick)",
+      "description": "Inicia sesión con tus cuentas de Twitch y Kick para enviar mensajes directamente en el chat y sincronizar tus preferencias.",
+      "feature1": "Envío de mensajes directo en el chat de Twitch y Kick",
+      "feature2": "Soporte completo para emoticonos (BTTV y 7TV)",
+      "feature3": "Integración total con el Chat Unificado"
     },
     "step4": {
       "title": "Sugerencias de Stream por Categoría",
@@ -345,12 +348,20 @@
       "note": "Todo se ejecuta localmente en tu computadora. El rendimiento depende de tu CPU y del modelo seleccionado."
     },
     "step6": {
+      "title": "Grabación Local",
+      "description": "Graba transmisiones en vivo directamente de la fuente en máxima calidad con conversión automática a MP4.",
+      "feature1": "Captura directa de la fuente sin pérdida de calidad",
+      "feature2": "Conversión automática a MP4",
+      "feature3": "Selección de carpeta de guardado personalizada",
+      "note": "Los archivos se guardan directamente en tu disco y son accesibles desde los ajustes."
+    },
+    "step7": {
       "title": "Atajos de Teclado",
-      "description": "Usa estos atajos rápidos para controlar tus transmisiones y chats de manera eficiente:",
-      "add": "Abrir diálogo para añadir transmisión",
-      "screenshot": "Tomar captura de pantalla de la transmisión enfocada",
-      "chat": "Cambiar al chat de la transmisión {keys}",
-      "screenshotTitle": "Captura de Pantalla"
+      "description": "Usa estos atajos rápidos para controlar tus streams y chats con eficiencia:",
+      "add": "Abrir diálogo de agregar stream",
+      "screenshot": "Tomar captura de pantalla del stream enfocado",
+      "chat": "Cambiar al chat del stream {keys}",
+      "screenshotTitle": "Captura de pantalla"
     }
   },
   "webBanner": {

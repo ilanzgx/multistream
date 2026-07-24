@@ -182,7 +182,7 @@ const formatViewers = (count: number) => {
           <Tooltip>
             <TooltipTrigger as-child>
               <div
-                class="flex items-center gap-2 p-1 rounded-md hover:bg-[#1f2227] cursor-pointer group transition-colors"
+                class="flex items-center gap-2 p-1 rounded-md cursor-pointer group transition-colors"
                 @click.stop="onAddClick(channel)"
               >
                 <div class="relative shrink-0">

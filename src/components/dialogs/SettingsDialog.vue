@@ -23,7 +23,6 @@ import {
   Upload,
   HelpCircle,
   Settings,
-  Puzzle,
   Link,
   Trash2,
   Check,
@@ -37,6 +36,7 @@ import {
   ChevronsUp,
   Monitor,
   ChevronsDown,
+  Clock,
 } from "@lucide/vue";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
@@ -356,41 +356,41 @@ watch(
         >
           <TabsTrigger
             value="geral"
-            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
-            <Settings class="size-4" />
-            {{ $t("settings.tabs.general") }}
+            <Settings class="size-4 shrink-0" />
+            <span class="truncate">{{ $t("settings.tabs.general") }}</span>
           </TabsTrigger>
 
           <TabsTrigger
             value="dados"
-            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
-            <Database class="size-4" />
-            {{ $t("settings.tabs.data") }}
+            <Database class="size-4 shrink-0" />
+            <span class="truncate">{{ $t("settings.tabs.data") }}</span>
           </TabsTrigger>
           <TabsTrigger
             value="conexoes"
-            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
-            <Link class="size-4" />
-            {{ $t("settings.tabs.connections") }}
+            <Link class="size-4 shrink-0" />
+            <span class="truncate">{{ $t("settings.tabs.connections") }}</span>
           </TabsTrigger>
           <TabsTrigger
             v-if="isRunningInTauri && isSupported"
             value="recursos"
-            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
-            <Puzzle class="size-4" />
-            {{ $t("settings.tabs.resources") }}
+            <Captions class="size-4 shrink-0" />
+            <span class="truncate">{{ $t("settings.tabs.resources") }}</span>
           </TabsTrigger>
           <TabsTrigger
             v-if="isRunningInTauri && isRecordingSupported"
             value="gravacao"
-            class="flex items-center gap-2 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white"
+            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
-            <Video class="size-4" />
-            {{ $t("settings.recording.tabLabel") }}
+            <Video class="size-4 shrink-0" />
+            <span class="truncate">{{ $t("settings.recording.tabLabel") }}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -880,8 +880,8 @@ watch(
             value="gravacao"
             class="space-y-6 mt-0 outline-none"
           >
-            <!-- Enable Recording -->
-            <div class="flex items-center justify-between">
+            <!-- 1. Enable Recording Section -->
+            <div class="flex items-center justify-between gap-4">
               <div class="flex items-center gap-2 px-1">
                 <Video class="size-4 text-gray-400 shrink-0" />
                 <div>
@@ -896,7 +896,7 @@ watch(
                   </p>
                 </div>
               </div>
-              <div class="flex items-center gap-3 shrink-0">
+              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
                 <Switch
                   v-if="isDependenciesInstalled"
                   v-model="recordingEnabled"
@@ -928,7 +928,7 @@ watch(
               </div>
             </div>
 
-            <!-- Quality -->
+            <!-- 2. Stream Quality Section -->
             <div
               class="space-y-2"
               :class="{
@@ -946,10 +946,8 @@ watch(
                   </p>
                 </div>
               </div>
-              <div
-                class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-start"
-              >
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 w-full">
+              <div class="bg-[#14161a] border border-[#2a2d33]/60 p-1.5 rounded-xl">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 w-full">
                   <button
                     v-for="quality in [
                       { id: 'best', label: $t('settings.recording.qualityBest'), icon: ChevronsUp },
@@ -963,85 +961,89 @@ watch(
                       },
                     ]"
                     :key="quality.id"
-                    class="flex flex-1 items-center justify-center gap-2 px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer min-w-[60px]"
+                    class="flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs font-medium rounded-md transition-all duration-150 cursor-pointer min-w-0"
                     :class="
                       recordingQuality === quality.id
-                        ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
-                        : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+                        ? 'bg-white text-black shadow-sm font-semibold'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
                     "
                     @click="recordingQuality = quality.id"
                   >
                     <component
                       :is="quality.icon"
                       class="size-3.5 shrink-0"
-                      :class="recordingQuality === quality.id ? 'text-white' : 'text-gray-500'"
+                      :class="recordingQuality === quality.id ? 'text-black' : 'text-gray-500'"
                     />
-                    <span class="whitespace-normal leading-tight text-left text-[11px] min-w-0">{{
-                      quality.label
-                    }}</span>
+                    <span class="truncate text-[11px] font-medium">{{ quality.label }}</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- Save Location -->
+            <!-- 3. Save Location Section -->
             <div
-              class="flex items-center justify-between"
+              class="space-y-2"
               :class="{
                 'opacity-50 pointer-events-none': !recordingEnabled || !isDependenciesInstalled,
               }"
             >
-              <div class="flex items-center gap-2 px-1 min-w-0">
+              <div class="flex items-center gap-2 px-1">
                 <FolderOpen class="size-4 text-gray-400 shrink-0" />
-                <div class="min-w-0 pr-4">
+                <div>
                   <h3 class="text-white text-sm font-medium">
                     {{ $t("settings.recording.pathTitle") }}
                   </h3>
-                  <div class="flex items-center gap-2 mt-0.5">
-                    <p class="text-gray-400 text-xs">
-                      {{ $t("settings.recording.pathDescription") }}
-                    </p>
-                  </div>
+                  <p class="text-gray-400 text-xs">
+                    {{ $t("settings.recording.pathDescription") }}
+                  </p>
                 </div>
               </div>
-              <div class="flex shrink-0 gap-2 items-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:border-[#3a3f4b] hover:bg-[#2a2d33]/50 px-2 shrink-0"
-                  :title="$t('settings.recording.openFolder')"
-                  @click="openFolder('')"
+              <div
+                class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-between gap-3"
+              >
+                <div
+                  class="flex items-center gap-2 text-xs text-gray-300 truncate bg-[#1e2127] border border-[#2a2d33] px-3 py-1.5 rounded-lg flex-1 min-w-0"
                 >
-                  <FolderOpen class="size-4" />
-                </Button>
-                <Button
-                  v-if="recordingPath"
-                  variant="outline"
-                  size="sm"
-                  class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:border-[#3a3f4b] hover:bg-[#2a2d33]/50 px-2 shrink-0"
-                  :title="$t('settings.recording.resetFolder')"
-                  @click="recordingPath = ''"
-                >
-                  <RotateCcw class="size-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  class="border-[#2a2d33] bg-[#2a2d33]/30 text-gray-300 hover:text-white hover:bg-[#3a3f4b] hover:border-[#4a4f5b] max-w-[250px]"
-                  :title="recordingPath || $t('settings.recording.selectFolder')"
-                  @click="handleSelectRecordingPath"
-                >
-                  <FolderOpen class="size-4 mr-2 shrink-0" />
-                  <span class="truncate text-[11px] mt-0.5">
-                    {{ recordingPath || $t("settings.recording.selectFolder") }}
-                  </span>
-                </Button>
+                  <span class="truncate">{{
+                    recordingPath || $t("settings.recording.defaultPath")
+                  }}</span>
+                </div>
+                <div class="flex shrink-0 gap-1.5 items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] text-xs h-8"
+                    @click="handleSelectRecordingPath"
+                  >
+                    {{ $t("settings.recording.selectFolder") }}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-white hover:bg-[#2a2d33] p-0 size-8 shrink-0"
+                    :title="$t('settings.recording.openFolder')"
+                    @click="openFolder('')"
+                  >
+                    <FolderOpen class="size-3.5" />
+                  </Button>
+                  <Button
+                    v-if="recordingPath"
+                    variant="outline"
+                    size="sm"
+                    class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-white hover:bg-[#2a2d33] p-0 size-8 shrink-0"
+                    :title="$t('settings.recording.resetFolder')"
+                    @click="recordingPath = ''"
+                  >
+                    <RotateCcw class="size-3.5" />
+                  </Button>
+                </div>
               </div>
             </div>
 
-            <!-- Orphan Recovery -->
+            <!-- 4. Incomplete Recordings Section -->
             <div v-if="orphans.length > 0" class="space-y-2">
               <div class="flex items-center gap-2 px-1">
+                <Clock class="size-4 text-amber-400 shrink-0" />
                 <div>
                   <h3 class="text-white text-sm font-medium">
                     {{ $t("settings.recording.orphanTitle") }}
@@ -1055,7 +1057,7 @@ watch(
                 <div
                   v-for="orphan in orphans"
                   :key="orphan.id"
-                  class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-between gap-2"
+                  class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-between gap-3"
                 >
                   <div class="min-w-0">
                     <p class="text-sm text-white font-medium truncate">

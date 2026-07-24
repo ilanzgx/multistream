@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { TwitchIcon, KickIcon, YoutubeIcon } from "@/components/icons";
-import { ChevronLeft, ChevronRight, Check, Mic, ArrowDown } from "@lucide/vue";
+import { ChevronLeft, ChevronRight, Check, Mic, ArrowDown, Video } from "@lucide/vue";
 import { useTranscription } from "@/composables/useTranscription";
+import { isTauri } from "@/composables/useUpdater";
+import { invoke } from "@tauri-apps/api/core";
 
 const props = withDefaults(
   defineProps<{
@@ -30,6 +32,17 @@ const emit = defineEmits<{
 
 const currentStep = ref(1);
 const { isSupported } = useTranscription();
+const isRecordingSupported = ref(false);
+
+onMounted(async () => {
+  if (isTauri()) {
+    try {
+      isRecordingSupported.value = await invoke<boolean>("is_recording_supported_cmd");
+    } catch {
+      isRecordingSupported.value = false;
+    }
+  }
+});
 
 // Reset step to 1 when dialog is opened
 watch(
@@ -53,13 +66,23 @@ function handleEscapeKey(e: Event) {
   }
 }
 
+function getNextStep(from: number): number {
+  let step = from + 1;
+  if (step === 5 && !isSupported.value) step++;
+  if (step === 6 && !isRecordingSupported.value) step++;
+  return step;
+}
+
+function getPrevStep(from: number): number {
+  let step = from - 1;
+  if (step === 6 && !isRecordingSupported.value) step--;
+  if (step === 5 && !isSupported.value) step--;
+  return step;
+}
+
 function handleNext() {
-  if (currentStep.value < 6) {
-    let nextStep = currentStep.value + 1;
-    if (nextStep === 5 && !isSupported.value) {
-      nextStep++;
-    }
-    currentStep.value = nextStep;
+  if (currentStep.value < 7) {
+    currentStep.value = getNextStep(currentStep.value);
   } else {
     handleFinish();
   }
@@ -67,11 +90,7 @@ function handleNext() {
 
 function handleBack() {
   if (currentStep.value > 1) {
-    let prevStep = currentStep.value - 1;
-    if (prevStep === 5 && !isSupported.value) {
-      prevStep--;
-    }
-    currentStep.value = prevStep;
+    currentStep.value = getPrevStep(currentStep.value);
   }
 }
 
@@ -96,10 +115,12 @@ function handleFinish() {
       <!-- Header -->
       <DialogHeader class="relative flex flex-col items-center text-center pb-2">
         <DialogTitle class="text-white text-xl md:text-2xl font-bold">
-          {{ $t("onboarding.title") }}
+          {{
+            currentStep === 1 ? $t("onboarding.title") : $t(`onboarding.step${currentStep}.title`)
+          }}
         </DialogTitle>
-        <DialogDescription class="text-gray-400 text-sm mt-1">
-          {{ $t(`onboarding.step${currentStep}.title`) }}
+        <DialogDescription v-if="currentStep === 1" class="text-gray-400 text-sm mt-1">
+          {{ $t("onboarding.step1.title") }}
         </DialogDescription>
       </DialogHeader>
 
@@ -175,7 +196,7 @@ function handleFinish() {
                     class="flex items-center justify-between px-4 h-11 bg-[#14161a] border border-[#2a2d33] rounded-xl shadow-md"
                   >
                     <div class="flex items-center gap-2">
-                      <span class="size-2 rounded-full bg-[#53FC18] animate-pulse" />
+                      <span class="size-2 rounded-full bg-[#53FC18]" />
                       <span class="text-xs text-white font-medium">Ninja (Kick)</span>
                     </div>
                     <span
@@ -288,9 +309,89 @@ function handleFinish() {
                 </div>
               </div>
 
-              <!-- STEP 6 GRAPHIC: Shortcuts Grid -->
+              <!-- STEP 6 GRAPHIC: Stream Recording -->
               <div
                 v-else-if="currentStep === 6"
+                class="relative flex flex-col items-center justify-center p-6 bg-[#1f2227]/30 rounded-2xl border border-[#2a2d33]/50 overflow-hidden w-full min-h-40 group"
+              >
+                <!-- Tech grid pattern -->
+                <div
+                  class="absolute inset-0 bg-[radial-gradient(#2a2d33_1px,transparent_1px)] bg-size-[16px_16px] opacity-40"
+                />
+
+                <div class="relative w-full max-w-sm flex flex-col gap-2.5">
+                  <!-- Settings mockup -->
+                  <div
+                    class="flex items-center justify-between px-3 py-2 bg-[#14161a] border border-[#2a2d33] rounded-xl shadow-md"
+                  >
+                    <div class="flex items-center gap-2">
+                      <div class="p-1.5 bg-[#2a2d33]/40 rounded-lg">
+                        <Video class="size-3.5 text-red-400" />
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="text-[11px] text-white font-medium">{{
+                          $t("onboarding.step6.title")
+                        }}</span>
+                        <span class="text-[9px] text-gray-400"
+                          >{{ $t("settings.title") }} →
+                          {{ $t("settings.recording.tabLabel") }}</span
+                        >
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="text-[8px] px-1.5 py-0.5 rounded bg-red-500/10 text-red-400 border border-red-500/20 uppercase tracking-wider font-mono flex items-center gap-1"
+                      >
+                        <span class="size-1.5 rounded-full bg-red-500" />
+                        REC
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Stream recording mockup card -->
+                  <div
+                    class="relative w-full py-2.5 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-center justify-center shadow-inner"
+                  >
+                    <div
+                      class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"
+                    ></div>
+                    <div class="relative flex items-center gap-3 px-4">
+                      <div
+                        class="flex items-center gap-2 px-2 py-1 bg-black/60 rounded text-center backdrop-blur-sm border border-white/10"
+                      >
+                        <Video class="size-3 text-red-400" />
+                        <span class="text-[10px] font-mono text-white">01:23:45</span>
+                      </div>
+                      <span class="text-[9px] text-gray-400 font-mono">1080p60 • .mp4</span>
+                    </div>
+                  </div>
+
+                  <!-- Feature Bullets -->
+                  <ul class="flex flex-col gap-1 px-1">
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step6.feature1") }}
+                    </li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step6.feature2") }}
+                    </li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step6.feature3") }}
+                    </li>
+                  </ul>
+
+                  <!-- Note -->
+                  <p class="relative text-[9px] text-gray-400 text-center">
+                    {{ $t("onboarding.step6.note") }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- STEP 7 GRAPHIC: Shortcuts Grid -->
+              <div
+                v-else-if="currentStep === 7"
                 class="relative grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full p-4 bg-[#1f2227]/30 rounded-2xl border border-[#2a2d33]/50 overflow-hidden"
               >
                 <!-- Tech grid pattern -->
@@ -311,7 +412,7 @@ function handleFinish() {
                       $t("onboarding.step1.title")
                     }}</span>
                     <span class="text-[10px] text-gray-400 mt-0.5 leading-snug">{{
-                      $t("onboarding.step6.add")
+                      $t("onboarding.step7.add")
                     }}</span>
                   </div>
                 </div>
@@ -326,10 +427,10 @@ function handleFinish() {
                   >
                   <div class="flex flex-col">
                     <span class="text-xs font-semibold text-white">{{
-                      $t("onboarding.step6.screenshotTitle")
+                      $t("onboarding.step7.screenshotTitle")
                     }}</span>
                     <span class="text-[10px] text-gray-400 mt-0.5 leading-snug">{{
-                      $t("onboarding.step6.screenshot")
+                      $t("onboarding.step7.screenshot")
                     }}</span>
                   </div>
                 </div>
@@ -354,13 +455,13 @@ function handleFinish() {
                       $t("onboarding.step2.title")
                     }}</span>
                     <span class="text-[10px] text-gray-400 mt-0.5 leading-snug">{{
-                      $t("onboarding.step6.chat", { keys: "1-9" })
+                      $t("onboarding.step7.chat", { keys: "1-9" })
                     }}</span>
                   </div>
                 </div>
               </div>
 
-              <!-- STEP 3 GRAPHIC: Twitch Chat Integration -->
+              <!-- STEP 3 GRAPHIC: Accounts & Authentication (Twitch & Kick) -->
               <div
                 v-else-if="currentStep === 3"
                 class="relative flex flex-col items-center justify-center p-6 bg-[#1f2227]/30 rounded-2xl border border-[#2a2d33]/50 overflow-hidden w-full min-h-40 group"
@@ -370,32 +471,53 @@ function handleFinish() {
                   class="absolute inset-0 bg-[radial-gradient(#2a2d33_1px,transparent_1px)] bg-size-[16px_16px] opacity-40"
                 />
 
-                <!-- Chat message mockup -->
-                <div class="relative w-full max-w-sm flex flex-col gap-2">
-                  <div class="px-3 py-2 bg-[#14161a] border border-[#2a2d33] rounded-xl shadow-md">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="text-[10px] font-bold text-[#9146FF]">multistream_user</span>
-                      <span class="text-[8px] text-gray-500">12:34</span>
+                <div class="relative w-full max-w-sm flex flex-col gap-3">
+                  <!-- Accounts connection mockup card -->
+                  <div
+                    class="flex flex-col gap-2 p-3 bg-[#14161a] border border-[#2a2d33] rounded-xl shadow-md"
+                  >
+                    <!-- Twitch button mockup -->
+                    <div
+                      class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[#9146FF]/30 bg-[#9146FF]/10 text-xs font-medium"
+                    >
+                      <TwitchIcon class="size-3.5 text-[#9146FF] shrink-0" />
+                      <span class="text-white font-semibold">Twitch</span>
+                      <span
+                        class="ml-auto text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#9146FF]/20 text-white border border-[#9146FF]/30"
+                      >
+                        Connected
+                      </span>
                     </div>
-                    <p class="text-xs text-gray-300 flex items-center gap-1.5 flex-wrap">
-                      Hello Twitch! We can now send messages directly!
-                      <img
-                        src="https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0"
-                        alt="Kappa"
-                        class="h-4"
-                      />
-                    </p>
+
+                    <!-- Kick button mockup -->
+                    <div
+                      class="flex items-center gap-2.5 px-3 py-2 rounded-lg border border-[#53FC18]/30 bg-[#53FC18]/10 text-xs font-medium"
+                    >
+                      <KickIcon class="size-3.5 text-[#53FC18] shrink-0" />
+                      <span class="text-white font-semibold">Kick</span>
+                      <span
+                        class="ml-auto text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#53FC18]/20 text-white border border-[#53FC18]/30"
+                      >
+                        Connected
+                      </span>
+                    </div>
                   </div>
 
-                  <!-- Fake Input -->
-                  <div
-                    class="mt-2 flex items-center px-3 py-2 bg-[#0f1115] border border-[#2a2d33] rounded-lg"
-                  >
-                    <span class="text-xs text-gray-500">Send a message...</span>
-                    <div class="ml-auto flex items-center gap-1">
-                      <TwitchIcon class="size-3 text-[#9146FF]" />
-                    </div>
-                  </div>
+                  <!-- Feature Bullets -->
+                  <ul class="flex flex-col gap-1 px-1">
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step3.feature1") }}
+                    </li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step3.feature2") }}
+                    </li>
+                    <li class="flex items-center gap-1.5 text-[10px] text-gray-300">
+                      <Check class="size-2.5 text-green-400" />
+                      {{ $t("onboarding.step3.feature3") }}
+                    </li>
+                  </ul>
                 </div>
               </div>
 
@@ -419,22 +541,6 @@ function handleFinish() {
                     class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium border text-[#9146FF] border-[#9146FF]/30 bg-[#9146FF]/10"
                   >
                     FPS
-                    <!-- spinner -->
-                    <svg class="size-2.5 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      />
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
                   </span>
                   <span
                     class="px-3 py-1 rounded-full text-[11px] font-medium border text-gray-400 border-[#2a2d33] bg-[#14161a]"
@@ -456,7 +562,7 @@ function handleFinish() {
                     <div class="aspect-video w-full bg-[#0f1115]">
                       <div
                         class="w-full h-full"
-                        :class="i <= 2 ? 'bg-[#9146FF]/10' : 'bg-[#53FC18]/10 animate-pulse'"
+                        :class="i <= 2 ? 'bg-[#9146FF]/10' : 'bg-[#53FC18]/10'"
                       />
                     </div>
                     <div class="p-1.5 flex items-center justify-between gap-1">
@@ -485,8 +591,8 @@ function handleFinish() {
         <!-- Dots indicators -->
         <div class="flex items-center gap-0">
           <button
-            v-for="step in 6"
-            v-show="step !== 5 || isSupported"
+            v-for="step in 7"
+            v-show="(step !== 5 || isSupported) && (step !== 6 || isRecordingSupported)"
             :key="step"
             class="p-2.5 group cursor-pointer"
             :aria-label="`Go to step ${step}`"
@@ -504,7 +610,7 @@ function handleFinish() {
         <!-- Action buttons -->
         <div class="flex items-center gap-2">
           <Button
-            v-if="currentStep < 6"
+            v-if="currentStep < 7"
             variant="ghost"
             size="sm"
             class="text-gray-400 hover:text-white hover:bg-white/5 active:scale-[0.97] transition-all"
@@ -529,7 +635,7 @@ function handleFinish() {
             class="bg-white text-[#14161a] hover:bg-gray-200 active:scale-[0.97] transition-all font-semibold"
             @click="handleNext"
           >
-            <template v-if="currentStep === 6">
+            <template v-if="currentStep === 7">
               <Check class="size-4 mr-1" />
               {{ $t("onboarding.finish") }}
             </template>

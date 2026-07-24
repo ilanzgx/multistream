@@ -124,7 +124,7 @@
       "general": "Allgemein",
       "data": "Daten",
       "connections": "Verbindungen",
-      "resources": "Funktionen",
+      "resources": "Transkription",
       "recording": "Aufnahme"
     },
     "recording": {
@@ -137,11 +137,11 @@
       "qualityTitle": "Standardqualität",
       "qualityPrefix": "Qualität: ",
       "qualityDescription": "Bevorzugte Stream-Qualität. Fällt auf die beste verfügbare zurück, wenn nicht gefunden.",
-      "qualityBest": "Beste verfügbare",
+      "qualityBest": "Beste",
       "quality1080p": "1080p",
       "quality720p": "720p",
       "quality480p": "480p",
-      "qualityWorst": "Niedrigste (kleinste Datei)",
+      "qualityWorst": "Niedrigste",
       "pathTitle": "Verzeichnis",
       "pathDescription": "Wähle, wo Aufnahmen gespeichert werden sollen. Leer lassen für den Standard-Videoordner.",
       "selectFolder": "Ordner auswählen",
@@ -326,8 +326,11 @@
       "chatActive": "Chat Aktiv"
     },
     "step3": {
-      "title": "Twitch-Chat",
-      "description": "Chatte direkt in der App! Melde dich bei Twitch an, um Nachrichten in einzelnen Chats zu senden, oder verfolge alles gleichzeitig im vereinheitlichten Chat."
+      "title": "Konten verbinden (Twitch & Kick)",
+      "description": "Melde dich mit deinen Twitch- und Kick-Konten an, um direkt im Chat Nachrichten zu senden und deine Einstellungen zu synchronisieren.",
+      "feature1": "Direktes Senden von Nachrichten im Twitch- und Kick-Chat",
+      "feature2": "Volle Unterstützung für Emotes (BTTV & 7TV)",
+      "feature3": "Nahtlose Integration in den vereinheitlichten Chat"
     },
     "step4": {
       "title": "Stream-Vorschläge nach Kategorie",
@@ -345,10 +348,18 @@
       "note": "Alles läuft lokal auf Ihrem Computer. Die Leistung hängt von Ihrer CPU und dem ausgewählten Modell ab."
     },
     "step6": {
+      "title": "Lokale Aufnahme",
+      "description": "Nimm Livestreams direkt von der Quelle in voller Qualität mit automatischer MP4-Konvertierung auf.",
+      "feature1": "Direkte Stream-Erfassung ohne Qualitätsverlust",
+      "feature2": "Automatische MP4-Konvertierung",
+      "feature3": "Einstellbarer Speicherordner",
+      "note": "Aufnahmen werden direkt auf Ihrer Festplatte gespeichert und sind über die Einstellungen erreichbar."
+    },
+    "step7": {
       "title": "Tastaturkurzbefehle",
       "description": "Verwende diese schnellen Kurzbefehle, um deine Streams und Chats effizient zu steuern:",
-      "add": "Stream-hinzufügen-Dialog öffnen",
-      "screenshot": "Screenshot des fokussierten Streams machen",
+      "add": "Stream-Hinzufügen-Dialog öffnen",
+      "screenshot": "Screenshot des fokussierten Streams erstellen",
       "chat": "Zum Stream-Chat {keys} wechseln",
       "screenshotTitle": "Screenshot"
     }

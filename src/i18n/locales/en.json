@@ -124,7 +124,7 @@
       "general": "General",
       "data": "Data",
       "connections": "Connections",
-      "resources": "Features",
+      "resources": "Transcription",
       "recording": "Recording"
     },
     "recording": {
@@ -137,11 +137,11 @@
       "qualityTitle": "Default Quality",
       "qualityPrefix": "Quality: ",
       "qualityDescription": "Preferred stream quality. Falls back to best available if not found.",
-      "qualityBest": "Best available",
+      "qualityBest": "Best",
       "quality1080p": "1080p",
       "quality720p": "720p",
       "quality480p": "480p",
-      "qualityWorst": "Lowest (smallest file)",
+      "qualityWorst": "Lowest",
       "pathTitle": "Directory",
       "pathDescription": "Choose where recordings should be saved. Leave empty to use the default Videos folder.",
       "selectFolder": "Select Folder",
@@ -326,8 +326,11 @@
       "chatActive": "Chat Active"
     },
     "step3": {
-      "title": "Twitch Chat",
-      "description": "Chat directly in the app! Log in with Twitch to send messages in individual chats, or read messages from all your streams at once using the unified chat."
+      "title": "Connect Accounts (Twitch & Kick)",
+      "description": "Sign in with your Twitch and Kick accounts to send messages directly in chat and sync your stream preferences.",
+      "feature1": "Send messages directly in Twitch and Kick chat",
+      "feature2": "Full support for third-party emotes (BTTV & 7TV)",
+      "feature3": "Seamless integration with Unified Chat"
     },
     "step4": {
       "title": "Stream Suggestions by Category",
@@ -345,6 +348,14 @@
       "note": "Everything runs locally on your computer. Performance depends on your CPU and the selected model."
     },
     "step6": {
+      "title": "Local Recording",
+      "description": "Record live streams directly from the source in original quality with automatic MP4 conversion.",
+      "feature1": "Direct stream capture without quality loss",
+      "feature2": "Automatic MP4 conversion",
+      "feature3": "Custom save folder selection",
+      "note": "Recordings are saved directly to your disk and accessible anytime from settings."
+    },
+    "step7": {
       "title": "Keyboard Shortcuts",
       "description": "Use these quick shortcuts to control your streams and chats efficiently:",
       "add": "Open add stream dialog",
