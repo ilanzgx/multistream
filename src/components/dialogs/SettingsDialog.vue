@@ -47,6 +47,7 @@ import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 import { PLATFORMS } from "@/config/platforms";
 import { useTranscription, CHUNK_STEPS } from "@/composables/useTranscription";
 import { Slider } from "@/components/ui/slider";
+import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
 
 const { checkForUpdates, isChecking } = useUpdater();
 const { notificationsEnabled, recordingEnabled, recordingQuality, recordingPath } =
@@ -66,6 +67,21 @@ const {
   installDependencies,
   openFolder,
 } = useRecording();
+
+const showDismissConfirm = ref(false);
+const pendingDismissId = ref<string | null>(null);
+
+const requestDismiss = (orphanId: string) => {
+  pendingDismissId.value = orphanId;
+  showDismissConfirm.value = true;
+};
+
+const confirmDismiss = () => {
+  if (pendingDismissId.value) {
+    dismissOrphan(pendingDismissId.value);
+    pendingDismissId.value = null;
+  }
+};
 
 import { invoke } from "@tauri-apps/api/core";
 import { ref as vueRef, onMounted } from "vue";
@@ -1061,7 +1077,7 @@ watch(
                       size="sm"
                       variant="outline"
                       class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 text-xs h-7"
-                      @click="dismissOrphan(orphan.id)"
+                      @click="requestDismiss(orphan.id)"
                     >
                       {{ $t("settings.recording.orphanDismiss") }}
                     </Button>
@@ -1113,5 +1129,16 @@ watch(
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <ConfirmDialog
+      :open="showDismissConfirm"
+      :title="$t('confirm.deleteOrphan.title')"
+      :description="$t('confirm.deleteOrphan.description')"
+      :confirm-text="$t('confirm.deleteOrphan.confirm')"
+      :cancel-text="$t('common.close')"
+      variant="destructive"
+      @update:open="showDismissConfirm = $event"
+      @confirm="confirmDismiss"
+    />
   </Dialog>
 </template>
