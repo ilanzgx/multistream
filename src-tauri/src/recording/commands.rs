@@ -7,7 +7,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_shell::process::CommandEvent;
 use tauri_plugin_shell::ShellExt;
 
-use super::disk::check_disk_space;
+use super::disk::{check_disk_space, check_disk_space_for_remux};
 use super::error::RecordingError;
 use super::orphan::OrphanRecording;
 use super::paths::{final_path, temp_path};
@@ -347,6 +347,9 @@ pub async fn dismiss_orphan_recording(
 ) -> Result<(), RecordingError> {
     validate_orphan_id(&orphan_id)?;
     let mut orphans = state.orphans.lock().await;
+    if let Some(orphan) = orphans.iter().find(|o| o.id == orphan_id) {
+        let _ = fs::remove_file(&orphan.full_path);
+    }
     orphans.retain(|o| o.id != orphan_id);
     Ok(())
 }
@@ -495,6 +498,9 @@ async fn run_ffmpeg_remux(
     ts_path: &std::path::Path,
     mp4_path: &std::path::Path,
 ) -> Result<(), RecordingError> {
+    let ts_size = std::fs::metadata(ts_path).map(|m| m.len()).unwrap_or(0);
+    check_disk_space_for_remux(ts_path.parent().unwrap_or(ts_path), ts_size)?;
+
     let ffmpeg_exe =
         crate::recording::installer::get_ffmpeg_exe(app).map_err(RecordingError::SpawnFailed)?;
     let args = ffmpeg_remux_args(ts_path, mp4_path);

@@ -49,7 +49,7 @@ fn collect_orphans(dir: &std::path::Path, out: &mut Vec<OrphanRecording>) {
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_default();
 
-        let channel = filename.split('_').next().unwrap_or("unknown").to_string();
+        let channel = filename.split('_').nth(1).unwrap_or("unknown").to_string();
 
         let size_bytes = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
 

@@ -15,6 +15,18 @@ pub fn check_disk_space(dir: &Path) -> Result<(), RecordingError> {
     }
 }
 
+pub fn check_disk_space_for_remux(dir: &Path, ts_size: u64) -> Result<(), RecordingError> {
+    let available = available_space(dir);
+    match available {
+        Some(bytes) if bytes < ts_size => Err(RecordingError::DiskSpace(format!(
+            "only {} MB available, {} MB required for conversion",
+            bytes / (1024 * 1024),
+            ts_size / (1024 * 1024)
+        ))),
+        _ => Ok(()),
+    }
+}
+
 #[cfg(target_os = "windows")]
 fn available_space(dir: &Path) -> Option<u64> {
     use std::os::windows::ffi::OsStrExt;
@@ -53,7 +65,7 @@ fn available_space(dir: &Path) -> Option<u64> {
     let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
     let ret = unsafe { libc::statvfs(path_cstr.as_ptr(), &mut stat) };
     if ret == 0 {
-        Some(stat.f_bavail as u64 * stat.f_bsize as u64)
+        (stat.f_bavail as u64).checked_mul(stat.f_bsize as u64)
     } else {
         None
     }
