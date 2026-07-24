@@ -4,12 +4,20 @@ use super::error::RecordingError;
 
 const MIN_FREE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 
+fn format_size(bytes: u64) -> String {
+    if bytes >= 1024 * 1024 * 1024 {
+        format!("{:.2} GB", bytes as f64 / (1024.0 * 1024.0 * 1024.0))
+    } else {
+        format!("{} MB", bytes / (1024 * 1024))
+    }
+}
+
 pub fn check_disk_space(dir: &Path) -> Result<(), RecordingError> {
     let available = available_space(dir);
     match available {
         Some(bytes) if bytes < MIN_FREE_BYTES => Err(RecordingError::DiskSpace(format!(
-            "only {} MB available, 2 GB required",
-            bytes / (1024 * 1024)
+            "{} free, 2.00 GB required",
+            format_size(bytes)
         ))),
         _ => Ok(()),
     }
@@ -19,9 +27,9 @@ pub fn check_disk_space_for_remux(dir: &Path, ts_size: u64) -> Result<(), Record
     let available = available_space(dir);
     match available {
         Some(bytes) if bytes < ts_size => Err(RecordingError::DiskSpace(format!(
-            "only {} MB available, {} MB required for conversion",
-            bytes / (1024 * 1024),
-            ts_size / (1024 * 1024)
+            "{} free, {} required for conversion",
+            format_size(bytes),
+            format_size(ts_size)
         ))),
         _ => Ok(()),
     }

@@ -126,6 +126,7 @@ const _useRecording = () => {
       if (entry) recordings.delete(payload.streamId);
       stopTickerIfIdle();
       toast.warning(t("settings.recording.remuxFailed"), {
+        description: payload.error || undefined,
         action: {
           label: t("settings.recording.openFolder"),
           onClick: () => {
