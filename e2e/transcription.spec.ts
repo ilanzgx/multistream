@@ -37,8 +37,8 @@ test.describe("Live Transcription UI E2E Test", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
-    // Act: Switch to the Features tab where Transcription lives
-    await page.getByRole("tab", { name: "Features" }).click();
+    // Act: Switch to the Transcription tab where Transcription lives
+    await page.getByRole("tab", { name: "Transcription" }).click();
 
     // Assert: Transcription section is visible
     await expect(page.getByRole("heading", { name: "Live Transcription" })).toBeVisible();
