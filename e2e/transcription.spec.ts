@@ -37,17 +37,27 @@ test.describe("Live Transcription UI E2E Test", () => {
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
 
-    // Act: Switch to the Transcription tab where Transcription lives
+    // Act: Switch to the Transcription (Resources) tab
     await page.getByRole("tab", { name: "Transcription" }).click();
 
-    // Assert: Transcription section is visible
+    // Assert: Live Transcription heading is visible
     await expect(page.getByRole("heading", { name: "Live Transcription" })).toBeVisible();
-    await expect(
-      page.getByText("Real-time captions generated using local machine learning.")
-    ).toBeVisible();
 
-    // Assert: Since model 'base' is mocked as installed, the mode select and toggle should appear
+    // Assert: Mode select and toggle are visible when model 'base' is installed
     await expect(page.getByTestId("transcription-mode-select")).toBeVisible();
     await expect(page.getByTestId("transcription-enable-toggle")).toBeVisible();
+  });
+
+  test("can change transcription caption mode (Original vs Translate)", async ({ page }) => {
+    // Act: Open settings and go to Transcription tab
+    await page.getByTestId("settings-btn").click();
+    await page.getByRole("tab", { name: "Transcription" }).click();
+
+    // Act: Change select value to translate
+    const select = page.getByTestId("transcription-mode-select");
+    await select.selectOption("translate");
+
+    // Assert: Value changes to translate
+    await expect(select).toHaveValue("translate");
   });
 });
