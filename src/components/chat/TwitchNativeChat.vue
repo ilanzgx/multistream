@@ -27,9 +27,7 @@ const { username } = useTwitchAuth();
 const { t } = useI18n();
 const { getEmoteDictionary, loadChannelEmotes } = useEmotes();
 
-const channelMessages = computed(() =>
-  (channelMessagesMap.value[props.channel.toLowerCase()] || []).toReversed()
-);
+const channelMessages = computed(() => channelMessagesMap.value[props.channel.toLowerCase()] || []);
 
 const channelEmotes = computed(() => getEmoteDictionary(props.channel, "twitch"));
 

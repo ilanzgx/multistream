@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { UnifiedChatMessage } from "@/composables/useUnifiedChat";
+import type { KickChatMessage } from "@/composables/useKickChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Sword, Crown, Gem, Star } from "@lucide/vue";
 import TwitchIcon from "@/components/icons/TwitchIcon.vue";
@@ -9,7 +10,7 @@ import { open as openUrl } from "@tauri-apps/plugin-shell";
 
 const props = withDefaults(
   defineProps<{
-    message: UnifiedChatMessage & { isPending?: boolean };
+    message: (UnifiedChatMessage | KickChatMessage) & { isPending?: boolean };
     channelColor: string;
     channelAvatar?: string;
     compact?: boolean;
@@ -25,7 +26,7 @@ const props = withDefaults(
 const { parseMessage } = useEmotes();
 
 const parsedTokens = computed(() => {
-  return parseMessage(props.message.message, props.message.emotes, props.message.channel);
+  return parseMessage(props.message.message, props.message.emotes ?? null, props.message.channel);
 });
 
 const parsedBadges = computed(() => {

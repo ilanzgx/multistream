@@ -9,9 +9,9 @@ export interface KickChatMessage {
   display_name: string;
   message: string;
   timestamp_ms: number;
-  color?: string;
+  color?: string | null;
   badges: string[];
-  emotes?: string;
+  emotes?: string | null;
   isPending?: boolean;
   platform?: "kick";
 }
@@ -61,9 +61,9 @@ async function setupListeners() {
       newMsgs.splice(pendingIdx, 1);
     }
 
-    newMsgs.push(msg);
+    newMsgs.unshift(msg);
     if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
-      newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
+      newMsgs.length = MAX_FRONTEND_MESSAGES;
     }
 
     channelMessagesMap.value = {
@@ -109,7 +109,7 @@ export function useKickChat(channelSlug: string) {
     const chan = channelSlug.toLowerCase();
     const existing = channelMessagesMap.value[chan] || [];
     let idx = -1;
-    for (let i = existing.length - 1; i >= 0; i--) {
+    for (let i = 0; i < existing.length; i++) {
       const m = existing[i];
       if (m && m.username.toLowerCase() === username.toLowerCase() && m.isPending) {
         idx = i;
@@ -139,7 +139,7 @@ export function useKickChat(channelSlug: string) {
     const existing = channelMessagesMap.value[chan] || [];
     channelMessagesMap.value = {
       ...channelMessagesMap.value,
-      [chan]: [...existing, msg],
+      [chan]: [msg, ...existing],
     };
   }
 

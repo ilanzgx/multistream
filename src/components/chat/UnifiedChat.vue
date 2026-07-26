@@ -18,7 +18,7 @@ const { t } = useI18n();
 const { loadChannelEmotes } = useEmotes();
 const { unifiedChatState } = useUnifiedChatState();
 
-const reversedMessages = computed(() => [...messages.value].toReversed());
+const chatMessages = computed(() => messages.value);
 function openAuthModal() {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "twitch-auth" }));
 }
@@ -136,7 +136,7 @@ onMounted(() => {
             @scroll="handleScroll"
           >
             <UnifiedChatMessage
-              v-for="msg in reversedMessages"
+              v-for="msg in chatMessages"
               :key="msg.id"
               :message="msg"
               :is-pending="msg.isPending"

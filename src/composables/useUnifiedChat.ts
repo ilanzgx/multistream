@@ -104,7 +104,7 @@ const _useUnifiedChat = () => {
     try {
       const existing = await invoke<UnifiedChatMessage[]>("twitch_get_messages");
       existing.forEach((m) => (m.platform = "twitch"));
-      messages.value = existing.slice(-MAX_FRONTEND_MESSAGES);
+      messages.value = existing.slice(-MAX_FRONTEND_MESSAGES).toReversed();
     } catch {
       messages.value = [];
     }
@@ -132,13 +132,11 @@ const _useUnifiedChat = () => {
   async function sendKickMessage(channelSlug: string, text: string) {
     if (!isTauri()) return;
     try {
-      // 1. Resolve Kick channel slug -> broadcaster user_id via Frontend (bypasses Cloudflare)
       const res = await fetch(`https://kick.com/api/v1/channels/${channelSlug}`);
       if (!res.ok) throw new Error(`Channel fetch failed: ${res.status}`);
       const data = await res.json();
       const userId = data.user_id;
 
-      // 2. Send authenticated message via Rust backend
       await invoke("kick_send_message", { broadcasterUserId: userId, message: text });
     } catch (e) {
       console.error("[useUnifiedChat] failed to send Kick message", e);
@@ -194,9 +192,10 @@ const _useUnifiedChat = () => {
         if (!flushTimer) {
           flushTimer = setTimeout(() => {
             if (pendingMessages.length > 0) {
-              const newMsgs = [...messages.value, ...pendingMessages];
+              const reversedPending = pendingMessages.toReversed();
+              const newMsgs = [...reversedPending, ...messages.value];
               if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
-                newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
+                newMsgs.length = MAX_FRONTEND_MESSAGES;
               }
               messages.value = newMsgs;
 
@@ -213,9 +212,9 @@ const _useUnifiedChat = () => {
               );
 
               for (const [chan, msgs] of Object.entries(byChannel)) {
-                const updated = [...(newMap[chan] || []), ...msgs];
+                const updated = [...msgs.toReversed(), ...(newMap[chan] || [])];
                 if (updated.length > MAX_FRONTEND_MESSAGES) {
-                  updated.splice(0, updated.length - MAX_FRONTEND_MESSAGES);
+                  updated.length = MAX_FRONTEND_MESSAGES;
                 }
                 newMap[chan] = updated;
                 mapChanged = true;
@@ -228,7 +227,7 @@ const _useUnifiedChat = () => {
               pendingMessages = [];
             }
             flushTimer = null;
-          }, 50); // 50ms batching (20fps) to eliminate jitters
+          }, 50);
         }
       }
     );
@@ -263,7 +262,6 @@ const _useUnifiedChat = () => {
             }
           }, 1000);
         } else {
-          // De-duplicate local optimistic messages that were manually pushed by UnifiedChat.vue
           const pendingIdx = messages.value.findIndex(
             (m) =>
               m.isPending &&
@@ -302,9 +300,10 @@ const _useUnifiedChat = () => {
         if (!flushTimer) {
           flushTimer = setTimeout(() => {
             if (pendingMessages.length > 0) {
-              const newMsgs = [...messages.value, ...pendingMessages];
+              const reversedPending = pendingMessages.toReversed();
+              const newMsgs = [...reversedPending, ...messages.value];
               if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
-                newMsgs.splice(0, newMsgs.length - MAX_FRONTEND_MESSAGES);
+                newMsgs.length = MAX_FRONTEND_MESSAGES;
               }
               messages.value = newMsgs;
 
@@ -321,9 +320,9 @@ const _useUnifiedChat = () => {
               );
 
               for (const [chan, msgs] of Object.entries(byChannel)) {
-                const updated = [...(newMap[chan] || []), ...msgs];
+                const updated = [...msgs.toReversed(), ...(newMap[chan] || [])];
                 if (updated.length > MAX_FRONTEND_MESSAGES) {
-                  updated.splice(0, updated.length - MAX_FRONTEND_MESSAGES);
+                  updated.length = MAX_FRONTEND_MESSAGES;
                 }
                 newMap[chan] = updated;
                 mapChanged = true;
@@ -336,7 +335,7 @@ const _useUnifiedChat = () => {
               pendingMessages = [];
             }
             flushTimer = null;
-          }, 50); // 50ms batching (20fps) to eliminate jitters
+          }, 50);
         }
       }
     );
@@ -425,9 +424,8 @@ const _useUnifiedChat = () => {
   }
 
   function removeLastLocalMessage(channel: string, currentUsername: string): string | null {
-    // Find the index of the last message by this user in this channel
     let lastIdx = -1;
-    for (let i = messages.value.length - 1; i >= 0; i--) {
+    for (let i = 0; i < messages.value.length; i++) {
       const m = messages.value[i];
       if (
         m &&
@@ -467,9 +465,8 @@ const _useUnifiedChat = () => {
   }
 
   function removeLastLocalKickMessage(channel: string, currentUsername: string): string | null {
-    // Same implementation but could differ if Kick uses different username casing rules
     let lastIdx = -1;
-    for (let i = messages.value.length - 1; i >= 0; i--) {
+    for (let i = 0; i < messages.value.length; i++) {
       const m = messages.value[i];
       if (
         m &&

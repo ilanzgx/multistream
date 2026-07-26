@@ -34,9 +34,7 @@ function openAuthModal() {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "kick-auth" }));
 }
 
-const channelMessages = computed(() =>
-  (channelMessagesMap.value[props.channel.toLowerCase()] || []).toReversed()
-);
+const channelMessages = computed(() => channelMessagesMap.value[props.channel.toLowerCase()] || []);
 
 const channelEmotes = computed(() => getEmoteDictionary(props.channel, "kick"));
 
@@ -182,11 +180,7 @@ onUnmounted(async () => {
         <UnifiedChatMessage
           v-for="msg in channelMessages"
           :key="msg.id"
-          :message="{
-            ...msg,
-            color: msg.color ?? null,
-            emotes: msg.emotes ?? null,
-          }"
+          :message="msg"
           :is-pending="msg.isPending"
           :channel-color="'#53fc18'"
           compact
