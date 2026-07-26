@@ -12,8 +12,14 @@ env:
 permissions:
   contents: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-tauri:
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -30,8 +36,6 @@ jobs:
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             name: windows-x64
-
-    runs-on: ${{ matrix.platform }}
 
     steps:
       - name: Checkout
@@ -62,7 +66,7 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
 
       - name: Install frontend dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: Download Whisper Binaries (Windows only)
         if: matrix.platform == 'windows-latest'
@@ -143,6 +147,7 @@ jobs:
   release:
     needs: build-tauri
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -163,11 +168,11 @@ jobs:
 
           echo "Generating changelog for range: $RANGE"
 
-          FEATURES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^feat(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          FIXES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^fix(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          REFACTORS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^refactor(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          STYLES=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^style(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          PERFS=$(git log $RANGE --pretty=format:"%s" --no-merges | grep -iE "^perf(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          FEATURES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^feat(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          FIXES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^fix(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          REFACTORS=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^refactor(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          STYLES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^style(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          PERFS=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^perf(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
 
           > changelog.md
 
