@@ -54,8 +54,10 @@ const availableCategories = computed(() => {
 const ALL_MODE_CAP = 200;
 
 const filteredStreams = computed(() => {
-  if (!selectedCategory.value) return allStreams.value.slice(0, ALL_MODE_CAP);
-  return allStreams.value.filter((s) => s.category === selectedCategory.value);
+  const list = !selectedCategory.value
+    ? allStreams.value.slice(0, ALL_MODE_CAP)
+    : allStreams.value.filter((s) => s.category === selectedCategory.value);
+  return list.toSorted((a, b) => (b.viewerCount ?? 0) - (a.viewerCount ?? 0));
 });
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredStreams.value.length / PAGE_SIZE)));
