@@ -195,6 +195,9 @@ fn auth_file_path() -> std::path::PathBuf {
     let mut path = dirs::config_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
     path.push("multistream");
     let _ = std::fs::create_dir_all(&path);
+    #[cfg(debug_assertions)]
+    path.push(format!("{}_dev", STRONGHOLD_KEY));
+    #[cfg(not(debug_assertions))]
     path.push(STRONGHOLD_KEY);
     path.with_extension("json")
 }
