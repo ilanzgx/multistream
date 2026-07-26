@@ -23,7 +23,7 @@ test.describe("Settings & i18n Preferences E2E Test", () => {
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
     // Act: click Portuguese language option (button with label "PT")
-    const ptButton = page.getByRole("button", { name: "PT" });
+    const ptButton = dialog.getByRole("button", { name: "PT", exact: true });
     await expect(ptButton).toBeVisible();
     await ptButton.click();
 
