@@ -170,8 +170,8 @@ pub async fn twitch_set_channels(
         .build()
         .map_err(TwitchError::Http)?;
 
-    let auth_info = match try_refresh_if_needed(&app, auth_info, &state, &http).await {
-        Ok(info) => info,
+    match try_refresh_if_needed(&app, auth_info, &state, &http).await {
+        Ok(_) => {}
         Err(TwitchError::TokenRefreshFailed) => {
             // Token refresh failed or is invalid
             *state.auth.lock().await = None;
@@ -189,7 +189,7 @@ pub async fn twitch_set_channels(
         Err(e) => return Err(e),
     };
 
-    update_subscriptions(&app, new_set, auth_info.access_token, auth_info.username).await;
+    update_subscriptions(&app, new_set).await;
 
     Ok(())
 }
@@ -257,7 +257,7 @@ pub async fn twitch_send_message(
     Ok(())
 }
 
-async fn try_refresh_if_needed(
+pub(crate) async fn try_refresh_if_needed(
     app: &AppHandle,
     auth: TwitchAuthInfo,
     state: &TwitchState,
@@ -272,11 +272,30 @@ async fn try_refresh_if_needed(
 
     match validate_resp {
         Ok(resp) if resp.status().is_success() => Ok(auth),
-        Ok(_) => {
+        Ok(resp) if resp.status() == reqwest::StatusCode::UNAUTHORIZED => {
+            let _guard = state.auth_refresh_lock.lock().await;
+
+            // Check if it was refreshed while waiting for the lock
+            let current_auth = state.auth.lock().await.clone();
+            if let Some(current) = current_auth {
+                if current.access_token != auth.access_token {
+                    // It was refreshed by another thread. Re-validate or just assume it's good.
+                    // For performance, we can just return the new token and let the caller use it.
+                    return Ok(current);
+                }
+            }
+
             let refreshed = oauth::refresh_token(http, &auth.refresh_token).await?;
             oauth::store_auth(app, &refreshed)?;
             *state.auth.lock().await = Some(refreshed.clone());
             Ok(refreshed)
+        }
+        Ok(resp) => {
+            // Transient error like 429 or 5xx. Don't refresh the token and don't delete local auth.
+            Err(TwitchError::OAuth(format!(
+                "Validation failed with status: {}",
+                resp.status()
+            )))
         }
         Err(e) => Err(TwitchError::Http(e)),
     }

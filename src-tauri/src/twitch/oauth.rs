@@ -144,8 +144,13 @@ pub async fn refresh_token(
         .await?;
 
     let status = response.status();
-    if status.is_client_error() {
+    if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::BAD_REQUEST {
         return Err(TwitchError::TokenRefreshFailed);
+    } else if !status.is_success() {
+        return Err(TwitchError::OAuth(format!(
+            "Refresh failed with status: {}",
+            status
+        )));
     }
 
     let response: TokenResponse = response

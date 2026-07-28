@@ -65,6 +65,7 @@ pub struct TwitchState {
     pub irc_shutdown_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
     pub auth_abort_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
     pub irc_outbound_tx: Mutex<Option<tokio::sync::mpsc::Sender<OutboundIrcMessage>>>,
+    pub auth_refresh_lock: Mutex<()>,
 }
 
 impl TwitchState {
@@ -77,6 +78,7 @@ impl TwitchState {
             irc_shutdown_tx: Mutex::new(None),
             auth_abort_tx: Mutex::new(None),
             irc_outbound_tx: Mutex::new(None),
+            auth_refresh_lock: Mutex::new(()),
         }
     }
 }

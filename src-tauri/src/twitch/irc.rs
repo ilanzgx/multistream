@@ -98,13 +98,19 @@ async fn emit_connection_state(app: &AppHandle, state: ConnectionState) {
 
 pub async fn run_irc_loop(
     app: AppHandle,
-    access_token: String,
-    username: String,
     channels: HashSet<String>,
     mut shutdown_rx: oneshot::Receiver<()>,
     mut outbound_rx: tokio::sync::mpsc::Receiver<OutboundIrcMessage>,
 ) {
     let mut attempt: u32 = 0;
+
+    let http = match reqwest::Client::builder().use_rustls_tls().build() {
+        Ok(c) => c,
+        Err(e) => {
+            log::error!("[twitch-irc] Failed to create HTTP client: {}", e);
+            return;
+        }
+    };
 
     loop {
         let state_label = if attempt == 0 {
@@ -118,10 +124,42 @@ pub async fn run_irc_loop(
         );
         emit_connection_state(&app, state_label).await;
 
+        let auth_info = {
+            let state = app.state::<TwitchState>();
+            let auth = state.auth.lock().await.clone();
+
+            let Some(auth) = auth else {
+                log::warn!("[twitch-irc] No auth state found, exiting loop");
+                emit_connection_state(&app, ConnectionState::Disconnected).await;
+                break;
+            };
+
+            match super::commands::try_refresh_if_needed(&app, auth, &state, &http).await {
+                Ok(info) => info,
+                Err(e) => {
+                    log::warn!("[twitch-irc] Auth refresh failed ({e}), stopping loop");
+                    emit_connection_state(&app, ConnectionState::Disconnected).await;
+                    if matches!(e, TwitchError::TokenRefreshFailed) {
+                        *state.auth.lock().await = None;
+                        super::oauth::clear_auth(&app);
+                        let _ = app.emit("twitch-auth-expired", ());
+                        let _ = app.emit(
+                            "twitch-auth-changed",
+                            super::state::AuthState {
+                                authenticated: false,
+                                username: None,
+                            },
+                        );
+                    }
+                    break;
+                }
+            }
+        };
+
         match connect_irc(
             &app,
-            &access_token,
-            &username,
+            &auth_info.access_token,
+            &auth_info.username,
             &channels,
             &mut shutdown_rx,
             &mut outbound_rx,
@@ -136,8 +174,11 @@ pub async fn run_irc_loop(
             Err(TwitchError::OAuth(ref msg)) => {
                 log::warn!("[twitch-irc] auth failure ({msg}), stopping loop");
                 emit_connection_state(&app, ConnectionState::Disconnected).await;
-                let _ = app.emit("twitch-auth-expired", ());
-                break;
+                // Wait, if it's an OAuth error from connect_irc (like Login authentication failed),
+                // it might mean the token just expired before we connected.
+                // We shouldn't permanently break and clear auth, maybe just backoff and retry,
+                // because the next loop iteration will try to refresh it!
+                // So let's just let the loop continue and try to refresh on the next pass.
             }
             Err(e) => {
                 log::warn!("[twitch-irc] connect_irc returned error: {e}");
@@ -426,12 +467,7 @@ async fn push_message(app: &AppHandle, msg: UnifiedChatMessage) {
     }
 }
 
-pub async fn update_subscriptions(
-    app: &AppHandle,
-    new_channels: HashSet<String>,
-    access_token: String,
-    username: String,
-) {
+pub async fn update_subscriptions(app: &AppHandle, new_channels: HashSet<String>) {
     let Some(state) = app.try_state::<TwitchState>() else {
         return;
     };
@@ -466,7 +502,7 @@ pub async fn update_subscriptions(
     let app_clone = app.clone();
     log::info!("[twitch-irc] spawning new IRC loop for {:?}", new_channels);
     tokio::spawn(async move {
-        run_irc_loop(app_clone, access_token, username, new_channels, rx, out_rx).await;
+        run_irc_loop(app_clone, new_channels, rx, out_rx).await;
     });
 }
 
