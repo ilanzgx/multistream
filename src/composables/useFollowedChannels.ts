@@ -5,7 +5,6 @@ import { invoke } from "@tauri-apps/api/core";
 export const debugErrors = ref<string[]>([]);
 import { isTauri } from "./useUpdater";
 import { useTwitchAuth } from "./useTwitchAuth";
-import { useKickAuth } from "./useKickAuth";
 import { useLiveStatus } from "./useLiveStatus";
 import { useFavorites } from "./useFavorites";
 import { REFRESH_CONFIG } from "@/config/api";
