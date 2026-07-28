@@ -42,12 +42,7 @@ const formatViewers = (count?: number): string => {
     @click="emit('click')"
   >
     <!-- live indicator dot -->
-    <span v-if="status?.isLive" class="relative flex h-2 w-2 shrink-0">
-      <span
-        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"
-      />
-      <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-    </span>
+    <span v-if="status?.isLive" class="h-2 w-2 shrink-0 rounded-full bg-red-500" />
     <span
       v-else-if="props.platform === 'twitch' || props.platform === 'kick'"
       class="h-2 w-2 shrink-0 rounded-full bg-gray-600"

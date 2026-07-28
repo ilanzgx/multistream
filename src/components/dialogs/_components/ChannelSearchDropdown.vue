@@ -71,12 +71,7 @@ const emit = defineEmits<{
 
           <!-- Live badge -->
           <span v-if="result.isLive" class="flex items-center gap-1.5 shrink-0">
-            <span class="relative flex h-1.5 w-1.5">
-              <span
-                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"
-              />
-              <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500" />
-            </span>
+            <span class="h-1.5 w-1.5 rounded-full bg-red-500" />
             <span class="text-[10px] font-semibold uppercase tracking-wide text-red-400">Live</span>
           </span>
 

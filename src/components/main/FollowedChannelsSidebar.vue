@@ -78,7 +78,7 @@ const formatViewers = (count: number) => {
 
 <template>
   <div
-    class="flex-shrink-0 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative"
+    class="shrink-0 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative"
     :class="[isOpen ? 'w-56' : 'w-14', isStoreLoaded ? 'transition-all duration-300' : '']"
   >
     <div
@@ -216,7 +216,7 @@ const formatViewers = (count: number) => {
                       channel.displayName
                     }}</span>
                     <div class="flex items-center gap-1 text-rose-400 shrink-0">
-                      <div class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+                      <div class="w-1.5 h-1.5 rounded-full bg-rose-500"></div>
                       <span class="text-xs font-semibold">{{
                         formatViewers(channel.viewerCount || 0)
                       }}</span>

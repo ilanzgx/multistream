@@ -213,12 +213,7 @@ const formatViewers = (count?: number) => {
           <div
             class="absolute top-2 left-2 flex items-center gap-1.5 px-1 rounded bg-red-600 shadow-lg shadow-red-900/20"
           >
-            <span class="relative flex h-2 w-2">
-              <span
-                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"
-              />
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-white" />
-            </span>
+            <span class="h-2 w-2 rounded-full bg-white" />
             <span class="text-[10px] font-bold text-white tracking-wide">LIVE</span>
           </div>
 
