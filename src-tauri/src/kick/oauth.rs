@@ -177,7 +177,7 @@ pub async fn refresh_token(
         .await?;
 
     let status = token_resp.status();
-    if status.is_client_error() {
+    if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::BAD_REQUEST {
         return Err(KickError::TokenRefreshFailed);
     }
 
@@ -194,7 +194,9 @@ pub async fn refresh_token(
         .await?;
 
     let user_status = user_resp.status();
-    if user_status.is_client_error() {
+    if user_status == reqwest::StatusCode::UNAUTHORIZED
+        || user_status == reqwest::StatusCode::BAD_REQUEST
+    {
         return Err(KickError::TokenRefreshFailed);
     }
 

@@ -20,6 +20,7 @@ type OAuthCallbackSender = tokio::sync::oneshot::Sender<Result<(String, String),
 
 pub struct KickState {
     pub auth: Mutex<Option<KickAuthInfo>>,
+    pub auth_refresh_lock: Mutex<()>,
     pub pusher_shutdown_tx: Mutex<Option<tokio::sync::oneshot::Sender<()>>>,
     pub oauth_callback_tx: Mutex<Option<OAuthCallbackSender>>,
 }
@@ -28,6 +29,7 @@ impl KickState {
     pub fn new() -> Self {
         Self {
             auth: Mutex::new(None),
+            auth_refresh_lock: Mutex::new(()),
             pusher_shutdown_tx: Mutex::new(None),
             oauth_callback_tx: Mutex::new(None),
         }

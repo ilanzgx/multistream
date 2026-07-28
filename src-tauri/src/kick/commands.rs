@@ -116,6 +116,44 @@ pub fn init_stored_auth() -> Option<super::state::KickAuthInfo> {
     None
 }
 
+async fn refresh_kick_token_locked(
+    app: &AppHandle,
+    state: &State<'_, KickState>,
+    http: &reqwest::Client,
+    failed_refresh_token: &str,
+) -> Result<super::state::KickAuthInfo, KickError> {
+    let _lock = state.auth_refresh_lock.lock().await;
+
+    let current_auth = state.auth.lock().await.clone();
+    if let Some(auth) = current_auth {
+        if auth.refresh_token != failed_refresh_token {
+            return Ok(auth);
+        }
+    }
+
+    match super::oauth::refresh_token(http, failed_refresh_token).await {
+        Ok(new_auth) => {
+            super::oauth::store_auth(&new_auth)?;
+            *state.auth.lock().await = Some(new_auth.clone());
+            Ok(new_auth)
+        }
+        Err(e) => {
+            if matches!(e, KickError::TokenRefreshFailed) {
+                *state.auth.lock().await = None;
+                super::oauth::clear_auth();
+                let _ = app.emit(
+                    "kick-auth-changed",
+                    KickAuthState {
+                        authenticated: false,
+                        username: None,
+                    },
+                );
+            }
+            Err(e)
+        }
+    }
+}
+
 #[tauri::command]
 pub async fn kick_send_message(
     app: AppHandle,
@@ -144,33 +182,11 @@ pub async fn kick_send_message(
                 if msg.contains("Auth error sending message: 401")
                     || msg.contains("Auth error sending message: 403")
                 {
-                    match super::oauth::refresh_token(&http, &auth.refresh_token).await {
-                        Ok(new_auth) => {
-                            super::oauth::store_auth(&new_auth)?;
-                            *state.auth.lock().await = Some(new_auth.clone());
-                            super::api::send_message(
-                                &http,
-                                &new_auth,
-                                broadcaster_user_id,
-                                &message,
-                            )
-                            .await?;
-                            return Ok(());
-                        }
-                        Err(KickError::TokenRefreshFailed) => {
-                            *state.auth.lock().await = None;
-                            super::oauth::clear_auth();
-                            let _ = app.emit(
-                                "kick-auth-changed",
-                                KickAuthState {
-                                    authenticated: false,
-                                    username: None,
-                                },
-                            );
-                            return Err(KickError::TokenRefreshFailed);
-                        }
-                        Err(e) => return Err(e),
-                    }
+                    let new_auth =
+                        refresh_kick_token_locked(&app, &state, &http, &auth.refresh_token).await?;
+                    super::api::send_message(&http, &new_auth, broadcaster_user_id, &message)
+                        .await?;
+                    return Ok(());
                 }
             }
             Err(e)
