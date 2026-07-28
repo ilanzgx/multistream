@@ -26,12 +26,12 @@ export interface FollowedChannel {
 
 const _useFollowedChannels = () => {
   const twitchChannels = ref<FollowedChannel[]>([]);
-  const isLoading = ref(false);
+  const isFetchingTwitch = ref(false);
   const platformFilter = ref<"all" | "twitch" | "kick">("all");
 
   const { authenticated: twitchAuthenticated } = useTwitchAuth();
-  const { authenticated: kickAuthenticated } = useKickAuth();
-  const { statuses } = useLiveStatus();
+  const { statuses, isChecking } = useLiveStatus();
+  const isLoading = computed(() => isFetchingTwitch.value || isChecking.value);
   const { favorites } = useFavorites();
   let pollInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -107,9 +107,9 @@ const _useFollowedChannels = () => {
   });
 
   const refresh = async () => {
-    if (!isTauri() || isLoading.value) return;
+    if (!isTauri() || isFetchingTwitch.value) return;
 
-    isLoading.value = true;
+    isFetchingTwitch.value = true;
     debugErrors.value = [];
     try {
       if (twitchAuthenticated.value) {
@@ -127,7 +127,7 @@ const _useFollowedChannels = () => {
     } catch (e) {
       console.error("Failed to refresh followed channels", e);
     } finally {
-      isLoading.value = false;
+      isFetchingTwitch.value = false;
     }
   };
 
@@ -144,7 +144,7 @@ const _useFollowedChannels = () => {
     }
   };
 
-  watch([twitchAuthenticated, kickAuthenticated], () => {
+  watch(twitchAuthenticated, () => {
     if (typeof document !== "undefined" && document.visibilityState === "visible") {
       refresh();
     }
