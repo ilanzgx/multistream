@@ -127,6 +127,13 @@
       "resources": "转录",
       "recording": "录制"
     },
+    "nativePlayer": {
+      "title": "原生播放器（实验性）",
+      "description": "使用原生 HLS 播放器播放 Twitch。绕过嵌入式直播的年龄限制。",
+      "loadError": "无法加载直播。原生播放器可能暂时不可用。",
+      "videoRefError": "视频元素引用未绑定",
+      "notSupportedError": "浏览器不支持 HLS 播放"
+    },
     "recording": {
       "tabLabel": "录制",
       "enableTitle": "本地录制",

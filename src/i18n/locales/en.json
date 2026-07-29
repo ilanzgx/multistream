@@ -127,6 +127,13 @@
       "resources": "Transcription",
       "recording": "Recording"
     },
+    "nativePlayer": {
+      "title": "Native Player (Experimental)",
+      "description": "Use a native HLS player for Twitch. Bypasses age restrictions on embedded streams.",
+      "loadError": "Failed to load stream. The native player may be temporarily unavailable.",
+      "videoRefError": "Video element reference not bound",
+      "notSupportedError": "HLS playback is not supported by your browser"
+    },
     "recording": {
       "tabLabel": "Recording",
       "enableTitle": "Local Recording",

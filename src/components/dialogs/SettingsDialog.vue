@@ -37,6 +37,7 @@ import {
   Monitor,
   ChevronsDown,
   Clock,
+  FlaskConical,
 } from "@lucide/vue";
 import { toast } from "vue-sonner";
 import { watch, ref } from "vue";
@@ -50,8 +51,13 @@ import { Slider } from "@/components/ui/slider";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
 
 const { checkForUpdates, isChecking } = useUpdater();
-const { notificationsEnabled, recordingEnabled, recordingQuality, recordingPath } =
-  usePreferences();
+const {
+  notificationsEnabled,
+  recordingEnabled,
+  recordingQuality,
+  recordingPath,
+  nativePlayerEnabled,
+} = usePreferences();
 const { locale, t } = useI18n();
 
 import { useRecording } from "@/composables/useRecording";
@@ -444,6 +450,24 @@ watch(
               </div>
               <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
                 <Switch v-model="notificationsEnabled" />
+              </div>
+            </div>
+
+            <!-- Native Player (Experimental) Section -->
+            <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-2 px-1">
+                <FlaskConical class="size-4 text-gray-400 shrink-0" />
+                <div>
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.nativePlayer.title") }}
+                  </h3>
+                  <p class="text-gray-400 text-xs">
+                    {{ $t("settings.nativePlayer.description") }}
+                  </p>
+                </div>
+              </div>
+              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+                <Switch v-model="nativePlayerEnabled" />
               </div>
             </div>
 

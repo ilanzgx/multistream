@@ -127,6 +127,13 @@
       "resources": "Transkription",
       "recording": "Aufnahme"
     },
+    "nativePlayer": {
+      "title": "Nativer Player (Experimentell)",
+      "description": "Einen nativen HLS-Player für Twitch verwenden. Umgeht Altersbeschränkungen bei eingebetteten Streams.",
+      "loadError": "Stream konnte nicht geladen werden. Der native Player ist möglicherweise vorübergehend nicht verfügbar.",
+      "videoRefError": "Videoelement-Referenz nicht gebunden",
+      "notSupportedError": "HLS-Wiedergabe wird vom Browser nicht unterstützt"
+    },
     "recording": {
       "tabLabel": "Aufnahme",
       "enableTitle": "Lokale Aufnahme",

@@ -127,6 +127,13 @@
       "resources": "Transcripción",
       "recording": "Grabación"
     },
+    "nativePlayer": {
+      "title": "Reproductor Nativo (Experimental)",
+      "description": "Usar un reproductor HLS nativo para Twitch. Evita restricciones de edad en streams integrados.",
+      "loadError": "Error al cargar la transmisión. El reproductor nativo puede estar temporalmente no disponible.",
+      "videoRefError": "Referencia del elemento de video no vinculada",
+      "notSupportedError": "El navegador no admite la reproducción HLS"
+    },
     "recording": {
       "tabLabel": "Grabación",
       "enableTitle": "Grabación Local",
