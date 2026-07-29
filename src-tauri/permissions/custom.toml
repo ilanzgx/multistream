@@ -28,6 +28,7 @@ commands.allow = [
     "kick_send_message",
     "kick_set_channels",
     "twitch_get_followed_streams",
+    "twitch_get_hls_url",
     "start_recording",
     "stop_recording",
     "is_recording",
