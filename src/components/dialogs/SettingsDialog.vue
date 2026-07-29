@@ -338,7 +338,7 @@ watch(
 <template>
   <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
     <DialogContent
-      class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl flex flex-col h-[780px] max-h-[90vh]"
+      class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl flex flex-col h-195 max-h-[90vh]"
     >
       <DialogHeader>
         <DialogTitle class="text-white">
@@ -449,7 +449,7 @@ watch(
                 </div>
               </div>
               <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
-                <Switch v-model="notificationsEnabled" />
+                <Switch id="notifications-switch" v-model:checked="notificationsEnabled" />
               </div>
             </div>
 
@@ -467,7 +467,7 @@ watch(
                 </div>
               </div>
               <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
-                <Switch v-model="nativePlayerEnabled" />
+                <Switch id="native-player-switch" v-model:checked="nativePlayerEnabled" />
               </div>
             </div>
 
@@ -550,7 +550,7 @@ watch(
                         <span :style="{ color: platform.color }" class="shrink-0">
                           <component :is="platform.icon" :size="14" />
                         </span>
-                        <span class="text-white font-medium truncate max-w-[100px]">{{
+                        <span class="text-white font-medium truncate max-w-25">{{
                           twitchUsername
                         }}</span>
                         <button
@@ -601,7 +601,7 @@ watch(
                         <span :style="{ color: platform.color }" class="shrink-0">
                           <component :is="platform.icon" :size="14" />
                         </span>
-                        <span class="text-white font-medium truncate max-w-[100px]">{{
+                        <span class="text-white font-medium truncate max-w-25">{{
                           kickUsername
                         }}</span>
                         <button
@@ -733,7 +733,7 @@ watch(
                     <select
                       v-model="captionMode"
                       data-testid="transcription-mode-select"
-                      class="bg-[#1e2127] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
+                      class="bg-[#1e2127] border border-[#2a2d33] text-white text-xs rounded-md px-2 py-1.5 focus:outline-none focus:border-white/20 w-full max-w-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       :disabled="isDownloading"
                     >
                       <option value="original">
@@ -752,7 +752,7 @@ watch(
                       $t("settings.transcription.enableToggle")
                     }}</span>
                     <Switch
-                      v-model="isEnabled"
+                      v-model:checked="isEnabled"
                       data-testid="transcription-enable-toggle"
                       :disabled="isDownloading"
                     />
@@ -827,7 +827,7 @@ watch(
 
                     <div class="shrink-0 flex items-center gap-2">
                       <template v-if="downloadingModel === model.id">
-                        <div class="w-[120px] space-y-1.5">
+                        <div class="w-30 space-y-1.5">
                           <div class="flex justify-between text-[9px] text-gray-400 font-mono">
                             <span
                               >{{ (downloadProgress.downloaded / 1024 / 1024).toFixed(1) }}M</span
@@ -937,9 +937,9 @@ watch(
                   <Download class="size-4 mr-1.5" />
                   {{ $t("settings.recording.downloadDependencies") }}
                 </Button>
-                <div v-else class="flex flex-col items-end gap-1 w-[180px]">
+                <div v-else class="flex flex-col items-end gap-1 w-45">
                   <div class="flex justify-between w-full text-[9px] text-gray-400 font-mono">
-                    <span class="truncate max-w-[140px]">{{ downloadDependenciesStep }}</span>
+                    <span class="truncate max-w-35">{{ downloadDependenciesStep }}</span>
                     <span>{{ downloadDependenciesProgress }}%</span>
                   </div>
                   <div class="h-1.5 w-full bg-[#2a2d33] rounded-full overflow-hidden">

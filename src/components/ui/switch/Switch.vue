@@ -1,24 +1,31 @@
 <script setup lang="ts">
-import type { SwitchRootEmits, SwitchRootProps } from "reka-ui";
 import type { HTMLAttributes } from "vue";
-import { reactiveOmit } from "@vueuse/core";
-import { SwitchRoot, SwitchThumb, useForwardPropsEmits } from "reka-ui";
+import { SwitchRoot, SwitchThumb } from "reka-ui";
 import { cn } from "@/lib/utils";
 
-const props = defineProps<SwitchRootProps & { class?: HTMLAttributes["class"] }>();
+const props = defineProps<{ class?: HTMLAttributes["class"]; disabled?: boolean }>();
+const checked = defineModel<boolean>("checked");
+const modelValue = defineModel<boolean>();
 
-const emits = defineEmits<SwitchRootEmits>();
+// Sync them in case reka-ui uses modelValue
+const isChecked = () => {
+  if (checked.value !== undefined) return checked.value;
+  if (modelValue.value !== undefined) return modelValue.value;
+  return false;
+};
 
-const delegatedProps = reactiveOmit(props, "class");
-
-const forwarded = useForwardPropsEmits(delegatedProps, emits);
+const updateChecked = (v: boolean) => {
+  if (checked.value !== undefined) checked.value = v;
+  if (modelValue.value !== undefined) modelValue.value = v;
+};
 </script>
 
 <template>
   <SwitchRoot
-    v-slot="slotProps"
     data-slot="switch"
-    v-bind="forwarded"
+    :checked="isChecked()"
+    :model-value="isChecked()"
+    :disabled="props.disabled"
     :class="
       cn(
         'inline-flex h-6 w-11 shrink-0 items-center rounded-full border border-[#3a3f4b] shadow-sm transition-all duration-200 outline-none cursor-pointer',
@@ -29,6 +36,8 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         props.class
       )
     "
+    @update:checked="updateChecked"
+    @update:model-value="updateChecked"
   >
     <SwitchThumb
       data-slot="switch-thumb"
@@ -41,7 +50,7 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
         )
       "
     >
-      <slot name="thumb" v-bind="slotProps" />
+      <slot name="thumb" />
     </SwitchThumb>
   </SwitchRoot>
 </template>

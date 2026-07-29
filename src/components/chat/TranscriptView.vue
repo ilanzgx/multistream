@@ -106,7 +106,7 @@ async function copyTranscript() {
           <Tooltip>
             <TooltipTrigger as-child>
               <div class="flex items-center mr-1">
-                <Switch v-model="showOverlay" data-testid="transcription-overlay-toggle" />
+                <Switch v-model:checked="showOverlay" data-testid="transcription-overlay-toggle" />
               </div>
             </TooltipTrigger>
             <TooltipContent>
