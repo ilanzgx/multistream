@@ -2,7 +2,7 @@
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { X, Heart, Maximize2, Camera, Circle, CircleStop } from "@lucide/vue";
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
@@ -19,7 +19,7 @@ const { addFavorite, removeFavorite, favorites } = useFavorites();
 const { toggleFocus, isFocused, clearFocus, focusedStreamId } = useFocusedStream();
 const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
-const { recordingEnabled, recordingQuality } = usePreferences();
+const { recordingEnabled, recordingQuality, nativePlayerEnabled } = usePreferences();
 const { startRecording, stopRecording, isRecording, getState } = useRecording();
 
 const formatWatchTime = (ms: number): string => {
@@ -140,47 +140,64 @@ const appVersionDisplay = computed(() => {
 
 const connectionStatus = ref("RESOLVING_IFRAME");
 
+const checkMedia = () => {
+  const iframe = containerRef.value?.querySelector("iframe");
+  const video = containerRef.value?.querySelector("video");
+
+  if (iframe) {
+    iframe.addEventListener("load", () => {
+      setTimeout(
+        () => {
+          isLoading.value = false;
+        },
+        props.platform === "kick" ? 3000 : 2000
+      );
+    });
+    return true;
+  }
+
+  if (video) {
+    const onVideoReady = () => {
+      setTimeout(() => {
+        isLoading.value = false;
+      }, 500);
+    };
+
+    if (video.readyState >= 2) {
+      onVideoReady();
+    } else {
+      video.addEventListener("loadeddata", onVideoReady, { once: true });
+      video.addEventListener("playing", onVideoReady, { once: true });
+    }
+    return true;
+  }
+
+  return false;
+};
+
+watch(nativePlayerEnabled, () => {
+  if (props.platform === "twitch") {
+    isLoading.value = true;
+    connectionStatus.value = "RESOLVING_IFRAME";
+    nextTick(() => {
+      if (!checkMedia()) {
+        setTimeout(checkMedia, 500);
+      }
+    });
+    setTimeout(() => {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+    }, 4000);
+  }
+});
+
 onMounted(() => {
   setTimeout(() => {
     if (isLoading.value) {
       connectionStatus.value = "ESTABLISHING_HANDSHAKE";
     }
   }, 800);
-
-  const checkMedia = () => {
-    const iframe = containerRef.value?.querySelector("iframe");
-    const video = containerRef.value?.querySelector("video");
-
-    if (iframe) {
-      iframe.addEventListener("load", () => {
-        setTimeout(
-          () => {
-            isLoading.value = false;
-          },
-          props.platform === "kick" ? 3000 : 2000
-        );
-      });
-      return true;
-    }
-
-    if (video) {
-      const onVideoReady = () => {
-        setTimeout(() => {
-          isLoading.value = false;
-        }, 500);
-      };
-
-      if (video.readyState >= 2) {
-        onVideoReady();
-      } else {
-        video.addEventListener("loadeddata", onVideoReady, { once: true });
-        video.addEventListener("playing", onVideoReady, { once: true });
-      }
-      return true;
-    }
-
-    return false;
-  };
 
   if (!checkMedia()) {
     setTimeout(checkMedia, 500);
