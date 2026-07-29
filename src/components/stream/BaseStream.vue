@@ -147,17 +147,51 @@ onMounted(() => {
     }
   }, 800);
 
-  const iframe = containerRef.value?.querySelector("iframe");
-  if (iframe) {
-    iframe.addEventListener("load", () => {
-      setTimeout(
-        () => {
+  const checkMedia = () => {
+    const iframe = containerRef.value?.querySelector("iframe");
+    const video = containerRef.value?.querySelector("video");
+
+    if (iframe) {
+      iframe.addEventListener("load", () => {
+        setTimeout(
+          () => {
+            isLoading.value = false;
+          },
+          props.platform === "kick" ? 3000 : 2000
+        );
+      });
+      return true;
+    }
+
+    if (video) {
+      const onVideoReady = () => {
+        setTimeout(() => {
           isLoading.value = false;
-        },
-        props.platform === "kick" ? 3000 : 2000
-      );
-    });
+        }, 500);
+      };
+
+      if (video.readyState >= 2) {
+        onVideoReady();
+      } else {
+        video.addEventListener("loadeddata", onVideoReady, { once: true });
+        video.addEventListener("playing", onVideoReady, { once: true });
+      }
+      return true;
+    }
+
+    return false;
+  };
+
+  if (!checkMedia()) {
+    setTimeout(checkMedia, 500);
   }
+
+  // Safety fallback: ensure skeleton is never stuck indefinitely
+  setTimeout(() => {
+    if (isLoading.value) {
+      isLoading.value = false;
+    }
+  }, 4000);
 
   window.addEventListener("multistream-screenshot", onScreenshotEvent);
 });
@@ -349,7 +383,7 @@ const handleScreenshot = () => {
               </p>
               <!-- category skeleton or real category -->
               <Skeleton v-if="!liveStatus?.category" class="h-3 w-24 bg-white/5" />
-              <p v-else class="h-3 text-xs text-white/20 leading-none truncate max-w-[120px]">
+              <p v-else class="h-3 text-xs text-white/20 leading-none truncate max-w-30">
                 {{ liveStatus.category }}
               </p>
             </div>
