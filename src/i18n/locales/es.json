@@ -128,11 +128,11 @@
       "recording": "Grabación"
     },
     "nativePlayer": {
-      "title": "Reproductor Nativo (Experimental)",
-      "description": "Usar un reproductor HLS nativo para Twitch. Evita restricciones de edad en streams integrados.",
-      "loadError": "Error al cargar la transmisión. El reproductor nativo puede estar temporalmente no disponible.",
+      "title": "Reproductor Personalizado (Experimental)",
+      "description": "Usar el motor de streaming integrado en lugar de reproductores embebidos. Puede mejorar el rendimiento y la compatibilidad.",
+      "loadError": "Error al cargar la transmisión. El reproductor personalizado puede estar temporalmente no disponible.",
       "videoRefError": "Referencia del elemento de video no vinculada",
-      "notSupportedError": "El navegador no admite la reproducción HLS"
+      "notSupportedError": "La reproducción multimedia no es compatible con su navegador"
     },
     "recording": {
       "tabLabel": "Grabación",
@@ -267,7 +267,15 @@
   },
   "common": {
     "close": "Cerrar",
-    "comingSoon": "Próximamente"
+    "comingSoon": "Próximamente",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "mute": "Silenciar",
+    "unmute": "Activar sonido",
+    "fullscreen": "Pantalla completa",
+    "exitFullscreen": "Salir de pantalla completa",
+    "settings": "Configuración",
+    "volume": "Volumen"
   },
   "toasts": {
     "add": {
@@ -380,5 +388,11 @@
     "all": "Todos",
     "loginTitle": "Conecta tu cuenta",
     "loginSubtitle": "Mira los canales que sigues"
+  },
+  "nativePlayer": {
+    "live": "EN VIVO",
+    "quality": {
+      "auto": "Automático"
+    }
   }
 }

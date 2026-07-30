@@ -128,11 +128,11 @@
       "recording": "Recording"
     },
     "nativePlayer": {
-      "title": "Native Player (Experimental)",
-      "description": "Use a native HLS player for Twitch. Bypasses age restrictions on embedded streams.",
-      "loadError": "Failed to load stream. The native player may be temporarily unavailable.",
+      "title": "Custom Player Backend (Experimental)",
+      "description": "Use the built-in stream engine instead of embedded players. May improve performance and compatibility.",
+      "loadError": "Failed to load stream. The custom player may be temporarily unavailable.",
       "videoRefError": "Video element reference not bound",
-      "notSupportedError": "HLS playback is not supported by your browser"
+      "notSupportedError": "Media playback is not supported by your browser"
     },
     "recording": {
       "tabLabel": "Recording",
@@ -267,7 +267,15 @@
   },
   "common": {
     "close": "Close",
-    "comingSoon": "Coming soon"
+    "comingSoon": "Coming soon",
+    "play": "Play",
+    "pause": "Pause",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit Fullscreen",
+    "settings": "Settings",
+    "volume": "Volume"
   },
   "toasts": {
     "add": {
@@ -380,5 +388,11 @@
     "all": "All",
     "loginTitle": "Connect your account",
     "loginSubtitle": "See the channels you follow"
+  },
+  "nativePlayer": {
+    "live": "LIVE",
+    "quality": {
+      "auto": "Auto"
+    }
   }
 }
