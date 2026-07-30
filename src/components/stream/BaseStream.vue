@@ -93,6 +93,7 @@ const viewerCountDisplay = computed(() => {
 
 const embedDomain = computed(() => {
   if (props.platform === "custom") return "custom_frame";
+  if (props.platform === "twitch" && nativePlayerEnabled.value) return "native";
   try {
     const url = platformConfig.value?.embedUrl;
     if (!url) return "unknown";
