@@ -34,6 +34,7 @@
     "@vueuse/core": "^14.3.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "hls.js": "^1.6.16",
     "reka-ui": "^2.9.10",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.18",

@@ -1,4 +1,5 @@
 use crate::models::FollowedChannel;
+use base64::Engine;
 use serde_json::Value;
 use std::collections::HashSet;
 
@@ -513,4 +514,152 @@ pub async fn twitch_get_followed_streams(
     });
 
     Ok(result)
+}
+
+#[tauri::command]
+pub async fn twitch_get_hls_url(
+    state: State<'_, TwitchState>,
+    channel: String,
+) -> Result<String, TwitchError> {
+    let http = reqwest::Client::builder()
+        .use_rustls_tls()
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .map_err(TwitchError::Http)?;
+
+    let channel_clean = channel.to_lowercase();
+    if !channel_clean
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        return Err(TwitchError::Api("Invalid channel name format".into()));
+    }
+    let access_token = state
+        .auth
+        .lock()
+        .await
+        .as_ref()
+        .map(|a| a.access_token.clone());
+    let custom_client_id = oauth::client_id();
+
+    let gql_body = serde_json::json!({
+        "operationName": "PlaybackAccessToken",
+        "query": "query PlaybackAccessToken($login: String!, $playerType: String!) { streamPlaybackAccessToken(channelName: $login, params: {platform: \"web\", playerBackend: \"mediaplayer\", playerType: $playerType}) { value signature __typename } }",
+        "variables": {
+            "login": channel_clean,
+            "playerType": "site"
+        }
+    });
+
+    let send_request = |c_id: &str, auth: Option<&str>| {
+        let mut req = http
+            .post("https://gql.twitch.tv/gql")
+            .header("Client-ID", c_id)
+            .header("Client-Session-Id", format!("{:x}", rand::random::<u64>()))
+            .json(&gql_body);
+
+        if let Some(tok) = auth {
+            req = req.header("Authorization", format!("OAuth {}", tok));
+        }
+        req
+    };
+
+    let web_client_id = "kimne78kx3ncx6brgo4mv6wki5h1ko";
+    let mut resp = None;
+    let mut used_client_id = web_client_id;
+
+    // Pass 1: Try authenticated request if access_token and custom_client_id exist
+    if let (Some(tok), false) = (&access_token, custom_client_id.is_empty()) {
+        if let Ok(res) = send_request(custom_client_id, Some(tok)).send().await {
+            if res.status().is_success() {
+                resp = Some(res);
+                used_client_id = custom_client_id;
+            }
+        }
+    }
+
+    // Pass 2: Fallback to web client ID without Authorization header
+    if resp.is_none() {
+        let res = send_request(web_client_id, None)
+            .send()
+            .await
+            .map_err(TwitchError::Http)?;
+
+        if !res.status().is_success() {
+            let status = res.status();
+            let err = res.text().await.unwrap_or_default();
+            return Err(TwitchError::OAuth(format!("GQL HTTP {}: {}", status, err)));
+        }
+        resp = Some(res);
+        used_client_id = web_client_id;
+    }
+
+    let response = resp.unwrap();
+    let body: Value = response
+        .json()
+        .await
+        .map_err(|e| TwitchError::OAuth(e.to_string()))?;
+
+    let stream_token = &body["data"]["streamPlaybackAccessToken"];
+
+    if stream_token.is_null() {
+        if let Some(errors) = body.get("errors") {
+            let msg = errors
+                .as_array()
+                .and_then(|a| a.first())
+                .and_then(|e| e["message"].as_str())
+                .unwrap_or("Unknown GQL error");
+            return Err(TwitchError::OAuth(format!("Twitch GQL: {}", msg)));
+        }
+        return Err(TwitchError::OAuth(format!(
+            "Channel '{}' is offline or unavailable",
+            channel_clean
+        )));
+    }
+
+    let token_value = stream_token["value"].as_str().ok_or_else(|| {
+        TwitchError::OAuth(format!("Missing token value for '{}'", channel_clean))
+    })?;
+
+    let signature = stream_token["signature"]
+        .as_str()
+        .ok_or_else(|| TwitchError::OAuth("Missing token signature".into()))?;
+
+    let encoded_token = urlencoding::encode(token_value);
+    let random_p: u32 = rand::random::<u32>() % 9_999_999;
+
+    let master_playlist_url = format!(
+        "https://usher.ttvnw.net/api/channel/hls/{}.m3u8?client_id={}&token={}&sig={}&allow_source=true&allow_audio_only=true&fast_bread=true&p={}",
+        channel_clean,
+        used_client_id,
+        encoded_token,
+        signature,
+        random_p
+    );
+
+    let usher_resp = http
+        .get(&master_playlist_url)
+        .send()
+        .await
+        .map_err(TwitchError::Http)?;
+
+    if usher_resp.status().as_u16() == 404 {
+        return Err(TwitchError::OAuth(format!(
+            "Channel '{}' is offline",
+            channel_clean
+        )));
+    }
+
+    if !usher_resp.status().is_success() {
+        let status = usher_resp.status();
+        return Err(TwitchError::OAuth(format!("Usher API HTTP {}", status)));
+    }
+
+    let m3u8_content = usher_resp.text().await.map_err(TwitchError::Http)?;
+
+    let encoded_m3u8 = base64::engine::general_purpose::STANDARD.encode(m3u8_content.as_bytes());
+    let data_uri = format!("data:application/x-mpegurl;base64,{}", encoded_m3u8);
+
+    Ok(data_uri)
 }

@@ -24,7 +24,12 @@ const {
   onMouseUp,
   onGlobalMouseUp,
 } = useDragAndDrop();
-const { setSelectedChat } = usePreferences();
+const { setSelectedChat, nativePlayerEnabled } = usePreferences();
+
+watch(nativePlayerEnabled, () => {
+  // Immediately purge dead Twitch streams from the graveyard when Twitch player mode changes
+  domStreams.value = domStreams.value.filter((ds) => !(ds._isDead && ds.platform === "twitch"));
+});
 
 useEventListener(window, "mouseup", onGlobalMouseUp);
 
@@ -66,12 +71,21 @@ watch(
       }
     });
 
-    // 3. Garbage Collector: Remove dead streams if their platform has NO active streams
+    // 3. Garbage Collector: Remove dead streams
     const activePlatforms = new Set(newStreams.map((s) => s.platform));
 
-    domStreams.value = domStreams.value.filter(
-      (ds) => !ds._isDead || (ds.platform !== "custom" && activePlatforms.has(ds.platform))
-    );
+    domStreams.value = domStreams.value.filter((ds) => {
+      if (!ds._isDead) return true;
+
+      // Custom streams always bypass the graveyard
+      if (ds.platform === "custom") return false;
+
+      // Twitch streams bypass the graveyard when Native HLS player is enabled
+      if (ds.platform === "twitch" && nativePlayerEnabled.value) return false;
+
+      // Otherwise keep in graveyard as long as there are active streams of that platform
+      return activePlatforms.has(ds.platform);
+    });
   },
   { deep: true, immediate: true }
 );

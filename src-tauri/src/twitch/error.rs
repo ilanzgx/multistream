@@ -16,6 +16,9 @@ pub enum TwitchError {
 
     #[error("Token refresh failed")]
     TokenRefreshFailed,
+
+    #[error("API error: {0}")]
+    Api(String),
 }
 
 impl serde::Serialize for TwitchError {

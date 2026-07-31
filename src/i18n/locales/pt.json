@@ -127,6 +127,13 @@
       "resources": "Transcrição",
       "recording": "Gravação"
     },
+    "nativePlayer": {
+      "title": "Player Customizado (Experimental)",
+      "description": "Usar o motor de stream integrado em vez de players incorporados. Pode melhorar o desempenho e a compatibilidade.",
+      "loadError": "Falha ao carregar stream. O player customizado pode estar temporariamente indisponível.",
+      "videoRefError": "Referência do elemento de vídeo não vinculada",
+      "notSupportedError": "Reprodução de mídia não é suportada pelo navegador"
+    },
     "recording": {
       "tabLabel": "Gravação",
       "enableTitle": "Gravação Local",
@@ -260,7 +267,15 @@
   },
   "common": {
     "close": "Fechar",
-    "comingSoon": "Em breve"
+    "comingSoon": "Em breve",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "mute": "Mudo",
+    "unmute": "Desmutar",
+    "fullscreen": "Tela Cheia",
+    "exitFullscreen": "Sair da Tela Cheia",
+    "settings": "Configurações",
+    "volume": "Volume"
   },
   "toasts": {
     "add": {
@@ -373,5 +388,11 @@
     "all": "Todos",
     "loginTitle": "Conecte sua conta",
     "loginSubtitle": "Veja os canais que você segue"
+  },
+  "nativePlayer": {
+    "live": "AO VIVO",
+    "quality": {
+      "auto": "Auto"
+    }
   }
 }

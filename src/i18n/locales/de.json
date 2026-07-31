@@ -127,6 +127,13 @@
       "resources": "Transkription",
       "recording": "Aufnahme"
     },
+    "nativePlayer": {
+      "title": "Benutzerdefinierter Player (Experimentell)",
+      "description": "Die integrierte Stream-Engine anstelle eingebetteter Player verwenden. Kann Leistung und Kompatibilität verbessern.",
+      "loadError": "Stream konnte nicht geladen werden. Der benutzerdefinierte Player ist möglicherweise vorübergehend nicht verfügbar.",
+      "videoRefError": "Videoelement-Referenz nicht gebunden",
+      "notSupportedError": "Medienwiedergabe wird vom Browser nicht unterstützt"
+    },
     "recording": {
       "tabLabel": "Aufnahme",
       "enableTitle": "Lokale Aufnahme",
@@ -260,7 +267,15 @@
   },
   "common": {
     "close": "Schließen",
-    "comingSoon": "Demnächst"
+    "comingSoon": "Demnächst",
+    "play": "Abspielen",
+    "pause": "Pause",
+    "mute": "Stumm",
+    "unmute": "Stummschaltung aufheben",
+    "fullscreen": "Vollbild",
+    "exitFullscreen": "Vollbild beenden",
+    "settings": "Einstellungen",
+    "volume": "Lautstärke"
   },
   "toasts": {
     "add": {
@@ -373,5 +388,11 @@
     "all": "Alle",
     "loginTitle": "Konto verbinden",
     "loginSubtitle": "Sehen Sie die Kanäle, denen Sie folgen"
+  },
+  "nativePlayer": {
+    "live": "LIVE",
+    "quality": {
+      "auto": "Automatisch"
+    }
   }
 }

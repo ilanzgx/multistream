@@ -127,6 +127,13 @@
       "resources": "转录",
       "recording": "录制"
     },
+    "nativePlayer": {
+      "title": "自定义播放器（实验性）",
+      "description": "使用内置流媒体引擎代替嵌入式播放器。可能会提升性能和兼容性。",
+      "loadError": "无法加载直播。自定义播放器可能暂时不可用。",
+      "videoRefError": "视频元素引用未绑定",
+      "notSupportedError": "浏览器不支持媒体播放"
+    },
     "recording": {
       "tabLabel": "录制",
       "enableTitle": "本地录制",
@@ -260,7 +267,15 @@
   },
   "common": {
     "close": "关闭",
-    "comingSoon": "即将推出"
+    "comingSoon": "即将推出",
+    "play": "播放",
+    "pause": "暂停",
+    "mute": "静音",
+    "unmute": "取消静音",
+    "fullscreen": "全屏",
+    "exitFullscreen": "退出全屏",
+    "settings": "设置",
+    "volume": "音量"
   },
   "toasts": {
     "add": {
@@ -373,5 +388,11 @@
     "all": "全部",
     "loginTitle": "连接您的账户",
     "loginSubtitle": "查看您关注的频道"
+  },
+  "nativePlayer": {
+    "live": "直播中",
+    "quality": {
+      "auto": "自动"
+    }
   }
 }

@@ -14,8 +14,8 @@ use audio::transcriber::TranscriptionState;
 mod twitch;
 use twitch::commands::{
     twitch_cancel_login, twitch_get_auth_state, twitch_get_connection_state,
-    twitch_get_followed_streams, twitch_get_messages, twitch_login, twitch_logout,
-    twitch_send_message, twitch_set_channels,
+    twitch_get_followed_streams, twitch_get_hls_url, twitch_get_messages, twitch_login,
+    twitch_logout, twitch_send_message, twitch_set_channels,
 };
 use twitch::state::TwitchState;
 
@@ -116,6 +116,7 @@ pub fn run() {
             kick_send_message,
             kick_set_channels,
             twitch_get_followed_streams,
+            twitch_get_hls_url,
             start_recording,
             stop_recording,
             is_recording,

@@ -14,13 +14,20 @@ describe("usePreferences composable unit tests", () => {
 
   it("should initialize with default preferences", () => {
     // Arrange & Act
-    const { selectedChat, sidebarOpen, notificationsEnabled, onboardingCompleted } = sut;
+    const {
+      selectedChat,
+      sidebarOpen,
+      notificationsEnabled,
+      onboardingCompleted,
+      nativePlayerEnabled,
+    } = sut;
 
     // Assert
     expect(selectedChat.value).toBe("");
     expect(sidebarOpen.value).toBe(true);
     expect(notificationsEnabled.value).toBe(true);
     expect(onboardingCompleted.value).toBe(false);
+    expect(nativePlayerEnabled.value).toBe(false);
   });
 
   it("should set selected chat correctly", () => {
@@ -87,6 +94,7 @@ describe("usePreferences composable unit tests", () => {
       setSidebarOpen,
       notificationsEnabled,
       setOnboardingCompleted,
+      nativePlayerEnabled,
       resetPreferences,
       selectedChat,
       sidebarOpen,
@@ -98,11 +106,13 @@ describe("usePreferences composable unit tests", () => {
     setSidebarOpen(false);
     notificationsEnabled.value = false;
     setOnboardingCompleted(true);
+    nativePlayerEnabled.value = true;
 
     expect(selectedChat.value).toBe("alanzoka_twitch");
     expect(sidebarOpen.value).toBe(false);
     expect(notificationsEnabled.value).toBe(false);
     expect(onboardingCompleted.value).toBe(true);
+    expect(nativePlayerEnabled.value).toBe(true);
 
     // Act
     resetPreferences();
@@ -112,5 +122,6 @@ describe("usePreferences composable unit tests", () => {
     expect(sidebarOpen.value).toBe(true);
     expect(notificationsEnabled.value).toBe(true);
     expect(onboardingCompleted.value).toBe(false);
+    expect(nativePlayerEnabled.value).toBe(false);
   });
 });

@@ -8,6 +8,7 @@ export interface Preferences {
   recordingEnabled: boolean;
   recordingQuality: string;
   recordingPath: string;
+  nativePlayerEnabled: boolean;
 }
 
 const defaultPreferences: Preferences = {
@@ -18,6 +19,7 @@ const defaultPreferences: Preferences = {
   recordingEnabled: false,
   recordingQuality: "best",
   recordingPath: "",
+  nativePlayerEnabled: false,
 };
 
 const _usePreferences = () => {
@@ -66,6 +68,11 @@ const _usePreferences = () => {
   const recordingPath = useStorage<string>(
     "preferences.recordingPath",
     defaultPreferences.recordingPath
+  );
+
+  const nativePlayerEnabled = useStorage<boolean>(
+    "preferences.nativePlayerEnabled",
+    defaultPreferences.nativePlayerEnabled
   );
 
   /**
@@ -128,6 +135,7 @@ const _usePreferences = () => {
     recordingEnabled.value = defaultPreferences.recordingEnabled;
     recordingQuality.value = defaultPreferences.recordingQuality;
     recordingPath.value = defaultPreferences.recordingPath;
+    nativePlayerEnabled.value = defaultPreferences.nativePlayerEnabled;
   };
 
   return {
@@ -139,6 +147,7 @@ const _usePreferences = () => {
     recordingEnabled,
     recordingQuality,
     recordingPath,
+    nativePlayerEnabled,
 
     // actions
     setSelectedChat,

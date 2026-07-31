@@ -2,7 +2,7 @@
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
 import { X, Heart, Maximize2, Camera, Circle, CircleStop } from "@lucide/vue";
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
@@ -19,7 +19,7 @@ const { addFavorite, removeFavorite, favorites } = useFavorites();
 const { toggleFocus, isFocused, clearFocus, focusedStreamId } = useFocusedStream();
 const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
-const { recordingEnabled, recordingQuality } = usePreferences();
+const { recordingEnabled, recordingQuality, nativePlayerEnabled } = usePreferences();
 const { startRecording, stopRecording, isRecording, getState } = useRecording();
 
 const formatWatchTime = (ms: number): string => {
@@ -93,6 +93,7 @@ const viewerCountDisplay = computed(() => {
 
 const embedDomain = computed(() => {
   if (props.platform === "custom") return "custom_frame";
+  if (props.platform === "twitch" && nativePlayerEnabled.value) return "native";
   try {
     const url = platformConfig.value?.embedUrl;
     if (!url) return "unknown";
@@ -140,14 +141,10 @@ const appVersionDisplay = computed(() => {
 
 const connectionStatus = ref("RESOLVING_IFRAME");
 
-onMounted(() => {
-  setTimeout(() => {
-    if (isLoading.value) {
-      connectionStatus.value = "ESTABLISHING_HANDSHAKE";
-    }
-  }, 800);
-
+const checkMedia = () => {
   const iframe = containerRef.value?.querySelector("iframe");
+  const video = containerRef.value?.querySelector("video");
+
   if (iframe) {
     iframe.addEventListener("load", () => {
       setTimeout(
@@ -157,7 +154,62 @@ onMounted(() => {
         props.platform === "kick" ? 3000 : 2000
       );
     });
+    return true;
   }
+
+  if (video) {
+    const onVideoReady = () => {
+      setTimeout(() => {
+        isLoading.value = false;
+      }, 500);
+    };
+
+    if (video.readyState >= 2) {
+      onVideoReady();
+    } else {
+      video.addEventListener("loadeddata", onVideoReady, { once: true });
+      video.addEventListener("playing", onVideoReady, { once: true });
+    }
+    return true;
+  }
+
+  return false;
+};
+
+watch(nativePlayerEnabled, () => {
+  if (props.platform === "twitch") {
+    isLoading.value = true;
+    connectionStatus.value = "RESOLVING_IFRAME";
+    nextTick(() => {
+      if (!checkMedia()) {
+        setTimeout(checkMedia, 500);
+      }
+    });
+    setTimeout(() => {
+      if (isLoading.value) {
+        isLoading.value = false;
+      }
+    }, 4000);
+  }
+});
+
+onMounted(() => {
+  setTimeout(() => {
+    if (isLoading.value) {
+      connectionStatus.value = "ESTABLISHING_HANDSHAKE";
+    }
+  }, 800);
+
+  if (!checkMedia()) {
+    setTimeout(checkMedia, 500);
+  }
+
+  // Safety fallback: ensure skeleton is never stuck indefinitely
+  setTimeout(() => {
+    if (isLoading.value) {
+      isLoading.value = false;
+    }
+  }, 4000);
 
   window.addEventListener("multistream-screenshot", onScreenshotEvent);
 });
@@ -349,7 +401,7 @@ const handleScreenshot = () => {
               </p>
               <!-- category skeleton or real category -->
               <Skeleton v-if="!liveStatus?.category" class="h-3 w-24 bg-white/5" />
-              <p v-else class="h-3 text-xs text-white/20 leading-none truncate max-w-[120px]">
+              <p v-else class="h-3 text-xs text-white/20 leading-none truncate max-w-30">
                 {{ liveStatus.category }}
               </p>
             </div>
