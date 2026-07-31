@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
+import { onClickOutside } from "@vueuse/core";
 import Hls from "hls.js";
 import { invoke } from "@tauri-apps/api/core";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +35,11 @@ const volume = ref([50]);
 const isFullscreen = ref(false);
 const showControls = ref(true);
 const qualityMenuOpen = ref(false);
+const qualityMenuRef = ref<HTMLDivElement | null>(null);
+
+onClickOutside(qualityMenuRef, () => {
+  qualityMenuOpen.value = false;
+});
 const availableLevels = ref<{ height: number; label: string }[]>([]);
 const currentLevelIndex = ref(-1);
 let hideTimer: ReturnType<typeof setTimeout> | null = null;
@@ -75,10 +81,8 @@ function togglePlay() {
       video.currentTime = hls.liveSyncPosition;
     }
     video.play().catch(() => {});
-    isPlaying.value = true;
   } else {
     video.pause();
-    isPlaying.value = false;
   }
 }
 
@@ -114,7 +118,6 @@ function snapToLive() {
   }
   if (video.paused) {
     video.play().catch(() => {});
-    isPlaying.value = true;
   }
 }
 
@@ -150,6 +153,7 @@ function onFullscreenChange() {
 }
 
 function buildLevelLabel(level: { height: number; attrs?: Record<string, string> }) {
+  if (!level.height) return "Audio";
   const fps = level.attrs?.["FRAME-RATE"];
   const fpsNum = fps ? Math.round(parseFloat(fps)) : null;
   const suffix = fpsNum && fpsNum > 30 ? fpsNum.toString() : "";
@@ -189,6 +193,10 @@ async function loadStream() {
       return;
     }
 
+    const v = volume.value[0] ?? 50;
+    videoRef.value.volume = v / 100;
+    videoRef.value.muted = isMuted.value || v === 0;
+
     if (hls) {
       hls.destroy();
       hls = null;
@@ -223,6 +231,14 @@ async function loadStream() {
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (!data.fatal || isDisposed) return;
 
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          hls?.startLoad();
+          return;
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hls?.recoverMediaError();
+          return;
+        }
+
         if (retryCount < MAX_RETRIES) {
           scheduleRetry();
         } else {
@@ -242,6 +258,20 @@ async function loadStream() {
           if (isDisposed) return;
           isLoading.value = false;
           videoRef.value?.play().catch(() => {});
+        },
+        { once: true }
+      );
+      videoRef.value.addEventListener(
+        "error",
+        (_err) => {
+          if (isDisposed) return;
+          if (retryCount < MAX_RETRIES) {
+            scheduleRetry();
+          } else {
+            hasError.value = true;
+            errorDetails.value = "Native playback error";
+            isLoading.value = false;
+          }
         },
         { once: true }
       );
@@ -287,6 +317,14 @@ function handleVideoClick() {
     clickCount = 0;
     toggleFullscreen();
   }
+}
+
+function onVideoPlaying() {
+  isPlaying.value = true;
+}
+
+function onVideoPaused() {
+  isPlaying.value = false;
 }
 
 onMounted(() => {
@@ -345,7 +383,10 @@ onBeforeUnmount(() => {
       class="w-full h-full object-contain cursor-pointer"
       :class="{ 'opacity-0': isLoading }"
       autoplay
-      muted
+      playsinline
+      :muted="isMuted"
+      @play="onVideoPlaying"
+      @pause="onVideoPaused"
       @click="handleVideoClick"
     />
 
@@ -426,7 +467,7 @@ onBeforeUnmount(() => {
             </button>
 
             <!-- Quality -->
-            <div class="relative">
+            <div ref="qualityMenuRef" class="relative">
               <button
                 class="text-white/90 hover:text-white transition-colors cursor-pointer p-1 flex items-center gap-1"
                 :aria-label="t('common.settings')"

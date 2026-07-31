@@ -529,6 +529,12 @@ pub async fn twitch_get_hls_url(
         .map_err(TwitchError::Http)?;
 
     let channel_clean = channel.to_lowercase();
+    if !channel_clean
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        return Err(TwitchError::Api("Invalid channel name format".into()));
+    }
     let access_token = state
         .auth
         .lock()

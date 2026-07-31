@@ -23,7 +23,6 @@ const updateChecked = (v: boolean) => {
 <template>
   <SwitchRoot
     data-slot="switch"
-    :checked="isChecked()"
     :model-value="isChecked()"
     :disabled="props.disabled"
     :class="
@@ -36,7 +35,6 @@ const updateChecked = (v: boolean) => {
         props.class
       )
     "
-    @update:checked="updateChecked"
     @update:model-value="updateChecked"
   >
     <SwitchThumb
