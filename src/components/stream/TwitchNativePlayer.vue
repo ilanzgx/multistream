@@ -239,24 +239,24 @@ async function loadStream() {
         currentLevelIndex.value = data.level;
       });
 
+      let networkRetryCount = 0;
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (!data.fatal || isDisposed) return;
 
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          hls?.startLoad();
-          return;
+          if (networkRetryCount < 3) {
+            networkRetryCount++;
+            hls?.startLoad();
+            return;
+          }
         } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           hls?.recoverMediaError();
           return;
         }
 
-        if (retryCount < MAX_RETRIES) {
-          scheduleRetry();
-        } else {
-          hasError.value = true;
-          errorDetails.value = `HLS Error (${data.type}: ${data.details})`;
-          isLoading.value = false;
-        }
+        hasError.value = true;
+        errorDetails.value = `HLS Error (${data.type}: ${data.details})`;
+        isLoading.value = false;
       });
 
       hls.loadSource(url);

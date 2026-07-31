@@ -13,7 +13,7 @@
   "app": {
     "windows": [],
     "security": {
-      "csp": "default-src 'self' http://ipc.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://player.kick.com https://kick.com https:; connect-src 'self' http://ipc.localhost http://localhost https:;"
+      "csp": "default-src 'self' http://ipc.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://player.kick.com https://kick.com https:; connect-src 'self' http://ipc.localhost http://localhost https: data: blob:; media-src 'self' blob: data: https:; worker-src 'self' blob:; child-src 'self' blob:;"
     }
   },
   "bundle": {
