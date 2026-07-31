@@ -6,11 +6,22 @@ import { invoke } from "@tauri-apps/api/core";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { useI18n } from "vue-i18n";
-import { Play, Pause, Volume2, Volume1, VolumeX, Maximize, Minimize, Settings } from "@lucide/vue";
+import {
+  Play,
+  Pause,
+  Volume2,
+  Volume1,
+  VolumeX,
+  Maximize,
+  Minimize,
+  Settings,
+  Users,
+} from "@lucide/vue";
 
 const props = defineProps<{
   channel: string;
   title?: string;
+  viewerCount?: number;
   avatarUrl?: string | null;
   isFocused?: boolean;
 }>();
@@ -407,11 +418,23 @@ onBeforeUnmount(() => {
               :alt="props.channel"
               class="size-8 rounded-full object-cover ring-1 ring-white/10 shrink-0"
             />
-            <div class="min-w-0">
-              <p class="text-white text-sm font-semibold leading-tight truncate">
-                {{ props.channel }}
-              </p>
-              <p v-if="props.title" class="text-gray-400 text-xs leading-tight truncate max-w-75">
+            <div class="min-w-0 flex flex-col justify-center">
+              <div class="flex items-center gap-2">
+                <p class="text-white text-sm font-semibold leading-tight truncate">
+                  {{ props.channel }}
+                </p>
+                <span
+                  v-if="props.viewerCount !== undefined"
+                  class="flex items-center gap-1 text-[10px] text-rose-400 font-bold bg-black/40 px-1.5 py-0.5 rounded-md"
+                >
+                  <Users class="size-3" />
+                  {{ props.viewerCount.toLocaleString() }}
+                </span>
+              </div>
+              <p
+                v-if="props.title"
+                class="text-gray-400 text-xs leading-tight truncate max-w-75 mt-0.5"
+              >
                 {{ props.title }}
               </p>
             </div>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
-import { X, Heart, Maximize2, Camera, Circle, CircleStop } from "@lucide/vue";
+import { X, Heart, Maximize2, Camera, Circle, CircleStop, Clock } from "@lucide/vue";
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
@@ -496,7 +496,7 @@ const handleScreenshot = () => {
     <!-- watch timer bottom overlay bar - appears on hover -->
     <div
       :class="[
-        'absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] sm:text-[10px] text-white/70 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 shadow-lg flex items-center gap-2',
+        'absolute bottom-3 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] text-white/70 pointer-events-none opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 z-10 shadow-lg flex items-center gap-1.5',
         isMiniaturized ? 'scale-90 bottom-1' : '',
       ]"
     >
@@ -504,15 +504,16 @@ const handleScreenshot = () => {
         v-if="getState(props.channelid)?.status === 'recording'"
         class="flex items-center gap-1 text-red-400 font-medium tabular-nums"
       >
-        <Circle class="size-2 animate-pulse fill-red-400 text-red-400" />
+        <Circle class="size-2 fill-red-400 text-red-400" />
         {{ formatWatchTime((getState(props.channelid)?.elapsed ?? 0) * 1000) }}
       </span>
       <div
         v-if="getState(props.channelid)?.status === 'recording'"
         class="w-px h-3 bg-white/10"
       ></div>
-      <span class="font-medium tracking-wide tabular-nums">
-        {{ t("stream.watching") }}: {{ displayWatchTime }}
+      <span class="flex items-center gap-1 font-medium tracking-wide tabular-nums">
+        <Clock class="size-2.5 opacity-60" />
+        {{ displayWatchTime }}
       </span>
     </div>
 

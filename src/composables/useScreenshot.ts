@@ -39,6 +39,57 @@ export function useScreenshot() {
     isCapturing.value = true;
 
     try {
+      // Extract save/download logic
+      const saveOrDownload = async (dataUrl: string) => {
+        const now = new Date();
+        const YYYY = now.getFullYear();
+        const MM = (now.getMonth() + 1).toString().padStart(2, "0");
+        const DD = now.getDate().toString().padStart(2, "0");
+        const hh = now.getHours().toString().padStart(2, "0");
+        const mm = now.getMinutes().toString().padStart(2, "0");
+        const ss = now.getSeconds().toString().padStart(2, "0");
+        const timestamp = `${YYYY}-${MM}-${DD}_${hh}-${mm}-${ss}`;
+        const filename = `${channel}_${platform}_${timestamp}.png`;
+
+        if (isTauri()) {
+          const savedPath = await invoke<string>("save_screenshot", {
+            dataUrl,
+            filename,
+          });
+          toast.success(`${t("toasts.screenshot.saved")}`, {
+            description: h(
+              "span",
+              { class: "text-[10px] text-gray-400 truncate block max-w-[250px]" },
+              savedPath
+            ) as any,
+            duration: 3500,
+          });
+        } else {
+          const link = document.createElement("a");
+          link.href = dataUrl;
+          link.download = filename;
+          link.click();
+          toast.success(`${t("toasts.screenshot.saved")}`);
+        }
+      };
+
+      const video = streamElement.querySelector("video");
+      if (video) {
+        // Native video capture
+        const canvas = document.createElement("canvas");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          toast.error(t("toasts.screenshot.failed"));
+          return;
+        }
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/png");
+        await saveOrDownload(dataUrl);
+        return;
+      }
+
       const iframe = streamElement.querySelector("iframe");
       if (!iframe || !iframe.contentWindow) {
         toast.error(t("toasts.screenshot.noStream"));
@@ -86,37 +137,8 @@ export function useScreenshot() {
         return;
       }
 
-      // build filename: channel_platform_YYYY-MM-DD_HH-mm-ss.png
-      const now = new Date();
-      const YYYY = now.getFullYear();
-      const MM = (now.getMonth() + 1).toString().padStart(2, "0");
-      const DD = now.getDate().toString().padStart(2, "0");
-      const hh = now.getHours().toString().padStart(2, "0");
-      const mm = now.getMinutes().toString().padStart(2, "0");
-      const ss = now.getSeconds().toString().padStart(2, "0");
-      const timestamp = `${YYYY}-${MM}-${DD}_${hh}-${mm}-${ss}`;
-      const filename = `${channel}_${platform}_${timestamp}.png`;
-
-      if (isTauri()) {
-        const savedPath = await invoke<string>("save_screenshot", {
-          dataUrl: result.dataUrl,
-          filename,
-        });
-        toast.success(`${t("toasts.screenshot.saved")}`, {
-          description: h(
-            "span",
-            { class: "text-[10px] text-gray-400 truncate block max-w-[250px]" },
-            savedPath
-          ) as any,
-          duration: 3500,
-        });
-      } else {
-        // browser fallback: trigger download
-        const link = document.createElement("a");
-        link.href = result.dataUrl!;
-        link.download = filename;
-        link.click();
-        toast.success(`${t("toasts.screenshot.saved")}`);
+      if (result.dataUrl) {
+        await saveOrDownload(result.dataUrl);
       }
     } catch (error) {
       console.error("Screenshot capture failed:", error);

@@ -72,7 +72,7 @@ describe("useScreenshot composable unit tests", () => {
     globalThis.window = mockWindow;
 
     const dummyIframe = { contentWindow: { postMessage: vi.fn() } };
-    const dummyDiv = { querySelector: vi.fn().mockReturnValue(dummyIframe) } as any;
+    const dummyDiv = { querySelector: vi.fn((s) => (s === "iframe" ? dummyIframe : null)) } as any;
 
     // Act
     const capturePromise = sut.captureStream(dummyDiv, "gaules", "twitch");
@@ -115,7 +115,7 @@ describe("useScreenshot composable unit tests", () => {
         }),
       },
     };
-    const dummyDiv = { querySelector: vi.fn().mockReturnValue(dummyIframe) } as any;
+    const dummyDiv = { querySelector: vi.fn((s) => (s === "iframe" ? dummyIframe : null)) } as any;
 
     // Act
     await sut.captureStream(dummyDiv, "gaules", "twitch");
@@ -154,7 +154,7 @@ describe("useScreenshot composable unit tests", () => {
         }),
       },
     };
-    const dummyDiv = { querySelector: vi.fn().mockReturnValue(dummyIframe) } as any;
+    const dummyDiv = { querySelector: vi.fn((s) => (s === "iframe" ? dummyIframe : null)) } as any;
 
     const mockDate = new Date("2026-04-02T13:42:16Z");
     vi.setSystemTime(mockDate);
@@ -199,7 +199,7 @@ describe("useScreenshot composable unit tests", () => {
         }),
       },
     };
-    const dummyDiv = { querySelector: vi.fn().mockReturnValue(dummyIframe) } as any;
+    const dummyDiv = { querySelector: vi.fn((s) => (s === "iframe" ? dummyIframe : null)) } as any;
 
     const mockAnchor = { href: "", download: "", click: vi.fn() };
     globalThis.document = {

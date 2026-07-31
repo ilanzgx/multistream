@@ -35,6 +35,7 @@ const parentHost = computed(() => {
       :key="channel"
       :channel="channel"
       :title="liveStatus?.title"
+      :viewer-count="liveStatus?.viewerCount"
       :avatar-url="profilePicture"
       :is-focused="isStreamFocused"
     />
