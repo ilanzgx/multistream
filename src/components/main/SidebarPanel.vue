@@ -93,6 +93,7 @@ const hasLoadedUnifiedChat = ref(false);
 const hasLoadedTranscript = ref(false);
 
 const { streams } = useStreams();
+const chatableStreams = computed(() => streams.value.filter((s) => s.platform !== "custom"));
 const { unifiedChatState } = useUnifiedChatState();
 const { selectedChat, sidebarOpen } = usePreferences();
 
@@ -114,20 +115,28 @@ watch(
 watch(
   () => streams.value.length,
   (len) => {
-    if (len === 0) return;
-
-    const current = selectedChat.value;
-
-    if (len === 1 && current === UNIFIED_CHAT_ID && streams.value[0]) {
-      selectedChat.value = `${streams.value[0].platform}:${streams.value[0].channel}`;
+    if (len === 0) {
+      if (selectedChat.value !== UNIFIED_CHAT_ID) selectedChat.value = "";
       return;
     }
 
-    const isValidStream = streams.value.some((s) => `${s.platform}:${s.channel}` === current);
+    const current = selectedChat.value;
+    const available = chatableStreams.value;
+
+    if (available.length === 1 && current === UNIFIED_CHAT_ID && available[0]) {
+      selectedChat.value = `${available[0].platform}:${available[0].channel}`;
+      return;
+    }
+
+    const isValidStream = available.some((s) => `${s.platform}:${s.channel}` === current);
     const isUnified = current === UNIFIED_CHAT_ID;
 
-    if (!isUnified && !isValidStream && streams.value[0]) {
-      selectedChat.value = `${streams.value[0].platform}:${streams.value[0].channel}`;
+    if (!isUnified && !isValidStream) {
+      if (available.length > 0) {
+        selectedChat.value = `${available[0].platform}:${available[0].channel}`;
+      } else {
+        selectedChat.value = "";
+      }
     }
   }
 );
@@ -263,7 +272,7 @@ onUnmounted(() => {
             <SelectContent class="bg-[#14161a] border-[#2a2d33]">
               <SelectGroup>
                 <SelectItem
-                  v-for="stream in streams"
+                  v-for="stream in chatableStreams"
                   :key="stream.id"
                   :value="`${stream.platform}:${stream.channel}`"
                   class="text-white focus:bg-[#2a2d33] focus:text-white cursor-pointer"

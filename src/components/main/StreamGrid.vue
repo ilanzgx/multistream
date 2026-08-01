@@ -51,8 +51,10 @@ const pauseIframe = (id: string) => {
 watch(
   streams,
   (newStreams) => {
+    const nextStreams = [...domStreams.value];
+
     // 1. Mark removed streams as dead (DO NOT remove from array)
-    domStreams.value.forEach((ds) => {
+    nextStreams.forEach((ds) => {
       const isStillAlive = newStreams.some((s) => s.id === ds.id);
       if (!isStillAlive && !ds._isDead) {
         ds._isDead = true;
@@ -62,9 +64,9 @@ watch(
 
     // 2. Add new streams
     newStreams.forEach((s) => {
-      const existing = domStreams.value.find((ds) => ds.id === s.id);
+      const existing = nextStreams.find((ds) => ds.id === s.id);
       if (!existing) {
-        domStreams.value.push({ ...s, _isDead: false });
+        nextStreams.push({ ...s, _isDead: false });
       } else if (existing._isDead) {
         // If it was dead and came back (unlikely to have the same ID, but for safety)
         existing._isDead = false;
@@ -74,7 +76,7 @@ watch(
     // 3. Garbage Collector: Remove dead streams
     const activePlatforms = new Set(newStreams.map((s) => s.platform));
 
-    domStreams.value = domStreams.value.filter((ds) => {
+    domStreams.value = nextStreams.filter((ds) => {
       if (!ds._isDead) return true;
 
       // Custom streams always bypass the graveyard
@@ -94,7 +96,8 @@ watch(
 watch(focusedStreamId, async (newId) => {
   if (!newId) return;
   const stream = streams.value.find((s) => s.id === newId);
-  if (stream) setSelectedChat(`${stream.platform}:${stream.channel}`);
+  if (stream && stream.platform !== "custom")
+    setSelectedChat(`${stream.platform}:${stream.channel}`);
 });
 
 // FLIP animation: streams physically slide to their new focus positions

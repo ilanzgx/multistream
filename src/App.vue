@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, defineAsyncComponent } from "vue";
+import { ref, watch, onMounted, onUnmounted } from "vue";
 import { Menu, X } from "@lucide/vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useStreams, type Platform } from "./composables/useStreams";
@@ -13,18 +13,11 @@ import "vue-sonner/style.css";
 import { Toaster } from "./components/ui/sonner";
 import FollowedChannelsSidebar from "./components/main/FollowedChannelsSidebar.vue";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
-const StreamGrid = defineAsyncComponent(() => import("./components/main/StreamGrid.vue"));
-const EmptyState = defineAsyncComponent(() => import("./components/main/EmptyState.vue"));
-
-const OnboardingTour = defineAsyncComponent(
-  () => import("./components/dialogs/OnboardingTour.vue")
-);
-const TwitchAuthDialog = defineAsyncComponent(
-  () => import("./components/dialogs/TwitchAuthDialog.vue")
-);
-const KickAuthDialog = defineAsyncComponent(
-  () => import("./components/dialogs/KickAuthDialog.vue")
-);
+import StreamGrid from "./components/main/StreamGrid.vue";
+import EmptyState from "./components/main/EmptyState.vue";
+import OnboardingTour from "./components/dialogs/OnboardingTour.vue";
+import TwitchAuthDialog from "./components/dialogs/TwitchAuthDialog.vue";
+import KickAuthDialog from "./components/dialogs/KickAuthDialog.vue";
 
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
@@ -149,7 +142,7 @@ watch(streams, (newStreams, oldStreams) => {
     ((oldStreams.length === 0 && newStreams.length === 1) ||
       (oldStreams.length > 1 && newStreams.length === 1))
   ) {
-    const first = newStreams[0];
+    const first = newStreams.find((s) => s.platform !== "custom");
     if (first) {
       setSelectedChat(`${first.platform}:${first.channel}`);
     } else {
