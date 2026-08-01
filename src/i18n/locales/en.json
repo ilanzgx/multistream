@@ -128,7 +128,7 @@
       "recording": "Recording"
     },
     "nativePlayer": {
-      "title": "Custom Player Backend (Experimental)",
+      "title": "Custom Twitch Player (Experimental)",
       "description": "Use the built-in stream engine instead of embedded players. May improve performance and compatibility.",
       "loadError": "Failed to load stream. The custom player may be temporarily unavailable.",
       "videoRefError": "Video element reference not bound",

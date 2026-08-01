@@ -128,7 +128,7 @@
       "recording": "Aufnahme"
     },
     "nativePlayer": {
-      "title": "Benutzerdefinierter Player (Experimentell)",
+      "title": "Benutzerdefinierter Twitch Player (Experimentell)",
       "description": "Die integrierte Stream-Engine anstelle eingebetteter Player verwenden. Kann Leistung und Kompatibilität verbessern.",
       "loadError": "Stream konnte nicht geladen werden. Der benutzerdefinierte Player ist möglicherweise vorübergehend nicht verfügbar.",
       "videoRefError": "Videoelement-Referenz nicht gebunden",

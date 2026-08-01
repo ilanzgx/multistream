@@ -128,7 +128,7 @@
       "recording": "Grabación"
     },
     "nativePlayer": {
-      "title": "Reproductor Personalizado (Experimental)",
+      "title": "Reproductor Twitch Personalizado (Experimental)",
       "description": "Usar el motor de streaming integrado en lugar de reproductores embebidos. Puede mejorar el rendimiento y la compatibilidad.",
       "loadError": "Error al cargar la transmisión. El reproductor personalizado puede estar temporalmente no disponible.",
       "videoRefError": "Referencia del elemento de video no vinculada",

@@ -128,7 +128,7 @@
       "recording": "录制"
     },
     "nativePlayer": {
-      "title": "自定义播放器（实验性）",
+      "title": "Twitch 自定义播放器（实验性）",
       "description": "使用内置流媒体引擎代替嵌入式播放器。可能会提升性能和兼容性。",
       "loadError": "无法加载直播。自定义播放器可能暂时不可用。",
       "videoRefError": "视频元素引用未绑定",

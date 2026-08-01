@@ -123,8 +123,9 @@ watch(
     const current = selectedChat.value;
     const available = chatableStreams.value;
 
-    if (available.length === 1 && current === UNIFIED_CHAT_ID && available[0]) {
-      selectedChat.value = `${available[0].platform}:${available[0].channel}`;
+    const firstAvailable = available[0];
+    if (available.length === 1 && current === UNIFIED_CHAT_ID && firstAvailable) {
+      selectedChat.value = `${firstAvailable.platform}:${firstAvailable.channel}`;
       return;
     }
 
@@ -132,8 +133,9 @@ watch(
     const isUnified = current === UNIFIED_CHAT_ID;
 
     if (!isUnified && !isValidStream) {
-      if (available.length > 0) {
-        selectedChat.value = `${available[0].platform}:${available[0].channel}`;
+      const first = available[0];
+      if (first) {
+        selectedChat.value = `${first.platform}:${first.channel}`;
       } else {
         selectedChat.value = "";
       }

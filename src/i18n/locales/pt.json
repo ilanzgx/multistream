@@ -128,7 +128,7 @@
       "recording": "Gravação"
     },
     "nativePlayer": {
-      "title": "Player Customizado (Experimental)",
+      "title": "Player Twitch Customizado (Experimental)",
       "description": "Usar o motor de stream integrado em vez de players incorporados. Pode melhorar o desempenho e a compatibilidade.",
       "loadError": "Falha ao carregar stream. O player customizado pode estar temporariamente indisponível.",
       "videoRefError": "Referência do elemento de vídeo não vinculada",
