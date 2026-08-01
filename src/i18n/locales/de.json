@@ -393,6 +393,10 @@
     "live": "LIVE",
     "quality": {
       "auto": "Automatisch"
+    },
+    "offline": {
+      "title": "Stream Beendet",
+      "description": "Der Streamer hat diese Übertragung beendet."
     }
   }
 }

@@ -413,7 +413,7 @@ const handleScreenshot = () => {
     <!-- stream controls - appears on hover -->
     <div
       :class="[
-        'absolute z-10 flex flex-col opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none',
+        'absolute z-50 flex flex-col opacity-0 translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 pointer-events-none',
         isMiniaturized ? 'top-1 right-1 gap-1' : 'top-2 right-2 gap-2',
       ]"
     >

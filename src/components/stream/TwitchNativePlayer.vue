@@ -16,7 +16,9 @@ import {
   Minimize,
   Settings,
   Users,
+  VideoOff,
 } from "@lucide/vue";
+import { TwitchIcon } from "@/components/icons";
 
 const props = defineProps<{
   channel: string;
@@ -33,6 +35,7 @@ const videoRef = ref<HTMLVideoElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const isLoading = ref(true);
 const hasError = ref(false);
+const isOffline = ref(false);
 const errorDetails = ref("");
 let hls: Hls | null = null;
 let retryCount = 0;
@@ -185,6 +188,7 @@ async function loadStream() {
   if (isDisposed) return;
   isLoading.value = true;
   hasError.value = false;
+  isOffline.value = false;
   errorDetails.value = "";
 
   try {
@@ -244,6 +248,12 @@ async function loadStream() {
         if (!data.fatal || isDisposed) return;
 
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          if (data.response && data.response.code === 404) {
+            isOffline.value = true;
+            isLoading.value = false;
+            hasError.value = false;
+            return;
+          }
           if (networkRetryCount < 3) {
             networkRetryCount++;
             hls?.startLoad();
@@ -294,6 +304,15 @@ async function loadStream() {
   } catch (err) {
     if (isDisposed) return;
     console.error("[TwitchNativePlayer] Failed to load stream:", err);
+
+    const errStr = String(err).toLowerCase();
+    if (errStr.includes("offline")) {
+      isOffline.value = true;
+      isLoading.value = false;
+      hasError.value = false;
+      return;
+    }
+
     errorDetails.value = String(err);
     if (retryCount < MAX_RETRIES) {
       scheduleRetry();
@@ -336,6 +355,12 @@ function onVideoPlaying() {
 
 function onVideoPaused() {
   isPlaying.value = false;
+}
+
+function onVideoEnded() {
+  isOffline.value = true;
+  isLoading.value = false;
+  hasError.value = false;
 }
 
 onMounted(() => {
@@ -389,6 +414,40 @@ onBeforeUnmount(() => {
       </p>
     </div>
 
+    <!-- Offline Overlay -->
+    <div
+      v-if="isOffline"
+      class="absolute inset-0 flex flex-col items-center justify-center bg-[#0f1115]/90 p-4 text-center z-10 backdrop-blur-sm"
+    >
+      <div class="relative mb-3">
+        <img
+          v-if="props.avatarUrl"
+          :src="props.avatarUrl"
+          :alt="props.channel"
+          class="size-16 rounded-full object-cover ring-4 ring-white/5"
+        />
+        <div
+          v-else
+          class="size-16 rounded-full bg-white/5 flex items-center justify-center ring-4 ring-white/5"
+        >
+          <VideoOff class="size-8 text-gray-500" />
+        </div>
+
+        <!-- Twitch badge -->
+        <div
+          class="absolute -bottom-1 -right-1 bg-[#9146FF] rounded-full p-1 border-[2.5px] border-[#0f1115] flex items-center justify-center shadow-md"
+        >
+          <TwitchIcon class="size-3 text-white" />
+        </div>
+      </div>
+      <p class="text-white font-semibold text-lg tracking-wide mb-1">
+        {{ props.channel }}
+      </p>
+      <p class="text-gray-400 text-sm font-medium">
+        {{ t("nativePlayer.offline.title") }}
+      </p>
+    </div>
+
     <video
       ref="videoRef"
       class="w-full h-full object-contain cursor-pointer"
@@ -398,18 +457,19 @@ onBeforeUnmount(() => {
       :muted="isMuted"
       @play="onVideoPlaying"
       @pause="onVideoPaused"
+      @ended="onVideoEnded"
       @click="handleVideoClick"
     />
 
     <!-- HUD Overlay -->
     <Transition name="hud-fade">
       <div
-        v-show="showControls && !isLoading && !hasError"
+        v-show="showControls && !isLoading && !hasError && !isOffline"
         class="absolute inset-0 pointer-events-none"
       >
         <!-- Top gradient + channel info -->
         <div
-          class="absolute top-0 left-0 right-0 bg-linear-to-b from-black/70 to-transparent px-3 pt-3 pb-8 pointer-events-auto"
+          class="absolute top-0 left-0 right-0 bg-linear-to-b from-black/70 to-transparent px-3 pt-3 pb-8"
         >
           <div class="flex items-center gap-2.5">
             <img

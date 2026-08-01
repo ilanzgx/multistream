@@ -393,6 +393,10 @@
     "live": "AO VIVO",
     "quality": {
       "auto": "Auto"
+    },
+    "offline": {
+      "title": "Transmissão Encerrada",
+      "description": "O streamer encerrou esta transmissão."
     }
   }
 }

@@ -393,6 +393,10 @@
     "live": "LIVE",
     "quality": {
       "auto": "Auto"
+    },
+    "offline": {
+      "title": "Stream Ended",
+      "description": "The broadcaster has ended this stream."
     }
   }
 }

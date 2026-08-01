@@ -393,6 +393,10 @@
     "live": "直播中",
     "quality": {
       "auto": "自动"
+    },
+    "offline": {
+      "title": "直播结束",
+      "description": "主播已结束此直播。"
     }
   }
 }
