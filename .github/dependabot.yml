@@ -15,7 +15,7 @@ updates:
 
   # Cargo/Rust (Backend Tauri)
   - package-ecosystem: "cargo"
-    directory: "/src-tauri"
+    directory: "/apps/desktop/src-tauri"
     schedule:
       interval: "weekly"
       day: "monday"

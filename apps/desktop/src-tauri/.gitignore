@@ -3,6 +3,7 @@
 /target/
 /target_test/
 /gen/schemas
+/binaries
 
 # Playwright
 playwright-report/

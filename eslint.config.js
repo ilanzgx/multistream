@@ -1,6 +1,7 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import pluginVue from "eslint-plugin-vue";
+import eslintPluginAstro from "eslint-plugin-astro";
 import oxlint from "eslint-plugin-oxlint";
 import eslintConfigPrettier from "eslint-config-prettier";
 import globals from "globals";
@@ -10,22 +11,25 @@ export default tseslint.config(
     ignores: [
       "dist/",
       "dist-ssr/",
-      "coverage/",
+      "apps/desktop/coverage/",
       "node_modules/",
-      "src-tauri/",
+      "apps/desktop/src-tauri/",
+      "apps/website/.astro/",
+      "apps/website/dist/",
       "**/*.local",
       "**/*.log",
       "scripts/sync-version.ts",
       ".github/",
-      "playwright-report/",
-      "test-results/",
+      "apps/desktop/playwright-report/",
+      "apps/desktop/test-results/",
     ],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginVue.configs["flat/recommended"],
+  ...eslintPluginAstro.configs.recommended,
   {
-    files: ["**/*.vue", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"],
+    files: ["**/*.vue", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.astro"],
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -34,7 +38,7 @@ export default tseslint.config(
       parserOptions: {
         parser: tseslint.parser,
         sourceType: "module",
-        extraFileExtensions: [".vue"],
+        extraFileExtensions: [".vue", ".astro"],
       },
     },
     rules: {

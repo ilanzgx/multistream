@@ -1,7 +1,7 @@
 {
-  "name": "website",
+  "name": "@multistream/website",
   "type": "module",
-  "version": "0.0.1",
+  "version": "0.18.11",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -9,7 +9,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.3",

@@ -57,7 +57,7 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: "./apps/desktop/src-tauri -> target"
 
       - name: Install dependencies (Ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -72,17 +72,17 @@ jobs:
         if: matrix.platform == 'windows-latest'
         shell: bash
         run: |
-          mkdir -p src-tauri/binaries
+          mkdir -p apps/desktop/src-tauri/binaries
           curl -L -o whisper-temp.zip https://github.com/ggml-org/whisper.cpp/releases/download/v1.8.6/whisper-bin-x64.zip
           unzip whisper-temp.zip -d whisper_temp_ext
 
           # Copy only the strictly necessary binaries.
-          mv whisper_temp_ext/Release/whisper-cli.exe src-tauri/binaries/whisper-cli-x86_64-pc-windows-msvc.exe
-          mv whisper_temp_ext/Release/ggml.dll src-tauri/binaries/
-          mv whisper_temp_ext/Release/ggml-base.dll src-tauri/binaries/
-          mv whisper_temp_ext/Release/ggml-cpu.dll src-tauri/binaries/
-          mv whisper_temp_ext/Release/whisper.dll src-tauri/binaries/
-          mv whisper_temp_ext/Release/SDL2.dll src-tauri/binaries/
+          mv whisper_temp_ext/Release/whisper-cli.exe apps/desktop/src-tauri/binaries/whisper-cli-x86_64-pc-windows-msvc.exe
+          mv whisper_temp_ext/Release/ggml.dll apps/desktop/src-tauri/binaries/
+          mv whisper_temp_ext/Release/ggml-base.dll apps/desktop/src-tauri/binaries/
+          mv whisper_temp_ext/Release/ggml-cpu.dll apps/desktop/src-tauri/binaries/
+          mv whisper_temp_ext/Release/whisper.dll apps/desktop/src-tauri/binaries/
+          mv whisper_temp_ext/Release/SDL2.dll apps/desktop/src-tauri/binaries/
 
           rm -rf whisper-temp.zip whisper_temp_ext
 
@@ -96,13 +96,15 @@ jobs:
           KICK_CLIENT_SECRET: ${{ secrets.KICK_CLIENT_SECRET }}
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
         with:
+          projectPath: "./apps/desktop"
+          tauriScript: "bunx tauri"
           args: --target ${{ matrix.target }}
 
       - name: Debug - List bundle directory
         shell: bash
         run: |
-          echo "=== Listing src-tauri/target ==="
-          find src-tauri/target -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.sig" \) 2>/dev/null || echo "No files found in src-tauri/target"
+          echo "=== Listing apps/desktop/src-tauri/target ==="
+          find apps/desktop/src-tauri/target -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.sig" \) 2>/dev/null || echo "No files found in apps/desktop/src-tauri/target"
           echo "=== Listing target ==="
           find target -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.tar.gz" -o -name "*.sig" \) 2>/dev/null || echo "No files found in target"
 
@@ -111,7 +113,7 @@ jobs:
         run: |
           mkdir -p renamed-artifacts
 
-          BUNDLE_PATH="src-tauri/target/${{ matrix.target }}/release/bundle"
+          BUNDLE_PATH="apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle"
           if [ ! -d "$BUNDLE_PATH" ]; then
             BUNDLE_PATH="target/${{ matrix.target }}/release/bundle"
           fi

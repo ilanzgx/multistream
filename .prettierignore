@@ -3,7 +3,7 @@ node_modules/
 dist/
 dist-ssr/
 coverage/
-src-tauri/
+apps/desktop/src-tauri/
 
 # Ignore locks and temporary files
 bun.lock

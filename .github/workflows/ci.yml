@@ -28,16 +28,18 @@ jobs:
         run: bun run lint
 
       - name: Type Check
-        run: bunx vue-tsc -b
+        working-directory: ./apps/desktop
+        run: bun run typecheck
 
       - name: Build
+        working-directory: ./apps/desktop
         run: bun run build
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: apps/desktop/dist/
           retention-days: 1
 
   lighthouse:
@@ -52,13 +54,13 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist
-          path: dist/
+          path: apps/desktop/dist/
 
       - name: Run Lighthouse CI
         id: lhci
         uses: treosh/lighthouse-ci-action@v12
         with:
-          configPath: ./lighthouserc.json
+          configPath: ./apps/desktop/lighthouserc.json
           uploadArtifacts: true
           artifactName: lighthouse-reports
 
@@ -80,6 +82,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Unit Tests
+        working-directory: ./apps/desktop
         run: bun run test
 
   rust:
@@ -102,13 +105,13 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "./src-tauri -> target"
+          workspaces: "./apps/desktop/src-tauri -> target"
 
       - name: Cargo Check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
+        run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml
 
       - name: Cargo Clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings
+        run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings
 
   e2e:
     name: E2E Tests (Playwright)
@@ -127,6 +130,7 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run E2E tests
+        working-directory: ./apps/desktop
         run: bun run test:e2e
 
       - name: Upload Playwright report
@@ -134,7 +138,7 @@ jobs:
         if: always()
         with:
           name: playwright-report
-          path: playwright-report/
+          path: apps/desktop/playwright-report/
           retention-days: 7
 
   website:
@@ -150,10 +154,10 @@ jobs:
       - name: Install root dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install website dependencies
-        working-directory: ./website
-        run: bun install --frozen-lockfile
+      - name: Type Check
+        working-directory: ./apps/website
+        run: bun run check
 
       - name: Build
-        working-directory: ./website
+        working-directory: ./apps/website
         run: bun run build
