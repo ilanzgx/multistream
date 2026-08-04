@@ -27,10 +27,10 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 - **Account Authentication & Unified Chat**: Log in to your Twitch and Kick accounts securely and read both chats together in one place, directly in the app. Free, no subscription. Supports 7TV, BTTV, and platform emotes.
 - **Direct from the source**: Streams load from the official players, so your views count and quality is exactly the same as on the platform itself.
 - **Lightweight**: Built with [Tauri](https://tauri.app/) and [Rust](https://www.rust-lang.org/), so memory usage is a fraction of what any browser-based alternative would use.
-- **Local stream recording**: *(Windows only)* Record streams directly from the source using [Streamlink](https://streamlink.github.io/). Recordings are processed natively without heavy sidecars, keeping the app extremely lightweight, and are automatically remuxed to MP4 when finished.
+- **Local stream recording**: _(Windows only)_ Record streams directly from the source using [Streamlink](https://streamlink.github.io/). Recordings are processed natively without heavy sidecars, keeping the app extremely lightweight, and are automatically remuxed to MP4 when finished.
 - **Available in 6 languages**: English, Portuguese, Spanish, German, Russian, and Chinese.
 - **Cross-platform**: Works on Windows, macOS, and Linux.
-- **Local AI transcription**: *(Windows only)* Real-time transcription powered by [Whisper.cpp](https://github.com/ggerganov/whisper.cpp), running fully offline on your CPU. Useful for streams in languages you don't speak. No API keys, no costs, no audio ever leaves your machine.
+- **Local AI transcription**: _(Windows only)_ Real-time transcription powered by [Whisper.cpp](https://github.com/ggerganov/whisper.cpp), running fully offline on your CPU. Useful for streams in languages you don't speak. No API keys, no costs, no audio ever leaves your machine.
 
 ### Built with
 
@@ -56,14 +56,15 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
    bun install
    ```
 3. Set up environment variables (required for Kick chat login)
-   Create a `.env` file inside `src-tauri/` and add your Kick app credentials:
+   Create a `.env` file inside `apps/desktop/src-tauri/` and add your Kick app credentials:
    ```env
    KICK_CLIENT_ID=your_client_id
    KICK_CLIENT_SECRET=your_client_secret
+   TWITCH_CLIENT_ID=your_client_id
    ```
 4. Start in development mode
    ```sh
-   bun run tauri:dev
+   bun run dev:desktop:tauri
    ```
 
 ## License

@@ -1,4 +1,4 @@
-# Multistream — Rust Backend (`src-tauri`)
+# Multistream — Rust Backend (`apps/desktop/src-tauri`)
 
 Backend of the Multistream application, built with [Tauri 2](https://v2.tauri.app/) and Rust. Responsible for OAuth authentication, real-time chat, audio transcription, and exposing IPC commands to the Vue frontend.
 
