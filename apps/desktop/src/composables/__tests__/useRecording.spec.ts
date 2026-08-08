@@ -165,4 +165,88 @@ describe("useRecording", () => {
     expect(orphans.value).toHaveLength(0);
     scope.stop();
   });
+  it("should check dependencies and update state", async () => {
+    // Arrange
+    const scope = effectScope();
+    const { checkDependencies, isDependenciesInstalled } = scope.run(() => useRecording())!;
+    vi.mocked(invoke).mockImplementation(async (cmd) => {
+      if (cmd === "recording_check_dependencies") return true;
+      if (cmd === "scan_orphans") return [];
+      return null;
+    });
+
+    // Act
+    const result = await checkDependencies();
+
+    // Assert
+    expect(result).toBe(true);
+    expect(isDependenciesInstalled.value).toBe(true);
+    expect(invoke).toHaveBeenCalledWith("recording_check_dependencies");
+    expect(invoke).toHaveBeenCalledWith("scan_orphans", { outputDir: null });
+    scope.stop();
+  });
+
+  it("should handle installDependencies success", async () => {
+    // Arrange
+    const scope = effectScope();
+    const { installDependencies, isDependenciesInstalled } = scope.run(() => useRecording())!;
+    vi.mocked(invoke).mockResolvedValueOnce(undefined);
+
+    // Act
+    await installDependencies();
+
+    // Assert
+    expect(isDependenciesInstalled.value).toBe(true);
+    expect(toast.success).toHaveBeenCalledWith("settings.recording.installSuccess");
+    expect(invoke).toHaveBeenCalledWith("recording_install_dependencies");
+    scope.stop();
+  });
+
+  it("should handle installDependencies error", async () => {
+    // Arrange
+    const scope = effectScope();
+    const { installDependencies, isDependenciesInstalled } = scope.run(() => useRecording())!;
+    vi.mocked(invoke).mockRejectedValueOnce(new Error("Network error"));
+
+    // Act
+    await installDependencies();
+
+    // Assert
+    expect(isDependenciesInstalled.value).toBe(false);
+    expect(toast.error).toHaveBeenCalledWith("settings.recording.installError");
+    expect(invoke).toHaveBeenCalledWith("recording_install_dependencies");
+    scope.stop();
+  });
+
+  it("should uninstall dependencies successfully", async () => {
+    // Arrange
+    const scope = effectScope();
+    const { uninstallDependencies, isDependenciesInstalled } = scope.run(() => useRecording())!;
+    isDependenciesInstalled.value = true;
+    vi.mocked(invoke).mockResolvedValueOnce(undefined);
+
+    // Act
+    await uninstallDependencies();
+
+    // Assert
+    expect(isDependenciesInstalled.value).toBe(false);
+    expect(toast.success).toHaveBeenCalledWith("settings.recording.uninstallSuccess");
+    expect(invoke).toHaveBeenCalledWith("recording_uninstall_dependencies");
+    scope.stop();
+  });
+
+  it("should get env size", async () => {
+    // Arrange
+    const scope = effectScope();
+    const { getEnvSize } = scope.run(() => useRecording())!;
+    vi.mocked(invoke).mockResolvedValueOnce(184000000);
+
+    // Act
+    const size = await getEnvSize();
+
+    // Assert
+    expect(size).toBe(184000000);
+    expect(invoke).toHaveBeenCalledWith("recording_get_env_size");
+    scope.stop();
+  });
 });

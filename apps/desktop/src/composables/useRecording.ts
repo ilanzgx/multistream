@@ -57,6 +57,10 @@ function stopTickerIfIdle() {
 export function __test_resetState() {
   recordings.clear();
   orphans.value = [];
+  isDependenciesInstalled.value = false;
+  isDownloadingDependencies.value = false;
+  downloadDependenciesProgress.value = 0;
+  downloadDependenciesStep.value = "";
   if (tickerHandle !== null) {
     clearInterval(tickerHandle);
     tickerHandle = null;
@@ -314,6 +318,27 @@ const _useRecording = () => {
     }
   }
 
+  async function uninstallDependencies(): Promise<void> {
+    try {
+      await invoke("recording_uninstall_dependencies");
+      isDependenciesInstalled.value = false;
+      toast.success(
+        t("settings.recording.uninstallSuccess", "Dependencies uninstalled successfully")
+      );
+    } catch (e) {
+      toast.error(t("settings.recording.uninstallError", { error: String(e) }));
+    }
+  }
+
+  async function getEnvSize(): Promise<number> {
+    try {
+      return await invoke<number>("recording_get_env_size");
+    } catch (e) {
+      console.error("Failed to get env size:", e);
+      return 0;
+    }
+  }
+
   return {
     recordings,
     orphans,
@@ -330,6 +355,8 @@ const _useRecording = () => {
     dismissOrphan,
     checkDependencies,
     installDependencies,
+    uninstallDependencies,
+    getEnvSize,
   };
 };
 

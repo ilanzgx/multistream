@@ -51,13 +51,8 @@ import { Slider } from "@/components/ui/slider";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
 
 const { checkForUpdates, isChecking } = useUpdater();
-const {
-  notificationsEnabled,
-  recordingEnabled,
-  recordingQuality,
-  recordingPath,
-  nativePlayerEnabled,
-} = usePreferences();
+const { notificationsEnabled, recordingQuality, recordingPath, nativePlayerEnabled } =
+  usePreferences();
 const { locale, t } = useI18n();
 
 import { useRecording } from "@/composables/useRecording";
@@ -71,8 +66,36 @@ const {
   downloadDependenciesStep,
   checkDependencies,
   installDependencies,
+  uninstallDependencies,
+  getEnvSize,
   openFolder,
 } = useRecording();
+
+const envSize = ref<number>(0);
+
+const showUninstallConfirm = ref(false);
+
+const requestUninstall = () => {
+  showUninstallConfirm.value = true;
+};
+
+const confirmUninstall = () => {
+  uninstallDependencies();
+};
+
+const fetchEnvSize = async () => {
+  if (isDependenciesInstalled.value) {
+    envSize.value = await getEnvSize();
+  }
+};
+
+watch(isDependenciesInstalled, (installed) => {
+  if (installed) {
+    fetchEnvSize();
+  } else {
+    envSize.value = 0;
+  }
+});
 
 const showDismissConfirm = ref(false);
 const pendingDismissId = ref<string | null>(null);
@@ -97,7 +120,9 @@ onMounted(() => {
     invoke<boolean>("is_recording_supported_cmd").then((v) => {
       isRecordingSupported.value = v;
       if (props.open && v) {
-        checkDependencies();
+        checkDependencies().then((installed) => {
+          if (installed) fetchEnvSize();
+        });
       }
     });
   }
@@ -328,7 +353,9 @@ watch(
   () => props.open,
   (isOpen) => {
     if (isOpen && isRunningInTauri && isRecordingSupported.value) {
-      checkDependencies();
+      checkDependencies().then((installed) => {
+        if (installed) fetchEnvSize();
+      });
     }
   },
   { immediate: true }
@@ -921,11 +948,25 @@ watch(
                 </div>
               </div>
               <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
-                <Switch
-                  v-if="isDependenciesInstalled"
-                  v-model="recordingEnabled"
-                  :disabled="!isRecordingSupported"
-                />
+                <template v-if="isDependenciesInstalled">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[10px] text-gray-400 font-mono">
+                      {{ (envSize / 1024 / 1024).toFixed(1) }} MB
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33]"
+                      :disabled="!isRecordingSupported"
+                      @click="requestUninstall"
+                    >
+                      <Trash2 class="size-4 mr-1.5" />
+                      {{
+                        $t("settings.recording.uninstallDependencies", "Desinstalar funcionalidade")
+                      }}
+                    </Button>
+                  </div>
+                </template>
                 <Button
                   v-else-if="!isDownloadingDependencies"
                   size="sm"
@@ -956,7 +997,7 @@ watch(
             <div
               class="space-y-2"
               :class="{
-                'opacity-50 pointer-events-none': !recordingEnabled || !isDependenciesInstalled,
+                'opacity-50 pointer-events-none': !isDependenciesInstalled,
               }"
             >
               <div class="flex items-center gap-2 px-1">
@@ -1008,7 +1049,7 @@ watch(
             <div
               class="space-y-2"
               :class="{
-                'opacity-50 pointer-events-none': !recordingEnabled || !isDependenciesInstalled,
+                'opacity-50 pointer-events-none': !isDependenciesInstalled,
               }"
             >
               <div class="flex items-center gap-2 px-1">
@@ -1165,6 +1206,22 @@ watch(
       variant="destructive"
       @update:open="showDismissConfirm = $event"
       @confirm="confirmDismiss"
+    />
+
+    <ConfirmDialog
+      :open="showUninstallConfirm"
+      :title="$t('settings.recording.uninstallConfirmTitle', 'Desinstalar funcionalidade?')"
+      :description="
+        $t(
+          'settings.recording.uninstallConfirmDescription',
+          'Isso removerá o ambiente isolado do gravador e liberará espaço. Você poderá instalar novamente mais tarde.'
+        )
+      "
+      :confirm-text="$t('settings.recording.uninstallConfirmButton', 'Desinstalar')"
+      :cancel-text="$t('common.close')"
+      variant="destructive"
+      @update:open="showUninstallConfirm = $event"
+      @confirm="confirmUninstall"
     />
   </Dialog>
 </template>
