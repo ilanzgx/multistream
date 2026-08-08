@@ -170,9 +170,9 @@ export const platformConfigs = {
 
 ### D. TypeScript Anti-Patterns to Avoid
 
-- ❌ **No Untyped `any`:** Use `unknown` or explicit generics when type is uncertain.
-- ❌ **No Non-Null Assertions (`!`):** Prefer early returns or optional chaining (`?.`).
-- ❌ **No Type Casting Overuse (`as X`):** Rely on type guards or explicit validation functions instead of forcing types.
+- **No Untyped `any`:** Use `unknown` or explicit generics when type is uncertain.
+- **No Non-Null Assertions (`!`):** Prefer early returns or optional chaining (`?.`).
+- **No Type Casting Overuse (`as X`):** Rely on type guards or explicit validation functions instead of forcing types.
 
 ---
 
@@ -262,9 +262,9 @@ describe("useExample composable unit tests", () => {
 
 ### A. UI / Interface Checklist (Building Components & Layouts)
 
-1. 🎨 **Design System Check:** Does it strictly use the neutral dark palette (`#0f1115`, `#14161a`, `#1f2227`, `#2a2d33`) and `src/components/ui/` primitives?
-2. 🌐 **i18n Parity Check:** Are ALL user-facing strings registered in **ALL 6 JSON files** (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`)?
-3. ♿ **Accessibility (a11y) Check:**
+1. **Design System Check:** Does it strictly use the neutral dark palette (`#0f1115`, `#14161a`, `#1f2227`, `#2a2d33`) and `src/components/ui/` primitives?
+2. **Strict i18n Parity Check:** You MUST pay extra attention and double-check your work to ensure strict parity across ALL 6 JSON files (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`) before considering any UI implementation complete. Do not rely solely on Vue `$t` fallbacks.
+3. **Accessibility (a11y) Check:**
    - Are icon-only buttons labeled with `aria-label`?
    - Are decorative icons hidden with `aria-hidden="true"`?
    - Is keyboard focus ring visible on `Tab` focus?
@@ -272,12 +272,12 @@ describe("useExample composable unit tests", () => {
 
 ### B. Type Safety Checklist
 
-1. 🛡️ **No `any` or `!`:** Are inputs and refs properly typed without `any` or non-null assertions?
-2. 🔀 **Discriminated Unions:** Are async/component states modeled with explicit status discriminators?
-3. 🔒 **Literal Types:** Are constants defined with `as const` or validated via `satisfies`?
+1. **No `any` or `!`:** Are inputs and refs properly typed without `any` or non-null assertions?
+2. **Discriminated Unions:** Are async/component states modeled with explicit status discriminators?
+3. **Literal Types:** Are constants defined with `as const` or validated via `satisfies`?
 
 ### C. Stateful Feature Checklist (Adding Logic & Workflows)
 
-1. ⚙️ **Composable:** Create or update composable in `src/composables/`.
-2. 🧪 **Unit Test (AAA):** Write comprehensive unit tests in `src/composables/__tests__/` with `// Arrange`, `// Act`, `// Assert`.
-3. 🎨 **Connect UI:** Wire the composable into the UI component following the UI and Type Safety checklists above.
+1. **Composable:** Create or update composable in `src/composables/`.
+2. **Unit Test (AAA):** Write comprehensive unit tests in `src/composables/__tests__/` with `// Arrange`, `// Act`, `// Assert`.
+3. **Connect UI:** Wire the composable into the UI component following the UI and Type Safety checklists above.

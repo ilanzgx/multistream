@@ -200,9 +200,10 @@ mod tests {
 
 Before completing any backend modification in `apps/desktop/src-tauri/`:
 
-1. 📖 **Read Subsystem Docs:** Consult [`apps/desktop/src-tauri/README.md`](apps/desktop/src-tauri/README.md) for detailed flowcharts and API tables for Twitch, Kick, Whisper, and Recording subsystems.
-2. 🧪 **Check Compilation:** Run `cargo check` inside `apps/desktop/src-tauri/` to verify zero compiler errors or warnings.
-3. 🛡️ **Check Security & Headers:** Ensure `reqwest` uses `rustls-tls` and passes a valid Chrome `User-Agent`.
-4. 🔒 **No Unwraps in Production:** Replace `unwrap()` with `?`, `match`, or `.expect("descriptive failure reason")`.
-5. 📝 **Sync Command in `lib.rs`:** Ensure any new `#[tauri::command]` function is registered in `tauri::generate_handler![...]` in `lib.rs` AND in capability permissions (`capabilities/default.json`).
-6. ⚡ **Write Unit Tests:** Verify all parsing or data manipulation functions with `cargo test` using explicit `// Arrange`, `// Act`, `// Assert` blocks.
+1. **Read Subsystem Docs:** Consult [`apps/desktop/src-tauri/README.md`](apps/desktop/src-tauri/README.md) for detailed flowcharts and API tables for Twitch, Kick, Whisper, and Recording subsystems.
+2. **Check Compilation:** Run `cargo check` inside `apps/desktop/src-tauri/` to verify zero compiler errors or warnings.
+3. **Check Security & Headers:** Ensure `reqwest` uses `rustls-tls` and passes a valid Chrome `User-Agent`.
+4. **No Unwraps in Production:** Replace `unwrap()` with `?`, `match`, or `.expect("descriptive failure reason")`.
+5. **Sync Command in `lib.rs`:** Ensure any new `#[tauri::command]` function is registered in `tauri::generate_handler![...]` in `lib.rs` AND in capability permissions (`capabilities/default.json`).
+6. **Write Unit Tests:** Verify all parsing or data manipulation functions with `cargo test` using explicit `// Arrange`, `// Act`, `// Assert` blocks.
+7. **NEVER FORGET TESTS:** Whenever you add a new feature, a new rule, or modify existing behavior, you MUST add or update the corresponding tests. Never wait to be asked. NEVER delete tests.

@@ -64,7 +64,7 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
    ```
 4. Start in development mode
    ```sh
-   bun run dev:desktop:tauri
+   bun run desktop:tauri:dev
    ```
 
 ## License

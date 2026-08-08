@@ -110,8 +110,8 @@ Run commands from the repository root or inside `apps/website/`:
 
 Before committing changes to `apps/website/`:
 
-1. 🌐 **i18n Parity:** Ensure every text key added to `src/i18n/ui.ts` exists in both `en` and `pt-br`.
-2. 📐 **Type Check:** Run `bun run check --filter @multistream/website` (`astro check`) to verify zero TypeScript errors in `.astro` and `.ts` files.
-3. 📱 **Responsive Design:** Verify layouts on mobile (375px), tablet (768px), and desktop (1280px).
-4. ♿ **Accessibility (a11y):** Ensure interactive elements have `aria-label` or focus indicators (`focus-visible`).
-5. ⚡ **Zero Console Errors:** Verify that client-side scripts in `Hero.astro` and `Changelog.astro` handle network timeouts gracefully.
+1. **i18n Parity:** Ensure every text key added to `src/i18n/ui.ts` exists in both `en` and `pt-br`.
+2. **Type Check:** Run `bun run check --filter @multistream/website` (`astro check`) to verify zero TypeScript errors in `.astro` and `.ts` files.
+3. **Responsive Design:** Verify layouts on mobile (375px), tablet (768px), and desktop (1280px).
+4. **Accessibility (a11y):** Ensure interactive elements have `aria-label` or focus indicators (`focus-visible`).
+5. **Zero Console Errors:** Verify that client-side scripts in `Hero.astro` and `Changelog.astro` handle network timeouts gracefully.

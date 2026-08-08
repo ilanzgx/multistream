@@ -30,6 +30,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 - **[`multistream-website`](.agents/skills/website/SKILL.md)**: Pragmatic architecture guide, Astro SSG setup, Tailwind CSS v4 styling, i18n, Deep Link Gateway, and dynamic GitHub release links for the website (`apps/website/`).
 - **[`multistream-desktop-frontend-testing`](.agents/skills/desktop-frontend-testing/SKILL.md)**: Comprehensive guide, AAA pattern, Tauri IPC mocking, fake timers, and best practices for writing unit tests in `apps/desktop/src/`.
 - **[`multistream-graveyard`](.agents/skills/graveyard/SKILL.md)**: Explains the Multistream Graveyard mechanism, how it works, and why it is necessary to prevent WebView IPC crashes.
+
 ## Tech Stack
 
 - **Frontend Framework:** [Vue 3](https://vuejs.org/)
@@ -47,16 +48,17 @@ This repository contains custom, specialized skills for AI Agents located in the
 
 ### Commands
 
-| Action           | Command                 |
-| :--------------- | :---------------------- |
-| **Dev (Tauri)**  | `bun run dev:desktop:tauri` |
-| **Build (Tauri)**| `bun run build:desktop:tauri` |
-| **Tests (Unit)** | `bun run --filter @multistream/desktop test` |
-| **Coverage**     | `bun run --filter @multistream/desktop test:coverage` |
-| **Tests (E2E)**  | `bun run --filter @multistream/desktop test:e2e` |
-| **Tests (UI)**   | `bun run --filter @multistream/desktop test:e2e:ui` |
-| **Type Check**   | `bun run --filter @multistream/desktop typecheck` |
-| **Linting**      | `bun run lint`          |
+| Action                  | Command                              |
+| :---------------------- | :----------------------------------- |
+| **Dev (Tauri)**         | `bun run desktop:tauri:dev`          |
+| **Build (Tauri)**       | `bun run desktop:build:tauri`        |
+| **Tests (Unit)**        | `bun run desktop:test`               |
+| **Tests (Unit Single)** | `bun run desktop:test -- <filename>` |
+| **Coverage**            | `bun run desktop:test:coverage`      |
+| **Tests (E2E)**         | `bun run desktop:test:e2e`           |
+| **Tests (UI)**          | `bun run desktop:test:e2e:ui`        |
+| **Type Check**          | `bun run desktop:typecheck`          |
+| **Linting**             | `bun run lint`                       |
 
 ## Architecture & Conventions
 
@@ -67,7 +69,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 
 ### Frontend Structure (`apps/desktop/src/`)
 
-*(See [`multistream-desktop-frontend`](.agents/skills/desktop-frontend/SKILL.md) for full guide)*
+_(See [`multistream-desktop-frontend`](.agents/skills/desktop-frontend/SKILL.md) for full guide)_
 
 - `components/`: UI components (primitives, chat, streams, dialogs).
 - `composables/`: Shared reactive logic (favorites, live status, stream management).
@@ -77,7 +79,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 
 ### Backend Structure (`apps/desktop/src-tauri/`)
 
-*(See [`multistream-desktop-backend`](.agents/skills/desktop-backend/SKILL.md) for full guide)*
+_(See [`multistream-desktop-backend`](.agents/skills/desktop-backend/SKILL.md) for full guide)_
 
 - `src/`: Rust backend source code.
   - `audio/`: System audio loopback capture logic and transcription pipeline/sidecar management.
@@ -94,7 +96,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 
 ### Landing Page (`apps/website/`)
 
-*(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)*
+_(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
 
 - **Framework:** Built with Astro (Static output mode).
 - **Design:** Minimalist, using Tailwind CSS v4.
@@ -162,6 +164,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 
 - **Internationalization (i18n):**
   - **Always translate UI text:** Every new user-facing text string must be localized. Always remember to add the translations to all 6 supported languages in `apps/desktop/src/i18n/locales/` (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`).
+  - **Pre-Flight Checklist:** You MUST pay extra attention and double-check your work to ensure strict parity across ALL 6 files before considering any UI implementation complete. Do not rely solely on Vue `$t` fallbacks.
 
 - **UI Components (shadcn-vue):**
   - ALWAYS use shadcn-vue components whenever possible. However, carefully evaluate the trade-off between the component's size/performance and simpler native or lightweight alternatives, choosing what is best for the specific context.

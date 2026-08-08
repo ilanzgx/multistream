@@ -1,9 +1,9 @@
 #!/bin/sh
 echo "Type checking..."
-bun run typecheck:desktop
+bun run desktop:typecheck
 
 echo "Running unit tests..."
-bun run test:desktop
+bun run desktop:test
 
 echo "Running cargo clippy..."
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings

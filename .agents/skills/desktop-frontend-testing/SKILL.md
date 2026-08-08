@@ -32,11 +32,12 @@ it("should update favorite channel state", () => {
 ---
 
 ### B. The 5 Iron Laws of Testing
-1. 🔒 **Strict State Isolation:** Clear `localStorage`, reset mocks with `vi.clearAllMocks()`, and reset composable singleton state in `beforeEach()`. Unstub globals in `afterEach()`.
-2. 🎯 **Assert Specific Outcomes:** Use `.toBe("expected")`, `.toEqual({...})`, or `.toThrow(...)`. NEVER rely on `.toBeTruthy()` or `.toBeDefined()` alone.
-3. 📦 **Test Behavior, Not Implementation:** Assert reactive `ref` values, returned objects, and IPC calls — do not inspect unexposed internal closure variables.
-4. 🛑 **Zero Order Dependencies:** Each test case MUST run independently in any order without relying on previous test executions.
-5. 🛡️ **No Production Data / Live APIs:** Mock all Tauri IPC commands (`invoke`), event listeners (`listen`), and HTTP calls (`fetch`).
+1. **Strict State Isolation:** Clear `localStorage`, reset mocks with `vi.clearAllMocks()`, and reset composable singleton state in `beforeEach()`. Unstub globals in `afterEach()`.
+2. **Assert Specific Outcomes:** Use `.toBe("expected")`, `.toEqual({...})`, or `.toThrow(...)`. NEVER rely on `.toBeTruthy()` or `.toBeDefined()` alone.
+3. **Test Behavior, Not Implementation:** Assert reactive `ref` values, returned objects, and IPC calls — do not inspect unexposed internal closure variables.
+4. **Zero Order Dependencies:** Each test case MUST run independently in any order without relying on previous test executions.
+5. **No Production Data / Live APIs:** Mock all Tauri IPC commands (`invoke`), event listeners (`listen`), and HTTP calls (`fetch`).
+6. **NEVER FORGET TESTS:** Whenever you add a new feature, a new rule, or modify existing behavior, you MUST add or update the corresponding tests. Never wait to be asked. NEVER delete tests.
 
 ---
 
@@ -198,9 +199,9 @@ Execute Vitest test commands from the monorepo root:
 
 | Purpose | Command |
 | :--- | :--- |
-| **Run All Unit Tests** | `bun run --filter @multistream/desktop test` |
-| **Run Single Test File** | `bun run --filter @multistream/desktop test useFavorites.spec.ts` |
-| **Check Test Coverage** | `bun run --filter @multistream/desktop test:coverage` |
+| **Run All Unit Tests** | `bun run desktop:test` |
+| **Run Single Test File** | `bun run desktop:test useFavorites.spec.ts` |
+| **Check Test Coverage** | `bun run desktop:test:coverage` |
 
 ---
 
@@ -208,7 +209,7 @@ Execute Vitest test commands from the monorepo root:
 
 Before submitting any new test file or test case:
 
-1. 🏷️ **AAA Pattern:** Are all test cases explicitly commented with `// Arrange`, `// Act`, and `// Assert`?
-2. 🧹 **Mock Leak Prevention:** Does `afterEach()` call `scope.stop()`, `vi.useRealTimers()`, or `vi.unstubAllGlobals()` if timers/globals were mocked?
-3. 🎯 **Specific Assertions:** Are expectations testing exact values (`expect(val).toBe(...)`) instead of loose boolean checks?
-4. ⚡ **Execution Check:** Did you run `bun run --filter @multistream/desktop test` to confirm all tests pass cleanly without errors or warnings?
+1. **AAA Pattern:** Are all test cases explicitly commented with `// Arrange`, `// Act`, and `// Assert`?
+2. **Mock Leak Prevention:** Does `afterEach()` call `scope.stop()`, `vi.useRealTimers()`, or `vi.unstubAllGlobals()` if timers/globals were mocked?
+3. **Specific Assertions:** Are expectations testing exact values (`expect(val).toBe(...)`) instead of loose boolean checks?
+4. **Execution Check:** Did you run `bun run desktop:test` to confirm all tests pass cleanly without errors or warnings?
