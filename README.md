@@ -38,6 +38,25 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 - [Tauri 2](https://v2.tauri.app/)
 - [Tailwind CSS](https://tailwindcss.com/)
 
+## Important for macOS Users
+
+As a free, open-source project, Multistream is distributed without a paid Apple Developer certificate. This causes macOS Gatekeeper to flag the application as "damaged" by default.
+
+If you see the error _"Multistream is damaged and can't be opened"_, you have two options:
+
+**1. Install via Homebrew (Recommended):**
+
+```sh
+brew install --cask ilanzgx/multistream/multistream
+```
+
+**2. Fix manually after downloading the DMG:**
+
+Move `Multistream.app` to your `/Applications` folder, then run:
+```sh
+xattr -dr com.apple.quarantine /Applications/Multistream.app
+```
+
 ## Getting started
 
 ### Prerequisites
