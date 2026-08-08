@@ -5,12 +5,12 @@ use tauri::{AppHandle, Emitter, Manager};
 use zip::ZipArchive;
 
 const PYTHON_URL: &str = "https://www.python.org/ftp/python/3.11.8/python-3.11.8-embed-amd64.zip";
-const GET_PIP_URL: &str = "https://bootstrap.pypa.io/get-pip.py";
+const GET_PIP_URL: &str = "https://raw.githubusercontent.com/pypa/get-pip/f6f644156f23dfe9acc06e7b9ca75eee311f2e37/public/get-pip.py";
 const FFMPEG_URL: &str =
     "https://github.com/GyanD/codexffmpeg/releases/download/7.1/ffmpeg-7.1-essentials_build.zip";
 
 const PYTHON_SHA256: &str = "6347068ca56bf4dd6319f7ef5695f5a03f1ade3e9aa2d6a095ab27faa77a1290";
-const GET_PIP_SHA256: &str = "a341e1a43e38001c551a1508a73ff23636a11970b61d901d9a1cad2a18f57055";
+const GET_PIP_SHA256: &str = "fb24e693bab954209a063d90953621412ccad4a500905a726286e038f508ddf6";
 const FFMPEG_SHA256: &str = "fa7d4d7e795db0e2503f49f105f46ed5852386f0cfdd819899be3b65ebde24fc";
 
 fn verify_hash(bytes: &[u8], expected_hash: &str) -> Result<(), String> {
@@ -67,6 +67,47 @@ pub async fn recording_check_dependencies(app: tauri::AppHandle) -> Result<bool,
     let streamlink_exe = env_dir.join("Scripts").join("streamlink.exe");
 
     Ok(python_exe.exists() && ffmpeg_exe.exists() && streamlink_exe.exists())
+}
+
+#[tauri::command]
+pub async fn recording_get_env_size(app: tauri::AppHandle) -> Result<u64, String> {
+    let env_dir = get_recording_env_dir(&app)?;
+    if !env_dir.exists() {
+        return Ok(0);
+    }
+
+    let mut total_size = 0;
+
+    // We can use a simple walkdir or just recursion. Standard library `fs::read_dir` recursion:
+    fn get_size(path: &Path) -> std::io::Result<u64> {
+        let mut size = 0;
+        if path.is_dir() {
+            for entry in fs::read_dir(path)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_dir() {
+                    size += get_size(&path)?;
+                } else {
+                    size += entry.metadata()?.len();
+                }
+            }
+        } else {
+            size += path.metadata()?.len();
+        }
+        Ok(size)
+    }
+
+    total_size = get_size(&env_dir).map_err(|e| e.to_string())?;
+    Ok(total_size)
+}
+
+#[tauri::command]
+pub async fn recording_uninstall_dependencies(app: tauri::AppHandle) -> Result<(), String> {
+    let env_dir = get_recording_env_dir(&app)?;
+    if env_dir.exists() {
+        fs::remove_dir_all(&env_dir).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 async fn download_file(url: &str) -> Result<Vec<u8>, String> {

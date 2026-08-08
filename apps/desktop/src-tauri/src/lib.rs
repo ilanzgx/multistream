@@ -31,7 +31,10 @@ use recording::commands::{
     dismiss_orphan_recording, is_recording, is_recording_supported_cmd, list_recordings,
     open_recording_folder, recover_orphan_recording, scan_orphans, start_recording, stop_recording,
 };
-use recording::installer::{recording_check_dependencies, recording_install_dependencies};
+use recording::installer::{
+    recording_check_dependencies, recording_get_env_size, recording_install_dependencies,
+    recording_uninstall_dependencies,
+};
 use recording::RecordingManager;
 
 // fixed port
@@ -127,6 +130,8 @@ pub fn run() {
             is_recording_supported_cmd,
             recording_check_dependencies,
             recording_install_dependencies,
+            recording_uninstall_dependencies,
+            recording_get_env_size,
             scan_orphans,
         ])
         .setup(move |app| {
