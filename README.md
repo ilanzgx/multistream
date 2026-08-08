@@ -52,8 +52,9 @@ brew install --cask ilanzgx/multistream/multistream
 
 **2. Fix manually after downloading the DMG:**
 
+Move `Multistream.app` to your `/Applications` folder, then run:
 ```sh
-xattr -cr /Applications/Multistream.app
+xattr -dr com.apple.quarantine /Applications/Multistream.app
 ```
 
 ## Getting started

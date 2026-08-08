@@ -252,34 +252,6 @@ jobs:
           echo "=== Release files ==="
           ls -la release-files/
 
-      - name: Checkout Homebrew tap
-        uses: actions/checkout@v4
-        with:
-          repository: ilanzgx/homebrew-multistream
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
-          path: homebrew-tap
-
-      - name: Update Homebrew Cask
-        working-directory: release-files
-        env:
-          TAG: ${{ github.ref_name }}
-        run: |
-          SHA_ARM=$(shasum -a 256 Multistream-macos-arm64.dmg | awk '{print $1}')
-          SHA_X64=$(shasum -a 256 Multistream-macos-x64.dmg  | awk '{print $1}')
-          VERSION="${TAG#v}"
-
-          CASK="../homebrew-tap/Casks/multistream.rb"
-          sed -i "s/version \"[^\"]*\"/version \"${VERSION}\"/" "$CASK"
-          sed -i "/on_arm/,/end/{s/sha256 \"[^\"]*\"/sha256 \"${SHA_ARM}\"/}" "$CASK"
-          sed -i "/on_intel/,/end/{s/sha256 \"[^\"]*\"/sha256 \"${SHA_X64}\"/}" "$CASK"
-
-          cd ../homebrew-tap
-          git config user.name  "multistream-bot"
-          git config user.email "bot@multistream.app"
-          git add Casks/multistream.rb
-          git commit -m "chore: update cask to ${VERSION}"
-          git push
-
       - name: Build updater manifest
         working-directory: release-files
         env:
@@ -341,3 +313,35 @@ jobs:
           name: Multistream ${{ github.ref_name }}
           body_path: changelog.md
           files: release-files/*
+
+      - name: Checkout Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: ilanzgx/homebrew-multistream
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Homebrew Cask
+        working-directory: release-files
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          SHA_ARM=$(shasum -a 256 Multistream-macos-arm64.dmg | awk '{print $1}')
+          SHA_X64=$(shasum -a 256 Multistream-macos-x64.dmg  | awk '{print $1}')
+          VERSION="${TAG#v}"
+
+          CASK="../homebrew-tap/Casks/multistream.rb"
+          sed -i "s/version \"[^\"]*\"/version \"${VERSION}\"/" "$CASK"
+          sed -i "/on_arm/,/end/{s/sha256 \"[^\"]*\"/sha256 \"${SHA_ARM}\"/}" "$CASK"
+          sed -i "/on_intel/,/end/{s/sha256 \"[^\"]*\"/sha256 \"${SHA_X64}\"/}" "$CASK"
+
+          cd ../homebrew-tap
+          git config user.name "multistream-bot"
+          git config user.email "bot@multistream.app"
+          git add Casks/multistream.rb
+          
+          # Only commit and push if there are changes
+          git diff --quiet --staged || {
+            git commit -m "chore(homebrew): update cask to ${VERSION}"
+            git push
+          }
