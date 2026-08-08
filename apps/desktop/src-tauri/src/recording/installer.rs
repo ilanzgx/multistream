@@ -76,8 +76,6 @@ pub async fn recording_get_env_size(app: tauri::AppHandle) -> Result<u64, String
         return Ok(0);
     }
 
-    let mut total_size = 0;
-
     // We can use a simple walkdir or just recursion. Standard library `fs::read_dir` recursion:
     fn get_size(path: &Path) -> std::io::Result<u64> {
         let mut size = 0;
@@ -97,7 +95,7 @@ pub async fn recording_get_env_size(app: tauri::AppHandle) -> Result<u64, String
         Ok(size)
     }
 
-    total_size = get_size(&env_dir).map_err(|e| e.to_string())?;
+    let total_size = get_size(&env_dir).map_err(|e| e.to_string())?;
     Ok(total_size)
 }
 
