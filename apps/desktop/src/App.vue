@@ -7,6 +7,7 @@ import { usePreferences } from "./composables/usePreferences";
 import { useUpdater, isTauri } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
 import { useMediaCodecs } from "./composables/useMediaCodecs";
+import { useRecording } from "./composables/useRecording";
 import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import { useDeepLink } from "./composables/useDeepLink";
 import "vue-sonner/style.css";
@@ -61,6 +62,7 @@ const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnbo
 const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
 const { checkVideoCodecs } = useMediaCodecs();
+const { checkDependencies } = useRecording();
 const { locale } = useI18n();
 
 useDeepLink();
@@ -208,6 +210,7 @@ onMounted(async () => {
   // check for updates on startup
   checkForUpdates();
   checkVideoCodecs();
+  checkDependencies();
 
   // start polling favorites live status (every 30s)
   startPolling();
