@@ -20,7 +20,8 @@ const { toggleFocus, isFocused, clearFocus, focusedStreamId } = useFocusedStream
 const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
 const { recordingEnabled, recordingQuality, nativePlayerEnabled } = usePreferences();
-const { startRecording, stopRecording, isRecording, getState } = useRecording();
+const { startRecording, stopRecording, isRecording, getState, isDependenciesInstalled } =
+  useRecording();
 
 const formatWatchTime = (ms: number): string => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -452,7 +453,7 @@ const handleScreenshot = () => {
         <Camera :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <!-- record button -->
-      <template v-if="recordingEnabled && props.platform !== 'custom'">
+      <template v-if="recordingEnabled && isDependenciesInstalled && props.platform !== 'custom'">
         <button
           :data-testid="`record-stream-${props.channel}`"
           :class="[

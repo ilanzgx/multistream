@@ -31,7 +31,7 @@ const platformIcons: Record<string, any> = {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   UserPlus2,
-  Settings2,
+  Settings,
   Share2,
   ImportIcon as Import,
   PanelRightClose,
@@ -210,7 +210,7 @@ onUnmounted(() => {
               v-else
               class="h-1.5 w-1.5 rounded-full"
               :class="{
-                'bg-green-500/80 animate-pulse': transcriptionStatus === 'active',
+                'bg-green-500/80': transcriptionStatus === 'active',
                 'bg-red-500/80': transcriptionStatus === 'error',
               }"
             ></div>
@@ -363,15 +363,17 @@ onUnmounted(() => {
       <div class="p-5 border-t border-[#1f2227]">
         <TooltipProvider>
           <div class="grid grid-cols-5 gap-3">
-            <Tooltip>
+            <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
                   data-testid="add-stream-btn"
-                  class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
+                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="addDialogOpen = true"
                 >
-                  <UserPlus2 class="size-5 text-white" />
+                  <UserPlus2
+                    class="size-5 text-white transition-transform duration-300 group-hover:scale-110"
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -379,15 +381,17 @@ onUnmounted(() => {
               </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
+            <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
-                  class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
+                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   data-testid="settings-btn"
                   @click="settingsDialogOpen = true"
                 >
-                  <Settings2 class="size-5 text-white" />
+                  <Settings
+                    class="size-5 text-white transition-transform duration-300 group-hover:rotate-90"
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -395,15 +399,17 @@ onUnmounted(() => {
               </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
+            <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
                   data-testid="share-dialog-btn"
-                  class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
+                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="shareDialogOpen = true"
                 >
-                  <Share2 class="size-5 text-white" />
+                  <Share2
+                    class="size-5 text-white transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110"
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -411,15 +417,17 @@ onUnmounted(() => {
               </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
+            <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
                   data-testid="import-dialog-btn"
-                  class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
+                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="importDialogOpen = true"
                 >
-                  <Import class="size-5 text-white" />
+                  <Import
+                    class="size-5 text-white transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110"
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -427,14 +435,16 @@ onUnmounted(() => {
               </TooltipContent>
             </Tooltip>
 
-            <Tooltip>
+            <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
-                  class="h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200 hover:scale-105"
+                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="sidebarOpen = !sidebarOpen"
                 >
-                  <PanelRightClose class="size-5 text-white" />
+                  <PanelRightClose
+                    class="size-5 text-white transition-transform duration-300 group-hover:translate-x-0.5 group-hover:scale-110"
+                  />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>

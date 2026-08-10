@@ -1,11 +1,12 @@
 import { createSharedComposable } from "@vueuse/core";
-import { reactive, ref, onScopeDispose } from "vue";
+import { reactive, ref, onScopeDispose, h, markRaw } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import type { Stream } from "./useStreams";
 import { usePreferences } from "./usePreferences";
+import RemuxProgressToast from "@/components/ui/sonner/RemuxProgressToast.vue";
 
 export interface RecordingState {
   streamId: string;
@@ -24,6 +25,8 @@ export interface OrphanRecording {
   filename: string;
   sizeBytes: number;
 }
+
+export const remuxProgressMap = reactive(new Map<string, { bytes: number; totalBytes: number }>());
 
 const recordings = reactive(new Map<string, RecordingState>());
 const orphans = ref<OrphanRecording[]>([]);
@@ -57,6 +60,7 @@ function stopTickerIfIdle() {
 export function __test_resetState() {
   recordings.clear();
   orphans.value = [];
+  remuxProgressMap.clear();
   isDependenciesInstalled.value = false;
   isDownloadingDependencies.value = false;
   downloadDependenciesProgress.value = 0;
@@ -99,21 +103,63 @@ const _useRecording = () => {
   });
 
   const unlisten3 = listen<{ streamId: string }>("recording:remux-started", ({ payload }) => {
+    let channelName = payload.streamId;
     const entry = recordings.get(payload.streamId);
-    if (entry) entry.status = "remuxing";
-    toast.info(t("settings.recording.remuxing"), {
-      description: t("settings.recording.remuxingDescription"),
+    if (entry) {
+      entry.status = "remuxing";
+      channelName = entry.channel;
+    } else {
+      const orphan = orphans.value.find((o) => o.id === payload.streamId);
+      if (orphan) channelName = orphan.channel;
+    }
+
+    remuxProgressMap.set(payload.streamId, { bytes: 0, totalBytes: 0 });
+
+    toast.dismiss(`stop-${payload.streamId}`);
+
+    toast(h(markRaw(RemuxProgressToast), { streamId: payload.streamId, channel: channelName }), {
+      id: `remux-${payload.streamId}`,
+      duration: Infinity,
+      unstyled: true,
+      style: {
+        backgroundColor: "transparent",
+        padding: "0",
+        border: "none",
+        boxShadow: "none",
+      },
     });
   });
 
   const unlisten4 = listen<{ streamId: string }>("recording:remux-finished", ({ payload }) => {
+    let channelName = payload.streamId;
+    const entry = recordings.get(payload.streamId);
+    if (entry) {
+      channelName = entry.channel;
+    } else {
+      const orphan = orphans.value.find((o) => o.id === payload.streamId);
+      if (orphan) channelName = orphan.channel;
+    }
+
+    const progress = remuxProgressMap.get(payload.streamId);
+    let sizeDesc = "";
+    if (progress && progress.totalBytes > 0) {
+      const mb = (progress.totalBytes / 1024 / 1024).toFixed(1);
+      sizeDesc = `${mb} MB`;
+    }
+
     recordings.delete(payload.streamId);
+    remuxProgressMap.delete(payload.streamId);
     stopTickerIfIdle();
+
+    const { recordingPath } = usePreferences();
+
+    toast.dismiss(`remux-${payload.streamId}`);
     toast.success(t("settings.recording.saved"), {
+      duration: 6000,
+      description: `${channelName} — ${sizeDesc}`,
       action: {
         label: t("settings.recording.openFolder"),
         onClick: () => {
-          const { recordingPath } = usePreferences();
           invoke("open_recording_folder", {
             streamId: payload.streamId,
             outputDir: recordingPath.value || null,
@@ -126,11 +172,22 @@ const _useRecording = () => {
   const unlisten5 = listen<{ streamId: string; error: string }>(
     "recording:remux-failed",
     ({ payload }) => {
+      let channelName = payload.streamId;
       const entry = recordings.get(payload.streamId);
-      if (entry) recordings.delete(payload.streamId);
+      if (entry) {
+        channelName = entry.channel;
+        recordings.delete(payload.streamId);
+      } else {
+        const orphan = orphans.value.find((o) => o.id === payload.streamId);
+        if (orphan) channelName = orphan.channel;
+      }
+
+      remuxProgressMap.delete(payload.streamId);
       stopTickerIfIdle();
+      toast.dismiss(`remux-${payload.streamId}`);
       toast.warning(t("settings.recording.remuxFailed"), {
-        description: payload.error || undefined,
+        duration: 8000,
+        description: `${channelName} — ${payload.error || "Unknown error"}`,
         action: {
           label: t("settings.recording.openFolder"),
           onClick: () => {
@@ -141,6 +198,16 @@ const _useRecording = () => {
             });
           },
         },
+      });
+    }
+  );
+
+  const unlistenRemuxProgress = listen<{ streamId: string; bytes: number; totalBytes: number }>(
+    "recording:remux-progress",
+    ({ payload }) => {
+      remuxProgressMap.set(payload.streamId, {
+        bytes: payload.bytes,
+        totalBytes: payload.totalBytes,
       });
     }
   );
@@ -194,6 +261,7 @@ const _useRecording = () => {
     (await unlisten7)();
     (await unlisten8)();
     (await unlisten9)();
+    (await unlistenRemuxProgress)();
   });
 
   const actionLocks = new Set<string>();
@@ -242,10 +310,11 @@ const _useRecording = () => {
     actionLocks.add(streamId);
     setTimeout(() => actionLocks.delete(streamId), 5500);
 
-    toast.info(t("settings.recording.stopping"));
+    toast.info(t("settings.recording.stopping"), { id: `stop-${streamId}` });
     try {
       await invoke("stop_recording", { streamId });
     } catch (e) {
+      toast.dismiss(`stop-${streamId}`);
       toast.error(String(e));
     }
   }
@@ -266,9 +335,6 @@ const _useRecording = () => {
   }
 
   async function recoverOrphan(orphanId: string): Promise<void> {
-    toast.info(t("settings.recording.remuxing"), {
-      description: t("settings.recording.remuxingDescription"),
-    });
     try {
       await invoke("recover_orphan_recording", { orphanId });
     } catch (e) {
