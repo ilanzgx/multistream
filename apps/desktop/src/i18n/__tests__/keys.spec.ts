@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { en, pt, es, de, cn, ru } from "../locales";
+import * as allLocales from "../locales";
 
 function getKeys(obj: Record<string, unknown>, prefix = ""): string[] {
   return Object.keys(obj).reduce((res: string[], key: string) => {
@@ -15,10 +15,10 @@ function getKeys(obj: Record<string, unknown>, prefix = ""): string[] {
 }
 
 describe("i18n key consistency tests", () => {
+  const { en, ...otherLocales } = allLocales;
   const enKeys = getKeys(en as Record<string, unknown>);
-  const locales = { pt, es, de, cn, ru };
 
-  Object.entries(locales).forEach(([lang, content]) => {
+  Object.entries(otherLocales).forEach(([lang, content]) => {
     it(`should have all keys present in ${lang}.json matching en.json`, () => {
       // Arrange
       const targetKeys = new Set(getKeys(content as Record<string, unknown>));
