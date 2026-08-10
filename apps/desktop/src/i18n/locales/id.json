@@ -1,0 +1,412 @@
+{
+  "add": {
+    "tooltip": "Tambah Stream",
+    "title": "Tambah Stream Baru",
+    "description": "Masukkan nama saluran atau URL untuk menambahkan stream baru ke multistream Anda.",
+    "platform": "Platform",
+    "channelLabel": "Nama Saluran",
+    "videoIdLabel": "ID Video",
+    "placeholder": "Masukkan nama saluran atau URL...",
+    "iframeUrlLabel": "URL Iframe",
+    "iframeUrlPlaceholder": "Tempel URL sumber iframe...",
+    "customNameLabel": "Nama Tampilan (opsional)",
+    "customNamePlaceholder": "Stream Kustom Saya",
+    "cancelButton": "Batal",
+    "addButton": "Tambah Stream",
+    "recents": "Stream Anda yang baru dibuka",
+    "historyLabel": "Riwayat",
+    "favoritesLabel": "Favorit",
+    "favoritesDescription": "Saluran favorit yang sedang melakukan streaming",
+    "suggestions": "Populer dalam bahasa Inggris",
+    "categoryAll": "Semua",
+    "searchLoading": "Mencari...",
+    "searchNoResults": "Saluran tidak ditemukan",
+    "removeStream": "Hapus stream"
+  },
+  "settings": {
+    "tooltip": "Pengaturan",
+    "title": "Pengaturan",
+    "description": "Sesuaikan preferensi Anda.",
+    "updates": {
+      "title": "Pembaruan",
+      "description": "Periksa versi baru",
+      "checkButton": "Periksa Pembaruan",
+      "checking": "Memeriksa..."
+    },
+    "language": {
+      "title": "Bahasa",
+      "description": "Pilih bahasa pilihan Anda"
+    },
+    "notifications": {
+      "title": "Notifikasi",
+      "description": "Dapatkan peringatan saat favorit disiarkan",
+      "enabled": "Notifikasi diaktifkan",
+      "disabled": "Notifikasi dinonaktifkan"
+    },
+    "auth": {
+      "title": "Akun",
+      "description": "Hubungkan akun streaming Anda",
+      "connect": "Hubungkan",
+      "kickConnect": "Hubungkan dengan Kick",
+      "authorizeBrowser": "Harap otorisasi aplikasi di browser Anda.",
+      "manualLink": "Jika tidak terbuka secara otomatis, klik tautan di bawah ini.",
+      "openBrowser": "Buka Browser Secara Manual",
+      "connected": "Terhubung",
+      "disconnect": "Putuskan sambungan",
+      "disconnected": "Terputus",
+      "logout": "Keluar",
+      "features": {
+        "readChat": "Baca pesan obrolan",
+        "sendChat": "Kirim pesan obrolan",
+        "followedChannels": "Daftar saluran yang diikuti"
+      }
+    },
+    "help": {
+      "title": "Bantuan",
+      "description": "Butuh bantuan atau ingin meninjau fitur?",
+      "showTourButton": "Tampilkan Tur Orientasi"
+    },
+    "backup": {
+      "title": "Data & Cadangan",
+      "description": "Ekspor atau impor konfigurasi lengkap Anda",
+      "exportButton": "Ekspor Data",
+      "importButton": "Impor Data",
+      "importConfirmTitle": "Timpa Konfigurasi?",
+      "importConfirmDescription": "Apakah Anda yakin ingin mengimpor konfigurasi ini? Ini akan sepenuhnya menggantikan stream, favorit, yang terbaru, dan preferensi Anda saat ini.",
+      "importConfirmButton": "Impor dan Timpa",
+      "importConfirmCancel": "Batal",
+      "importSuccess": "Konfigurasi berhasil diimpor",
+      "importError": "File cadangan konfigurasi tidak valid",
+      "exportSuccess": "Konfigurasi berhasil diekspor"
+    },
+    "transcription": {
+      "title": "Transkripsi Langsung",
+      "description": "Takarir waktu nyata yang dihasilkan menggunakan pembelajaran mesin lokal.",
+      "macosWarning": "Pengambilan audio tidak didukung di macOS tanpa driver virtual BlackHole.",
+      "statusNotInstalled": "Belum Terinstal",
+      "statusDownloading": "Mengunduh...",
+      "statusReady": "Siap",
+      "statusActive": "Aktif",
+      "modelLabel": "Model",
+      "modelTiny": "Inferensi tercepat, akurasi lebih rendah, lebih banyak halusinasi.",
+      "modelBase": "Direkomendasikan. Keseimbangan terbaik antara kecepatan dan kualitas. Cocok untuk sebagian besar sistem.",
+      "modelSmall": "Akurasi tertinggi, penggunaan CPU lebih tinggi, mungkin lambat pada prosesor lama.",
+      "downloadButton": "Unduh Model",
+      "downloadingButton": "Mengunduh...",
+      "captionModeLabel": "Mode Takarir",
+      "captionModeOriginal": "Deteksi bahasa otomatis",
+      "captionModeTranslate": "Terjemahkan ke Bahasa Inggris",
+      "enableToggle": "Aktifkan Transkripsi",
+      "modelInstalled": "Terinstal",
+      "modelSelected": "Dipilih",
+      "modelSelect": "Pilih",
+      "modelDownload": "Unduh",
+      "startedTitle": "Transkripsi Langsung Dimulai",
+      "startedModel": "Model: {model}",
+      "startedMode": "Mode: {mode}",
+      "stoppedTitle": "Transkripsi Langsung Dihentikan",
+      "activeIndicator": "Transkripsi Langsung Aktif",
+      "processingIndicator": "Memproses Audio",
+      "errorIndicator": "Kesalahan Transkripsi",
+      "lastCaption": "Takarir terakhir:",
+      "timeNow": "baru saja",
+      "timeAgo": "{time} yang lalu",
+      "timeS": "{s}d",
+      "timeM": "{m}m",
+      "recommendedBadge": "Direkomendasikan",
+      "statusDisabled": "Dinonaktifkan",
+      "modeLabel": "Mode",
+      "chunkDurationLabel": "Daya Tanggap Takarir",
+      "chunkDurationHintLow": "Nilai yang lebih rendah menampilkan takarir lebih cepat tetapi mungkin menggunakan lebih banyak CPU.",
+      "chunkDurationHintHigh": "Nilai yang lebih tinggi mengurangi tekanan pemrosesan tetapi meningkatkan jeda.",
+      "chunkDurationHintRec": "10d disarankan untuk sebagian besar sistem."
+    },
+    "tabs": {
+      "general": "Umum",
+      "data": "Data",
+      "connections": "Koneksi",
+      "resources": "Transkripsi",
+      "recording": "Perekaman"
+    },
+    "nativePlayer": {
+      "title": "Pemutar Twitch Kustom (Eksperimental)",
+      "description": "Gunakan mesin stream bawaan alih-alih pemutar tersemat. Dapat meningkatkan kinerja dan kompatibilitas.",
+      "loadError": "Gagal memuat stream. Pemutar kustom mungkin untuk sementara tidak tersedia.",
+      "videoRefError": "Referensi elemen video tidak terikat",
+      "notSupportedError": "Pemutaran media tidak didukung oleh browser Anda"
+    },
+    "recording": {
+      "tabLabel": "Perekaman",
+      "enableTitle": "Perekaman Lokal",
+      "enableFeatureToggle": "Aktifkan fitur perekaman lokal",
+      "downloadDependencies": "Unduh dependensi",
+      "installSuccess": "Dependensi berhasil diinstal",
+      "installError": "Kesalahan penginstalan: {error}",
+      "uninstallDependencies": "Copot pemasangan fitur",
+      "uninstallSuccess": "Fitur berhasil dicopot pemasangannya",
+      "uninstallError": "Kesalahan mencopot pemasangan: {error}",
+      "uninstallConfirmTitle": "Copot pemasangan fitur?",
+      "uninstallConfirmDescription": "Ini akan menghapus lingkungan perekam terisolasi dan mengosongkan ruang. Anda dapat menginstalnya kembali nanti.",
+      "uninstallConfirmButton": "Copot Pemasangan",
+      "enableDescription": "Rekam stream langsung dari sumbernya menggunakan Streamlink. File disimpan ke folder Video Anda.",
+      "unavailableOS": "Perekaman hanya tersedia di Windows.",
+      "qualityTitle": "Kualitas Bawaan",
+      "qualityPrefix": "Kualitas: ",
+      "qualityDescription": "Kualitas stream yang disukai. Kembali ke yang terbaik yang tersedia jika tidak ditemukan.",
+      "qualityBest": "Terbaik",
+      "quality1080p": "1080p",
+      "quality720p": "720p",
+      "quality480p": "480p",
+      "qualityWorst": "Terendah",
+      "pathTitle": "Direktori",
+      "pathDescription": "Pilih di mana rekaman harus disimpan. Biarkan kosong untuk menggunakan folder Video bawaan.",
+      "selectFolder": "Pilih Folder",
+      "defaultPath": "Bawaan (Video)",
+      "resetFolder": "Atur Ulang",
+      "orphanTitle": "Rekaman Tidak Lengkap",
+      "orphanDescription": "Rekaman ini terganggu. Anda dapat mengonversinya ke MP4 atau membuangnya.",
+      "orphanConvert": "Konversikan ke MP4",
+      "orphanDismiss": "Buang",
+      "starting": "Memulai perekaman...",
+      "stopping": "Menghentikan perekaman...",
+      "remuxing": "Mengonversi ke MP4...",
+      "remuxingDescription": "Ini mungkin memakan waktu cukup lama tergantung pada ukuran file.",
+      "saved": "Rekaman disimpan",
+      "openFolder": "Buka Folder",
+      "remuxFailed": "Konversi gagal. Rekaman mentah dipertahankan.",
+      "streamEnded": "Stream berakhir. Menyimpan rekaman...",
+      "streamError": "Kesalahan perekaman: {error}",
+      "customNotSupported": "Perekaman tidak didukung untuk stream kustom.",
+      "orphanFound": "Ditemukan {count} rekaman tidak lengkap"
+    }
+  },
+  "share": {
+    "tooltip": "Bagikan",
+    "title": "Bagikan Stream",
+    "description": "Bagikan stream Anda dengan teman-teman Anda.",
+    "noStreams": "Tidak ada stream untuk dibagikan",
+    "cancelButton": "Batal",
+    "copyButton": "Salin Tautan",
+    "toast": "Tautan disalin ke papan klip"
+  },
+  "import": {
+    "tooltip": "Impor",
+    "title": "Impor Stream",
+    "description": "Tempel tautan berbagi untuk mengimpor stream.",
+    "placeholder": "Tempel tautan berbagi di sini...",
+    "importButton": "Impor",
+    "invalidLink": "Tautan berbagi tidak valid",
+    "invalidCustom": "Gagal mengurai stream kustom",
+    "success": "Stream berhasil diimpor",
+    "deepLinkSuccess": "Stream berhasil diimpor melalui Tautan Dalam (Deep Link)!"
+  },
+  "hide": {
+    "tooltip": "Sembunyikan"
+  },
+  "stream": {
+    "watching": "Menonton"
+  },
+  "empty": {
+    "title": "Tidak ada stream yang dipilih",
+    "description": "Mulailah dengan menambahkan saluran favorit Anda untuk ditonton secara bersamaan.",
+    "addButton": "Tambah Stream",
+    "tourLink": "Butuh bantuan? Ikuti tur"
+  },
+  "chat": {
+    "controlTitle": "Kontrol Obrolan",
+    "selectPlaceholder": "Pilih obrolan stream",
+    "selectPrompt": "Pilih stream untuk melihat obrolan.",
+    "noStreams": "Tidak ada stream yang tersedia.",
+    "noStreamsHint": "Tambahkan stream untuk melihat obrolan.",
+    "sendPlaceholder": "Kirim pesan...",
+    "resume": "Obrolan langsung",
+    "tabs": {
+      "chat": "Obrolan",
+      "transcript": "Transkrip"
+    },
+    "transcript": {
+      "emptyState": "Belum ada riwayat transkripsi.",
+      "emptyStateHint": "Aktifkan Transkripsi Langsung untuk mulai menghasilkan takarir.",
+      "showOverlay": "Tampilkan hamparan",
+      "copy": "Salin",
+      "clear": "Bersihkan",
+      "copied": "Disalin!"
+    },
+    "unified": {
+      "selectorLabel": "Obrolan Terpadu",
+      "connectTitle": "Hubungkan dengan Twitch",
+      "connectHint": "Masuk untuk melihat pesan dari semua saluran Twitch di kisi Anda dalam satu umpan.",
+      "connectButton": "Hubungkan",
+      "reconnecting": "Menyambungkan kembali…",
+      "noStreams": "Tidak ada stream di kisi Anda.",
+      "noStreamsHint": "Tambahkan stream untuk melihat pesan di sini.",
+      "disconnected": "Obrolan terputus.",
+      "auth": {
+        "expired": "Kode otorisasi telah kedaluwarsa. Silakan coba lagi.",
+        "error": "Terjadi kesalahan selama autentikasi: ",
+        "tryAgain": "Coba Lagi",
+        "step1": "1. Buka tautan verifikasi di bawah ini",
+        "step2": "2. Masukkan kode ini untuk menautkan akun Anda",
+        "waiting": "Menunggu otorisasi...",
+        "cancel": "Batal"
+      },
+      "warningTwitchLoginToMerge": "Hubungkan akun Twitch Anda untuk menyertakan obrolan Twitch dalam Obrolan Terpadu.",
+      "warningTwitchLogin": "Hubungkan akun Twitch Anda untuk mengaktifkan Obrolan Terpadu."
+    },
+    "loginPrompt": "Masuk untuk berinteraksi",
+    "loginPromptTwitch": "Hubungkan akun Twitch Anda untuk mengirim pesan di saluran ini.",
+    "loginPromptKick": "Hubungkan akun Kick Anda untuk mengirim pesan di saluran ini.",
+    "connectAction": "Hubungkan",
+    "emotes": {
+      "searchEmote": "Cari emote...",
+      "noEmotesFound": "Emote tidak ditemukan",
+      "tabs": {
+        "recent": "Terbaru",
+        "global": "Global",
+        "channel": "Saluran"
+      }
+    }
+  },
+  "confirm": {
+    "deleteOrphan": {
+      "title": "Hapus Rekaman",
+      "description": "File rekaman ini akan dihapus secara permanen dari disk. Tindakan ini tidak dapat dibatalkan.",
+      "confirm": "Hapus"
+    }
+  },
+  "common": {
+    "close": "Tutup",
+    "comingSoon": "Segera hadir",
+    "play": "Putar",
+    "pause": "Jeda",
+    "mute": "Bisukan",
+    "unmute": "Bunyikan",
+    "fullscreen": "Layar Penuh",
+    "exitFullscreen": "Keluar Layar Penuh",
+    "settings": "Pengaturan",
+    "volume": "Volume"
+  },
+  "toasts": {
+    "add": {
+      "added": "ditambahkan",
+      "alreadyAdded": "Stream sudah ditambahkan",
+      "maxStreams": "Maksimal 12 stream tercapai"
+    },
+    "favorite": {
+      "added": "ditambahkan ke favorit",
+      "removed": "dihapus dari favorit"
+    },
+    "remove": "dihapus",
+    "update": {
+      "newVersion": "Versi baru tersedia",
+      "latestVersion": "Anda menggunakan versi terbaru!",
+      "failedCheck": "Gagal memeriksa pembaruan",
+      "failedUpdate": "Gagal mengunduh pembaruan",
+      "downloading": "Mengunduh pembaruan...",
+      "success": "Pembaruan selesai! Memulai ulang..."
+    },
+    "screenshot": {
+      "saved": "Tangkapan layar disimpan!",
+      "failed": "Gagal mengambil tangkapan layar",
+      "noStream": "Tidak ada stream video yang ditemukan",
+      "blocked": "Tangkapan layar diblokir oleh DRM platform",
+      "timeout": "Waktu tangkapan layar habis"
+    },
+    "codecs": {
+      "missing": "Codec media yang hilang terdeteksi. Silakan instal codec sistem Anda (mis., ubuntu-restricted-extras atau gstreamer-plugins) untuk menonton stream."
+    }
+  },
+  "skeleton": {
+    "loading": "Memuat stream",
+    "loadingChannel": "Memuat {channel}..."
+  },
+  "notifications": {
+    "welcome": "Favorit sedang siaran",
+    "welcomeBody": "{channels} sedang siaran langsung sekarang!",
+    "welcomeBodyMore": "{channels} dan {count} favorit lainnya sedang siaran langsung!",
+    "welcomeBodySingle": "{channel} sedang siaran langsung sekarang!",
+    "live": "{channel} sedang siaran langsung!",
+    "liveBody": "[{category}] {title}",
+    "liveBodyTitleOnly": "{title}",
+    "liveBodyFallback": "{channel} di {platform}",
+    "actionWatch": "Tonton Stream",
+    "actionIgnore": "Abaikan"
+  },
+  "onboarding": {
+    "title": "Selamat datang di Multistream",
+    "skip": "Lewati",
+    "back": "Kembali",
+    "next": "Selanjutnya",
+    "finish": "Mulai",
+    "step1": {
+      "title": "Tambah Stream",
+      "description": "Klik tombol '+' di bilah sisi atau tekan tombol {key} untuk menambahkan stream Twitch, Kick, atau YouTube."
+    },
+    "step2": {
+      "title": "Pilih Obrolan",
+      "description": "Pilih obrolan stream mana yang terlihat di bilah sisi menggunakan menu tarik-turun di bagian atas, atau tekan tombol {keys} untuk beralih secara instan.",
+      "pressKeys": "Tekan tombol",
+      "switchImmediately": "untuk beralih segera",
+      "chatActive": "Obrolan Aktif"
+    },
+    "step3": {
+      "title": "Hubungkan Akun (Twitch & Kick)",
+      "description": "Masuk dengan akun Twitch dan Kick Anda untuk mengirim pesan langsung dalam obrolan dan menyinkronkan preferensi stream Anda.",
+      "feature1": "Kirim pesan langsung dalam obrolan Twitch dan Kick",
+      "feature2": "Dukungan penuh untuk emote pihak ketiga (BTTV & 7TV)",
+      "feature3": "Integrasi mulus dengan Obrolan Terpadu"
+    },
+    "step4": {
+      "title": "Saran Stream Berdasarkan Kategori",
+      "description": "Saring stream yang disarankan berdasarkan kategori menggunakan chip di bagian atas. Klik chip mana pun untuk memuat lebih banyak stream langsung secara instan dari Twitch dan Kick untuk kategori tersebut, di latar belakang.",
+      "caption": "Stream dari kedua platform dimuat secara otomatis dan tetap di-cache saat Anda menjelajah."
+    },
+    "step5": {
+      "title": "Transkripsi Langsung",
+      "description": "Tonton stream dengan takarir waktu nyata yang dihasilkan langsung di komputer Anda.",
+      "captionOriginal": "Asli: Bonjour tout le monde.",
+      "captionTranslation": "Terjemahan: Halo semuanya.",
+      "feature1": "Takarir waktu nyata",
+      "feature2": "Terjemahan bahasa Inggris opsional",
+      "feature3": "Berjalan secara lokal di komputer Anda",
+      "note": "Semuanya berjalan secara lokal di komputer Anda. Kinerja tergantung pada CPU Anda dan model yang dipilih."
+    },
+    "step6": {
+      "title": "Perekaman Lokal",
+      "description": "Rekam stream langsung langsung dari sumber dalam kualitas asli dengan konversi MP4 otomatis.",
+      "feature1": "Tangkapan stream langsung tanpa kehilangan kualitas",
+      "feature2": "Konversi MP4 otomatis",
+      "feature3": "Pilihan folder penyimpanan kustom",
+      "note": "Rekaman disimpan langsung ke disk Anda dan dapat diakses kapan saja dari pengaturan."
+    },
+    "step7": {
+      "title": "Pintasan Keyboard",
+      "description": "Gunakan pintasan cepat ini untuk mengontrol stream dan obrolan Anda secara efisien:",
+      "add": "Buka dialog tambah stream",
+      "screenshot": "Ambil tangkapan layar dari stream yang difokuskan",
+      "chat": "Beralih ke obrolan stream {keys}",
+      "screenshotTitle": "Tangkapan Layar"
+    }
+  },
+  "webBanner": {
+    "title": "Multistream berjalan lebih baik di aplikasi desktop.",
+    "button": "Unduh"
+  },
+  "sidebar": {
+    "openSidebar": "Buka bilah sisi",
+    "followedChannels": "Saluran yang Diikuti",
+    "all": "Semua",
+    "loginTitle": "Hubungkan akun Anda",
+    "loginSubtitle": "Lihat saluran yang Anda ikuti"
+  },
+  "nativePlayer": {
+    "live": "LANGSUNG",
+    "quality": {
+      "auto": "Otomatis"
+    },
+    "offline": {
+      "title": "Stream Berakhir",
+      "description": "Penyiar telah mengakhiri stream ini."
+    }
+  }
+}

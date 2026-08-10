@@ -20,7 +20,8 @@
     "suggestions": "Tendencias en Español",
     "categoryAll": "Todos",
     "searchLoading": "Buscando...",
-    "searchNoResults": "No se encontraron canales"
+    "searchNoResults": "No se encontraron canales",
+    "removeStream": "Eliminar stream"
   },
   "settings": {
     "tooltip": "Configuraciones",
@@ -392,6 +393,7 @@
     "button": "Descargar"
   },
   "sidebar": {
+    "openSidebar": "Abrir menú lateral",
     "followedChannels": "Canales seguidos",
     "all": "Todos",
     "loginTitle": "Conecta tu cuenta",

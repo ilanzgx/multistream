@@ -20,7 +20,8 @@
     "suggestions": "Popular in English",
     "categoryAll": "All",
     "searchLoading": "Searching...",
-    "searchNoResults": "No channels found"
+    "searchNoResults": "No channels found",
+    "removeStream": "Remove stream"
   },
   "settings": {
     "tooltip": "Settings",
@@ -392,6 +393,7 @@
     "button": "Download"
   },
   "sidebar": {
+    "openSidebar": "Open sidebar",
     "followedChannels": "Followed Channels",
     "all": "All",
     "loginTitle": "Connect your account",

@@ -1,0 +1,412 @@
+{
+  "add": {
+    "tooltip": "Ajouter un flux",
+    "title": "Ajouter un nouveau flux",
+    "description": "Entrez le nom de la chaîne ou l'URL pour ajouter un nouveau flux à votre multistream.",
+    "platform": "Plateforme",
+    "channelLabel": "Nom de la chaîne",
+    "videoIdLabel": "ID de la vidéo",
+    "placeholder": "Entrez le nom de la chaîne ou l'URL...",
+    "iframeUrlLabel": "URL de l'iframe",
+    "iframeUrlPlaceholder": "Collez l'URL source de l'iframe...",
+    "customNameLabel": "Nom d'affichage (facultatif)",
+    "customNamePlaceholder": "Mon flux personnalisé",
+    "cancelButton": "Annuler",
+    "addButton": "Ajouter un flux",
+    "recents": "Vos flux récemment ouverts",
+    "historyLabel": "Historique",
+    "favoritesLabel": "Favoris",
+    "favoritesDescription": "Chaînes favorites actuellement en direct",
+    "suggestions": "Populaire en français",
+    "categoryAll": "Tout",
+    "searchLoading": "Recherche en cours...",
+    "searchNoResults": "Aucune chaîne trouvée",
+    "removeStream": "Supprimer le flux"
+  },
+  "settings": {
+    "tooltip": "Paramètres",
+    "title": "Paramètres",
+    "description": "Ajustez vos préférences.",
+    "updates": {
+      "title": "Mises à jour",
+      "description": "Rechercher de nouvelles versions",
+      "checkButton": "Vérifier les mises à jour",
+      "checking": "Vérification en cours..."
+    },
+    "language": {
+      "title": "Langue",
+      "description": "Sélectionnez votre langue préférée"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Recevez des alertes lorsque vos favoris sont en direct",
+      "enabled": "Notifications activées",
+      "disabled": "Notifications désactivées"
+    },
+    "auth": {
+      "title": "Comptes",
+      "description": "Connectez vos comptes de streaming",
+      "connect": "Se connecter",
+      "kickConnect": "Se connecter avec Kick",
+      "authorizeBrowser": "Veuillez autoriser l'application dans votre navigateur.",
+      "manualLink": "S'il ne s'est pas ouvert automatiquement, cliquez sur le lien ci-dessous.",
+      "openBrowser": "Ouvrir le navigateur manuellement",
+      "connected": "Connecté",
+      "disconnect": "Se déconnecter",
+      "disconnected": "Déconnecté",
+      "logout": "Déconnexion",
+      "features": {
+        "readChat": "Lire les messages du chat",
+        "sendChat": "Envoyer des messages dans le chat",
+        "followedChannels": "Liste des chaînes suivies"
+      }
+    },
+    "help": {
+      "title": "Aide",
+      "description": "Besoin d'aide ou envie de revoir les fonctionnalités ?",
+      "showTourButton": "Afficher la visite guidée"
+    },
+    "backup": {
+      "title": "Données & Sauvegarde",
+      "description": "Exportez ou importez votre configuration complète",
+      "exportButton": "Exporter les données",
+      "importButton": "Importer les données",
+      "importConfirmTitle": "Écraser la configuration ?",
+      "importConfirmDescription": "Êtes-vous sûr de vouloir importer cette configuration ? Cela remplacera complètement vos flux, favoris, récents et préférences actuels.",
+      "importConfirmButton": "Importer et écraser",
+      "importConfirmCancel": "Annuler",
+      "importSuccess": "Configuration importée avec succès",
+      "importError": "Fichier de sauvegarde de configuration invalide",
+      "exportSuccess": "Configuration exportée avec succès"
+    },
+    "transcription": {
+      "title": "Transcription en direct",
+      "description": "Sous-titres générés en temps réel à l'aide de l'apprentissage automatique local.",
+      "macosWarning": "La capture audio n'est pas prise en charge sur macOS sans le pilote virtuel BlackHole.",
+      "statusNotInstalled": "Non installé",
+      "statusDownloading": "Téléchargement en cours...",
+      "statusReady": "Prêt",
+      "statusActive": "Actif",
+      "modelLabel": "Modèle",
+      "modelTiny": "Inférence la plus rapide, précision inférieure, plus d'hallucinations.",
+      "modelBase": "Recommandé. Meilleur équilibre entre vitesse et qualité. Convient à la plupart des systèmes.",
+      "modelSmall": "Plus grande précision, utilisation plus élevée du processeur, peut être lent sur les processeurs plus anciens.",
+      "downloadButton": "Télécharger le modèle",
+      "downloadingButton": "Téléchargement en cours...",
+      "captionModeLabel": "Mode de sous-titrage",
+      "captionModeOriginal": "Détecter la langue automatiquement",
+      "captionModeTranslate": "Traduire en anglais",
+      "enableToggle": "Activer la transcription",
+      "modelInstalled": "Installé",
+      "modelSelected": "Sélectionné",
+      "modelSelect": "Sélectionner",
+      "modelDownload": "Télécharger",
+      "startedTitle": "Transcription en direct démarrée",
+      "startedModel": "Modèle : {model}",
+      "startedMode": "Mode : {mode}",
+      "stoppedTitle": "Transcription en direct arrêtée",
+      "activeIndicator": "Transcription en direct active",
+      "processingIndicator": "Traitement de l'audio",
+      "errorIndicator": "Erreur de transcription",
+      "lastCaption": "Dernier sous-titre :",
+      "timeNow": "à l'instant",
+      "timeAgo": "il y a {time}",
+      "timeS": "{s}s",
+      "timeM": "{m}m",
+      "recommendedBadge": "Recommandé",
+      "statusDisabled": "Désactivé",
+      "modeLabel": "Mode",
+      "chunkDurationLabel": "Réactivité des sous-titres",
+      "chunkDurationHintLow": "Des valeurs plus basses affichent les sous-titres plus rapidement mais peuvent utiliser plus de CPU.",
+      "chunkDurationHintHigh": "Des valeurs plus élevées réduisent la pression de traitement mais augmentent le délai.",
+      "chunkDurationHintRec": "10s est recommandé pour la plupart des systèmes."
+    },
+    "tabs": {
+      "general": "Général",
+      "data": "Données",
+      "connections": "Connexions",
+      "resources": "Transcription",
+      "recording": "Enregistrement"
+    },
+    "nativePlayer": {
+      "title": "Lecteur Twitch personnalisé (Expérimental)",
+      "description": "Utilisez le moteur de flux intégré au lieu des lecteurs intégrés. Peut améliorer les performances et la compatibilité.",
+      "loadError": "Échec du chargement du flux. Le lecteur personnalisé peut être temporairement indisponible.",
+      "videoRefError": "Référence de l'élément vidéo non liée",
+      "notSupportedError": "La lecture multimédia n'est pas prise en charge par votre navigateur"
+    },
+    "recording": {
+      "tabLabel": "Enregistrement",
+      "enableTitle": "Enregistrement local",
+      "enableFeatureToggle": "Activer la fonction d'enregistrement local",
+      "downloadDependencies": "Télécharger les dépendances",
+      "installSuccess": "Dépendances installées avec succès",
+      "installError": "Erreur d'installation : {error}",
+      "uninstallDependencies": "Désinstaller la fonctionnalité",
+      "uninstallSuccess": "Fonctionnalité désinstallée avec succès",
+      "uninstallError": "Erreur lors de la désinstallation : {error}",
+      "uninstallConfirmTitle": "Désinstaller la fonctionnalité ?",
+      "uninstallConfirmDescription": "Cela supprimera l'environnement d'enregistrement isolé et libérera de l'espace. Vous pourrez le réinstaller plus tard.",
+      "uninstallConfirmButton": "Désinstaller",
+      "enableDescription": "Enregistrez des flux directement depuis la source en utilisant Streamlink. Les fichiers sont enregistrés dans votre dossier Vidéos.",
+      "unavailableOS": "L'enregistrement n'est disponible que sur Windows.",
+      "qualityTitle": "Qualité par défaut",
+      "qualityPrefix": "Qualité : ",
+      "qualityDescription": "Qualité de flux préférée. Se rabat sur la meilleure disponible si non trouvée.",
+      "qualityBest": "Meilleure",
+      "quality1080p": "1080p",
+      "quality720p": "720p",
+      "quality480p": "480p",
+      "qualityWorst": "Plus basse",
+      "pathTitle": "Répertoire",
+      "pathDescription": "Choisissez où les enregistrements doivent être sauvegardés. Laissez vide pour utiliser le dossier Vidéos par défaut.",
+      "selectFolder": "Sélectionner un dossier",
+      "defaultPath": "Défaut (Vidéos)",
+      "resetFolder": "Réinitialiser",
+      "orphanTitle": "Enregistrements incomplets",
+      "orphanDescription": "Ces enregistrements ont été interrompus. Vous pouvez les convertir en MP4 ou les supprimer.",
+      "orphanConvert": "Convertir en MP4",
+      "orphanDismiss": "Supprimer",
+      "starting": "Démarrage de l'enregistrement...",
+      "stopping": "Arrêt de l'enregistrement...",
+      "remuxing": "Conversion en MP4...",
+      "remuxingDescription": "Cela peut prendre un certain temps selon la taille du fichier.",
+      "saved": "Enregistrement sauvegardé",
+      "openFolder": "Ouvrir le dossier",
+      "remuxFailed": "Échec de la conversion. L'enregistrement brut est préservé.",
+      "streamEnded": "Le flux est terminé. Sauvegarde de l'enregistrement...",
+      "streamError": "Erreur d'enregistrement : {error}",
+      "customNotSupported": "L'enregistrement n'est pas pris en charge pour les flux personnalisés.",
+      "orphanFound": "{count} enregistrement(s) incomplet(s) trouvé(s)"
+    }
+  },
+  "share": {
+    "tooltip": "Partager",
+    "title": "Partager des flux",
+    "description": "Partagez vos flux avec vos amis.",
+    "noStreams": "Aucun flux à partager",
+    "cancelButton": "Annuler",
+    "copyButton": "Copier le lien",
+    "toast": "Lien copié dans le presse-papiers"
+  },
+  "import": {
+    "tooltip": "Importer",
+    "title": "Importer des flux",
+    "description": "Collez un lien de partage pour importer des flux.",
+    "placeholder": "Collez le lien de partage ici...",
+    "importButton": "Importer",
+    "invalidLink": "Lien de partage invalide",
+    "invalidCustom": "Échec de l'analyse des flux personnalisés",
+    "success": "Flux importés avec succès",
+    "deepLinkSuccess": "Flux importés avec succès via un lien profond !"
+  },
+  "hide": {
+    "tooltip": "Masquer"
+  },
+  "stream": {
+    "watching": "En cours de visionnage"
+  },
+  "empty": {
+    "title": "Aucun flux sélectionné",
+    "description": "Commencez par ajouter vos chaînes favorites pour les regarder simultanément.",
+    "addButton": "Ajouter un flux",
+    "tourLink": "Besoin d'aide ? Suivez la visite guidée"
+  },
+  "chat": {
+    "controlTitle": "Contrôle du chat",
+    "selectPlaceholder": "Sélectionner le chat du flux",
+    "selectPrompt": "Sélectionnez un flux pour voir le chat.",
+    "noStreams": "Aucun flux disponible.",
+    "noStreamsHint": "Ajoutez un flux pour voir le chat.",
+    "sendPlaceholder": "Envoyer un message...",
+    "resume": "Chat en direct",
+    "tabs": {
+      "chat": "Chat",
+      "transcript": "Transcription"
+    },
+    "transcript": {
+      "emptyState": "Aucun historique de transcription pour le moment.",
+      "emptyStateHint": "Activez la transcription en direct pour commencer à générer des sous-titres.",
+      "showOverlay": "Afficher la superposition",
+      "copy": "Copier",
+      "clear": "Effacer",
+      "copied": "Copié !"
+    },
+    "unified": {
+      "selectorLabel": "Chat unifié",
+      "connectTitle": "Se connecter avec Twitch",
+      "connectHint": "Connectez-vous pour voir les messages de toutes les chaînes Twitch de votre grille dans un seul flux.",
+      "connectButton": "Se connecter",
+      "reconnecting": "Reconnexion…",
+      "noStreams": "Aucun flux dans votre grille.",
+      "noStreamsHint": "Ajoutez un flux pour voir les messages ici.",
+      "disconnected": "Chat déconnecté.",
+      "auth": {
+        "expired": "Le code d'autorisation a expiré. Veuillez réessayer.",
+        "error": "Une erreur s'est produite lors de l'authentification : ",
+        "tryAgain": "Réessayer",
+        "step1": "1. Ouvrez le lien de vérification ci-dessous",
+        "step2": "2. Entrez ce code pour lier votre compte",
+        "waiting": "En attente d'autorisation...",
+        "cancel": "Annuler"
+      },
+      "warningTwitchLoginToMerge": "Connectez votre compte Twitch pour inclure les chats Twitch dans le chat unifié.",
+      "warningTwitchLogin": "Connectez votre compte Twitch pour activer le chat unifié."
+    },
+    "loginPrompt": "Connectez-vous pour interagir",
+    "loginPromptTwitch": "Connectez votre compte Twitch pour envoyer des messages sur cette chaîne.",
+    "loginPromptKick": "Connectez votre compte Kick pour envoyer des messages sur cette chaîne.",
+    "connectAction": "Se connecter",
+    "emotes": {
+      "searchEmote": "Rechercher une émoticône...",
+      "noEmotesFound": "Aucune émoticône trouvée",
+      "tabs": {
+        "recent": "Récentes",
+        "global": "Globales",
+        "channel": "Chaîne"
+      }
+    }
+  },
+  "confirm": {
+    "deleteOrphan": {
+      "title": "Supprimer l'enregistrement",
+      "description": "Ce fichier d'enregistrement sera définitivement supprimé du disque. Cette action est irréversible.",
+      "confirm": "Supprimer"
+    }
+  },
+  "common": {
+    "close": "Fermer",
+    "comingSoon": "Bientôt disponible",
+    "play": "Lecture",
+    "pause": "Pause",
+    "mute": "Mettre en sourdine",
+    "unmute": "Rétablir le son",
+    "fullscreen": "Plein écran",
+    "exitFullscreen": "Quitter le plein écran",
+    "settings": "Paramètres",
+    "volume": "Volume"
+  },
+  "toasts": {
+    "add": {
+      "added": "ajouté",
+      "alreadyAdded": "Le flux est déjà ajouté",
+      "maxStreams": "Maximum de 12 flux atteint"
+    },
+    "favorite": {
+      "added": "ajouté aux favoris",
+      "removed": "retiré des favoris"
+    },
+    "remove": "supprimé",
+    "update": {
+      "newVersion": "Nouvelle version disponible",
+      "latestVersion": "Vous utilisez la dernière version !",
+      "failedCheck": "Échec de la recherche de mises à jour",
+      "failedUpdate": "Échec du téléchargement de la mise à jour",
+      "downloading": "Téléchargement de la mise à jour...",
+      "success": "Mise à jour terminée ! Redémarrage..."
+    },
+    "screenshot": {
+      "saved": "Capture d'écran sauvegardée !",
+      "failed": "Échec de la capture d'écran",
+      "noStream": "Aucun flux vidéo trouvé",
+      "blocked": "Capture d'écran bloquée par le DRM de la plateforme",
+      "timeout": "Délai d'attente de la capture d'écran dépassé"
+    },
+    "codecs": {
+      "missing": "Des codecs multimédias manquants ont été détectés. Veuillez installer vos codecs système (ex: ubuntu-restricted-extras ou gstreamer-plugins) pour regarder des flux."
+    }
+  },
+  "skeleton": {
+    "loading": "Chargement du flux",
+    "loadingChannel": "Chargement de {channel}..."
+  },
+  "notifications": {
+    "welcome": "Les favoris sont en direct",
+    "welcomeBody": "{channels} sont en direct maintenant !",
+    "welcomeBodyMore": "{channels} et {count} autres favoris sont en direct !",
+    "welcomeBodySingle": "{channel} est en direct maintenant !",
+    "live": "{channel} est en direct !",
+    "liveBody": "[{category}] {title}",
+    "liveBodyTitleOnly": "{title}",
+    "liveBodyFallback": "{channel} sur {platform}",
+    "actionWatch": "Regarder le flux",
+    "actionIgnore": "Ignorer"
+  },
+  "onboarding": {
+    "title": "Bienvenue sur Multistream",
+    "skip": "Passer",
+    "back": "Retour",
+    "next": "Suivant",
+    "finish": "Commencer",
+    "step1": {
+      "title": "Ajouter des flux",
+      "description": "Cliquez sur le bouton '+' dans la barre latérale ou appuyez sur la touche {key} pour ajouter un flux Twitch, Kick ou YouTube."
+    },
+    "step2": {
+      "title": "Sélectionner le chat",
+      "description": "Choisissez quel chat de flux est visible dans la barre latérale en utilisant le menu déroulant en haut, ou appuyez sur les touches {keys} pour changer instantanément.",
+      "pressKeys": "Appuyez sur les touches",
+      "switchImmediately": "pour changer immédiatement",
+      "chatActive": "Chat actif"
+    },
+    "step3": {
+      "title": "Connecter les comptes (Twitch & Kick)",
+      "description": "Connectez-vous avec vos comptes Twitch et Kick pour envoyer des messages directement dans le chat et synchroniser vos préférences de flux.",
+      "feature1": "Envoyez des messages directement dans le chat Twitch et Kick",
+      "feature2": "Prise en charge complète des émoticônes tierces (BTTV & 7TV)",
+      "feature3": "Intégration transparente avec le chat unifié"
+    },
+    "step4": {
+      "title": "Suggestions de flux par catégorie",
+      "description": "Filtrez les flux suggérés par catégorie à l'aide des puces en haut. Cliquez sur n'importe quelle puce pour charger instantanément en arrière-plan d'autres flux en direct de Twitch et Kick pour cette catégorie.",
+      "caption": "Les flux des deux plateformes se chargent automatiquement et restent en cache pendant que vous naviguez."
+    },
+    "step5": {
+      "title": "Transcription en direct",
+      "description": "Regardez des flux avec des sous-titres en temps réel générés directement sur votre ordinateur.",
+      "captionOriginal": "Original : Bonjour tout le monde.",
+      "captionTranslation": "Traduction : Hello everyone.",
+      "feature1": "Sous-titres en temps réel",
+      "feature2": "Traduction anglaise facultative",
+      "feature3": "S'exécute localement sur votre ordinateur",
+      "note": "Tout s'exécute localement sur votre ordinateur. Les performances dépendent de votre processeur et du modèle sélectionné."
+    },
+    "step6": {
+      "title": "Enregistrement local",
+      "description": "Enregistrez des flux en direct directement depuis la source en qualité originale avec conversion automatique en MP4.",
+      "feature1": "Capture directe de flux sans perte de qualité",
+      "feature2": "Conversion automatique en MP4",
+      "feature3": "Sélection de dossier de sauvegarde personnalisé",
+      "note": "Les enregistrements sont sauvegardés directement sur votre disque et accessibles à tout moment depuis les paramètres."
+    },
+    "step7": {
+      "title": "Raccourcis clavier",
+      "description": "Utilisez ces raccourcis rapides pour contrôler efficacement vos flux et vos chats :",
+      "add": "Ouvrir la boîte de dialogue d'ajout de flux",
+      "screenshot": "Faire une capture d'écran du flux sélectionné",
+      "chat": "Passer au chat du flux {keys}",
+      "screenshotTitle": "Capture d'écran"
+    }
+  },
+  "webBanner": {
+    "title": "Multistream fonctionne mieux sur l'application de bureau.",
+    "button": "Télécharger"
+  },
+  "sidebar": {
+    "openSidebar": "Ouvrir la barre latérale",
+    "followedChannels": "Chaînes suivies",
+    "all": "Tout",
+    "loginTitle": "Connectez votre compte",
+    "loginSubtitle": "Voir les chaînes que vous suivez"
+  },
+  "nativePlayer": {
+    "live": "EN DIRECT",
+    "quality": {
+      "auto": "Auto"
+    },
+    "offline": {
+      "title": "Flux terminé",
+      "description": "Le diffuseur a mis fin à ce flux."
+    }
+  }
+}

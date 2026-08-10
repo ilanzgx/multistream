@@ -20,7 +20,8 @@
     "suggestions": "Top Deutsche Kanäle",
     "categoryAll": "Alle",
     "searchLoading": "Suche läuft...",
-    "searchNoResults": "Keine Kanäle gefunden"
+    "searchNoResults": "Keine Kanäle gefunden",
+    "removeStream": "Stream entfernen"
   },
   "settings": {
     "tooltip": "Einstellungen",
@@ -392,6 +393,7 @@
     "button": "Herunterladen"
   },
   "sidebar": {
+    "openSidebar": "Seitenleiste öffnen",
     "followedChannels": "Gefolgte Kanäle",
     "all": "Alle",
     "loginTitle": "Konto verbinden",

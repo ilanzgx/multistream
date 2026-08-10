@@ -20,7 +20,8 @@
     "suggestions": "Destaques em Português",
     "categoryAll": "Todos",
     "searchLoading": "Buscando...",
-    "searchNoResults": "Nenhum canal encontrado"
+    "searchNoResults": "Nenhum canal encontrado",
+    "removeStream": "Remover stream"
   },
   "settings": {
     "tooltip": "Configurações",
@@ -392,6 +393,7 @@
     "button": "Baixar"
   },
   "sidebar": {
+    "openSidebar": "Abrir menu lateral",
     "followedChannels": "Canais seguidos",
     "all": "Todos",
     "loginTitle": "Conecte sua conta",

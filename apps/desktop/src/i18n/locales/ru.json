@@ -20,7 +20,8 @@
     "suggestions": "Популярно на русском",
     "categoryAll": "Все",
     "searchLoading": "Поиск...",
-    "searchNoResults": "Каналы не найдены"
+    "searchNoResults": "Каналы не найдены",
+    "removeStream": "Удалить стрим"
   },
   "settings": {
     "tooltip": "Настройки",
@@ -392,6 +393,7 @@
     "button": "Скачать"
   },
   "sidebar": {
+    "openSidebar": "Открыть боковую панель",
     "followedChannels": "Отслеживаемые каналы",
     "all": "Все",
     "loginTitle": "Подключите аккаунт",

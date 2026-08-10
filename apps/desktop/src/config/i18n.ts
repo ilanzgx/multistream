@@ -5,6 +5,10 @@ import {
   RussiaFlagIcon,
   SpainFlagIcon,
   UnitedStatesFlagIcon,
+  FranceFlagIcon,
+  TurkeyFlagIcon,
+  IndiaFlagIcon,
+  IndonesiaFlagIcon,
 } from "@/components/icons/flags";
 import type { Component } from "vue";
 
@@ -78,6 +82,46 @@ export const SUPPORTED_LANGUAGES: Record<string, LanguageConfig> = {
     apiCodes: {
       twitch: "RU",
       kick: { code: "ru", name: "Russian" },
+    },
+  },
+  fr: {
+    code: "fr",
+    label: "FR",
+    name: "Français",
+    flag: FranceFlagIcon,
+    apiCodes: {
+      twitch: "FR",
+      kick: { code: "fr", name: "French" },
+    },
+  },
+  tr: {
+    code: "tr",
+    label: "TR",
+    name: "Türkçe",
+    flag: TurkeyFlagIcon,
+    apiCodes: {
+      twitch: "TR",
+      kick: { code: "tr", name: "Turkish" },
+    },
+  },
+  hi: {
+    code: "hi",
+    label: "HI",
+    name: "हिन्दी",
+    flag: IndiaFlagIcon,
+    apiCodes: {
+      twitch: "HI",
+      kick: { code: "hi", name: "Hindi" },
+    },
+  },
+  id: {
+    code: "id",
+    label: "ID",
+    name: "Bahasa Indonesia",
+    flag: IndonesiaFlagIcon,
+    apiCodes: {
+      twitch: "ID",
+      kick: { code: "id", name: "Indonesian" },
     },
   },
 };

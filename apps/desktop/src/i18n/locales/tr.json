@@ -1,0 +1,412 @@
+{
+  "add": {
+    "tooltip": "Yayın Ekle",
+    "title": "Yeni Yayın Ekle",
+    "description": "Çoklu yayınınız için yeni bir yayın eklemek üzere kanal adını veya url'yi girin.",
+    "platform": "Platform",
+    "channelLabel": "Kanal Adı",
+    "videoIdLabel": "Video ID",
+    "placeholder": "Kanal adı veya URL girin...",
+    "iframeUrlLabel": "Iframe URL",
+    "iframeUrlPlaceholder": "Iframe src URL'sini yapıştırın...",
+    "customNameLabel": "Görünen Ad (isteğe bağlı)",
+    "customNamePlaceholder": "Özel Yayını",
+    "cancelButton": "İptal",
+    "addButton": "Yayın Ekle",
+    "recents": "Son açılan yayınlarınız",
+    "historyLabel": "Geçmiş",
+    "favoritesLabel": "Favoriler",
+    "favoritesDescription": "Şu anda yayın yapan favori kanallar",
+    "suggestions": "İngilizce'de Popüler",
+    "categoryAll": "Tümü",
+    "searchLoading": "Aranıyor...",
+    "searchNoResults": "Kanal bulunamadı",
+    "removeStream": "Yayını kaldır"
+  },
+  "settings": {
+    "tooltip": "Ayarlar",
+    "title": "Ayarlar",
+    "description": "Tercihlerinizi ayarlayın.",
+    "updates": {
+      "title": "Güncellemeler",
+      "description": "Yeni sürümleri kontrol et",
+      "checkButton": "Güncellemeleri Kontrol Et",
+      "checking": "Kontrol ediliyor..."
+    },
+    "language": {
+      "title": "Dil",
+      "description": "Tercih ettiğiniz dili seçin"
+    },
+    "notifications": {
+      "title": "Bildirimler",
+      "description": "Favoriler canlı yayına geçtiğinde uyarı al",
+      "enabled": "Bildirimler açık",
+      "disabled": "Bildirimler kapalı"
+    },
+    "auth": {
+      "title": "Hesaplar",
+      "description": "Yayın hesaplarınızı bağlayın",
+      "connect": "Bağlan",
+      "kickConnect": "Kick ile Bağlan",
+      "authorizeBrowser": "Lütfen tarayıcınızda uygulamaya izin verin.",
+      "manualLink": "Otomatik olarak açılmadıysa aşağıdaki bağlantıya tıklayın.",
+      "openBrowser": "Tarayıcıyı Manuel Aç",
+      "connected": "Bağlandı",
+      "disconnect": "Bağlantıyı Kes",
+      "disconnected": "Bağlantı Kesildi",
+      "logout": "Çıkış Yap",
+      "features": {
+        "readChat": "Sohbet mesajlarını oku",
+        "sendChat": "Sohbet mesajları gönder",
+        "followedChannels": "Takip edilen kanallar listesi"
+      }
+    },
+    "help": {
+      "title": "Yardım",
+      "description": "Yardıma mı ihtiyacınız var veya özellikleri incelemek mi istiyorsunuz?",
+      "showTourButton": "Tanıtım Turunu Göster"
+    },
+    "backup": {
+      "title": "Veri ve Yedekleme",
+      "description": "Tüm yapılandırmanızı dışa aktarın veya içe aktarın",
+      "exportButton": "Veriyi Dışa Aktar",
+      "importButton": "Veriyi İçe Aktar",
+      "importConfirmTitle": "Yapılandırmanın Üzerine Yazılsın mı?",
+      "importConfirmDescription": "Bu yapılandırmayı içe aktarmak istediğinizden emin misiniz? Bu, mevcut yayınlarınızı, favorilerinizi, son kullanılanları ve tercihlerinizi tamamen değiştirecektir.",
+      "importConfirmButton": "İçe Aktar ve Üzerine Yaz",
+      "importConfirmCancel": "İptal",
+      "importSuccess": "Yapılandırma başarıyla içe aktarıldı",
+      "importError": "Geçersiz yapılandırma yedek dosyası",
+      "exportSuccess": "Yapılandırma başarıyla dışa aktarıldı"
+    },
+    "transcription": {
+      "title": "Canlı Deşifre",
+      "description": "Yerel makine öğrenimi kullanılarak oluşturulan gerçek zamanlı altyazılar.",
+      "macosWarning": "Ses yakalama, BlackHole sanal sürücüsü olmadan macOS'te desteklenmez.",
+      "statusNotInstalled": "Yüklü Değil",
+      "statusDownloading": "İndiriliyor...",
+      "statusReady": "Hazır",
+      "statusActive": "Aktif",
+      "modelLabel": "Model",
+      "modelTiny": "En hızlı çıkarım, daha düşük doğruluk, daha fazla halüsinasyon.",
+      "modelBase": "Önerilen. Hız ve kalitenin en iyi dengesi. Çoğu sistem için uygundur.",
+      "modelSmall": "En yüksek doğruluk, daha yüksek CPU kullanımı, eski işlemcilerde yavaş olabilir.",
+      "downloadButton": "Modeli İndir",
+      "downloadingButton": "İndiriliyor...",
+      "captionModeLabel": "Altyazı Modu",
+      "captionModeOriginal": "Dili otomatik algıla",
+      "captionModeTranslate": "İngilizce'ye Çevir",
+      "enableToggle": "Deşifreyi Etkinleştir",
+      "modelInstalled": "Yüklendi",
+      "modelSelected": "Seçildi",
+      "modelSelect": "Seç",
+      "modelDownload": "İndir",
+      "startedTitle": "Canlı Deşifre Başladı",
+      "startedModel": "Model: {model}",
+      "startedMode": "Mod: {mode}",
+      "stoppedTitle": "Canlı Deşifre Durduruldu",
+      "activeIndicator": "Canlı Deşifre Aktif",
+      "processingIndicator": "Ses İşleniyor",
+      "errorIndicator": "Deşifre Hatası",
+      "lastCaption": "Son altyazı:",
+      "timeNow": "şimdi",
+      "timeAgo": "{time} önce",
+      "timeS": "{s}s",
+      "timeM": "{m}d",
+      "recommendedBadge": "Önerilen",
+      "statusDisabled": "Devre Dışı",
+      "modeLabel": "Mod",
+      "chunkDurationLabel": "Altyazı Tepki Süresi",
+      "chunkDurationHintLow": "Daha düşük değerler altyazıları daha hızlı gösterir ancak daha fazla CPU kullanabilir.",
+      "chunkDurationHintHigh": "Daha yüksek değerler işlem baskısını azaltır ancak gecikmeyi artırır.",
+      "chunkDurationHintRec": "Çoğu sistem için 10s önerilir."
+    },
+    "tabs": {
+      "general": "Genel",
+      "data": "Veri",
+      "connections": "Bağlantılar",
+      "resources": "Deşifre",
+      "recording": "Kayıt"
+    },
+    "nativePlayer": {
+      "title": "Özel Twitch Oynatıcısı (Deneysel)",
+      "description": "Gömülü oynatıcılar yerine yerleşik yayın motorunu kullanın. Performansı ve uyumluluğu artırabilir.",
+      "loadError": "Yayın yüklenemedi. Özel oynatıcı geçici olarak kullanılamayabilir.",
+      "videoRefError": "Video öğesi referansı bağlanmadı",
+      "notSupportedError": "Medya oynatma tarayıcınız tarafından desteklenmiyor"
+    },
+    "recording": {
+      "tabLabel": "Kayıt",
+      "enableTitle": "Yerel Kayıt",
+      "enableFeatureToggle": "Yerel kayıt özelliğini etkinleştir",
+      "downloadDependencies": "Bağımlılıkları indir",
+      "installSuccess": "Bağımlılıklar başarıyla kuruldu",
+      "installError": "Kurulum hatası: {error}",
+      "uninstallDependencies": "Özelliği kaldır",
+      "uninstallSuccess": "Özellik başarıyla kaldırıldı",
+      "uninstallError": "Kaldırma hatası: {error}",
+      "uninstallConfirmTitle": "Özellik kaldırılsın mı?",
+      "uninstallConfirmDescription": "Bu, yalıtılmış kayıt ortamını kaldıracak ve alan boşaltacaktır. Daha sonra yeniden yükleyebilirsiniz.",
+      "uninstallConfirmButton": "Kaldır",
+      "enableDescription": "Streamlink kullanarak yayınları doğrudan kaynaktan kaydedin. Dosyalar Videolar klasörünüze kaydedilir.",
+      "unavailableOS": "Kayıt yalnızca Windows'ta kullanılabilir.",
+      "qualityTitle": "Varsayılan Kalite",
+      "qualityPrefix": "Kalite: ",
+      "qualityDescription": "Tercih edilen yayın kalitesi. Bulunamazsa mevcut olan en iyisine geri döner.",
+      "qualityBest": "En İyi",
+      "quality1080p": "1080p",
+      "quality720p": "720p",
+      "quality480p": "480p",
+      "qualityWorst": "En Düşük",
+      "pathTitle": "Dizin",
+      "pathDescription": "Kayıtların nereye kaydedileceğini seçin. Varsayılan Videolar klasörünü kullanmak için boş bırakın.",
+      "selectFolder": "Klasör Seç",
+      "defaultPath": "Varsayılan (Videolar)",
+      "resetFolder": "Sıfırla",
+      "orphanTitle": "Eksik Kayıtlar",
+      "orphanDescription": "Bu kayıtlar kesintiye uğradı. Bunları MP4'e dönüştürebilir veya silebilirsiniz.",
+      "orphanConvert": "MP4'e Dönüştür",
+      "orphanDismiss": "Sil",
+      "starting": "Kayıt başlatılıyor...",
+      "stopping": "Kayıt durduruluyor...",
+      "remuxing": "MP4'e dönüştürülüyor...",
+      "remuxingDescription": "Bu işlem dosya boyutuna bağlı olarak biraz zaman alabilir.",
+      "saved": "Kayıt kaydedildi",
+      "openFolder": "Klasörü Aç",
+      "remuxFailed": "Dönüştürme başarısız oldu. Ham kayıt korundu.",
+      "streamEnded": "Yayın sona erdi. Kayıt kaydediliyor...",
+      "streamError": "Kayıt hatası: {error}",
+      "customNotSupported": "Özel yayınlar için kayıt desteklenmez.",
+      "orphanFound": "{count} eksik kayıt bulundu"
+    }
+  },
+  "share": {
+    "tooltip": "Paylaş",
+    "title": "Yayınları Paylaş",
+    "description": "Yayınlarınızı arkadaşlarınızla paylaşın.",
+    "noStreams": "Paylaşılacak yayın yok",
+    "cancelButton": "İptal",
+    "copyButton": "Bağlantıyı Kopyala",
+    "toast": "Bağlantı panoya kopyalandı"
+  },
+  "import": {
+    "tooltip": "İçe Aktar",
+    "title": "Yayınları İçe Aktar",
+    "description": "Yayınları içe aktarmak için bir paylaşım bağlantısı yapıştırın.",
+    "placeholder": "Paylaşım bağlantısını buraya yapıştırın...",
+    "importButton": "İçe Aktar",
+    "invalidLink": "Geçersiz paylaşım bağlantısı",
+    "invalidCustom": "Özel yayınlar ayrıştırılamadı",
+    "success": "Yayınlar başarıyla içe aktarıldı",
+    "deepLinkSuccess": "Yayınlar Deep Link üzerinden başarıyla içe aktarıldı!"
+  },
+  "hide": {
+    "tooltip": "Gizle"
+  },
+  "stream": {
+    "watching": "İzleniyor"
+  },
+  "empty": {
+    "title": "Seçili yayın yok",
+    "description": "Aynı anda izlemek için favori kanallarınızı ekleyerek başlayın.",
+    "addButton": "Yayın Ekle",
+    "tourLink": "Yardıma mı ihtiyacınız var? Tura katılın"
+  },
+  "chat": {
+    "controlTitle": "Sohbet Kontrolü",
+    "selectPlaceholder": "Yayın sohbetini seçin",
+    "selectPrompt": "Sohbeti görüntülemek için bir yayın seçin.",
+    "noStreams": "Mevcut yayın yok.",
+    "noStreamsHint": "Sohbeti görüntülemek için bir yayın ekleyin.",
+    "sendPlaceholder": "Bir mesaj gönder...",
+    "resume": "Canlı sohbet",
+    "tabs": {
+      "chat": "Sohbet",
+      "transcript": "Döküm"
+    },
+    "transcript": {
+      "emptyState": "Henüz deşifre geçmişi yok.",
+      "emptyStateHint": "Altyazı oluşturmaya başlamak için Canlı Deşifreyi Etkinleştirin.",
+      "showOverlay": "Katmanı göster",
+      "copy": "Kopyala",
+      "clear": "Temizle",
+      "copied": "Kopyalandı!"
+    },
+    "unified": {
+      "selectorLabel": "Birleşik Sohbet",
+      "connectTitle": "Twitch ile Bağlan",
+      "connectHint": "Izgaranızdaki tüm Twitch kanallarından gelen mesajları tek bir akışta görmek için giriş yapın.",
+      "connectButton": "Bağlan",
+      "reconnecting": "Yeniden bağlanılıyor…",
+      "noStreams": "Izgaranızda yayın yok.",
+      "noStreamsHint": "Burada mesajları görmek için bir yayın ekleyin.",
+      "disconnected": "Sohbet bağlantısı kesildi.",
+      "auth": {
+        "expired": "Yetkilendirme kodunun süresi doldu. Lütfen tekrar deneyin.",
+        "error": "Kimlik doğrulama sırasında bir hata oluştu: ",
+        "tryAgain": "Tekrar Dene",
+        "step1": "1. Aşağıdaki doğrulama bağlantısını açın",
+        "step2": "2. Hesabınızı bağlamak için bu kodu girin",
+        "waiting": "Yetkilendirme bekleniyor...",
+        "cancel": "İptal"
+      },
+      "warningTwitchLoginToMerge": "Birleşik Sohbete Twitch sohbetlerini dahil etmek için Twitch hesabınızı bağlayın.",
+      "warningTwitchLogin": "Birleşik Sohbeti etkinleştirmek için Twitch hesabınızı bağlayın."
+    },
+    "loginPrompt": "Etkileşimde bulunmak için giriş yapın",
+    "loginPromptTwitch": "Bu kanalda mesaj göndermek için Twitch hesabınızı bağlayın.",
+    "loginPromptKick": "Bu kanalda mesaj göndermek için Kick hesabınızı bağlayın.",
+    "connectAction": "Bağlan",
+    "emotes": {
+      "searchEmote": "İfade ara...",
+      "noEmotesFound": "İfade bulunamadı",
+      "tabs": {
+        "recent": "Son",
+        "global": "Genel",
+        "channel": "Kanal"
+      }
+    }
+  },
+  "confirm": {
+    "deleteOrphan": {
+      "title": "Kaydı Sil",
+      "description": "Bu kayıt dosyası diskten kalıcı olarak silinecektir. Bu işlem geri alınamaz.",
+      "confirm": "Sil"
+    }
+  },
+  "common": {
+    "close": "Kapat",
+    "comingSoon": "Çok yakında",
+    "play": "Oynat",
+    "pause": "Duraklat",
+    "mute": "Sesi Kapat",
+    "unmute": "Sesi Aç",
+    "fullscreen": "Tam Ekran",
+    "exitFullscreen": "Tam Ekrandan Çık",
+    "settings": "Ayarlar",
+    "volume": "Ses"
+  },
+  "toasts": {
+    "add": {
+      "added": "eklendi",
+      "alreadyAdded": "Yayın zaten eklendi",
+      "maxStreams": "Maksimum 12 yayına ulaşıldı"
+    },
+    "favorite": {
+      "added": "favorilere eklendi",
+      "removed": "favorilerden çıkarıldı"
+    },
+    "remove": "kaldırıldı",
+    "update": {
+      "newVersion": "Yeni sürüm mevcut",
+      "latestVersion": "En son sürümdesiniz!",
+      "failedCheck": "Güncellemeler kontrol edilemedi",
+      "failedUpdate": "Güncelleme indirilemedi",
+      "downloading": "Güncelleme indiriliyor...",
+      "success": "Güncelleme tamamlandı! Yeniden başlatılıyor..."
+    },
+    "screenshot": {
+      "saved": "Ekran görüntüsü kaydedildi!",
+      "failed": "Ekran görüntüsü alınamadı",
+      "noStream": "Video akışı bulunamadı",
+      "blocked": "Ekran görüntüsü platform DRM tarafından engellendi",
+      "timeout": "Ekran görüntüsü zaman aşımına uğradı"
+    },
+    "codecs": {
+      "missing": "Eksik medya kodlayıcıları tespit edildi. Yayınları izlemek için lütfen sistem kodlayıcılarınızı (örneğin ubuntu-restricted-extras veya gstreamer-plugins) yükleyin."
+    }
+  },
+  "skeleton": {
+    "loading": "Yayın yükleniyor",
+    "loadingChannel": "{channel} yükleniyor..."
+  },
+  "notifications": {
+    "welcome": "Favoriler canlı yayında",
+    "welcomeBody": "{channels} şu an canlı yayında!",
+    "welcomeBodyMore": "{channels} ve {count} favori daha canlı yayında!",
+    "welcomeBodySingle": "{channel} şu an canlı yayında!",
+    "live": "{channel} canlı yayında!",
+    "liveBody": "[{category}] {title}",
+    "liveBodyTitleOnly": "{title}",
+    "liveBodyFallback": "{platform} üzerinde {channel}",
+    "actionWatch": "Yayını İzle",
+    "actionIgnore": "Yoksay"
+  },
+  "onboarding": {
+    "title": "Multistream'e Hoş Geldiniz",
+    "skip": "Geç",
+    "back": "Geri",
+    "next": "İleri",
+    "finish": "Başla",
+    "step1": {
+      "title": "Yayın Ekle",
+      "description": "Bir Twitch, Kick veya YouTube yayını eklemek için kenar çubuğundaki '+' düğmesine tıklayın veya {key} tuşuna basın."
+    },
+    "step2": {
+      "title": "Sohbet Seç",
+      "description": "Üstteki açılır menüyü kullanarak kenar çubuğunda hangi yayın sohbetinin görüneceğini seçin veya anında geçiş yapmak için {keys} tuşlarına basın.",
+      "pressKeys": "Anında geçiş yapmak için",
+      "switchImmediately": "tuşlarına basın",
+      "chatActive": "Sohbet Aktif"
+    },
+    "step3": {
+      "title": "Hesapları Bağla (Twitch ve Kick)",
+      "description": "Sohbette doğrudan mesaj göndermek ve yayın tercihlerinizi senkronize etmek için Twitch ve Kick hesaplarınızla giriş yapın.",
+      "feature1": "Doğrudan Twitch ve Kick sohbetinde mesaj gönderin",
+      "feature2": "Üçüncü taraf ifadeleri için tam destek (BTTV ve 7TV)",
+      "feature3": "Birleşik Sohbet ile kusursuz entegrasyon"
+    },
+    "step4": {
+      "title": "Kategoriye Göre Yayın Önerileri",
+      "description": "Üstteki çipleri kullanarak önerilen yayınları kategoriye göre filtreleyin. Arka planda o kategori için Twitch ve Kick'ten daha fazla canlı yayın yüklemek için herhangi bir çipe tıklayın.",
+      "caption": "Her iki platformdan gelen yayınlar otomatik olarak yüklenir ve siz gezinirken önbellekte tutulur."
+    },
+    "step5": {
+      "title": "Canlı Deşifre",
+      "description": "Doğrudan bilgisayarınızda oluşturulan gerçek zamanlı altyazılarla yayınları izleyin.",
+      "captionOriginal": "Orijinal: Bonjour tout le monde.",
+      "captionTranslation": "Çeviri: Herkese merhaba.",
+      "feature1": "Gerçek zamanlı altyazılar",
+      "feature2": "İsteğe bağlı İngilizce çeviri",
+      "feature3": "Yerel olarak bilgisayarınızda çalışır",
+      "note": "Her şey bilgisayarınızda yerel olarak çalışır. Performans CPU'nuza ve seçilen modele bağlıdır."
+    },
+    "step6": {
+      "title": "Yerel Kayıt",
+      "description": "Otomatik MP4 dönüştürme ile canlı yayınları doğrudan kaynaktan orijinal kalitede kaydedin.",
+      "feature1": "Kalite kaybı olmadan doğrudan yayın yakalama",
+      "feature2": "Otomatik MP4 dönüştürme",
+      "feature3": "Özel kayıt klasörü seçimi",
+      "note": "Kayıtlar doğrudan diskinize kaydedilir ve ayarlardan her zaman erişilebilir."
+    },
+    "step7": {
+      "title": "Klavye Kısayolları",
+      "description": "Yayınlarınızı ve sohbetlerinizi verimli bir şekilde kontrol etmek için bu hızlı kısayolları kullanın:",
+      "add": "Yayın ekle iletişim kutusunu aç",
+      "screenshot": "Odaklanmış yayının ekran görüntüsünü al",
+      "chat": "Yayın sohbetine geç {keys}",
+      "screenshotTitle": "Ekran Görüntüsü"
+    }
+  },
+  "webBanner": {
+    "title": "Multistream masaüstü uygulamasında daha iyi çalışır.",
+    "button": "İndir"
+  },
+  "sidebar": {
+    "openSidebar": "Kenar çubuğunu aç",
+    "followedChannels": "Takip Edilen Kanallar",
+    "all": "Tümü",
+    "loginTitle": "Hesabınızı bağlayın",
+    "loginSubtitle": "Takip ettiğiniz kanalları görün"
+  },
+  "nativePlayer": {
+    "live": "CANLI",
+    "quality": {
+      "auto": "Otomatik"
+    },
+    "offline": {
+      "title": "Yayın Sona Erdi",
+      "description": "Yayıncı bu yayını sonlandırdı."
+    }
+  }
+}

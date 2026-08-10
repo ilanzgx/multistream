@@ -20,7 +20,8 @@
     "suggestions": "热门中文频道",
     "categoryAll": "全部",
     "searchLoading": "搜索中...",
-    "searchNoResults": "未找到频道"
+    "searchNoResults": "未找到频道",
+    "removeStream": "移除直播流"
   },
   "settings": {
     "tooltip": "设置",
@@ -392,6 +393,7 @@
     "button": "下载"
   },
   "sidebar": {
+    "openSidebar": "打开侧边栏",
     "followedChannels": "已关注频道",
     "all": "全部",
     "loginTitle": "连接您的账户",

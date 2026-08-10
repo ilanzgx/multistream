@@ -286,7 +286,7 @@ onUnmounted(() => {
     <!-- toggle button -->
     <button
       v-if="!sidebarOpen"
-      aria-label="Abrir menu lateral"
+      :aria-label="$t('sidebar.openSidebar')"
       class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2"
       @click="sidebarOpen = true"
     >
