@@ -20,6 +20,7 @@ Multistream is a native, cross-platform desktop application that enables power u
 - ALWAYS follow the current design system and minimalist aesthetics of the application. Do not invent new visual patterns, do not introduce jarring colors, and strictly respect the dark/neutral color palette (e.g., bg-[#0f1115], text-gray-400) used across the app.
 - ALWAYS profile before suggesting architectural performance changes. Do not recommend virtualization, caching, memoization, background workers, or other advanced optimizations unless there is evidence they address the actual bottleneck.
 - NEVER write a text hardcoded ALWAYS write following i18n pattern (on frontend)
+- ALWAYS validate changes according to scope: UI/interface changes require running 'bun run desktop:typecheck'; logic/composable changes require running both 'bun run desktop:typecheck' and unit tests.
 
 ## Local Agent Skills
 
@@ -30,6 +31,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 - **[`multistream-website`](.agents/skills/website/SKILL.md)**: Pragmatic architecture guide, Astro SSG setup, Tailwind CSS v4 styling, i18n, Deep Link Gateway, and dynamic GitHub release links for the website (`apps/website/`).
 - **[`multistream-desktop-frontend-testing`](.agents/skills/desktop-frontend-testing/SKILL.md)**: Comprehensive guide, AAA pattern, Tauri IPC mocking, fake timers, and best practices for writing unit tests in `apps/desktop/src/`.
 - **[`multistream-graveyard`](.agents/skills/graveyard/SKILL.md)**: Explains the Multistream Graveyard mechanism, how it works, and why it is necessary to prevent WebView IPC crashes.
+- **[`multistream-adding-language`](.agents/skills/adding-language/SKILL.md)**: Guides agents and developers through the exact process of adding a new language to the Multistream application.
 
 ## Tech Stack
 
@@ -40,11 +42,6 @@ This repository contains custom, specialized skills for AI Agents located in the
 - **Tooling/Runtime:** Vite, Bun
 
 ## Development
-
-### Prerequisites
-
-- [Bun](https://bun.sh/)
-- [Rust](https://www.rust-lang.org/)
 
 ### Commands
 
@@ -102,7 +99,7 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
 - **Design:** Minimalist, using Tailwind CSS v4.
 - **i18n:** Supports multiple languages (e.g., `/en/` and `/pt-br/`).
 - **Deployment:** Deployed on Vercel.
-- **Analytics:** Uses `@vercel/analytics` and `@vercel/speed-insights` native components directly in `Layout.astro`. **Do not** use the `@astrojs/vercel` adapter, as it is deprecated for static sites on modern Astro.
+- **Analytics:** Uses `@vercel/analytics` and `@vercel/speed-insights` native components directly in `Layout.astro`.
 - **Dependencies:** Relies on the root `package.json` for some types (like `@vue/tsconfig`). CI must always run `bun install` at the root before building the `website/` directory.
 
 ### Testing
@@ -163,8 +160,8 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
   - **Custom Streams Bypass:** Streams with `platform === 'custom'` bypass this graveyard logic entirely and are removed from the DOM immediately, as they don't share the same risk of platform-wide IPC crash cascades.
 
 - **Internationalization (i18n):**
-  - **Always translate UI text:** Every new user-facing text string must be localized. Always remember to add the translations to all 6 supported languages in `apps/desktop/src/i18n/locales/` (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`).
-  - **Pre-Flight Checklist:** You MUST pay extra attention and double-check your work to ensure strict parity across ALL 6 files before considering any UI implementation complete. Do not rely solely on Vue `$t` fallbacks.
+  - **Always translate UI text:** Every new user-facing text string must be localized. Always remember to add the translations to all 10 supported languages in `apps/desktop/src/i18n/locales/` (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`, `fr.json`, `tr.json`, `hi.json`, `id.json`).
+  - **Pre-Flight Checklist:** You MUST pay extra attention and double-check your work to ensure strict parity across ALL 10 files before considering any UI implementation complete. Do not rely solely on Vue `$t` fallbacks.
 
 - **UI Components (shadcn-vue):**
   - ALWAYS use shadcn-vue components whenever possible. However, carefully evaluate the trade-off between the component's size/performance and simpler native or lightweight alternatives, choosing what is best for the specific context.
@@ -178,10 +175,9 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
 - **Vitest Testing Gotchas:**
   - **Global Mock Leaks:** When mocking global objects (e.g., `window`, `fetch`) via `vi.stubGlobal()`, always explicitly call `vi.unstubAllGlobals()` in the `afterEach` hook to prevent leaking mocks into subsequent test suites.
   - **Composable Singleton State:** Composables that rely on module-level variables (e.g., `const map = new Map()`) retain their state across tests. Always export a test-only reset function (e.g., `__test_resetState()`) and call it inside the `beforeEach` block of the test suite to ensure strict test isolation.
-  -
 - **CI/CD & Environment Variables:**
-  - **Always Sync Secrets with Workflows:** If you add a new feature, external API connection, or authentication flow that requires environment variables or secrets (e.g., `option_env!("CLIENT_ID")` in Rust), you MUST remember to update `.github/workflows/release.yml` (and `ci.yml` if applicable) to inject these secrets into the build steps (`env:`). Rust evaluates these macros at compile time, so failing to pass them in CI will result in valid builds that crash at runtime.
-  -
+  - **Always Sync Secrets with Workflows:** When adding new features or APIs in Rust that depend on environment variables, ALWAYS verify and update .github/workflows/release.yml (and ci.yml) to inject those environment variables into the build steps.
+
 - **NEVER DELETE TESTS:** But add or update tests for the code you change, even if nobody asked.
 - **NO OVERENGINEERING:** Always prioritize simplicity and maintainability over adding unnecessary complexity.
 - **AVOID TRIAL AND ERROR:** When lacking context or information about a framework, library, or API, do not rely on trial and error. Always use the **Context7 MCP** to query and fetch the most up-to-date documentation.

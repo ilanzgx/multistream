@@ -4,9 +4,20 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 import pkg from "./package.json";
 
+import { visualizer } from "rollup-plugin-visualizer";
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [
+    vue(),
+    tailwindcss(),
+    visualizer({
+      open: process.env.ANALYZE === "true",
+      gzipSize: true,
+      brotliSize: true,
+      filename: "stats.html",
+    }),
+  ],
   clearScreen: false,
   server: {
     port: 5173,

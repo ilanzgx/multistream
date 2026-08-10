@@ -1,2 +1,6 @@
 #!/bin/sh
+echo "Checking i18n key consistency..."
+bun run check:i18n
+
+echo "Running staged linters and formatters..."
 bunx lint-staged

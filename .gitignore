@@ -33,3 +33,7 @@ test-results/
 worktrees/
 .vercel
 .env*.local
+
+# Bundle Analyzer
+.vite-bundle-analyzer/
+stats.html
