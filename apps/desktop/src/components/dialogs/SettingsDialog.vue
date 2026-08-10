@@ -428,7 +428,7 @@ watch(
         </TabsList>
 
         <div class="flex-1 overflow-y-auto mt-4 pr-1 scrollbar-thin">
-          <TabsContent value="geral" class="space-y-6 mt-0 outline-none">
+          <TabsContent value="geral" class="space-y-8 mt-0 outline-none">
             <!-- Language Section -->
             <div class="space-y-2">
               <div class="flex items-center gap-2 px-1">
@@ -443,11 +443,11 @@ watch(
               <div
                 class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-start"
               >
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 w-full">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 w-full">
                   <button
                     v-for="lang in languages"
                     :key="lang.code"
-                    class="flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer w-full"
+                    class="flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer w-full"
                     :class="
                       locale === lang.code
                         ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
@@ -455,8 +455,8 @@ watch(
                     "
                     @click="changeLanguage(lang.code)"
                   >
-                    <component :is="lang.flag" :size="14" />
-                    <span>{{ lang.label }}</span>
+                    <component :is="lang.flag" :size="20" class="shrink-0" />
+                    <span class="w-16 sm:w-20 text-left truncate">{{ lang.name }}</span>
                   </button>
                 </div>
               </div>
@@ -475,7 +475,7 @@ watch(
                   </p>
                 </div>
               </div>
-              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+              <div class="shrink-0 flex items-center justify-end">
                 <Switch id="notifications-switch" v-model:checked="notificationsEnabled" />
               </div>
             </div>
@@ -484,7 +484,7 @@ watch(
             <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
               <div class="flex items-center gap-2 px-1">
                 <FlaskConical class="size-4 text-gray-400 shrink-0" />
-                <div>
+                <div class="pr-8">
                   <h3 class="text-white text-sm font-medium">
                     {{ $t("settings.nativePlayer.title") }}
                   </h3>
@@ -493,7 +493,7 @@ watch(
                   </p>
                 </div>
               </div>
-              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+              <div class="shrink-0 flex items-center justify-end">
                 <Switch id="native-player-switch" v-model:checked="nativePlayerEnabled" />
               </div>
             </div>
@@ -507,11 +507,11 @@ watch(
                   <p class="text-gray-400 text-xs">{{ $t("settings.updates.description") }}</p>
                 </div>
               </div>
-              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+              <div class="shrink-0 flex items-center justify-end">
                 <Button
                   variant="outline"
                   size="sm"
-                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
+                  class="w-52 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
                   :disabled="isChecking"
                   @click="handleCheckUpdates"
                 >
@@ -534,11 +534,11 @@ watch(
                   <p class="text-gray-400 text-xs">{{ $t("settings.help.description") }}</p>
                 </div>
               </div>
-              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+              <div class="shrink-0 flex items-center justify-end">
                 <Button
                   variant="outline"
                   size="sm"
-                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
+                  class="w-52 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
                   @click="startTour"
                 >
                   {{ $t("settings.help.showTourButton") }}
@@ -547,7 +547,7 @@ watch(
             </div>
           </TabsContent>
 
-          <TabsContent value="conexoes" class="space-y-6 mt-0 outline-none">
+          <TabsContent value="conexoes" class="space-y-8 mt-0 outline-none">
             <!-- Accounts / Platforms Section -->
             <div class="space-y-2 relative">
               <div class="flex items-center gap-2 px-1">
@@ -555,9 +555,6 @@ watch(
                 <div>
                   <div class="flex items-center gap-2">
                     <h3 class="text-white text-sm font-medium">{{ $t("settings.auth.title") }}</h3>
-                    <!--<span class="text-[10px] text-gray-400 font-medium"
-                      >({{ $t("common.comingSoon") }})</span
-                    >-->
                   </div>
                   <p class="text-gray-400 text-xs mt-0.5">{{ $t("settings.auth.description") }}</p>
                 </div>
@@ -689,7 +686,7 @@ watch(
             </div>
           </TabsContent>
 
-          <TabsContent value="dados" class="space-y-6 mt-0 outline-none">
+          <TabsContent value="dados" class="space-y-8 mt-0 outline-none">
             <!-- Data & Backup Section -->
             <div class="flex items-center justify-between gap-4">
               <div class="flex items-center gap-2 px-1">
@@ -699,7 +696,7 @@ watch(
                   <p class="text-gray-400 text-xs">{{ $t("settings.backup.description") }}</p>
                 </div>
               </div>
-              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center gap-2">
+              <div class="shrink-0 flex items-center justify-end gap-2">
                 <input
                   ref="fileInputRef"
                   type="file"
@@ -732,7 +729,7 @@ watch(
           <TabsContent
             v-if="isRunningInTauri && isSupported"
             value="recursos"
-            class="space-y-6 mt-0 outline-none"
+            class="space-y-8 mt-0 outline-none"
           >
             <!-- Live Transcription Section -->
             <div v-if="isRunningInTauri && isSupported" class="space-y-2">
@@ -929,7 +926,7 @@ watch(
           <TabsContent
             v-if="isRunningInTauri && isRecordingSupported"
             value="gravacao"
-            class="space-y-6 mt-0 outline-none"
+            class="space-y-8 mt-0 outline-none"
           >
             <!-- 1. Enable Recording Section -->
             <div class="flex items-center justify-between gap-4">
@@ -947,7 +944,7 @@ watch(
                   </p>
                 </div>
               </div>
-              <div class="shrink-0 bg-[#14161a] p-2 rounded-xl flex items-center">
+              <div class="shrink-0 flex items-center justify-end">
                 <template v-if="isDependenciesInstalled">
                   <div class="flex items-center gap-3">
                     <span class="text-[10px] text-gray-400 font-mono">
