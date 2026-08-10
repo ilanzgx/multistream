@@ -39,13 +39,16 @@ pub fn streamlink_args(url: &str, quality: &str, output: &Path) -> Vec<String> {
 
 pub fn ffmpeg_remux_args(input: &Path, output: &Path) -> Vec<String> {
     vec![
+        "-y".to_string(), // put -y at the beginning
         "-i".to_string(),
         input.to_string_lossy().to_string(),
         "-c".to_string(),
         "copy".to_string(),
         "-movflags".to_string(),
         "+faststart".to_string(),
+        "-progress".to_string(),
+        "pipe:1".to_string(),
+        "-nostats".to_string(),
         output.to_string_lossy().to_string(),
-        "-y".to_string(),
     ]
 }

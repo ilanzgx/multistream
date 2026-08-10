@@ -47,6 +47,14 @@ struct RecordingStreamEndedPayload {
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
+struct RemuxProgressPayload {
+    stream_id: String,
+    bytes: u64,
+    total_bytes: u64,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RecordingInfo {
     stream_id: String,
     channel: String,
@@ -311,7 +319,7 @@ pub async fn recover_orphan_recording(
     let app_clone = app.clone();
     let oid = orphan_id.clone();
     tokio::spawn(async move {
-        let result = run_ffmpeg_remux(&app_clone, &ts_path, &mp4_path).await;
+        let result = run_ffmpeg_remux(&app_clone, &oid, &ts_path, &mp4_path).await;
         match result {
             Ok(()) => {
                 let _ = fs::remove_file(&ts_path);
@@ -459,7 +467,7 @@ async fn run_remux(app: AppHandle, stream_id: String) {
         },
     );
 
-    match run_ffmpeg_remux(&app, &ts_path, &mp4_path).await {
+    match run_ffmpeg_remux(&app, &stream_id, &ts_path, &mp4_path).await {
         Ok(()) => {
             for i in 0..5 {
                 if std::fs::remove_file(&ts_path).is_ok() {
@@ -495,6 +503,7 @@ async fn run_remux(app: AppHandle, stream_id: String) {
 
 async fn run_ffmpeg_remux(
     app: &AppHandle,
+    stream_id: &str,
     ts_path: &std::path::Path,
     mp4_path: &std::path::Path,
 ) -> Result<(), RecordingError> {
@@ -512,15 +521,35 @@ async fn run_ffmpeg_remux(
         .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
 
     while let Some(event) = rx.recv().await {
-        if let CommandEvent::Terminated(payload) = event {
-            return if payload.code == Some(0) {
-                Ok(())
-            } else {
-                Err(RecordingError::SpawnFailed(format!(
-                    "ffmpeg exited with code {:?}",
-                    payload.code
-                )))
-            };
+        match event {
+            CommandEvent::Stdout(line) => {
+                let text = String::from_utf8_lossy(&line);
+                for l in text.lines() {
+                    if let Some(rest) = l.strip_prefix("total_size=") {
+                        if let Ok(bytes) = rest.parse::<u64>() {
+                            let _ = app.emit(
+                                "recording:remux-progress",
+                                RemuxProgressPayload {
+                                    stream_id: stream_id.to_string(),
+                                    bytes,
+                                    total_bytes: ts_size,
+                                },
+                            );
+                        }
+                    }
+                }
+            }
+            CommandEvent::Terminated(payload) => {
+                return if payload.code == Some(0) {
+                    Ok(())
+                } else {
+                    Err(RecordingError::SpawnFailed(format!(
+                        "ffmpeg exited with code {:?}",
+                        payload.code
+                    )))
+                };
+            }
+            _ => {}
         }
     }
 
