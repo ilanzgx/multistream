@@ -11,12 +11,16 @@ export default defineConfig({
   plugins: [
     vue(),
     tailwindcss(),
-    visualizer({
-      open: process.env.ANALYZE === "true",
-      gzipSize: true,
-      brotliSize: true,
-      filename: "stats.html",
-    }),
+    ...(process.env.ANALYZE === "true"
+      ? [
+          visualizer({
+            open: true,
+            gzipSize: true,
+            brotliSize: true,
+            filename: "stats.html",
+          }),
+        ]
+      : []),
   ],
   clearScreen: false,
   server: {

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 echo "Checking i18n key consistency..."
 bun run check:i18n
 

@@ -4,10 +4,10 @@ import { getDefaultLocale } from "../index";
 describe("i18n: getDefaultLocale unit tests", () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.unstubAllGlobals();
   });
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -24,7 +24,7 @@ describe("i18n: getDefaultLocale unit tests", () => {
 
   it("should ignore localStorage if saved 'locale' is fundamentally unsupported", () => {
     // Arrange
-    localStorage.setItem("locale", "fr"); // French is not supported
+    localStorage.setItem("locale", "it"); // Italian is not supported
     vi.stubGlobal("navigator", { language: "en-US" }); // Make sure we stub navigator to English to test the fallback properly
 
     // Act

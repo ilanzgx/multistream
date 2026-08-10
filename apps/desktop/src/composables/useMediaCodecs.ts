@@ -34,3 +34,7 @@ const _useMediaCodecs = () => {
 };
 
 export const useMediaCodecs = createSharedComposable(_useMediaCodecs);
+
+export const __test_resetState = () => {
+  hasWarnedCodecs = false;
+};

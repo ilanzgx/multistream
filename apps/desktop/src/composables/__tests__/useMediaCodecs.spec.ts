@@ -26,7 +26,9 @@ describe("useMediaCodecs", () => {
 
   beforeEach(async () => {
     vi.resetModules();
-    useMediaCodecs = (await import("../useMediaCodecs")).useMediaCodecs;
+    const mod = await import("../useMediaCodecs");
+    useMediaCodecs = mod.useMediaCodecs;
+    mod.__test_resetState();
     vi.clearAllMocks();
 
     canPlayTypeMock = vi.fn();
@@ -127,12 +129,13 @@ describe("useMediaCodecs", () => {
     setUserAgent("Mozilla/5.0 (X11; Linux x86_64)");
     canPlayTypeMock.mockReturnValue("");
 
-    const { checkVideoCodecs } = useMediaCodecs();
+    const { checkVideoCodecs: firstCheck } = useMediaCodecs();
+    const { checkVideoCodecs: secondCheck } = useMediaCodecs();
 
     // Act
-    checkVideoCodecs();
-    checkVideoCodecs(); // second call
-    checkVideoCodecs(); // third call
+    firstCheck();
+    secondCheck(); // second call
+    firstCheck(); // third call
 
     // Assert
     expect(createElementMock).toHaveBeenCalledTimes(1); // Only checked once
