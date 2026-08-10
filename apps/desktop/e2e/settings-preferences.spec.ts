@@ -22,8 +22,8 @@ test.describe("Settings & i18n Preferences E2E Test", () => {
     // Assert: English title is present
     await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 
-    // Act: click Portuguese language option (button with label "PT")
-    const ptButton = dialog.getByRole("button", { name: "PT", exact: true });
+    // Act: click Portuguese language option (button with label "Português")
+    const ptButton = dialog.getByRole("button", { name: "Português", exact: true });
     await expect(ptButton).toBeVisible();
     await ptButton.click();
 
