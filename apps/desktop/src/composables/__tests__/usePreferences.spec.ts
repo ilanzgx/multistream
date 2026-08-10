@@ -87,6 +87,28 @@ describe("usePreferences composable unit tests", () => {
     expect(sidebarOpen.value).toBe(true);
   });
 
+  it("should set recording quality correctly", () => {
+    // Arrange
+    const { setRecordingQuality, recordingQuality } = sut;
+
+    // Act
+    setRecordingQuality("720p");
+
+    // Assert
+    expect(recordingQuality.value).toBe("720p");
+  });
+
+  it("should set recording path correctly", () => {
+    // Arrange
+    const { setRecordingPath, recordingPath } = sut;
+
+    // Act
+    setRecordingPath("D:/videos");
+
+    // Assert
+    expect(recordingPath.value).toBe("D:/videos");
+  });
+
   it("should reset all preferences to defaults", () => {
     // Arrange
     const {
@@ -95,10 +117,15 @@ describe("usePreferences composable unit tests", () => {
       notificationsEnabled,
       setOnboardingCompleted,
       nativePlayerEnabled,
+      setRecordingQuality,
+      setRecordingPath,
+      recordingEnabled,
       resetPreferences,
       selectedChat,
       sidebarOpen,
       onboardingCompleted,
+      recordingQuality,
+      recordingPath,
     } = sut;
 
     // Tweak properties
@@ -107,12 +134,18 @@ describe("usePreferences composable unit tests", () => {
     notificationsEnabled.value = false;
     setOnboardingCompleted(true);
     nativePlayerEnabled.value = true;
+    setRecordingQuality("480p");
+    setRecordingPath("C:/test");
+    recordingEnabled.value = true;
 
     expect(selectedChat.value).toBe("alanzoka_twitch");
     expect(sidebarOpen.value).toBe(false);
     expect(notificationsEnabled.value).toBe(false);
     expect(onboardingCompleted.value).toBe(true);
     expect(nativePlayerEnabled.value).toBe(true);
+    expect(recordingQuality.value).toBe("480p");
+    expect(recordingPath.value).toBe("C:/test");
+    expect(recordingEnabled.value).toBe(true);
 
     // Act
     resetPreferences();
@@ -123,5 +156,8 @@ describe("usePreferences composable unit tests", () => {
     expect(notificationsEnabled.value).toBe(true);
     expect(onboardingCompleted.value).toBe(false);
     expect(nativePlayerEnabled.value).toBe(false);
+    expect(recordingQuality.value).toBe("best");
+    expect(recordingPath.value).toBe("");
+    expect(recordingEnabled.value).toBe(false);
   });
 });

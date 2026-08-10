@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useRecording, __test_resetState } from "../useRecording";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { toast } from "vue-sonner";
 import type { Stream } from "../useStreams";
 import { nextTick, effectScope } from "vue";
@@ -13,14 +14,17 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(() => Promise.resolve(vi.fn())),
 }));
 
-vi.mock("vue-sonner", () => ({
-  toast: {
+vi.mock("vue-sonner", () => {
+  const toastMock = vi.fn();
+  Object.assign(toastMock, {
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),
     info: vi.fn(),
-  },
-}));
+    dismiss: vi.fn(),
+  });
+  return { toast: toastMock };
+});
 
 vi.mock("vue-i18n", () => ({
   useI18n: () => ({
@@ -111,11 +115,15 @@ describe("useRecording", () => {
     const { stopRecording } = scope.run(() => useRecording())!;
 
     // Act
-    await stopRecording(mockStream.id);
+    await scope.run(async () => {
+      await stopRecording("stream1");
+    });
 
     // Assert
-    expect(toast.info).toHaveBeenCalledWith("settings.recording.stopping");
-    expect(invoke).toHaveBeenCalledWith("stop_recording", { streamId: mockStream.id });
+    expect(toast.info).toHaveBeenCalledWith("settings.recording.stopping", {
+      id: "stop-stream1",
+    });
+    expect(invoke).toHaveBeenCalledWith("stop_recording", { streamId: "stream1" });
     scope.stop();
   });
 
@@ -123,13 +131,16 @@ describe("useRecording", () => {
     // Arrange
     const scope = effectScope();
     const { openFolder } = scope.run(() => useRecording())!;
+    vi.mocked(invoke).mockResolvedValueOnce(null);
 
     // Act
-    await openFolder(mockStream.id);
+    await scope.run(async () => {
+      await openFolder("stream1");
+    });
 
     // Assert
     expect(invoke).toHaveBeenCalledWith("open_recording_folder", {
-      streamId: mockStream.id,
+      streamId: "stream1",
       outputDir: null,
     });
     scope.stop();
@@ -141,12 +152,11 @@ describe("useRecording", () => {
     const { recoverOrphan } = scope.run(() => useRecording())!;
 
     // Act
-    await recoverOrphan("orphan1");
+    await scope.run(async () => {
+      await recoverOrphan("orphan1");
+    });
 
     // Assert
-    expect(toast.info).toHaveBeenCalledWith("settings.recording.remuxing", {
-      description: "settings.recording.remuxingDescription",
-    });
     expect(invoke).toHaveBeenCalledWith("recover_orphan_recording", { orphanId: "orphan1" });
     scope.stop();
   });
@@ -248,5 +258,103 @@ describe("useRecording", () => {
     expect(size).toBe(184000000);
     expect(invoke).toHaveBeenCalledWith("recording_get_env_size");
     scope.stop();
+  });
+
+  describe("IPC Event Listeners", () => {
+    function getListener(eventName: string): ((...args: any[]) => any) | undefined {
+      const call = vi.mocked(listen).mock.calls.find((c) => c[0] === eventName);
+      return call ? call[1] : undefined;
+    }
+
+    it("should handle recording:remux-started", async () => {
+      // Arrange
+      const scope = effectScope();
+      scope.run(() => useRecording());
+      const listener = getListener("recording:remux-started");
+      expect(listener).toBeDefined();
+
+      if (listener) {
+        // Act
+        listener({ payload: { streamId: "stream1" } });
+
+        // Assert
+        expect(toast.dismiss).toHaveBeenCalledWith("stop-stream1");
+        expect(toast).toHaveBeenCalled();
+      }
+      scope.stop();
+    });
+
+    it("should handle recording:remux-finished", async () => {
+      // Arrange
+      const scope = effectScope();
+      scope.run(() => useRecording());
+      const listener = getListener("recording:remux-finished");
+      expect(listener).toBeDefined();
+
+      if (listener) {
+        // Act
+        listener({ payload: { streamId: "stream1" } });
+
+        // Assert
+        expect(toast.dismiss).toHaveBeenCalledWith("remux-stream1");
+        expect(toast.success).toHaveBeenCalledWith("settings.recording.saved", expect.any(Object));
+      }
+      scope.stop();
+    });
+
+    it("should handle recording:remux-failed", async () => {
+      // Arrange
+      const scope = effectScope();
+      scope.run(() => useRecording());
+      const listener = getListener("recording:remux-failed");
+      expect(listener).toBeDefined();
+
+      if (listener) {
+        // Act
+        listener({ payload: { streamId: "stream1", error: "OOM" } });
+
+        // Assert
+        expect(toast.dismiss).toHaveBeenCalledWith("remux-stream1");
+        expect(toast.warning).toHaveBeenCalledWith(
+          "settings.recording.remuxFailed",
+          expect.any(Object)
+        );
+      }
+      scope.stop();
+    });
+
+    it("should handle recording:remux-progress", async () => {
+      // Arrange
+      const scope = effectScope();
+      scope.run(() => useRecording());
+      const listener = getListener("recording:remux-progress");
+      expect(listener).toBeDefined();
+
+      if (listener) {
+        // Act
+        listener({ payload: { streamId: "stream1", bytes: 100, totalBytes: 200 } });
+
+        // Assert
+        // State updates are internal, we just assert it doesn't crash
+      }
+      scope.stop();
+    });
+
+    it("should handle recording:stream-ended", async () => {
+      // Arrange
+      const scope = effectScope();
+      scope.run(() => useRecording());
+      const listener = getListener("recording:stream-ended");
+      expect(listener).toBeDefined();
+
+      if (listener) {
+        // Act
+        listener({ payload: { streamId: "stream1", channel: "test" } });
+
+        // Assert
+        expect(toast.info).toHaveBeenCalledWith("settings.recording.streamEnded");
+      }
+      scope.stop();
+    });
   });
 });
