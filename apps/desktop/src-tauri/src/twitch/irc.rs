@@ -429,7 +429,7 @@ async fn connect_irc(
             _ = heartbeat.tick() => {
                 let idle = last_read_activity.elapsed();
                 let timeout = Duration::from_secs(HEARTBEAT_TIMEOUT_SECS);
-                log::info!(
+                log::debug!(
                     "[twitch-irc] heartbeat check: idle={idle:?}, timeout={timeout:?}, \
                      iteration={loop_iteration}, msgs_rx={total_messages_received}, \
                      pings={total_pings_received}, pongs={total_pongs_sent}, \

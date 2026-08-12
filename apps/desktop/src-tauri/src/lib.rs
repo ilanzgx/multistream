@@ -49,6 +49,27 @@ const KEYBOARD_SCRIPT: &str = include_str!("core/keyboard_shortcuts.js");
 const CORE_ENGINE: &str = include_str!("core/player_engine.bin");
 const METRICS: &str = include_str!("core/metrics.bin");
 
+#[tauri::command]
+async fn splashscreen_ready(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(splash) = app.get_webview_window("splashscreen") {
+        let _ = splash.show();
+    }
+    Ok(())
+}
+
+#[tauri::command]
+async fn close_splashscreen(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(splash) = app.get_webview_window("splashscreen") {
+        let _ = splash.close();
+    }
+    if let Some(main) = app.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.unminimize();
+        let _ = main.set_focus();
+    }
+    Ok(())
+}
+
 // this works on Windows, Linux and maybe macOS
 // dont touch this, unless you know what you are doing
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -133,10 +154,13 @@ pub fn run() {
             recording_uninstall_dependencies,
             recording_get_env_size,
             scan_orphans,
+            splashscreen_ready,
+            close_splashscreen,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
             app.manage(RecordingManager::new());
+
             let twitch_state = TwitchState::new();
             app.manage(twitch_state);
             let state = app.state::<TwitchState>();
@@ -253,17 +277,6 @@ pub fn run() {
                 )?;
             }
 
-            // resolve url
-            let url = if cfg!(debug_assertions) {
-                tauri::WebviewUrl::External("http://localhost:5173".parse().unwrap())
-            } else {
-                tauri::WebviewUrl::External(
-                    format!("http://localhost:{}", LOCALHOST_PORT)
-                        .parse()
-                        .unwrap(),
-                )
-            };
-
             let player_injector = format!("eval(atob('{}'));", CORE_ENGINE);
             let metrics_injector = format!("eval(atob('{}'));", METRICS);
             let graveyard_script = r#"
@@ -315,23 +328,37 @@ pub fn run() {
                 });
             "#;
 
-            // create the window manually so can set user_agent
-            // And inject scripts to global window
+            // Windows WebView2 requires all windows in the same app to share identical 
+            // browser arguments and user agent, otherwise it crashes.
+            let browser_args = "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection \
+                                --disable-background-timer-throttling \
+                                --disable-backgrounding-occluded-windows \
+                                --disable-renderer-backgrounding \
+                                --autoplay-policy=no-user-gesture-required";
+
+
+            // resolve url for main window
+            let url = if cfg!(debug_assertions) {
+                tauri::WebviewUrl::External("http://localhost:5173".parse().unwrap())
+            } else {
+                tauri::WebviewUrl::External(
+                    format!("http://localhost:{}", LOCALHOST_PORT)
+                        .parse()
+                        .unwrap(),
+                )
+            };
+
+            // create the main window manually
             tauri::WebviewWindowBuilder::new(app, "main", url)
                 .title("Multistream")
+                .visible(false)
                 .inner_size(1280.0, 720.0)
                 .resizable(true)
                 .fullscreen(false)
                 .maximized(true)
                 .background_color(Color(31, 34, 39, 255))
                 .user_agent(USER_AGENT)
-                .additional_browser_args(
-                    "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection \
-                     --disable-background-timer-throttling \
-                     --disable-backgrounding-occluded-windows \
-                     --disable-renderer-backgrounding \
-                     --autoplay-policy=no-user-gesture-required",
-                )
+                .additional_browser_args(browser_args)
                 .initialization_script_for_all_frames(&player_injector)
                 .initialization_script_for_all_frames(&metrics_injector)
                 .initialization_script_for_all_frames(graveyard_script)

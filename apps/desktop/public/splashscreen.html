@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading Multistream...</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: #1f2227;
+      }
+
+      .splash-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        /* Match the main app background to look seamless */
+        background: #1f2227;
+      }
+
+      .logo {
+        width: 72px;
+        height: 72px;
+        border-radius: 16px;
+        animation: pulse 1.8s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.6;
+          transform: scale(0.96);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      /* loading dots */
+      .dots {
+        margin-top: 24px;
+      }
+
+      .dots span {
+        display: inline-block;
+        width: 5px;
+        height: 5px;
+        margin: 0 3px;
+        border-radius: 50%;
+        background: #4b5563;
+        animation: dot-bounce 1.2s ease-in-out infinite;
+      }
+      .dots span:nth-child(2) {
+        animation-delay: 0.15s;
+      }
+      .dots span:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+
+      @keyframes dot-bounce {
+        0%,
+        80%,
+        100% {
+          opacity: 0.3;
+          transform: scale(0.8);
+        }
+        40% {
+          opacity: 1;
+          transform: scale(1.2);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="splash-container">
+      <img src="/128x128.png" alt="Multistream" class="logo" />
+      <div class="dots">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+    <script>
+      // Wait for DOM and styles to be fully evaluated before showing the window.
+      // This prevents the native WebView2 background flash.
+      document.addEventListener("DOMContentLoaded", () => {
+        if (window.__TAURI__.core.invoke) {
+          window.__TAURI__.core.invoke("splashscreen_ready").catch(console.error);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -198,14 +198,6 @@ onMounted(async () => {
   if (!onboardingCompleted.value) {
     showOnboarding.value = true;
   }
-  // dismiss splash screen after a brief moment so user sees the loading state
-  const splash = document.getElementById("splash");
-  if (splash) {
-    setTimeout(() => {
-      splash.classList.add("fade-out");
-      setTimeout(() => splash.remove(), 250);
-    }, 300);
-  }
 
   // check for updates on startup
   checkForUpdates();

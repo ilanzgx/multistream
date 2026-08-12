@@ -41,5 +41,7 @@ commands.allow = [
     "recording_install_dependencies",
     "recording_uninstall_dependencies",
     "recording_get_env_size",
-    "scan_orphans"
+    "scan_orphans",
+    "splashscreen_ready",
+    "close_splashscreen"
 ]

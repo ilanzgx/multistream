@@ -11,7 +11,23 @@
     "beforeBuildCommand": "bun run build"
   },
   "app": {
-    "windows": [],
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "splashscreen",
+        "url": "splashscreen.html",
+        "title": "Multistream",
+        "width": 400,
+        "height": 300,
+        "center": true,
+        "decorations": false,
+        "visible": false,
+        "alwaysOnTop": true,
+        "backgroundColor": "#1f2227",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36",
+        "additionalBrowserArgs": "--disable-features=msWebOOUI,msPdfOOUI,msSmartScreenProtection --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --autoplay-policy=no-user-gesture-required"
+      }
+    ],
     "security": {
       "csp": "default-src 'self' http://ipc.localhost; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; frame-src https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://player.kick.com https://kick.com https:; connect-src 'self' http://ipc.localhost http://localhost https: data: blob:; media-src 'self' blob: data: https:; worker-src 'self' blob:; child-src 'self' blob:;"
     }
