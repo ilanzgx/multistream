@@ -15,7 +15,7 @@ Multistream is a native, cross-platform desktop application that enables power u
 
 - ALMOST NEVER write comments. We're senior engineers here, not learners.
 - NEVER run the backend or frontend manually. The human is already doing this.
-- ALWAYS test rust backend changes by running 'cargo check'.
+- ALWAYS test rust backend changes by running 'cargo check', and if you modify any business logic or important commands, also run 'cargo test'.
 - ALWAYS test frontend changes by running Playwright MCP.
 - ALWAYS follow the current design system and minimalist aesthetics of the application. Do not invent new visual patterns, do not introduce jarring colors, and strictly respect the dark/neutral color palette (e.g., bg-[#0f1115], text-gray-400) used across the app.
 - ALWAYS profile before suggesting architectural performance changes. Do not recommend virtualization, caching, memoization, background workers, or other advanced optimizations unless there is evidence they address the actual bottleneck.

@@ -19,7 +19,7 @@
   <br />
 </div>
 
-Most multistream setups are just browser tabs. Multistream is a desktop app built with Tauri and Rust: Twitch, Kick, and YouTube side by side in one window, using less memory than a single Chrome tab, with no trackers or background processes.
+Most multistream setups are just browser tabs. Multistream is a desktop app built with [Tauri](https://v2.tauri.app/), [Rust](https://www.rust-lang.org/), and [Vue 3](https://vuejs.org/): Twitch, Kick, and YouTube side by side in one window, using less memory than a single Chrome tab, with no trackers or background processes.
 
 ### Features
 
@@ -28,15 +28,9 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 - **Direct from the source**: Streams load from the official players, so your views count and quality is exactly the same as on the platform itself.
 - **Lightweight**: Built with [Tauri](https://tauri.app/) and [Rust](https://www.rust-lang.org/), so memory usage is a fraction of what any browser-based alternative would use.
 - **Local stream recording**: _(Windows only)_ Record streams directly from the source using [Streamlink](https://streamlink.github.io/). Recordings are processed natively without heavy sidecars, keeping the app extremely lightweight, and are automatically remuxed to MP4 when finished.
-- **Available in 10 languages**: English, Portuguese, Spanish, German, Russian, Chinese, French, Turkish, Hindi, and Indonesian.
+- **Available in 10 languages**: English, Portuguese, Spanish, German, Russian, Chinese, French, Turkish, Hindi, and Indonesian. _(Note: Languages other than English and Portuguese were AI-translated. Native speakers are highly welcome to open a PR to improve them!)_
 - **Cross-platform**: Works on Windows, macOS, and Linux.
 - **Local AI transcription**: _(Windows only)_ Real-time transcription powered by [Whisper.cpp](https://github.com/ggerganov/whisper.cpp), running fully offline on your CPU. Useful for streams in languages you don't speak. No API keys, no costs, no audio ever leaves your machine.
-
-### Built with
-
-- [Vue 3](https://vuejs.org/)
-- [Tauri 2](https://v2.tauri.app/)
-- [Tailwind CSS](https://tailwindcss.com/)
 
 ## Important for macOS Users
 
@@ -57,14 +51,26 @@ Move `Multistream.app` to your `/Applications` folder, then run:
 xattr -dr com.apple.quarantine /Applications/Multistream.app
 ```
 
-## Getting started
+## Keyboard Shortcuts
+
+You can navigate the app quickly using these global hotkeys (they even work when you are interacting with a stream iframe):
+
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>1</kbd> - <kbd>9</kbd> | Switch active chat tab to the corresponding stream number |
+| <kbd>D</kbd> | Open the "Add Stream" dialog |
+| <kbd>S</kbd> | Take a screenshot of the focused stream |
+
+## Local Development
+
+If you want to compile the app yourself or contribute to the project, follow the instructions below to set up your local development environment.
 
 ### Prerequisites
 
 - [Bun](https://bun.sh/) or [Node.js](https://nodejs.org/)
 - [Rust](https://www.rust-lang.org/)
 
-### Installation
+### Setup
 
 1. Clone the repository
    ```sh

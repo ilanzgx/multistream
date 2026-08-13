@@ -1,7 +1,7 @@
 {
   "name": "multistream-monorepo",
   "private": true,
-  "version": "0.18.13",
+  "version": "0.18.14",
   "type": "module",
   "workspaces": [
     "apps/*"
@@ -10,6 +10,7 @@
     "version": "bun run scripts/sync-version.ts",
     "desktop:dev": "cd apps/desktop && bun run dev",
     "desktop:tauri:dev": "cd apps/desktop && bun run tauri:dev",
+    "desktop:tauri:build": "cd apps/desktop && bun run tauri:build",
     "desktop:typecheck": "cd apps/desktop && bun run typecheck",
     "desktop:test": "cd apps/desktop && bun run test",
     "desktop:test:e2e": "cd apps/desktop && bun run test:e2e",
