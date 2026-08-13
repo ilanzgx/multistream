@@ -237,6 +237,11 @@ jobs:
           printf '| Linux (AppImage) | [`Multistream-linux-x64.AppImage`](%s/Multistream-linux-x64.AppImage) |\n' "$BASE" >> changelog.md
           printf '| Linux (Debian) | [`Multistream-linux-x64.deb`](%s/Multistream-linux-x64.deb) |\n' "$BASE" >> changelog.md
 
+          printf '\n### macOS (Homebrew)\n\n' >> changelog.md
+          printf '```sh\n' >> changelog.md
+          printf 'brew install --cask ilanzgx/multistream/multistream\n' >> changelog.md
+          printf '```\n\n' >> changelog.md
+
           echo "Generated changelog:"
           cat changelog.md
 
