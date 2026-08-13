@@ -86,10 +86,7 @@ pub async fn poll_device_token(
 
     if response.status() == 400 {
         let body = response.text().await.unwrap_or_default();
-        let body_lower = body.to_lowercase();
-        if body_lower.contains("authorization_pending")
-            || body_lower.contains("authorization pending")
-        {
+        if is_authorization_pending(&body) {
             return Ok(None);
         }
         return Err(TwitchError::OAuth(format!("Polling failed: {}", body)));
@@ -205,4 +202,37 @@ fn auth_file_path() -> std::path::PathBuf {
     #[cfg(not(debug_assertions))]
     path.push(STRONGHOLD_KEY);
     path.with_extension("json")
+}
+
+pub(crate) fn is_authorization_pending(body: &str) -> bool {
+    let body_lower = body.to_lowercase();
+    body_lower.contains("authorization_pending") || body_lower.contains("authorization pending")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_detect_authorization_pending_variants() {
+        // Standard Twitch API format
+        let standard = r#"{"status":400,"message":"authorization_pending"}"#;
+        assert!(is_authorization_pending(standard));
+
+        // Sometimes Twitch returns it with space instead of underscore
+        let with_space = r#"{"status":400,"message":"authorization pending"}"#;
+        assert!(is_authorization_pending(with_space));
+
+        // Case insensitivity check
+        let uppercase = r#"{"message":"AUTHORIZATION_PENDING"}"#;
+        assert!(is_authorization_pending(uppercase));
+
+        // Unrelated error
+        let unrelated = r#"{"status":400,"message":"invalid_client"}"#;
+        assert!(!is_authorization_pending(unrelated));
+
+        // Empty body
+        let empty = "";
+        assert!(!is_authorization_pending(empty));
+    }
 }

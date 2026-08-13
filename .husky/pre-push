@@ -6,5 +6,8 @@ bun run desktop:typecheck
 echo "Running unit tests..."
 bun run desktop:test
 
+echo "Running cargo test..."
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+
 echo "Running cargo clippy..."
 cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings

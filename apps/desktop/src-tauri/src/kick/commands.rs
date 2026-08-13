@@ -106,7 +106,7 @@ pub async fn kick_get_auth_state(state: State<'_, KickState>) -> Result<KickAuth
 
 pub fn init_stored_auth() -> Option<super::state::KickAuthInfo> {
     if let Some(auth) = oauth::load_auth() {
-        if auth.has_chat_write {
+        if is_auth_valid(&auth) {
             return Some(auth);
         } else {
             oauth::clear_auth();
@@ -179,9 +179,7 @@ pub async fn kick_send_message(
         Ok(_) => Ok(()),
         Err(e) => {
             if let KickError::OAuth(msg) = &e {
-                if msg.contains("Auth error sending message: 401")
-                    || msg.contains("Auth error sending message: 403")
-                {
+                if is_retryable_auth_error(msg) {
                     let new_auth =
                         refresh_kick_token_locked(&app, &state, &http, &auth.refresh_token).await?;
                     super::api::send_message(&http, &new_auth, broadcaster_user_id, &message)
@@ -202,4 +200,47 @@ pub async fn kick_set_channels(
     let channels_set: HashSet<(String, u64)> = channels.into_iter().collect();
     super::pusher::update_kick_subscriptions(&app, channels_set).await;
     Ok(())
+}
+
+pub(crate) fn is_auth_valid(auth: &super::state::KickAuthInfo) -> bool {
+    auth.has_chat_write
+}
+
+pub(crate) fn is_retryable_auth_error(msg: &str) -> bool {
+    msg.contains("Auth error sending message: 401")
+        || msg.contains("Auth error sending message: 403")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_validate_auth_correctly() {
+        let valid = super::super::state::KickAuthInfo {
+            access_token: "".to_string(),
+            refresh_token: "".to_string(),
+            username: "".to_string(),
+            has_chat_write: true,
+        };
+        assert!(is_auth_valid(&valid));
+
+        let invalid = super::super::state::KickAuthInfo {
+            access_token: "".to_string(),
+            refresh_token: "".to_string(),
+            username: "".to_string(),
+            has_chat_write: false,
+        };
+        assert!(!is_auth_valid(&invalid));
+    }
+
+    #[test]
+    fn should_detect_retryable_auth_error() {
+        assert!(is_retryable_auth_error("Auth error sending message: 401"));
+        assert!(is_retryable_auth_error("Auth error sending message: 403"));
+
+        assert!(!is_retryable_auth_error("Auth error sending message: 429"));
+        assert!(!is_retryable_auth_error("Rate limited by Kick API"));
+        assert!(!is_retryable_auth_error("Failed to send message: 500"));
+    }
 }

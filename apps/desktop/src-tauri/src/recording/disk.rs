@@ -83,3 +83,20 @@ fn available_space(dir: &Path) -> Option<u64> {
 fn available_space(_dir: &Path) -> Option<u64> {
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_format_size_correctly() {
+        // Arrange & Act & Assert
+        assert_eq!(format_size(1024 * 1024), "1 MB");
+        assert_eq!(format_size(500 * 1024 * 1024), "500 MB");
+        assert_eq!(format_size(1024 * 1024 * 1024), "1.00 GB");
+        assert_eq!(
+            format_size(2 * 1024 * 1024 * 1024 + 512 * 1024 * 1024),
+            "2.50 GB"
+        );
+    }
+}

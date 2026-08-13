@@ -475,13 +475,10 @@ pub async fn twitch_get_followed_streams(
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
 
-        let mut thumbnail_url = live_info
+        let thumbnail_url = live_info
             .get("thumbnail_url")
             .and_then(|v| v.as_str())
-            .map(|s| s.to_string());
-        if let Some(url) = &mut thumbnail_url {
-            *url = url.replace("{width}", "320").replace("{height}", "180");
-        }
+            .map(|s| format_thumbnail_url(s, 320, 180));
 
         let title = live_info
             .get("title")
@@ -502,16 +499,7 @@ pub async fn twitch_get_followed_streams(
         });
     }
 
-    result.sort_by(|a, b| {
-        b.viewer_count
-            .unwrap_or(0)
-            .cmp(&a.viewer_count.unwrap_or(0))
-            .then_with(|| {
-                a.display_name
-                    .to_lowercase()
-                    .cmp(&b.display_name.to_lowercase())
-            })
-    });
+    sort_followed_channels(&mut result);
 
     Ok(result)
 }
@@ -662,4 +650,128 @@ pub async fn twitch_get_hls_url(
     let data_uri = format!("data:application/x-mpegurl;base64,{}", encoded_m3u8);
 
     Ok(data_uri)
+}
+
+pub(crate) fn format_thumbnail_url(url: &str, width: u32, height: u32) -> String {
+    url.replace("{width}", &width.to_string())
+        .replace("{height}", &height.to_string())
+}
+
+pub(crate) fn sort_followed_channels(channels: &mut [FollowedChannel]) {
+    channels.sort_by(|a, b| {
+        b.viewer_count
+            .unwrap_or(0)
+            .cmp(&a.viewer_count.unwrap_or(0))
+            .then_with(|| {
+                a.display_name
+                    .to_lowercase()
+                    .cmp(&b.display_name.to_lowercase())
+            })
+    });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_format_thumbnail_url_correctly() {
+        let url = "https://static-cdn.jtvnw.net/previews-ttv/live_user_gaules-{width}x{height}.jpg";
+        let formatted = format_thumbnail_url(url, 320, 180);
+        assert_eq!(
+            formatted,
+            "https://static-cdn.jtvnw.net/previews-ttv/live_user_gaules-320x180.jpg"
+        );
+    }
+
+    #[test]
+    fn should_sort_channels_by_viewer_count_then_alphabetically() {
+        let mut channels = vec![
+            FollowedChannel {
+                id: "1".to_string(),
+                platform: "twitch".to_string(),
+                display_name: "Zack".to_string(),
+                avatar_url: "".to_string(),
+                is_live: true,
+                viewer_count: Some(100),
+                game: None,
+                thumbnail_url: None,
+                title: None,
+            },
+            FollowedChannel {
+                id: "2".to_string(),
+                platform: "twitch".to_string(),
+                display_name: "Alice".to_string(),
+                avatar_url: "".to_string(),
+                is_live: true,
+                viewer_count: Some(200),
+                game: None,
+                thumbnail_url: None,
+                title: None,
+            },
+            FollowedChannel {
+                id: "3".to_string(),
+                platform: "twitch".to_string(),
+                display_name: "Bob".to_string(),
+                avatar_url: "".to_string(),
+                is_live: true,
+                viewer_count: Some(100),
+                game: None,
+                thumbnail_url: None,
+                title: None,
+            },
+            FollowedChannel {
+                id: "4".to_string(),
+                platform: "twitch".to_string(),
+                display_name: "Charlie".to_string(),
+                avatar_url: "".to_string(),
+                is_live: true,
+                viewer_count: None,
+                game: None,
+                thumbnail_url: None,
+                title: None,
+            },
+        ];
+
+        sort_followed_channels(&mut channels);
+
+        // Expected order: Alice (200), Bob (100, alphabetically before Zack), Zack (100), Charlie (None == 0)
+        assert_eq!(channels[0].display_name, "Alice");
+        assert_eq!(channels[1].display_name, "Bob");
+        assert_eq!(channels[2].display_name, "Zack");
+        assert_eq!(channels[3].display_name, "Charlie");
+    }
+
+    #[test]
+    fn should_sort_case_insensitive() {
+        let mut channels = vec![
+            FollowedChannel {
+                id: "1".to_string(),
+                platform: "twitch".to_string(),
+                display_name: "zack".to_string(),
+                avatar_url: "".to_string(),
+                is_live: true,
+                viewer_count: Some(100),
+                game: None,
+                thumbnail_url: None,
+                title: None,
+            },
+            FollowedChannel {
+                id: "2".to_string(),
+                platform: "twitch".to_string(),
+                display_name: "Alice".to_string(),
+                avatar_url: "".to_string(),
+                is_live: true,
+                viewer_count: Some(100),
+                game: None,
+                thumbnail_url: None,
+                title: None,
+            },
+        ];
+
+        sort_followed_channels(&mut channels);
+
+        assert_eq!(channels[0].display_name, "Alice");
+        assert_eq!(channels[1].display_name, "zack");
+    }
 }

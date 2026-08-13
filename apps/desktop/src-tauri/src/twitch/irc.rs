@@ -560,4 +560,64 @@ mod tests {
         // Assert
         assert_eq!(delay, Duration::ZERO);
     }
+
+    #[test]
+    fn should_parse_tags_correctly() {
+        // Arrange
+        let raw = "badge-info=;badges=moderator/1,subscriber/12;color=#1E90FF;display-name=TestUser;emotes=;id=abc-123;mod=1;room-id=123;subscriber=1;tmi-sent-ts=1700000000000;turbo=0;user-id=99999;user-type=mod";
+
+        // Act
+        let tags = parse_tags(raw);
+
+        // Assert
+        assert_eq!(tags.get("color").unwrap(), "#1E90FF");
+        assert_eq!(tags.get("display-name").unwrap(), "TestUser");
+        assert_eq!(tags.get("badge-info").unwrap(), ""); // Empty value
+        assert_eq!(tags.get("badges").unwrap(), "moderator/1,subscriber/12");
+        assert_eq!(tags.get("nonexistent"), None);
+    }
+
+    #[test]
+    fn should_handle_malformed_tags() {
+        // Arrange
+        let raw = "key1=val1;key2;key3=val3;=";
+
+        // Act
+        let tags = parse_tags(raw);
+
+        // Assert
+        assert_eq!(tags.get("key1").unwrap(), "val1");
+        assert_eq!(tags.get("key2").unwrap(), ""); // Missing '=' means empty value
+        assert_eq!(tags.get("key3").unwrap(), "val3");
+        assert_eq!(tags.get("").unwrap(), ""); // "=" parses as empty key and empty value
+    }
+
+    #[test]
+    fn should_fallback_to_username_when_display_name_is_empty() {
+        // Arrange
+        // Missing display-name tag completely
+        let line = "@color=#1E90FF;id=abc-123 :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello world";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert_eq!(msg.display_name, "testuser");
+    }
+
+    #[test]
+    fn should_parse_privmsg_without_tags() {
+        // Arrange
+        // Raw IRC PRIVMSG without Twitch capabilities (no @tags prefix)
+        let line = ":testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello basic irc";
+
+        // Act
+        // Because of the current logic `line.strip_prefix('@')?`, our parser STRICTLY expects tags.
+        // If Twitch sends a message without tags, our parse_privmsg will return None.
+        // Let's assert this behavior to protect against regressions if we ever change it.
+        let result = parse_privmsg(line);
+
+        // Assert
+        assert!(result.is_none());
+    }
 }

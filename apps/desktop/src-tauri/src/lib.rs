@@ -49,16 +49,23 @@ const KEYBOARD_SCRIPT: &str = include_str!("core/keyboard_shortcuts.js");
 const CORE_ENGINE: &str = include_str!("core/player_engine.bin");
 const METRICS: &str = include_str!("core/metrics.bin");
 
+use std::sync::atomic::{AtomicBool, Ordering};
+
+static SPLASH_DISMISSED: AtomicBool = AtomicBool::new(false);
+
 #[tauri::command]
 async fn splashscreen_ready(app: tauri::AppHandle) -> Result<(), String> {
-    if let Some(splash) = app.get_webview_window("splashscreen") {
-        let _ = splash.show();
+    if !SPLASH_DISMISSED.load(Ordering::Relaxed) {
+        if let Some(splash) = app.get_webview_window("splashscreen") {
+            let _ = splash.show();
+        }
     }
     Ok(())
 }
 
 #[tauri::command]
 async fn close_splashscreen(app: tauri::AppHandle) -> Result<(), String> {
+    SPLASH_DISMISSED.store(true, Ordering::Relaxed);
     if let Some(splash) = app.get_webview_window("splashscreen") {
         let _ = splash.close();
     }

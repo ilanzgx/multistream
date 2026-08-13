@@ -86,16 +86,24 @@ fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir)
 }
 
-/// Returns the expected file path for a given model name.
-/// Format: `<app_data>/whisper-models/ggml-<model_name>.bin`
-fn model_path(app: &AppHandle, model_name: &str) -> Result<PathBuf, String> {
+pub(crate) fn validate_model_name(model_name: &str) -> Result<&str, &'static str> {
+    if model_name.is_empty() {
+        return Err("Model name cannot be empty");
+    }
     if !model_name
         .chars()
         .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
     {
-        return Err("Invalid model name".to_string());
+        return Err("Invalid model name");
     }
-    Ok(models_dir(app)?.join(format!("ggml-{model_name}.bin")))
+    Ok(model_name)
+}
+
+/// Returns the expected file path for a given model name.
+/// Format: `<app_data>/whisper-models/ggml-<model_name>.bin`
+fn model_path(app: &AppHandle, model_name: &str) -> Result<PathBuf, String> {
+    let valid_name = validate_model_name(model_name).map_err(|e| e.to_string())?;
+    Ok(models_dir(app)?.join(format!("ggml-{valid_name}.bin")))
 }
 
 /// Returns the current UNIX timestamp in milliseconds.
@@ -735,4 +743,28 @@ pub fn set_chunk_duration(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_accept_valid_model_names() {
+        assert!(validate_model_name("base").is_ok());
+        assert!(validate_model_name("tiny-en").is_ok());
+        assert!(validate_model_name("small_en-v2").is_ok());
+        assert!(validate_model_name("123").is_ok());
+    }
+
+    #[test]
+    fn should_reject_invalid_model_names_and_path_traversal() {
+        assert!(validate_model_name("").is_err());
+        assert!(validate_model_name("../base").is_err());
+        assert!(validate_model_name("base/../").is_err());
+        assert!(validate_model_name("base\\model").is_err());
+        assert!(validate_model_name("base model").is_err());
+        assert!(validate_model_name("base.bin").is_err());
+        assert!(validate_model_name("rm -rf").is_err());
+    }
 }

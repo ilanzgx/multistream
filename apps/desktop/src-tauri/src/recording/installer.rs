@@ -243,3 +243,36 @@ pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(),
     emit_progress(&app, "Done!", 100);
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_verify_correct_hash() {
+        // Arrange
+        let bytes = b"multistream";
+        // echo -n "multistream" | sha256sum
+        let expected = "7c78e1cdcb3be4bdfa973a0a644c613a63fa6154c880be48972f86d9e05079d0";
+
+        // Act
+        let result = verify_hash(bytes, expected);
+
+        // Assert
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn should_reject_incorrect_hash() {
+        // Arrange
+        let bytes = b"multistream";
+        let incorrect = "63d7e59b20e0ffb304c4b69d80d2edc3fa0ccb87e221b65bb24cf417bfa4ef7d";
+
+        // Act
+        let result = verify_hash(bytes, incorrect);
+
+        // Assert
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Hash mismatch"));
+    }
+}

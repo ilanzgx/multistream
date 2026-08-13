@@ -13,6 +13,7 @@ Backend of the Multistream application, built with [Tauri 2](https://v2.tauri.ap
 5. [Auto-update](#5-auto-update)
 6. [Build Script (`build.rs`)](#6-build-script-buildrs)
 7. [Local Stream Recording](#7-local-stream-recording)
+8. [Testing Strategy](#8-testing-strategy)
 
 ---
 
@@ -339,3 +340,23 @@ When a recording stops, the `.ts` file is automatically remuxed into an `.mp4` f
 | `remux_orphan_recording` | Converts a `.ts` file to `.mp4` using FFmpeg |
 | `delete_orphan_recording` | Deletes a `.ts` file |
 | `open_recording_folder` | Opens the target directory in the OS explorer |
+
+---
+
+## 8. Testing Strategy
+
+The Rust backend adopts a pragmatic **AAA (Arrange, Act, Assert)** unit testing methodology, heavily focused on separating pure business logic from side-effect-heavy Tauri/I/O boundaries.
+
+Because testing deep IPC interactions or WebSocket lifecycles can be brittle and slow, we use the **Extract Method** pattern to isolate core logic.
+
+### Pure Function Extraction
+
+Functions containing complex business rules, conditional logic, or data formatting are extracted into pure `pub(crate)` helper functions so they can be comprehensively unit tested without invoking `tauri::AppHandle`, `reqwest::Client`, or actual network sockets.
+
+**Examples:**
+- `twitch/irc.rs`: The complex logic to parse IRC strings was extracted into `parse_tags` and `parse_privmsg`, which are now protected by exhaustive unit tests simulating real edge cases (missing attributes, malformed tags, empty payloads) without needing a real WebSocket.
+- `kick/oauth.rs`: The username extraction from deeply nested HTTP JSON responses is isolated to `extract_username`, tested against empty arrays to prevent panics.
+- `kick/api.rs`: Mapping HTTP status codes (401, 403, 429) to internal domain errors (`KickError::OAuth`) is isolated and tested in `map_api_status`.
+- `audio/transcription.rs`: Determining the correct `whisper-cli` filename depending on the compilation target (`OS` + `ARCH`) is tested across matrix combinations without needing the actual file system.
+
+This surgical approach ensures the highest code reliability across Windows, macOS, and Linux without the overhead of heavy Mocking libraries or End-to-End flaky tests for pure business rules.

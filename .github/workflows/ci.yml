@@ -110,6 +110,9 @@ jobs:
       - name: Cargo Check
         run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml
 
+      - name: Cargo Test
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+
       - name: Cargo Clippy
         run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings
 

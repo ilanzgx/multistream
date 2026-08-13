@@ -1,3 +1,7 @@
+pub(crate) fn extract_base64(data_url: &str) -> Result<&str, &'static str> {
+    data_url.split(',').nth(1).ok_or("Invalid data URL format")
+}
+
 // invokable function to save a screenshot to the Pictures/Multistream directory
 // receives a base64-encoded data URL from the frontend and writes it as a PNG file
 #[tauri::command]
@@ -6,10 +10,7 @@ pub async fn save_screenshot(data_url: String, filename: String) -> Result<Strin
     use std::path::PathBuf;
 
     // extract base64 data from data URL ("data:image/png;base64,AAAA...")
-    let base64_data = data_url
-        .split(',')
-        .nth(1)
-        .ok_or("Invalid data URL format")?;
+    let base64_data = extract_base64(&data_url)?;
 
     // decode base64 into raw bytes
     use base64::Engine;
@@ -27,4 +28,46 @@ pub async fn save_screenshot(data_url: String, filename: String) -> Result<Strin
     fs::write(&file_path, &image_data).map_err(|e| format!("Failed to save screenshot: {}", e))?;
 
     Ok(file_path.to_string_lossy().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_extract_base64_from_valid_data_url() {
+        // Arrange
+        let valid_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAE";
+
+        // Act
+        let result = extract_base64(valid_url);
+
+        // Assert
+        assert_eq!(result, Ok("iVBORw0KGgoAAAANSUhEUgAAAAE"));
+    }
+
+    #[test]
+    fn should_reject_invalid_data_url_without_comma() {
+        // Arrange
+        let invalid_url = "not_a_data_url_just_base64_AAAA";
+
+        // Act
+        let result = extract_base64(invalid_url);
+
+        // Assert
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid data URL format");
+    }
+
+    #[test]
+    fn should_handle_empty_base64_string_after_comma() {
+        // Arrange
+        let empty_base64_url = "data:image/png;base64,";
+
+        // Act
+        let result = extract_base64(empty_base64_url);
+
+        // Assert
+        assert_eq!(result, Ok(""));
+    }
 }

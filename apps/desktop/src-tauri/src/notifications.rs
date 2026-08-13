@@ -1,3 +1,9 @@
+pub fn get_safe_filename(platform: &str, channel: &str) -> String {
+    let safe_plat: String = platform.chars().filter(|c| c.is_alphanumeric()).collect();
+    let safe_chan: String = channel.chars().filter(|c| c.is_alphanumeric()).collect();
+    format!("{}_{}.jpg", safe_plat, safe_chan)
+}
+
 #[tauri::command]
 #[allow(unused_variables, unused_imports, clippy::too_many_arguments)]
 pub async fn send_notification(
@@ -21,10 +27,7 @@ pub async fn send_notification(
             let _ = tokio::fs::create_dir_all(&avatars_dir).await;
 
             if let (Some(plat), Some(chan)) = (&platform, &channel) {
-                let safe_plat: String = plat.chars().filter(|c| c.is_alphanumeric()).collect();
-                let safe_chan: String = chan.chars().filter(|c| c.is_alphanumeric()).collect();
-
-                let filename = format!("{}_{}.jpg", safe_plat, safe_chan);
+                let filename = get_safe_filename(plat, chan);
                 let filepath = avatars_dir.join(filename);
 
                 if !filepath.exists() {
@@ -168,4 +171,20 @@ pub async fn send_notification(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_sanitize_filenames_correctly() {
+        assert_eq!(get_safe_filename("twitch", "gaules"), "twitch_gaules.jpg");
+        assert_eq!(get_safe_filename("kick!", "xQc-Cow"), "kick_xQcCow.jpg");
+        assert_eq!(
+            get_safe_filename("you/tube", "lofi girl"),
+            "youtube_lofigirl.jpg"
+        );
+        assert_eq!(get_safe_filename(";", "rm -rf"), "_rmrf.jpg");
+    }
 }

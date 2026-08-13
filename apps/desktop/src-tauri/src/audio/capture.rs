@@ -152,3 +152,73 @@ pub fn write_wav(
     writer.finalize().map_err(|e| e.to_string())?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_convert_stereo_to_mono() {
+        // Arrange: L = 1.0, R = -1.0, L = 0.5, R = 0.5
+        let stereo = vec![1.0, -1.0, 0.5, 0.5];
+
+        // Act
+        let mono = to_mono(&stereo, 2);
+
+        // Assert
+        assert_eq!(mono.len(), 2);
+        assert_eq!(mono[0], 0.0); // (1.0 + -1.0) / 2
+        assert_eq!(mono[1], 0.5); // (0.5 + 0.5) / 2
+    }
+
+    #[test]
+    fn should_return_same_if_already_mono() {
+        let mono = vec![1.0, 0.0, -1.0];
+        let result = to_mono(&mono, 1);
+        assert_eq!(result, mono);
+    }
+
+    #[test]
+    fn should_resample_mono_downsample() {
+        // Arrange
+        // Simple case: going from 48000 to 16000 (3:1 ratio)
+        // input: 9 samples, output should be 3 samples
+        let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+
+        // Act
+        let result = resample_mono(&input, 48000, 16000);
+
+        // ratio = 3.0.
+        // i=0 -> exact_idx=0.0 -> input[0]
+        // i=1 -> exact_idx=3.0 -> input[3]
+        // i=2 -> exact_idx=6.0 -> input[6]
+
+        // Assert
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], 1.0);
+        assert_eq!(result[1], 4.0);
+        assert_eq!(result[2], 7.0);
+    }
+
+    #[test]
+    fn should_resample_mono_interpolate() {
+        // Arrange
+        let input = vec![0.0, 10.0, 20.0];
+
+        // Act: Downsample 2:1
+        // ratio = 2.0
+        // i=0 -> exact=0 -> 0.0
+        // i=1 -> exact=2 -> 20.0
+        let result = resample_mono(&input, 2, 1);
+        assert_eq!(result.len(), 2);
+        assert_eq!(result[0], 0.0);
+        assert_eq!(result[1], 20.0);
+    }
+
+    #[test]
+    fn should_return_same_if_same_sample_rate() {
+        let input = vec![1.0, 0.0, -1.0];
+        let result = resample_mono(&input, 48000, 48000);
+        assert_eq!(result, input);
+    }
+}

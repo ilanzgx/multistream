@@ -33,7 +33,7 @@ pub struct KickChatMessage {
 }
 
 #[derive(Deserialize)]
-struct PusherEvent {
+pub(crate) struct PusherEvent {
     event: String,
     data: Option<Value>,
     channel: Option<String>,
@@ -225,69 +225,149 @@ async fn connect_pusher(
     }
 }
 
+pub fn parse_chat_message(
+    pusher_event: &PusherEvent,
+    channels: &HashSet<(String, u64)>,
+) -> Option<KickChatMessage> {
+    if pusher_event.event != "App\\Events\\ChatMessageEvent" {
+        return None;
+    }
+
+    let channel_str = pusher_event.channel.as_ref()?;
+    let data = pusher_event.data.as_ref()?;
+    let data_str = data.as_str()?;
+    let payload = serde_json::from_str::<Value>(data_str).ok()?;
+
+    let chatroom_id = channel_str
+        .strip_prefix("chatrooms.")
+        .and_then(|s| s.strip_suffix(".v2"))
+        .unwrap_or(channel_str)
+        .parse::<u64>()
+        .unwrap_or(0);
+
+    let slug = channels
+        .iter()
+        .find(|(_, id)| *id == chatroom_id)
+        .map(|(s, _)| s.clone())
+        .unwrap_or_else(|| chatroom_id.to_string());
+
+    let id = payload["id"].as_str().unwrap_or("").to_string();
+    let content = payload["content"].as_str().unwrap_or("").to_string();
+    let sender = &payload["sender"];
+    let username = sender["username"].as_str().unwrap_or("").to_string();
+    let display_name = sender["username"].as_str().unwrap_or("").to_string();
+    let color = sender["identity"]["color"].as_str().map(|s| s.to_string());
+
+    let mut badges = Vec::new();
+    if let Some(badges_array) = sender["identity"]["badges"].as_array() {
+        for badge in badges_array {
+            if let Some(badge_type) = badge["type"].as_str() {
+                badges.push(badge_type.to_string());
+            }
+        }
+    }
+
+    let timestamp_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64;
+
+    Some(KickChatMessage {
+        id,
+        channel: slug,
+        username,
+        display_name,
+        message: content,
+        timestamp_ms,
+        color,
+        badges,
+        emotes: None,
+    })
+}
+
 async fn handle_pusher_message(
     app: &AppHandle,
     channels: &HashSet<(String, u64)>,
     text: &str,
 ) -> Result<(), KickError> {
     if let Ok(pusher_event) = serde_json::from_str::<PusherEvent>(text) {
-        if pusher_event.event == "App\\Events\\ChatMessageEvent" {
-            if let (Some(channel_str), Some(data)) = (pusher_event.channel, pusher_event.data) {
-                // Parse inner data which is a stringified JSON
-                if let Some(data_str) = data.as_str() {
-                    if let Ok(payload) = serde_json::from_str::<Value>(data_str) {
-                        let chatroom_id = channel_str
-                            .replace("chatrooms.", "")
-                            .replace(".v2", "")
-                            .parse::<u64>()
-                            .unwrap_or(0);
-
-                        // Find the slug
-                        let slug = channels
-                            .iter()
-                            .find(|(_, id)| *id == chatroom_id)
-                            .map(|(s, _)| s.clone())
-                            .unwrap_or_else(|| chatroom_id.to_string());
-
-                        let id = payload["id"].as_str().unwrap_or("").to_string();
-                        let content = payload["content"].as_str().unwrap_or("").to_string();
-                        let sender = &payload["sender"];
-                        let username = sender["username"].as_str().unwrap_or("").to_string();
-                        let display_name = sender["username"].as_str().unwrap_or("").to_string();
-                        let color = sender["identity"]["color"].as_str().map(|s| s.to_string());
-
-                        let mut badges = Vec::new();
-                        if let Some(badges_array) = sender["identity"]["badges"].as_array() {
-                            for badge in badges_array {
-                                if let Some(badge_type) = badge["type"].as_str() {
-                                    badges.push(badge_type.to_string());
-                                }
-                            }
-                        }
-
-                        // Add chrono for datetime if possible, or just use SystemTime
-                        let timestamp_ms = std::time::SystemTime::now()
-                            .duration_since(std::time::UNIX_EPOCH)
-                            .unwrap_or_default()
-                            .as_millis() as u64;
-
-                        let msg = KickChatMessage {
-                            id,
-                            channel: slug,
-                            username,
-                            display_name,
-                            message: content,
-                            timestamp_ms,
-                            color,
-                            badges,
-                            emotes: None,
-                        };
-
-                        let _ = app.emit("kick-chat-message", msg);
-                    }
-                }
-            }
+        if let Some(msg) = parse_chat_message(&pusher_event, channels) {
+            let _ = app.emit("kick-chat-message", msg);
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_parse_valid_chat_message() {
+        let raw_json = "{
+            \"event\": \"App\\\\Events\\\\ChatMessageEvent\",
+            \"data\": \"{\\\"id\\\":\\\"msg123\\\",\\\"content\\\":\\\"Hello world\\\",\\\"sender\\\":{\\\"username\\\":\\\"testuser\\\",\\\"identity\\\":{\\\"color\\\":\\\"#FF0000\\\",\\\"badges\\\":[{\\\"type\\\":\\\"broadcaster\\\"}]}}}\",
+            \"channel\": \"chatrooms.999.v2\"
+        }";
+
+        let pusher_event: PusherEvent = serde_json::from_str(raw_json).unwrap();
+
+        let mut channels = HashSet::new();
+        channels.insert(("test_slug".to_string(), 999));
+
+        let parsed = parse_chat_message(&pusher_event, &channels).unwrap();
+
+        assert_eq!(parsed.id, "msg123");
+        assert_eq!(parsed.channel, "test_slug");
+        assert_eq!(parsed.username, "testuser");
+        assert_eq!(parsed.display_name, "testuser");
+        assert_eq!(parsed.message, "Hello world");
+        assert_eq!(parsed.color, Some("#FF0000".to_string()));
+        assert_eq!(parsed.badges, vec!["broadcaster"]);
+    }
+
+    #[test]
+    fn should_return_none_for_non_chat_event() {
+        let raw_json = "{
+            \"event\": \"pusher_internal:subscription_succeeded\",
+            \"data\": \"{}\",
+            \"channel\": \"chatrooms.999.v2\"
+        }";
+
+        let pusher_event: PusherEvent = serde_json::from_str(raw_json).unwrap();
+        let channels = HashSet::new();
+
+        let parsed = parse_chat_message(&pusher_event, &channels);
+        assert!(parsed.is_none());
+    }
+
+    #[test]
+    fn should_handle_missing_slug_gracefully() {
+        let raw_json = "{
+            \"event\": \"App\\\\Events\\\\ChatMessageEvent\",
+            \"data\": \"{\\\"id\\\":\\\"msg123\\\",\\\"content\\\":\\\"Hello world\\\",\\\"sender\\\":{\\\"username\\\":\\\"testuser\\\",\\\"identity\\\":{\\\"color\\\":\\\"#FF0000\\\",\\\"badges\\\":[]}}}\",
+            \"channel\": \"chatrooms.999.v2\"
+        }";
+
+        let pusher_event: PusherEvent = serde_json::from_str(raw_json).unwrap();
+        let channels = HashSet::new();
+
+        let parsed = parse_chat_message(&pusher_event, &channels).unwrap();
+
+        assert_eq!(parsed.channel, "999");
+    }
+
+    #[test]
+    fn backoff_delay_never_exceeds_cap() {
+        for attempt in 0..100 {
+            let delay = backoff_delay(attempt);
+            // Cap is 60s + max 399ms jitter
+            assert!(delay <= Duration::from_millis(60399));
+            if attempt == 0 {
+                assert_eq!(delay, Duration::ZERO);
+            } else {
+                assert!(delay >= Duration::from_secs(2));
+            }
+        }
+    }
 }

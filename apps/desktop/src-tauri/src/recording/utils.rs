@@ -52,3 +52,61 @@ pub fn ffmpeg_remux_args(input: &Path, output: &Path) -> Vec<String> {
         output.to_string_lossy().to_string(),
     ]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn should_build_correct_stream_url() {
+        assert_eq!(
+            build_stream_url("twitch", "gaules"),
+            "https://twitch.tv/gaules"
+        );
+        assert_eq!(build_stream_url("kick", "xqc"), "https://kick.com/xqc");
+        assert_eq!(
+            build_stream_url("youtube", "lofigirl"),
+            "https://youtube.com/watch?v=lofigirl"
+        );
+    }
+
+    #[test]
+    fn should_build_streamlink_args_with_resolved_quality() {
+        let path = PathBuf::from("output.ts");
+
+        let args = streamlink_args("https://twitch.tv/test", "1080p", &path);
+
+        // Assert streamlink module invocation
+        assert_eq!(args[0], "-m");
+        assert_eq!(args[1], "streamlink");
+
+        // Assert URL and resolved quality
+        assert_eq!(args[2], "https://twitch.tv/test");
+        assert_eq!(args[3], "1080p60,1080p,1080p50,best");
+
+        // Assert output path and flags
+        assert_eq!(args[4], "--output");
+        assert_eq!(args[5], "output.ts");
+        assert!(args.contains(&"--force".to_string()));
+    }
+
+    #[test]
+    fn should_build_ffmpeg_remux_args() {
+        let input = PathBuf::from("in.ts");
+        let output = PathBuf::from("out.mp4");
+
+        let args = ffmpeg_remux_args(&input, &output);
+
+        assert_eq!(args[0], "-y");
+        assert_eq!(args[1], "-i");
+        assert_eq!(args[2], "in.ts");
+        assert_eq!(args[3], "-c");
+        assert_eq!(args[4], "copy");
+        assert_eq!(args[5], "-movflags");
+        assert_eq!(args[6], "+faststart");
+
+        // Output must be the last argument
+        assert_eq!(args.last().unwrap(), "out.mp4");
+    }
+}
