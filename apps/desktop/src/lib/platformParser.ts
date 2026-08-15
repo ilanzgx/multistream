@@ -1,5 +1,4 @@
-import { PLATFORMS } from "../config/platforms";
-import type { Platform } from "../composables/useStreams";
+import { PLATFORMS, type Platform } from "../config/platforms";
 
 export interface ParseResult {
   platform: Platform;
@@ -19,7 +18,7 @@ export function parseStreamUrl(input: string): ParseResult | null {
   let urlString = trimmed;
   // If it doesn't start with http/https, try to prepend protocol if it looks like a URL
   if (!/^https?:\/\//i.test(urlString)) {
-    if (urlString.includes(".") && urlString.includes("/")) {
+    if (urlString.includes(".") || urlString.includes("/")) {
       urlString = "https://" + urlString;
     } else {
       return null;
@@ -32,13 +31,15 @@ export function parseStreamUrl(input: string): ParseResult | null {
 
     // Match hostname against known platform domains
     let detectedPlatform: Platform | null = null;
-    for (const key of Object.keys(PLATFORMS)) {
+    for (const key of Object.keys(PLATFORMS) as Platform[]) {
       const platform = PLATFORMS[key];
       if (
         platform &&
-        platform.domains.some((domain) => hostname === domain || hostname.endsWith("." + domain))
+        platform.domains.some(
+          (domain: string) => hostname === domain || hostname.endsWith("." + domain)
+        )
       ) {
-        detectedPlatform = platform.id as Platform;
+        detectedPlatform = platform.id;
         break;
       }
     }
