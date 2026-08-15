@@ -14,6 +14,7 @@ import { useKickAuth } from "@/composables/useKickAuth";
 import { useI18n } from "vue-i18n";
 import { KickIcon } from "@/components/icons";
 import LoginPrompt from "./LoginPrompt.vue";
+import { API_CONFIG } from "@/config/api";
 
 const props = defineProps<{ channel: string }>();
 
@@ -57,7 +58,7 @@ async function sendKickMessage(channel: string, message: string) {
   try {
     let broadcaster_user_id = getBroadcasterUserId();
     if (!broadcaster_user_id) {
-      const res = await fetch(`https://kick.com/api/v1/channels/${channel}`);
+      const res = await fetch(API_CONFIG.kick.apiV1Url(channel));
       if (!res.ok) throw new Error("Channel not found");
       const data = await res.json();
       broadcaster_user_id = data.user_id;

@@ -8,7 +8,7 @@ defineProps<{ channel: string; channelid: string }>();
 <template>
   <BaseStream :channelid="channelid" :channel="channel" platform="youtube">
     <iframe
-      :src="`${PLATFORMS.youtube?.embedUrl}/${channel}?autoplay=1`"
+      :src="PLATFORMS.youtube.getEmbedUrl(channel)"
       allowfullscreen
       allow="
         accelerometer;

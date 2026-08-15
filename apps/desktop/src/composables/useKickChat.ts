@@ -1,6 +1,7 @@
 import { ref, shallowRef } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { API_CONFIG } from "@/config/api";
 
 export interface KickChatMessage {
   id: string;
@@ -80,7 +81,7 @@ export function useKickChat(channelSlug: string) {
     if (activeKickChannels.has(channelSlug)) return;
 
     try {
-      const res = await fetch(`https://kick.com/api/v1/channels/${channelSlug}`);
+      const res = await fetch(API_CONFIG.kick.apiV1Url(channelSlug));
       if (!res.ok) throw new Error("Channel not found");
       const data = await res.json();
       const chatroomId = data.chatroom.id;

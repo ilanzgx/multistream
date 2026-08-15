@@ -14,6 +14,7 @@ import { useStreams } from "@/composables/useStreams";
 import { parseUrlOptions } from "@/lib/parseUrlOptions";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
+import { APP_LINKS } from "@/config/links";
 
 const { t, locale } = useI18n();
 
@@ -76,8 +77,7 @@ const handleImport = () => {
           data-testid="import-link-input"
           type="text"
           :placeholder="
-            `https://usemultistream.vercel.app/${websiteLocale}/?action=share... | ` +
-            $t('import.placeholder')
+            `${APP_LINKS.website}/${websiteLocale}/?action=share... | ` + $t('import.placeholder')
           "
           class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-400"
           @keyup.enter="handleImport"

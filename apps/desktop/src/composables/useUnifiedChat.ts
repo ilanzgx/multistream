@@ -5,6 +5,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { isTauri } from "./useUpdater";
 import { useStreams } from "./useStreams";
 import { useTwitchAuth } from "./useTwitchAuth";
+import { API_CONFIG } from "@/config/api";
 
 export const UNIFIED_CHAT_ID = "__unified_twitch__";
 const MAX_FRONTEND_MESSAGES = 1_000;
@@ -132,7 +133,7 @@ const _useUnifiedChat = () => {
   async function sendKickMessage(channelSlug: string, text: string) {
     if (!isTauri()) return;
     try {
-      const res = await fetch(`https://kick.com/api/v1/channels/${channelSlug}`);
+      const res = await fetch(API_CONFIG.kick.apiV1Url(channelSlug));
       if (!res.ok) throw new Error(`Channel fetch failed: ${res.status}`);
       const data = await res.json();
       const userId = data.user_id;
@@ -364,9 +365,7 @@ const _useUnifiedChat = () => {
       channels.forEach(async (channel) => {
         if (!channelAvatars[channel]) {
           try {
-            const res = await fetch(
-              `https://decapi.me/twitch/avatar/${encodeURIComponent(channel)}`
-            );
+            const res = await fetch(API_CONFIG.decapi.twitchAvatarUrl(channel));
             if (res.ok) {
               const url = await res.text();
               if (url.startsWith("http")) {
@@ -388,9 +387,7 @@ const _useUnifiedChat = () => {
       channels.forEach(async (channel) => {
         if (!channelAvatars[channel]) {
           try {
-            const res = await fetch(
-              `https://kick.com/api/v2/channels/${encodeURIComponent(channel)}`
-            );
+            const res = await fetch(API_CONFIG.kick.apiV2Url(channel));
             if (res.ok) {
               const data = await res.json();
               if (data?.user?.profile_pic) {

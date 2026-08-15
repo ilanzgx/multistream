@@ -9,6 +9,7 @@ import { i18n } from "@/i18n";
 import { isTauri, httpGet, httpPost } from "@/lib/http";
 
 import { API_CONFIG, REFRESH_CONFIG } from "@/config/api";
+import { CDN_CONFIG } from "@/config/cdn";
 import { SUPPORTED_LANGUAGES, DEFAULT_LOCALE } from "@/config/i18n";
 
 export interface LiveStatus {
@@ -98,7 +99,7 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
           title: userData.stream.title,
           category: userData.stream.game?.displayName,
           avatarUrl: userData.profileImageURL,
-          thumbnailUrl: `https://static-cdn.jtvnw.net/previews-ttv/live_user_${ch.toLowerCase()}-320x180.jpg`,
+          thumbnailUrl: CDN_CONFIG.twitch.previewThumbnail(ch),
         };
       } else if (userData?.profileImageURL) {
         result[key] = { isLive: false, avatarUrl: userData.profileImageURL };

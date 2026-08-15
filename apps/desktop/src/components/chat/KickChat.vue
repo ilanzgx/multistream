@@ -12,7 +12,7 @@ defineProps<{ channel: string }>();
   <BaseChat v-else platform="kick">
     <iframe
       class="w-full h-full flex-1 border-none"
-      :src="`${PLATFORMS.kick?.chatUrl}/${channel}?readonly=true`"
+      :src="PLATFORMS.kick.getChatUrl(channel)"
       frameborder="0"
       sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
     />

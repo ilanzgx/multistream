@@ -13,6 +13,7 @@ import Button from "../ui/button/Button.vue";
 import { useStreams } from "@/composables/useStreams";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
+import { APP_LINKS } from "@/config/links";
 
 const { t, locale } = useI18n();
 
@@ -34,7 +35,7 @@ const shareLink = computed(() => {
 
   const baseUrl =
     window.location.hostname === "localhost" || window.location.hostname === "tauri.localhost"
-      ? "https://usemultistream.vercel.app"
+      ? APP_LINKS.website
       : window.location.origin;
 
   // Map app locale to website supported locales

@@ -23,6 +23,7 @@ import KickAuthDialog from "./components/dialogs/KickAuthDialog.vue";
 import { toast } from "vue-sonner";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
+import { APP_LINKS } from "./config/links";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
 const showOnboarding = ref(false);
@@ -252,7 +253,7 @@ onUnmounted(() => {
         }}</span>
         <div class="flex items-center gap-3 border-l border-[#2a2d33] pl-3">
           <a
-            href="https://github.com/ilanzgx/multistream/releases"
+            :href="APP_LINKS.github.releases"
             target="_blank"
             class="text-[13px] font-medium text-white hover:text-gray-300 transition-colors"
             >{{ $t("webBanner.button") }}</a

@@ -18,14 +18,6 @@ const { isFocused } = useFocusedStream();
 const liveStatus = computed(() => getStatus(props.channel, "twitch"));
 const profilePicture = getProfilePicture(props.channel, "twitch");
 const isStreamFocused = computed(() => isFocused(props.channelid));
-
-const parentHost = computed(() => {
-  const hostname = window.location.hostname;
-  if (!hostname || hostname.includes("tauri") || hostname === "") {
-    return "localhost";
-  }
-  return hostname;
-});
 </script>
 
 <template>
@@ -41,7 +33,7 @@ const parentHost = computed(() => {
     />
     <iframe
       v-else
-      :src="`${PLATFORMS.twitch?.embedUrl}/?channel=${channel}&parent=${parentHost}&autoplay=true&muted=true`"
+      :src="PLATFORMS.twitch.getEmbedUrl(channel)"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
     />

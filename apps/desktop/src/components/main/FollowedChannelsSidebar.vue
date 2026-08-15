@@ -17,6 +17,7 @@ import { useFollowedChannels, type FollowedChannel } from "../../composables/use
 import { useTwitchAuth } from "../../composables/useTwitchAuth";
 import { useStreams } from "../../composables/useStreams";
 import { isTauri } from "../../composables/useUpdater";
+import { CDN_CONFIG } from "@/config/cdn";
 const { channels, isLoading, platformFilter, refresh } = useFollowedChannels();
 const { addStream } = useStreams();
 const { t, locale } = useI18n();
@@ -189,10 +190,7 @@ const formatViewers = (count: number) => {
                   <div class="avatar-border rounded-full" :class="{ followed: channel.isFollowed }">
                     <img
                       loading="lazy"
-                      :src="
-                        channel.avatarUrl ||
-                        `https://ui-avatars.com/api/?name=${encodeURIComponent(channel.displayName)}&background=random`
-                      "
+                      :src="channel.avatarUrl || CDN_CONFIG.avatarFallback(channel.displayName)"
                       class="w-7 h-7 rounded-full block object-cover"
                     />
                   </div>
