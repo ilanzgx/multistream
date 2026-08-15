@@ -25,6 +25,7 @@
     "prepare": "husky",
     "lint": "oxlint && eslint .",
     "check:i18n": "cd apps/desktop && bun run test -- keys.spec.ts",
+    "check:endpoints": "bun run scripts/check-endpoints.ts",
     "lint:fix": "prettier --write . && oxlint --fix && eslint . --fix",
     "format": "prettier --write ."
   },
