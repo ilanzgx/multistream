@@ -1,5 +1,5 @@
 use std::fs;
-use std::sync::Arc;
+
 use std::time::Duration;
 
 use serde::Serialize;
@@ -97,22 +97,29 @@ pub async fn start_recording(
 
     let python_exe =
         crate::recording::installer::get_python_exe(&app).map_err(RecordingError::SpawnFailed)?;
-    let (mut rx, child) = app
-        .shell()
-        .command(python_exe.to_string_lossy().to_string())
-        .args(&args)
-        .spawn()
-        .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
+
+    let mut cmd = tokio::process::Command::new(python_exe);
+    cmd.args(&args);
+    cmd.stdout(std::process::Stdio::null());
+    cmd.stderr(std::process::Stdio::null());
+    cmd.stdin(std::process::Stdio::null());
+    cmd.kill_on_drop(true); // Ensure it's killed if we drop it
+
+    #[cfg(target_os = "windows")]
+    {
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
 
     #[cfg(unix)]
     {
-        let pid = child.pid() as libc::pid_t;
-        unsafe {
-            libc::setpgid(pid, pid);
-        }
+        cmd.process_group(0);
     }
 
-    let child_arc = Arc::new(tokio::sync::Mutex::new(Some(child)));
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
+
+    let pid = child.id();
 
     {
         let mut entries = state.entries.lock().await;
@@ -126,7 +133,7 @@ pub async fn start_recording(
                 temp_path: ts_path.clone(),
                 output_path: mp4_path.clone(),
                 started_at: std::time::Instant::now(),
-                streamlink_child: child_arc.clone(),
+                streamlink_pid: pid,
                 stop_reason: None,
             },
         );
@@ -145,13 +152,8 @@ pub async fn start_recording(
     let sid = stream_id.clone();
     let ch = channel.clone();
     tokio::spawn(async move {
-        let mut exit_code: Option<i32> = None;
-        while let Some(event) = rx.recv().await {
-            if let CommandEvent::Terminated(payload) = event {
-                exit_code = payload.code;
-                break;
-            }
-        }
+        let exit_status = child.wait().await.ok();
+        let exit_code = exit_status.and_then(|s| s.code());
 
         let state_ref = app_clone.state::<RecordingManager>();
         let stop_reason = {
@@ -198,26 +200,20 @@ pub async fn stop_recording(
 ) -> Result<(), RecordingError> {
     validate_stream_id(&stream_id)?;
 
-    let child_arc = {
+    let pid = {
         let mut entries = state.entries.lock().await;
         let entry = entries
             .get_mut(&stream_id)
             .ok_or(RecordingError::NotRecording)?;
         entry.status = RecordingStatus::Stopping;
         entry.stop_reason = Some(StopReason::UserRequested);
-        Arc::clone(&entry.streamlink_child)
+        entry.streamlink_pid
     };
 
-    let child_opt = {
-        let mut guard = child_arc.lock().await;
-        guard.take()
-    };
-
-    if let Some(child) = child_opt {
+    if let Some(pid) = pid {
         #[cfg(target_os = "windows")]
         {
             use std::os::windows::process::CommandExt;
-            let pid = child.pid();
             let _ = std::process::Command::new("taskkill")
                 .args(["/F", "/T", "/PID", &pid.to_string()])
                 .creation_flags(0x08000000)
@@ -226,12 +222,10 @@ pub async fn stop_recording(
         }
         #[cfg(unix)]
         {
-            let pgid = child.pid() as libc::pid_t;
-            unsafe { libc::kill(-pgid, libc::SIGTERM) };
+            unsafe { libc::kill(-(pid as i32), libc::SIGTERM) };
             tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-            unsafe { libc::kill(-pgid, libc::SIGKILL) };
+            unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
         }
-        let _ = child.kill();
     }
 
     let _ = app.emit(
@@ -408,18 +402,12 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
     for sid in &stream_ids {
         let entries = state.entries.lock().await;
         if let Some(entry) = entries.get(sid) {
-            let child_arc = Arc::clone(&entry.streamlink_child);
+            let pid = entry.streamlink_pid;
             kill_futs.push(async move {
-                let child_opt = {
-                    let mut guard = child_arc.lock().await;
-                    guard.take()
-                };
-
-                if let Some(child) = child_opt {
+                if let Some(pid) = pid {
                     #[cfg(target_os = "windows")]
                     {
                         use std::os::windows::process::CommandExt;
-                        let pid = child.pid();
                         let _ = std::process::Command::new("taskkill")
                             .args(["/F", "/T", "/PID", &pid.to_string()])
                             .creation_flags(0x08000000)
@@ -428,12 +416,10 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
                     }
                     #[cfg(unix)]
                     {
-                        let pgid = child.pid() as libc::pid_t;
-                        unsafe { libc::kill(-pgid, libc::SIGTERM) };
+                        unsafe { libc::kill(-(pid as i32), libc::SIGTERM) };
                         tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-                        unsafe { libc::kill(-pgid, libc::SIGKILL) };
+                        unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
                     }
-                    let _ = child.kill();
                 }
             });
         }

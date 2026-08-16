@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::Arc;
+
 use std::time::Instant;
 
 use serde::Serialize;
-use tauri_plugin_shell::process::CommandChild;
+
 use tokio::sync::Mutex;
 
 use super::orphan::OrphanRecording;
@@ -37,7 +37,7 @@ pub struct RecordingEntry {
     pub output_path: PathBuf,
     #[allow(dead_code)]
     pub started_at: Instant,
-    pub streamlink_child: Arc<Mutex<Option<CommandChild>>>,
+    pub streamlink_pid: Option<u32>,
     pub stop_reason: Option<StopReason>,
 }
 
