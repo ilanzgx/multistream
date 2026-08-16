@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
+import { ref, watch } from "vue";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,6 @@ import { Button } from "@/components/ui/button";
 import { TwitchIcon, KickIcon, YoutubeIcon } from "@/components/icons";
 import { ChevronLeft, ChevronRight, Check, Mic, ArrowDown, Video } from "@lucide/vue";
 import { useTranscription } from "@/composables/useTranscription";
-import { isTauri } from "@/composables/useUpdater";
-import { invoke } from "@tauri-apps/api/core";
 
 const props = withDefaults(
   defineProps<{
@@ -32,17 +30,6 @@ const emit = defineEmits<{
 
 const currentStep = ref(1);
 const { isSupported } = useTranscription();
-const isRecordingSupported = ref(false);
-
-onMounted(async () => {
-  if (isTauri()) {
-    try {
-      isRecordingSupported.value = await invoke<boolean>("is_recording_supported_cmd");
-    } catch {
-      isRecordingSupported.value = false;
-    }
-  }
-});
 
 // Reset step to 1 when dialog is opened
 watch(
@@ -69,13 +56,11 @@ function handleEscapeKey(e: Event) {
 function getNextStep(from: number): number {
   let step = from + 1;
   if (step === 5 && !isSupported.value) step++;
-  if (step === 6 && !isRecordingSupported.value) step++;
   return step;
 }
 
 function getPrevStep(from: number): number {
   let step = from - 1;
-  if (step === 6 && !isRecordingSupported.value) step--;
   if (step === 5 && !isSupported.value) step--;
   return step;
 }
@@ -592,7 +577,7 @@ function handleFinish() {
         <div class="flex items-center gap-0">
           <button
             v-for="step in 7"
-            v-show="(step !== 5 || isSupported) && (step !== 6 || isRecordingSupported)"
+            v-show="step !== 5 || isSupported"
             :key="step"
             class="p-2.5 group cursor-pointer"
             :aria-label="`Go to step ${step}`"

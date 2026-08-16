@@ -293,19 +293,18 @@ Generates capability schemas and prepares the Tauri security manifest. Must be t
 
 ## 7. Local Stream Recording
 
-Local live stream recording is powered by [Streamlink](https://streamlink.github.io/) for HLS/DASH chunk capture and [FFmpeg](https://ffmpeg.org/) for stream-copy remuxing (`.ts` to `.mp4`), executed directly via `tauri-plugin-shell`. **Windows x86_64 only.**
+Local live stream recording is powered by [Streamlink](https://streamlink.github.io/) for HLS/DASH chunk capture and [FFmpeg](https://ffmpeg.org/) for stream-copy remuxing (`.ts` to `.mp4`), executed directly via `tokio::process::Command`. **Supported on Windows (x86_64), Linux (x86_64), and macOS.**
 
 ### Architecture Insight: On-Demand Portable Sandbox
 
 To maintain Multistream's core philosophy of being lightweight and performant, we intentionally avoid bundling Streamlink, Python, and FFmpeg as [Tauri Sidecars](https://v2.tauri.app/concept/sidecar/) in the installer. 
 
 Instead, an **On-Demand Portable Environment** is provisioned dynamically when the user installs the feature:
-- Downloads official `python-3.11-embed-amd64.zip` and verifies SHA-256 integrity.
-- Patches `python311._pth` to uncomment `import site` (enabling `site-packages` resolution).
-- Downloads `get-pip.py`, validates SHA-256, and installs `pip` using the embedded Python runtime.
-- Installs `streamlink` into `%APPDATA%\multistream\recording_env` via `python.exe -m pip install streamlink`.
-- Downloads and extracts a standalone `ffmpeg.exe` (GyanD Essentials build), verifying SHA-256 integrity.
-- The environment is completely sandboxed in `%APPDATA%\multistream\recording_env` and does not pollute or rely on the host system PATH.
+- **Windows:** Downloads official `python-3.11-embed-amd64.zip` and standalone `ffmpeg.exe`. Patches `python311._pth` to enable `site-packages`, downloads `get-pip.py`, and installs `streamlink` natively via pip.
+- **Linux:** Downloads `Streamlink.AppImage` and a static `ffmpeg` build, extracting them natively without relying on system FUSE.
+- **macOS:** Downloads a standalone Python build, installs `streamlink` via pip, and extracts a static macOS FFmpeg binary.
+- The environment is completely sandboxed in `%APPDATA%\multistream\recording_env` (or its equivalent on Unix) and does not pollute or rely on the host system PATH.
+
 
 ### 2-Stage Recording & Remuxing Pipeline
 
@@ -354,7 +353,7 @@ If the application is terminated abruptly during recording (e.g., system crash, 
 
 | Command | Parameters | Description |
 |---|---|---|
-| `is_recording_supported_cmd` | — | Returns `true` on Windows x86_64 |
+| `is_recording_supported_cmd` | — | Returns `true` on supported architectures (Windows x86_64, Linux x86_64, macOS) |
 | `recording_check_dependencies` | — | Checks if Python, Streamlink, and FFmpeg are installed in `recording_env` |
 | `recording_install_dependencies` | — | Downloads and sets up the portable environment with SHA-256 validation |
 | `recording_uninstall_dependencies` | — | Completely deletes `%APPDATA%\multistream\recording_env` |

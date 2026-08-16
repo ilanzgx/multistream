@@ -149,7 +149,7 @@
       "uninstallConfirmDescription": "This will remove the isolated recorder environment and free up space. You can reinstall it later.",
       "uninstallConfirmButton": "Uninstall",
       "enableDescription": "Record streams directly from the source using Streamlink. Files are saved to your Videos folder.",
-      "unavailableOS": "Recording is only available on Windows.",
+      "unavailableOS": "Recording is not supported on your architecture.",
       "qualityTitle": "Default Quality",
       "qualityPrefix": "Quality: ",
       "qualityDescription": "Preferred stream quality. Falls back to best available if not found.",

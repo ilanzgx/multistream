@@ -43,8 +43,7 @@ export const ui = {
     "features.unified": "Unified Chat",
     "features.unified.desc": "Read Twitch and Kick chats together in one place.",
     "features.recording": "Local Recording",
-    "features.recording.desc":
-      'Record Twitch, Kick, and YouTube streams locally on your device.<span class="absolute top-6 right-6 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#111111] dark:text-gray-300 bg-[rgba(0,0,0,0.04)] dark:bg-white/5 px-2 py-1.5 rounded"><img src="/windows-icon.svg" class="w-3 h-3 dark:invert opacity-70" alt="" aria-hidden="true" width="12" height="12" /> Exclusive</span>',
+    "features.recording.desc": "Record Twitch, Kick, and YouTube streams locally on your device.",
     "features.auth": "Account Authentication",
     "features.auth.desc": "Securely log in to Twitch and Kick to interact with the chat natively.",
     "nav.donate": "Buy me a coffee",
@@ -90,7 +89,7 @@ export const ui = {
     "features.unified.desc": "Leia o chat da Twitch e da Kick juntos no mesmo lugar.",
     "features.recording": "Gravação Local",
     "features.recording.desc":
-      'Grave streams da Twitch, Kick e YouTube localmente no seu dispositivo.<span class="absolute top-6 right-6 inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[#111111] dark:text-gray-300 bg-[rgba(0,0,0,0.04)] dark:bg-white/5 px-2 py-1.5 rounded"><img src="/windows-icon.svg" class="w-3 h-3 dark:invert opacity-70" alt="" aria-hidden="true" width="12" height="12" /> Exclusivo</span>',
+      "Grave streams da Twitch, Kick e YouTube localmente no seu dispositivo.",
     "features.auth": "Autenticação",
     "features.auth.desc":
       "Faça login com segurança na Twitch e Kick para interagir com o chat nativamente.",

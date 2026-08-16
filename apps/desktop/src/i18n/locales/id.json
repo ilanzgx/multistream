@@ -149,7 +149,7 @@
       "uninstallConfirmDescription": "Ini akan menghapus lingkungan perekam terisolasi dan mengosongkan ruang. Anda dapat menginstalnya kembali nanti.",
       "uninstallConfirmButton": "Copot Pemasangan",
       "enableDescription": "Rekam stream langsung dari sumbernya menggunakan Streamlink. File disimpan ke folder Video Anda.",
-      "unavailableOS": "Perekaman hanya tersedia di Windows.",
+      "unavailableOS": "Perekaman tidak didukung pada arsitektur Anda.",
       "qualityTitle": "Kualitas Bawaan",
       "qualityPrefix": "Kualitas: ",
       "qualityDescription": "Kualitas stream yang disukai. Kembali ke yang terbaik yang tersedia jika tidak ditemukan.",

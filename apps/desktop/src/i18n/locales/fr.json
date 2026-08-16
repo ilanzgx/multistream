@@ -149,7 +149,7 @@
       "uninstallConfirmDescription": "Cela supprimera l'environnement d'enregistrement isolé et libérera de l'espace. Vous pourrez le réinstaller plus tard.",
       "uninstallConfirmButton": "Désinstaller",
       "enableDescription": "Enregistrez des flux directement depuis la source en utilisant Streamlink. Les fichiers sont enregistrés dans votre dossier Vidéos.",
-      "unavailableOS": "L'enregistrement n'est disponible que sur Windows.",
+      "unavailableOS": "L'enregistrement n'est pas pris en charge sur votre architecture.",
       "qualityTitle": "Qualité par défaut",
       "qualityPrefix": "Qualité : ",
       "qualityDescription": "Qualité de flux préférée. Se rabat sur la meilleure disponible si non trouvée.",
