@@ -104,6 +104,14 @@ pub async fn start_recording(
         .spawn()
         .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
 
+    #[cfg(unix)]
+    {
+        let pid = child.pid() as libc::pid_t;
+        unsafe {
+            libc::setpgid(pid, pid);
+        }
+    }
+
     let child_arc = Arc::new(tokio::sync::Mutex::new(Some(child)));
 
     {
@@ -212,6 +220,17 @@ pub async fn stop_recording(
                     .creation_flags(0x08000000)
                     .spawn()
                     .and_then(|mut c| c.wait());
+            }
+            #[cfg(unix)]
+            {
+                let pgid = child.pid() as libc::pid_t;
+                unsafe {
+                    libc::kill(-pgid, libc::SIGTERM);
+                }
+                std::thread::sleep(std::time::Duration::from_millis(300));
+                unsafe {
+                    libc::kill(-pgid, libc::SIGKILL);
+                }
             }
             let _ = child.kill();
         }
@@ -404,6 +423,17 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
                             .creation_flags(0x08000000)
                             .spawn()
                             .and_then(|mut c| c.wait());
+                    }
+                    #[cfg(unix)]
+                    {
+                        let pgid = child.pid() as libc::pid_t;
+                        unsafe {
+                            libc::kill(-pgid, libc::SIGTERM);
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(300));
+                        unsafe {
+                            libc::kill(-pgid, libc::SIGKILL);
+                        }
                     }
                     let _ = child.kill();
                 }
