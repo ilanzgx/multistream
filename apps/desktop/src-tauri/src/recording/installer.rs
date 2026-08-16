@@ -1,7 +1,9 @@
 use std::fs;
+#[cfg(not(target_os = "linux"))]
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Emitter, Manager};
+#[cfg(not(target_os = "linux"))]
 use zip::ZipArchive;
 
 // ─── Windows constants (existing, unchanged) ──────────────────────────────────
