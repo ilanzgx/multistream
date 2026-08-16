@@ -12,10 +12,31 @@ interface Props {
 
 const { title, description, lang = 'en' } = Astro.props;
 
-// Determine alternative language URL
 const currentUrl = new URL(Astro.url);
-const otherLang = lang === 'en' ? 'pt-br' : 'en';
-const altUrl = new URL(currentUrl.pathname.replace(`/${lang}/`, `/${otherLang}/`), currentUrl.origin);
+const canonicalUrl = new URL(currentUrl.pathname, Astro.site || currentUrl.origin).toString();
+const ogImageUrl = new URL('/icon.png', currentUrl.origin).toString();
+const ogLocale = lang === 'pt-br' ? 'pt_BR' : 'en_US';
+
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'SoftwareApplication',
+	name: 'Multistream',
+	operatingSystem: 'Windows, macOS, Linux',
+	applicationCategory: 'MultimediaApplication',
+	description: description,
+	url: canonicalUrl,
+	image: ogImageUrl,
+	offers: {
+		'@type': 'Offer',
+		price: '0',
+		priceCurrency: 'USD',
+	},
+	author: {
+		'@type': 'Person',
+		name: 'Ilan Fonseca',
+		url: 'https://github.com/ilanzgx',
+	},
+};
 ---
 
 <!doctype html>
@@ -23,22 +44,33 @@ const altUrl = new URL(currentUrl.pathname.replace(`/${lang}/`, `/${otherLang}/`
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" type="image/png" href="/favicon.png" />
+		<link rel="shortcut icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="theme-color" content="#0f1115" />
 
 		<SEO
 			title={title}
 			description={description}
+			canonical={canonicalUrl}
 			openGraph={{
 				basic: {
 					title: title,
 					type: 'website',
-					image: new URL('/favicon.png', currentUrl.origin).toString(),
-				}
+					image: ogImageUrl,
+				},
+				optional: {
+					description: description,
+					locale: ogLocale,
+					siteName: 'Multistream',
+				},
 			}}
 			twitter={{
 				card: 'summary_large_image',
+				title: title,
+				description: description,
+				image: ogImageUrl,
 			}}
 			extend={{
 				link: [
@@ -48,6 +80,9 @@ const altUrl = new URL(currentUrl.pathname.replace(`/${lang}/`, `/${otherLang}/`
 				]
 			}}
 		/>
+
+		<!-- Structured Data (JSON-LD) -->
+		<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
 		<!-- Theme Init (Prevent FOUC) -->
 		<script is:inline>

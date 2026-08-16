@@ -1,74 +1,72 @@
 ---
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { fetchRecentReleases, type GitHubRelease } from '../lib/github';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-let releases: any[] = [];
-let hasError = false;
-try {
-  const res = await fetch('https://api.github.com/repos/ilanzgx/multistream/releases');
-  if (res.ok) {
-    const data = await res.json();
-    releases = data.slice(0, 3);
-  } else {
-    hasError = true;
-  }
-} catch (e) {
-  hasError = true;
-}
+const releases: GitHubRelease[] = await fetchRecentReleases(3);
+const hasError = releases.length === 0;
 
-// Simple HTML escape function to prevent XSS
-const escapeHtml = (unsafe: string) => {
+// Escape HTML básico para caracteres sensíveis
+const escapeHtml = (unsafe: string): string => {
   return unsafe
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
-       .replace(/'/g, "&#039;");
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
+// Validador de URL segura para prevenir javascript: e data: URLs (XSS prevention)
+const isSafeUrl = (url: string): boolean => {
+  return /^https?:\/\//i.test(url.trim());
 };
 ---
 
-<section class="w-full py-24 px-6 bg-[#F7F6F3] border-t border-[rgba(0,0,0,0.06)] dark:bg-[#0c0d10] dark:border-white/5">
+<section class="w-full py-24 px-6 bg-[#F7F6F3] border-t border-[rgba(0,0,0,0.06)] dark:bg-[#0c0d10] dark:border-white/5" aria-labelledby="changelog-title">
   <div class="max-w-3xl mx-auto">
-    <h2 class="text-2xl font-bold text-[#111111] dark:text-white mb-16 text-center tracking-tight">
+    <h2 id="changelog-title" class="text-2xl font-bold text-[#111111] dark:text-white mb-16 text-center tracking-tight">
       {t('changelog.title')}
     </h2>
 
     <div class="space-y-12">
       {hasError && (
-        <p class="text-gray-600 dark:text-gray-400 text-center">Unable to fetch recent updates from GitHub.</p>
-      )}
-      {!hasError && releases.length === 0 && (
-        <p class="text-gray-500 text-center">{t('changelog.empty')}</p>
+        <p class="text-gray-600 dark:text-gray-400 text-center">{t('changelog.error')}</p>
       )}
 
-      {!hasError && releases.map((release: any) => {
+      {!hasError && releases.map((release) => {
         const titleParts = release.name ? release.name.split(' - ') : [release.tag_name, ''];
         const version = titleParts[0] || release.tag_name;
         const title = titleParts.slice(1).join(' - ') || new Date(release.published_at).toLocaleDateString();
 
         const bodyLines = (release.body || '').split('\n')
-          .map((line: string) => line.trim())
-          .filter((line: string) => line.startsWith('-') || line.startsWith('*'))
-          .map((line: string) => {
+          .map((line) => line.trim())
+          .filter((line) => line.startsWith('-') || line.startsWith('*'))
+          .map((line) => {
             let text = line.substring(1).trim();
             text = escapeHtml(text);
             text = text.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold text-[#111111] dark:text-[#EAEAEA]">$1</strong>');
             text = text.replace(/`([^`]+)`/g, '<code class="bg-[rgba(0,0,0,0.05)] dark:bg-white/5 px-1 rounded text-[#111111] dark:text-gray-300 font-mono text-sm">$1</code>');
 
-            // Format github commit links nicely (often formatted as ([hash](url)))
-            text = text.replace(/\(\[([^\]]+)\]\(([^)]+)\)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-1.5 py-0.5 ml-1 text-xs font-mono font-medium rounded-md bg-[rgba(0,0,0,0.04)] text-gray-600 hover:text-black hover:bg-[rgba(0,0,0,0.08)] dark:bg-white/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors border border-[rgba(0,0,0,0.05)] dark:border-white/10 shadow-sm"><svg class="w-3 h-3 mr-1 opacity-70" viewBox="0 0 16 16" fill="currentColor"><path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5h-3.32Zm-1.43-.5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"></path></svg>$1</a>');
+            // Format github commit links with URL protocol safety check
+            text = text.replace(/\(\[([^\]]+)\]\(([^)]+)\)\)/g, (_match, label, url) => {
+              if (!isSafeUrl(url)) return label;
+              return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-1.5 py-0.5 ml-1 text-xs font-mono font-medium rounded-md bg-[rgba(0,0,0,0.04)] text-gray-600 hover:text-black hover:bg-[rgba(0,0,0,0.08)] dark:bg-white/5 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/10 transition-colors border border-[rgba(0,0,0,0.05)] dark:border-white/10 shadow-sm"><svg class="w-3 h-3 mr-1 opacity-70" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M11.93 8.5a4.002 4.002 0 0 1-7.86 0H.75a.75.75 0 0 1 0-1.5h3.32a4.002 4.002 0 0 1 7.86 0h3.32a.75.75 0 0 1 0 1.5h-3.32Zm-1.43-.5a2.5 2.5 0 1 0-5 0 2.5 2.5 0 0 0 5 0Z"></path></svg>${label}</a>`;
+            });
 
-            // Generic fallback for other markdown links
-            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">$1</a>');
+            // Generic markdown links with URL protocol safety check
+            text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, url) => {
+              if (!isSafeUrl(url)) return label;
+              return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline font-medium">${label}</a>`;
+            });
 
             return text;
           });
 
         return (
           <div class="relative pl-8 border-l border-[rgba(0,0,0,0.1)] dark:border-white/10">
-            <div class="absolute -left-1.5 top-2 w-3 h-3 rounded-full bg-[#111111] dark:bg-[#EAEAEA]"></div>
+            <div class="absolute -left-1.5 top-2 w-3 h-3 rounded-full bg-[#111111] dark:bg-[#EAEAEA]" aria-hidden="true"></div>
             <div class="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-3 mb-4">
               <h3 class="text-xl font-bold text-[#111111] dark:text-gray-200">{version}</h3>
               <span class="text-sm text-gray-600 dark:text-gray-400 font-medium">{title}</span>
@@ -77,7 +75,7 @@ const escapeHtml = (unsafe: string) => {
               <ul class="space-y-3 text-[#111111] dark:text-gray-400">
                 {bodyLines.map((htmlLine: string) => (
                   <li class="flex gap-3">
-                    <span class="text-gray-600 dark:text-gray-400 mt-0.5 shrink-0">—</span>
+                    <span class="text-gray-600 dark:text-gray-400 mt-0.5 shrink-0" aria-hidden="true">—</span>
                     <span set:html={htmlLine}></span>
                   </li>
                 ))}

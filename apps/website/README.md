@@ -11,11 +11,12 @@ This directory contains the official landing page for **Multistream**, built to 
 
 ## Deep Link Gateway
 
-A critical architectural responsibility of this landing page is serving as a **Deep Link Gateway**. 
+A critical architectural responsibility of this landing page is serving as a **Deep Link Gateway**.
 
 Many modern communication platforms (like Discord, X/Twitter, WhatsApp) actively block or strip custom URI schemes (e.g., `multistream://`) to prevent malicious protocol execution, rendering them unclickable.
 
 To bypass this restriction seamlessly:
+
 1. Users share a standard, secure HTTPS link pointing to this landing page (e.g., `https://usemultistream.vercel.app/?action=share&streams=twitch:channel`).
 2. When a user clicks the link, the Astro frontend parses the query parameters.
 3. The page intercepts the payload and automatically redirects the browser to the local `multistream://` protocol.
@@ -23,9 +24,9 @@ To bypass this restriction seamlessly:
 
 ## Local Development
 
-| Command | Action |
-| :--- | :--- |
-| `bun install` | Installs dependencies |
-| `bun dev` | Starts local dev server at `localhost:4321` |
-| `bun build` | Builds the production static site to `./dist/` |
-| `bun preview` | Previews the production build locally |
+| Command       | Action                                         |
+| :------------ | :--------------------------------------------- |
+| `bun install` | Installs dependencies                          |
+| `bun dev`     | Starts local dev server at `localhost:4321`    |
+| `bun build`   | Builds the production static site to `./dist/` |
+| `bun preview` | Previews the production build locally          |

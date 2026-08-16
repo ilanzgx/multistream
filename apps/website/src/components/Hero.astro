@@ -1,107 +1,127 @@
 ---
 import { getLangFromUrl, useTranslations } from '../i18n/utils';
+import { fetchLatestReleaseAssets, type GitHubAsset } from '../lib/github';
 
 const lang = getLangFromUrl(Astro.url);
 const t = useTranslations(lang);
 
-let releaseAssets: any[] = [];
-try {
-  const res = await fetch('https://api.github.com/repos/ilanzgx/multistream/releases/latest');
-  if (res.ok) {
-    const release = await res.json();
-    releaseAssets = release.assets || [];
-  }
-} catch(e) {
-  console.error("Falha ao buscar assets", e);
-}
+const releaseAssets: GitHubAsset[] = await fetchLatestReleaseAssets();
 
-const getUrl = (ext: string, incl: string = '') => releaseAssets.find(a => a.name.toLowerCase().endsWith(ext) && a.name.toLowerCase().includes(incl))?.browser_download_url || 'https://github.com/ilanzgx/multistream/releases/latest';
+const getUrl = (ext: string, incl: string = '') =>
+  releaseAssets.find(a => a.name.toLowerCase().endsWith(ext) && a.name.toLowerCase().includes(incl))?.browser_download_url
+  || 'https://github.com/ilanzgx/multistream/releases/latest';
 ---
 
-<section class="w-full pt-20 pb-16 flex flex-col items-center justify-center text-center px-6">
+<section class="w-full pt-20 pb-16 flex flex-col items-center justify-center text-center px-6" aria-labelledby="hero-title">
   <div id="hero-content" class="max-w-3xl flex flex-col items-center">
-    <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight text-[#111111] dark:text-[#EAEAEA] mb-6 leading-tight">
+    <h1 id="hero-title" class="text-4xl md:text-6xl font-extrabold tracking-tight text-[#111111] dark:text-[#EAEAEA] mb-6 leading-tight">
       {t('hero.title')}
     </h1>
     <p class="text-lg md:text-xl text-gray-600 dark:text-[#A0A0A0] mb-10 max-w-2xl leading-relaxed">
       {t('hero.subtitle')}
     </p>
 
-    <div class="flex flex-col sm:flex-row flex-wrap items-center gap-4 w-full justify-center">
-      <a id="btn-win" href={getUrl('.exe')} class="w-full sm:w-auto px-6 py-3.5 bg-[#111111] text-[#FFFFFF] hover:bg-black dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 flex items-center justify-center gap-2 shadow-sm">
-        <img src="/windows-icon.svg" alt="Windows" class="w-5 h-5 invert dark:invert-0 opacity-90" aria-hidden="true" />
+    <div id="download-buttons" class="flex flex-col sm:flex-row flex-wrap items-center gap-4 w-full justify-center">
+      <a id="btn-win" href={getUrl('.exe')} data-os="windows" class="w-full sm:w-auto px-6 py-3.5 bg-[#111111] text-[#FFFFFF] hover:bg-black dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 flex items-center justify-center gap-2 shadow-sm">
+        <img src="/windows-icon.svg" alt="" aria-hidden="true" class="w-5 h-5 invert dark:invert-0 opacity-90" width="20" height="20" />
         {t('hero.download_win')}
       </a>
-      <a id="btn-linux" href={getUrl('.deb')} class="w-full sm:w-auto px-6 py-3.5 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20">
-        <img src="/linux-icon.svg" alt="Linux" class="w-5 h-5 dark:invert opacity-90" aria-hidden="true" />
+      <a id="btn-linux" href={getUrl('.deb')} data-os="linux" class="w-full sm:w-auto px-6 py-3.5 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20">
+        <img src="/linux-icon.svg" alt="" aria-hidden="true" class="w-5 h-5 dark:invert opacity-90" width="20" height="20" />
         {t('hero.download_linux')}
       </a>
-      <a id="btn-mac" href={getUrl('.dmg', 'arm64')} class="w-full sm:w-auto px-6 py-3.5 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20">
-        <img src="/macos-icon.svg" alt="Mac" class="w-5 h-5 dark:invert opacity-90" aria-hidden="true" />
+      <a id="btn-mac" href={getUrl('.dmg', 'arm64')} data-os="mac" class="w-full sm:w-auto px-6 py-3.5 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20">
+        <img src="/macos-icon.svg" alt="" aria-hidden="true" class="w-5 h-5 dark:invert opacity-90" width="20" height="20" />
         {t('hero.download_mac')}
       </a>
     </div>
 
-    <button id="btn-all-downloads" class="mt-6 cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white transition-colors">
+    <button
+      id="btn-all-downloads"
+      type="button"
+      aria-haspopup="dialog"
+      aria-expanded="false"
+      aria-controls="downloads-modal"
+      class="mt-6 cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white transition-colors"
+    >
       {t('hero.all_downloads')}
     </button>
   </div>
 
+  <!-- Deep Link Gateway -->
   <div id="deep-link-content" class="hidden max-w-2xl w-full p-8 rounded-xl bg-[#E1F3FE] border border-[#1F6C9F]/20 dark:bg-[#14161a] dark:border-[rgba(255,255,255,0.05)] flex flex-col items-center mt-4">
-    <div class="w-16 h-16 rounded-full bg-[#1F6C9F]/10 dark:bg-white/5 flex items-center justify-center mb-4 text-[#1F6C9F] dark:text-gray-300">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    <div class="w-16 h-16 rounded-full bg-[#1F6C9F]/10 dark:bg-white/5 flex items-center justify-center mb-4 text-[#1F6C9F] dark:text-gray-300" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
     </div>
     <h2 class="text-2xl font-bold text-[#111111] dark:text-[#EAEAEA] mb-2">{t('hero.deep_link_title')}</h2>
-    <p class="text-gray-600 dark:text-gray-400 mb-8">{t('hero.deep_link_subtitle')}</p>
+    <p class="text-gray-700 dark:text-gray-300 mb-8">{t('hero.deep_link_subtitle')}</p>
     <a id="deep-link-btn" href="#" class="px-10 py-4 bg-[#1F6C9F] hover:bg-[#154e73] text-white dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-semibold rounded-lg transition-transform hover:scale-[0.98] active:scale-95 animate-pulse-subtle flex items-center gap-2">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
       {t('hero.deep_link_button')}
     </a>
-    <button id="deep-link-cancel-btn" class="mt-6 text-sm cursor-pointer font-medium text-gray-500 hover:text-[#111111] dark:text-gray-400 dark:hover:text-white transition-colors underline underline-offset-4">
+    <button id="deep-link-cancel-btn" type="button" class="mt-6 text-sm cursor-pointer font-medium text-gray-700 hover:text-[#111111] dark:text-gray-300 dark:hover:text-white transition-colors underline underline-offset-4">
       {t('hero.deep_link_no_app')}
     </button>
   </div>
 
-  <div id="kick-callback-content" class="hidden max-w-2xl w-full p-8 rounded-xl bg-[#E1F3FE] border border-[#1F6C9F]/20 dark:bg-[#14161a] dark:border-[rgba(255,255,255,0.05)] flex flex-col items-center mt-4">
-    <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 text-green-500 dark:text-green-400">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+  <!-- Kick Callback -->
+  <div id="kick-callback-content" class="hidden max-w-2xl w-full p-8 rounded-xl bg-[#E1F3FE] border border-[#1F6C9F]/20 dark:bg-[#14161a] dark:border-[rgba(255,255,255,0.05)] flex flex-col items-center mt-4" role="status">
+    <div class="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 text-green-500 dark:text-green-400" aria-hidden="true">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
     </div>
     <h2 class="text-2xl font-bold text-[#111111] dark:text-[#EAEAEA] mb-2">{t('hero.kick_callback_title')}</h2>
-    <p class="text-gray-600 dark:text-gray-400">{t('hero.kick_callback_subtitle')}</p>
+    <p class="text-gray-700 dark:text-gray-300">{t('hero.kick_callback_subtitle')}</p>
   </div>
 
-  <!-- Downloads Modal -->
-  <div id="downloads-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-[#F7F6F3]/80 dark:bg-[#0c0d10]/80 backdrop-blur-sm opacity-0 transition-opacity duration-200">
+  <!-- Downloads Modal (A11y Compliant) -->
+  <div
+    id="downloads-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modal-title"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-[#F7F6F3]/80 dark:bg-[#0c0d10]/80 backdrop-blur-sm opacity-0 transition-opacity duration-200"
+  >
     <div class="bg-white dark:bg-[#14161a] border border-[rgba(0,0,0,0.08)] dark:border-white/10 rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 transform scale-95 transition-transform duration-200" id="downloads-modal-card">
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-bold text-[#111111] dark:text-white">{t('hero.modal_title')}</h2>
-        <button id="close-modal" class="text-gray-600 hover:text-[#111111] dark:text-gray-400 dark:hover:text-white transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <h2 id="modal-title" class="text-xl font-bold text-[#111111] dark:text-white">{t('hero.modal_title')}</h2>
+        <button
+          id="close-modal"
+          type="button"
+          aria-label={t('hero.modal_close')}
+          class="text-gray-600 hover:text-[#111111] dark:text-gray-400 dark:hover:text-white transition-colors p-1 rounded-md"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
       <div class="space-y-6 text-left">
         <div>
-          <h4 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2"><img src="/windows-icon.svg" class="w-4 h-4 dark:invert opacity-70" /> Windows</h4>
+          <h3 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2">
+            <img src="/windows-icon.svg" alt="" aria-hidden="true" class="w-4 h-4 dark:invert opacity-70" width="16" height="16" /> Windows
+          </h3>
           <div class="flex flex-col gap-2">
-            <a id="modal-win-exe" href={getUrl('.exe')} aria-label={t('hero.modal_win_exe')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_win_exe')}</a>
-            <a id="modal-win-msi" href={getUrl('.msi')} aria-label={t('hero.modal_win_msi')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_win_msi')}</a>
+            <a id="modal-win-exe" href={getUrl('.exe')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_win_exe')}</a>
+            <a id="modal-win-msi" href={getUrl('.msi')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_win_msi')}</a>
           </div>
         </div>
 
         <div>
-          <h4 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2"><img src="/macos-icon.svg" class="w-4 h-4 dark:invert opacity-70" /> macOS</h4>
+          <h3 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2">
+            <img src="/macos-icon.svg" alt="" aria-hidden="true" class="w-4 h-4 dark:invert opacity-70" width="16" height="16" /> macOS
+          </h3>
           <div class="flex flex-col gap-2">
-            <a id="modal-mac-arm" href={getUrl('.dmg', 'arm64')} aria-label={t('hero.modal_mac_arm')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_mac_arm')}</a>
-            <a id="modal-mac-x64" href={getUrl('.dmg', 'x64')} aria-label={t('hero.modal_mac_x64')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_mac_x64')}</a>
+            <a id="modal-mac-arm" href={getUrl('.dmg', 'arm64')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_mac_arm')}</a>
+            <a id="modal-mac-x64" href={getUrl('.dmg', 'x64')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_mac_x64')}</a>
           </div>
         </div>
 
         <div>
-          <h4 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2"><img src="/linux-icon.svg" class="w-4 h-4 dark:invert opacity-70" /> Linux</h4>
+          <h3 class="font-semibold text-[#111111] dark:text-gray-200 mb-3 flex items-center gap-2">
+            <img src="/linux-icon.svg" alt="" aria-hidden="true" class="w-4 h-4 dark:invert opacity-70" width="16" height="16" /> Linux
+          </h3>
           <div class="flex flex-col gap-2">
-            <a id="modal-linux-deb" href={getUrl('.deb')} aria-label={t('hero.modal_linux_deb')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_linux_deb')}</a>
-            <a id="modal-linux-appimage" href={getUrl('.appimage')} aria-label={t('hero.modal_linux_appimage')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_linux_appimage')}</a>
+            <a id="modal-linux-deb" href={getUrl('.deb')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_linux_deb')}</a>
+            <a id="modal-linux-appimage" href={getUrl('.appimage')} class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white">{t('hero.modal_linux_appimage')}</a>
           </div>
         </div>
       </div>
@@ -110,48 +130,88 @@ const getUrl = (ext: string, incl: string = '') => releaseAssets.find(a => a.nam
 </section>
 
 <script>
-  // Pure JavaScript, 0 bytes overhead from frameworks
-  document.addEventListener("DOMContentLoaded", () => {
-    // 1. Deep link logic
+  (() => {
+    // 0. Smart OS Detection & CTA Reordering
+    const userAgent = navigator.userAgent.toLowerCase();
+    let detectedOs = 'windows';
+    if (userAgent.includes('mac') || userAgent.includes('darwin')) {
+      detectedOs = 'mac';
+    } else if (userAgent.includes('linux') || userAgent.includes('x11')) {
+      detectedOs = 'linux';
+    }
+
+    const downloadButtonsContainer = document.getElementById('download-buttons');
+    if (downloadButtonsContainer) {
+      const buttons = Array.from(downloadButtonsContainer.querySelectorAll<HTMLAnchorElement>('a[data-os]'));
+      const detectedBtn = buttons.find(btn => btn.getAttribute('data-os') === detectedOs);
+      
+      if (detectedBtn && detectedBtn !== buttons[0]) {
+        // Reset all buttons to secondary outline style
+        buttons.forEach(btn => {
+          btn.className = 'w-full sm:w-auto px-6 py-3.5 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20';
+          const img = btn.querySelector('img');
+          if (img) {
+            img.className = 'w-5 h-5 dark:invert opacity-90';
+          }
+        });
+
+        // Highlight detected OS button with primary styling
+        detectedBtn.className = 'w-full sm:w-auto px-6 py-3.5 bg-[#111111] text-[#FFFFFF] hover:bg-black dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 flex items-center justify-center gap-2 shadow-sm';
+        const detectedImg = detectedBtn.querySelector('img');
+        if (detectedImg) {
+          if (detectedOs === 'windows') {
+            detectedImg.className = 'w-5 h-5 invert dark:invert-0 opacity-90';
+          } else {
+            detectedImg.className = 'w-5 h-5 invert-0 dark:invert opacity-90';
+          }
+        }
+
+        // Move detected button to the first position
+        downloadButtonsContainer.prepend(detectedBtn);
+      }
+    }
+
+    // 1. Deep link logic com sanitização estrita
     const params = new URLSearchParams(window.location.search);
     const action = params.get('action');
     const streams = params.get('streams');
 
     if (action === 'share' && streams) {
-      const hero = document.getElementById('hero-content');
-      const deeplink = document.getElementById('deep-link-content');
-      const btn = document.getElementById('deep-link-btn');
-      const cancelBtn = document.getElementById('deep-link-cancel-btn');
+      // Validação estrita: apenas caracteres alfanuméricos, barras, vírgulas, dois-pontos e hífens
+      const sanitizedStreams = streams.replace(/[^a-zA-Z0-9,/_:-]/g, '');
 
-      if (hero && deeplink && btn) {
-        hero.classList.add('hidden');
-        deeplink.classList.remove('hidden');
-        btn.setAttribute('href', `multistream://share?streams=${streams}`);
-        setTimeout(() => {
-           window.location.href = `multistream://share?streams=${streams}`;
-        }, 500);
+      if (sanitizedStreams.length > 0) {
+        const hero = document.getElementById('hero-content');
+        const deeplink = document.getElementById('deep-link-content');
+        const btn = document.getElementById('deep-link-btn');
+        const cancelBtn = document.getElementById('deep-link-cancel-btn');
 
-        if (cancelBtn) {
-          cancelBtn.addEventListener('click', () => {
+        if (hero && deeplink && btn) {
+          hero.classList.add('hidden');
+          deeplink.classList.remove('hidden');
+          const deepLinkUrl = `multistream://share?streams=${encodeURIComponent(sanitizedStreams)}`;
+          btn.setAttribute('href', deepLinkUrl);
+
+          setTimeout(() => {
+            window.location.href = deepLinkUrl;
+          }, 500);
+
+          const resetView = () => {
             deeplink.classList.add('hidden');
             hero.classList.remove('hidden');
             window.history.replaceState({}, document.title, window.location.pathname);
-          });
-        }
+          };
 
-        const headerLogo = document.getElementById('header-logo');
-        if (headerLogo) {
-          headerLogo.addEventListener('click', (e) => {
+          cancelBtn?.addEventListener('click', resetView);
+          document.getElementById('header-logo')?.addEventListener('click', (e) => {
             e.preventDefault();
-            deeplink.classList.add('hidden');
-            hero.classList.remove('hidden');
-            window.history.replaceState({}, document.title, window.location.pathname);
+            resetView();
           });
         }
       }
     }
 
-    // Kick OAuth callback: detected by code + state params (no action param sent by Kick)
+    // Kick OAuth callback
     const code = params.get('code');
     const oauthState = params.get('state');
     if (code && oauthState && action !== 'share') {
@@ -167,43 +227,76 @@ const getUrl = (ext: string, incl: string = '') => releaseAssets.find(a => a.nam
       window.location.href = `multistream://kick-callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(oauthState)}`;
     }
 
-    // 2. Modal Logic
+    // 2. Modal Logic com Focus Management e A11y
     const modal = document.getElementById('downloads-modal');
     const modalCard = document.getElementById('downloads-modal-card');
     const btnAll = document.getElementById('btn-all-downloads');
     const btnClose = document.getElementById('close-modal');
 
+    let previousActiveElement: HTMLElement | null = null;
+
     const openModal = () => {
       if (!modal || !modalCard) return;
+      previousActiveElement = document.activeElement as HTMLElement;
+      btnAll?.setAttribute('aria-expanded', 'true');
+
       modal.classList.remove('hidden');
       modal.classList.add('flex');
-      // Small delay to allow the opacity animation to run after removing display:none
+
       requestAnimationFrame(() => {
         modal.classList.remove('opacity-0');
         modalCard.classList.remove('scale-95');
         modalCard.classList.add('scale-100');
+        btnClose?.focus();
       });
+
+      document.addEventListener('keydown', handleKeyDown);
     };
 
     const closeModal = () => {
       if (!modal || !modalCard) return;
+      btnAll?.setAttribute('aria-expanded', 'false');
       modal.classList.add('opacity-0');
       modalCard.classList.remove('scale-100');
       modalCard.classList.add('scale-95');
+
       setTimeout(() => {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
+        previousActiveElement?.focus();
       }, 200);
+
+      document.removeEventListener('keydown', handleKeyDown);
     };
 
-    if (btnAll) btnAll.addEventListener('click', openModal);
-    if (btnClose) btnClose.addEventListener('click', closeModal);
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-      });
-    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        return;
+      }
 
+      // Trap Focus inside modal
+      if (e.key === 'Tab' && modal) {
+        const focusableElements = modal.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
 
-  });
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    btnAll?.addEventListener('click', openModal);
+    btnClose?.addEventListener('click', closeModal);
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
+  })();
 </script>
