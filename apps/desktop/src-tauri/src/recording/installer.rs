@@ -407,7 +407,7 @@ pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(),
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[tauri::command]
 pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(), String> {
     let env_dir = get_recording_env_dir(&app)?;
@@ -422,7 +422,13 @@ pub async fn recording_install_dependencies(app: tauri::AppHandle) -> Result<(),
     result
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(all(target_os = "linux", not(target_arch = "x86_64")))]
+#[tauri::command]
+pub async fn recording_install_dependencies(_app: tauri::AppHandle) -> Result<(), String> {
+    Err("Recording is only supported on x86_64 Linux architecture.".into())
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 async fn recording_install_linux_inner(
     app: &tauri::AppHandle,
     env_dir: &Path,
