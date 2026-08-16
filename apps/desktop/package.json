@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "tauri:dev": "bunx tauri dev",
     "tauri:build": "bunx tauri build",
-    "typecheck": "bunx vue-tsc -b",
+    "typecheck": "vue-tsc -b",
     "test": "vitest run --reporter=tree",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
