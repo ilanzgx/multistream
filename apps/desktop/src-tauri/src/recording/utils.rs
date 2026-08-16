@@ -1,7 +1,11 @@
 use std::path::Path;
 
 pub fn is_recording_supported() -> bool {
-    cfg!(all(target_os = "windows", target_arch = "x86_64"))
+    cfg!(any(
+        all(target_os = "windows", target_arch = "x86_64"),
+        all(target_os = "linux", target_arch = "x86_64"),
+        target_os = "macos"
+    ))
 }
 
 pub fn build_stream_url(platform: &str, channel: &str) -> String {
@@ -13,6 +17,11 @@ pub fn build_stream_url(platform: &str, channel: &str) -> String {
     }
 }
 
+/// Builds the full argument list to pass to the Streamlink executable.
+///
+/// On Windows and macOS, the executable is `python3`/`python.exe` so we prefix
+/// with `-m streamlink`. On Linux the executable is the AppImage `AppRun` which
+/// IS the streamlink CLI, so no prefix is needed.
 pub fn streamlink_args(url: &str, quality: &str, output: &Path) -> Vec<String> {
     let resolved_quality = match quality {
         "1080p" => "1080p60,1080p,1080p50,best",
@@ -22,9 +31,13 @@ pub fn streamlink_args(url: &str, quality: &str, output: &Path) -> Vec<String> {
         _ => quality, // "best", "worst", etc.
     };
 
-    vec![
-        "-m".to_string(),
-        "streamlink".to_string(),
+    #[cfg(target_os = "linux")]
+    let prefix: &[&str] = &[];
+    #[cfg(not(target_os = "linux"))]
+    let prefix: &[&str] = &["-m", "streamlink"];
+
+    let mut args: Vec<String> = prefix.iter().map(|s| s.to_string()).collect();
+    args.extend([
         url.to_string(),
         resolved_quality.to_string(),
         "--output".to_string(),
@@ -34,7 +47,8 @@ pub fn streamlink_args(url: &str, quality: &str, output: &Path) -> Vec<String> {
         "5".to_string(),
         "--retry-open".to_string(),
         "5".to_string(),
-    ]
+    ]);
+    args
 }
 
 pub fn ffmpeg_remux_args(input: &Path, output: &Path) -> Vec<String> {
@@ -77,17 +91,25 @@ mod tests {
 
         let args = streamlink_args("https://twitch.tv/test", "1080p", &path);
 
-        // Assert streamlink module invocation
-        assert_eq!(args[0], "-m");
-        assert_eq!(args[1], "streamlink");
+        // On non-Linux platforms the first two args are the python module prefix.
+        // On Linux the AppRun IS the CLI so args start directly with the URL.
+        #[cfg(not(target_os = "linux"))]
+        {
+            assert_eq!(args[0], "-m");
+            assert_eq!(args[1], "streamlink");
+            assert_eq!(args[2], "https://twitch.tv/test");
+            assert_eq!(args[3], "1080p60,1080p,1080p50,best");
+            assert_eq!(args[4], "--output");
+            assert_eq!(args[5], "output.ts");
+        }
+        #[cfg(target_os = "linux")]
+        {
+            assert_eq!(args[0], "https://twitch.tv/test");
+            assert_eq!(args[1], "1080p60,1080p,1080p50,best");
+            assert_eq!(args[2], "--output");
+            assert_eq!(args[3], "output.ts");
+        }
 
-        // Assert URL and resolved quality
-        assert_eq!(args[2], "https://twitch.tv/test");
-        assert_eq!(args[3], "1080p60,1080p,1080p50,best");
-
-        // Assert output path and flags
-        assert_eq!(args[4], "--output");
-        assert_eq!(args[5], "output.ts");
         assert!(args.contains(&"--force".to_string()));
     }
 
