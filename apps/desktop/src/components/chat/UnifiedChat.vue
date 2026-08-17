@@ -1,18 +1,20 @@
 <script lang="ts" setup>
-import { watch, computed, ref } from "vue";
+import { watch, computed, ref, onMounted } from "vue";
 import { WifiOff, RefreshCw, ArrowDown } from "@lucide/vue";
 import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 import { useEmotes } from "@/composables/useEmotes";
+import { useStreams } from "@/composables/useStreams";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { useI18n } from "vue-i18n";
-import { TwitchIcon } from "../icons";
+import { TwitchIcon, KickIcon } from "../icons";
 import LoginPrompt from "./LoginPrompt.vue";
 const { messages, connectionState, channelColor, channelAvatars, twitchChannels } =
   useUnifiedChat();
+const { streams } = useStreams();
 const { loading: authLoading } = useTwitchAuth();
 const { t } = useI18n();
 const { loadChannelEmotes } = useEmotes();
@@ -24,6 +26,28 @@ function openAuthModal() {
 }
 
 const isInitializing = ref(true);
+
+const hasTwitch = computed(() => streams.value.some((s) => s.platform === "twitch"));
+const hasKick = computed(() => streams.value.some((s) => s.platform === "kick"));
+
+const skeletonIcons = computed(() => {
+  if (hasTwitch.value && hasKick.value) {
+    return [
+      { key: "twitch", component: TwitchIcon, color: "#9146FF" },
+      { key: "kick", component: KickIcon, color: "#53FC18" },
+    ];
+  }
+  if (hasKick.value && !hasTwitch.value) {
+    return [
+      { key: "kick-1", component: KickIcon, color: "#53FC18" },
+      { key: "kick-2", component: KickIcon, color: "#53FC18" },
+    ];
+  }
+  return [
+    { key: "twitch-1", component: TwitchIcon, color: "#9146FF" },
+    { key: "twitch-2", component: TwitchIcon, color: "#9146FF" },
+  ];
+});
 
 const scrollContainer = ref<HTMLElement | null>(null);
 const isScrolledUp = ref(false);
@@ -49,7 +73,6 @@ watch(
   { immediate: true, deep: true }
 );
 
-import { onMounted } from "vue";
 onMounted(() => {
   setTimeout(() => {
     isInitializing.value = false;
@@ -64,7 +87,16 @@ onMounted(() => {
         v-if="isInitializing"
         class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#0f1115] p-6"
       >
-        <TwitchIcon :size="48" :style="{ color: '#9146FF' }" class="opacity-30" />
+        <div class="flex items-center justify-center gap-2.5">
+          <component
+            :is="icon.component"
+            v-for="icon in skeletonIcons"
+            :key="icon.key"
+            :size="36"
+            :style="{ color: icon.color }"
+            class="opacity-30"
+          />
+        </div>
         <div class="flex flex-col gap-2 w-full">
           <Skeleton class="h-2.5 w-3/4 mx-auto bg-white/5 rounded" />
           <Skeleton class="h-2.5 w-1/2 mx-auto bg-white/5 rounded" />
