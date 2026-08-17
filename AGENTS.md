@@ -32,6 +32,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 - **[`multistream-desktop-frontend-testing`](.agents/skills/desktop-frontend-testing/SKILL.md)**: Comprehensive guide, AAA pattern, Tauri IPC mocking, fake timers, and best practices for writing unit tests in `apps/desktop/src/`.
 - **[`multistream-graveyard`](.agents/skills/graveyard/SKILL.md)**: Explains the Multistream Graveyard mechanism, how it works, and why it is necessary to prevent WebView IPC crashes.
 - **[`multistream-adding-language`](.agents/skills/adding-language/SKILL.md)**: Guides agents and developers through the exact process of adding a new language to the Multistream application.
+- **[`multistream-critical-edge-case-analysis`](.agents/skills/critical-edge-case-analysis/SKILL.md)**: Rigorous, egoless methodology for auditing business logic, identifying hidden edge cases, questioning assumptions, remediating logic flaws, and authoring bulletproof unit tests (AAA pattern) across Multistream.
 
 ## Tech Stack
 
