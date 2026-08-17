@@ -397,7 +397,9 @@
     "followedChannels": "Saluran yang Diikuti",
     "all": "Semua",
     "loginTitle": "Hubungkan akun Anda",
-    "loginSubtitle": "Lihat saluran yang Anda ikuti"
+    "loginSubtitle": "Lihat saluran yang Anda ikuti",
+    "noChannels": "Tidak ada channel yang online",
+    "noChannelsSubtitle": "Favoritkan channel atau hubungkan akun Twitch Anda."
   },
   "nativePlayer": {
     "live": "LANGSUNG",

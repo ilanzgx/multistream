@@ -397,7 +397,9 @@
     "followedChannels": "Followed Channels",
     "all": "All",
     "loginTitle": "Connect your account",
-    "loginSubtitle": "See the channels you follow"
+    "loginSubtitle": "See the channels you follow",
+    "noChannels": "No channels online",
+    "noChannelsSubtitle": "Favorite channels or connect your Twitch account."
   },
   "nativePlayer": {
     "live": "LIVE",

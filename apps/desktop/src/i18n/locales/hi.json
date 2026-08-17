@@ -397,7 +397,9 @@
     "followedChannels": "अनुसरण किए गए चैनल",
     "all": "सभी",
     "loginTitle": "अपना खाता कनेक्ट करें",
-    "loginSubtitle": "उन चैनलों को देखें जिनका आप अनुसरण करते हैं"
+    "loginSubtitle": "उन चैनलों को देखें जिनका आप अनुसरण करते हैं",
+    "noChannels": "कोई चैनल ऑनलाइन नहीं है",
+    "noChannelsSubtitle": "चैनलों को पसंदीदा बनाएं या अपना Twitch खाता कनेक्ट करें।"
   },
   "nativePlayer": {
     "live": "लाइव",

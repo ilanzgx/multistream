@@ -397,7 +397,9 @@
     "followedChannels": "已关注频道",
     "all": "全部",
     "loginTitle": "连接您的账户",
-    "loginSubtitle": "查看您关注的频道"
+    "loginSubtitle": "查看您关注的频道",
+    "noChannels": "没有正在直播的频道",
+    "noChannelsSubtitle": "收藏频道或连接您的 Twitch 账户。"
   },
   "nativePlayer": {
     "live": "直播中",

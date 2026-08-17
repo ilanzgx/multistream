@@ -397,7 +397,9 @@
     "followedChannels": "Canais seguidos",
     "all": "Todos",
     "loginTitle": "Conecte sua conta",
-    "loginSubtitle": "Veja os canais que você segue"
+    "loginSubtitle": "Veja os canais que você segue",
+    "noChannels": "Nenhum canal online",
+    "noChannelsSubtitle": "Favorite canais ou conecte sua conta da Twitch."
   },
   "nativePlayer": {
     "live": "AO VIVO",

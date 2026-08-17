@@ -397,7 +397,9 @@
     "followedChannels": "Отслеживаемые каналы",
     "all": "Все",
     "loginTitle": "Подключите аккаунт",
-    "loginSubtitle": "Смотрите каналы, на которые вы подписаны"
+    "loginSubtitle": "Смотрите каналы, на которые вы подписаны",
+    "noChannels": "Нет каналов онлайн",
+    "noChannelsSubtitle": "Добавьте каналы в избранное или подключите Twitch."
   },
   "nativePlayer": {
     "live": "LIVE",

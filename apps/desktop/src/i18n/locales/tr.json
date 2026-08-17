@@ -397,7 +397,9 @@
     "followedChannels": "Takip Edilen Kanallar",
     "all": "Tümü",
     "loginTitle": "Hesabınızı bağlayın",
-    "loginSubtitle": "Takip ettiğiniz kanalları görün"
+    "loginSubtitle": "Takip ettiğiniz kanalları görün",
+    "noChannels": "Çevrimiçi kanal yok",
+    "noChannelsSubtitle": "Kanalları favorilere ekleyin veya Twitch hesabınızı bağlayın."
   },
   "nativePlayer": {
     "live": "CANLI",

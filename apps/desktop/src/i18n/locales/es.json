@@ -393,11 +393,13 @@
     "button": "Descargar"
   },
   "sidebar": {
-    "openSidebar": "Abrir menú lateral",
+    "openSidebar": "Abrir barra lateral",
     "followedChannels": "Canales seguidos",
     "all": "Todos",
     "loginTitle": "Conecta tu cuenta",
-    "loginSubtitle": "Mira los canales que sigues"
+    "loginSubtitle": "Ver los canales que sigues",
+    "noChannels": "No hay canales en directo",
+    "noChannelsSubtitle": "Añade canales a favoritos o conecta tu cuenta de Twitch."
   },
   "nativePlayer": {
     "live": "EN VIVO",

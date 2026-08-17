@@ -397,7 +397,9 @@
     "followedChannels": "Gefolgte Kanäle",
     "all": "Alle",
     "loginTitle": "Konto verbinden",
-    "loginSubtitle": "Sehen Sie die Kanäle, denen Sie folgen"
+    "loginSubtitle": "Sehen Sie die Kanäle, denen Sie folgen",
+    "noChannels": "Keine Kanäle online",
+    "noChannelsSubtitle": "Favorisiere Kanäle oder verbinde dein Twitch-Konto."
   },
   "nativePlayer": {
     "live": "LIVE",

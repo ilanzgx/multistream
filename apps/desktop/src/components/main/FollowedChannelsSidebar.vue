@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import { load, type Store } from "@tauri-apps/plugin-store";
+import { computed } from "vue";
 import {
   Tooltip,
   TooltipContent,
@@ -8,7 +7,7 @@ import {
   TooltipTrigger,
 } from "../../components/ui/tooltip";
 import { Skeleton } from "../../components/ui/skeleton";
-import { Users, ChevronLeft, ChevronRight, RefreshCw } from "@lucide/vue";
+import { Radio, ChevronLeft, ChevronRight, RefreshCw } from "@lucide/vue";
 import TwitchIcon from "../../components/icons/TwitchIcon.vue";
 import KickIcon from "../../components/icons/KickIcon.vue";
 import LoginPrompt from "../../components/chat/LoginPrompt.vue";
@@ -16,12 +15,14 @@ import { useI18n } from "vue-i18n";
 import { useFollowedChannels, type FollowedChannel } from "../../composables/useFollowedChannels";
 import { useTwitchAuth } from "../../composables/useTwitchAuth";
 import { useStreams } from "../../composables/useStreams";
-import { isTauri } from "../../composables/useUpdater";
+import { usePreferences } from "../../composables/usePreferences";
 import { CDN_CONFIG } from "@/config/cdn";
-const { channels, isLoading, platformFilter, refresh } = useFollowedChannels();
+
+const { channels, isLoading, isInitialLoading, platformFilter, refresh } = useFollowedChannels();
 const { addStream } = useStreams();
 const { t, locale } = useI18n();
 const { authenticated: isTwitchAuth } = useTwitchAuth();
+const { followedSidebarOpen: isOpen, toggleFollowedSidebar } = usePreferences();
 
 const liveChannels = computed(() => channels.value.filter((c) => c.isLive));
 
@@ -29,41 +30,12 @@ const openTwitchAuthDialog = () => {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "twitch-auth" }));
 };
 
-const isOpen = ref<boolean | undefined>(false);
-const isStoreLoaded = ref(false);
-let store: Store | null = null;
-
-const initStore = async () => {
-  if (!isTauri()) {
-    isStoreLoaded.value = true;
-    return;
-  }
-  try {
-    store = await load("sidebar.json", { autoSave: true } as any);
-    const stored = await store.get<boolean>("left-sidebar-open");
-    if (stored !== null) {
-      isOpen.value = stored;
-    }
-  } catch (e) {
-    console.error("Failed to load store", e);
-  } finally {
-    isStoreLoaded.value = true;
-  }
-};
-
-const toggleSidebar = async () => {
-  isOpen.value = !isOpen.value;
-  if (store) {
-    await store.set("left-sidebar-open", isOpen.value);
-  }
+const toggleSidebar = () => {
+  toggleFollowedSidebar();
   if (isOpen.value) {
     refresh();
   }
 };
-
-onMounted(() => {
-  initStore();
-});
 
 const onAddClick = (channel: FollowedChannel) => {
   addStream(channel.id, channel.platform);
@@ -79,15 +51,15 @@ const formatViewers = (count: number) => {
 
 <template>
   <div
-    class="shrink-0 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative"
-    :class="[isOpen ? 'w-56' : 'w-14', isStoreLoaded ? 'transition-all duration-300' : '']"
+    class="shrink-0 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative transition-all duration-300"
+    :class="isOpen ? 'w-56' : 'w-14'"
   >
     <div
       class="h-12 flex items-center px-2 border-b border-[#1f2227] shrink-0"
       :class="isOpen ? 'justify-between' : 'justify-center'"
     >
       <div v-if="isOpen" class="flex items-center gap-2">
-        <Users class="w-4 h-4 text-gray-400" />
+        <Radio class="w-4 h-4 text-gray-400" />
         <span class="text-[10px] font-semibold tracking-widest uppercase text-gray-400">{{
           t("sidebar.followedChannels")
         }}</span>
@@ -155,7 +127,7 @@ const formatViewers = (count: number) => {
 
     <TooltipProvider :delay-duration="0" :disable-hoverable-content="true">
       <div class="flex-1 overflow-y-auto py-1 flex flex-col gap-0.5 px-1.5 custom-scrollbar">
-        <template v-if="isLoading && liveChannels.length === 0">
+        <template v-if="isInitialLoading && liveChannels.length === 0">
           <div v-for="i in 20" :key="i" class="flex items-center gap-2 p-1 rounded-md">
             <div class="relative shrink-0">
               <Skeleton class="w-7 h-7 rounded-full border border-[#2a2d33] bg-[#1f2227]" />
@@ -179,8 +151,8 @@ const formatViewers = (count: number) => {
           </div>
         </template>
 
-        <template v-for="channel in liveChannels" v-else :key="channel.platform + '-' + channel.id">
-          <Tooltip>
+        <template v-else-if="liveChannels.length > 0">
+          <Tooltip v-for="channel in liveChannels" :key="channel.platform + '-' + channel.id">
             <TooltipTrigger as-child>
               <div
                 class="flex items-center gap-2 p-1 rounded-md cursor-pointer group transition-colors"
@@ -250,6 +222,31 @@ const formatViewers = (count: number) => {
             </TooltipContent>
           </Tooltip>
         </template>
+
+        <div
+          v-else
+          class="flex-1 flex flex-col items-center justify-center p-4 text-center select-none"
+        >
+          <template v-if="isOpen">
+            <span class="text-xs font-semibold text-gray-400 leading-snug">
+              {{ t("sidebar.noChannels") }}
+            </span>
+            <span class="text-[11px] text-gray-500 mt-1 leading-normal max-w-[180px]">
+              {{ t("sidebar.noChannelsSubtitle") }}
+            </span>
+          </template>
+          <Tooltip v-else>
+            <TooltipTrigger as-child>
+              <div class="p-2 text-gray-600">
+                <Radio class="w-4 h-4 opacity-50" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" :side-offset="10">
+              <p class="text-xs font-medium">{{ t("sidebar.noChannels") }}</p>
+              <p class="text-[10px] text-gray-400 mt-0.5">{{ t("sidebar.noChannelsSubtitle") }}</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </TooltipProvider>
 

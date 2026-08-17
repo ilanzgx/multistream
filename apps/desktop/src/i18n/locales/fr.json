@@ -397,7 +397,9 @@
     "followedChannels": "Chaînes suivies",
     "all": "Tout",
     "loginTitle": "Connectez votre compte",
-    "loginSubtitle": "Voir les chaînes que vous suivez"
+    "loginSubtitle": "Voir les chaînes que vous suivez",
+    "noChannels": "Aucune chaîne en ligne",
+    "noChannelsSubtitle": "Ajoutez des chaînes aux favoris ou connectez votre compte Twitch."
   },
   "nativePlayer": {
     "live": "EN DIRECT",
