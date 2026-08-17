@@ -149,7 +149,7 @@
       "uninstallConfirmDescription": "Bu, yalıtılmış kayıt ortamını kaldıracak ve alan boşaltacaktır. Daha sonra yeniden yükleyebilirsiniz.",
       "uninstallConfirmButton": "Kaldır",
       "enableDescription": "Streamlink kullanarak yayınları doğrudan kaynaktan kaydedin. Dosyalar Videolar klasörünüze kaydedilir.",
-      "unavailableOS": "Kayıt yalnızca Windows'ta kullanılabilir.",
+      "unavailableOS": "Kayıt mimarinizde desteklenmiyor.",
       "qualityTitle": "Varsayılan Kalite",
       "qualityPrefix": "Kalite: ",
       "qualityDescription": "Tercih edilen yayın kalitesi. Bulunamazsa mevcut olan en iyisine geri döner.",

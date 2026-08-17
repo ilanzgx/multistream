@@ -149,7 +149,7 @@
       "uninstallConfirmDescription": "Isso removerá o ambiente isolado do gravador e liberará espaço. Você poderá instalar novamente mais tarde.",
       "uninstallConfirmButton": "Desinstalar",
       "enableDescription": "Grave streams diretamente da fonte usando Streamlink. Os arquivos são salvos na pasta Vídeos.",
-      "unavailableOS": "A gravação está disponível apenas no Windows.",
+      "unavailableOS": "A gravação não é suportada na sua arquitetura.",
       "qualityTitle": "Qualidade Padrão",
       "qualityPrefix": "Qualidade: ",
       "qualityDescription": "Qualidade de stream preferida. Usa a melhor disponível se não encontrada.",

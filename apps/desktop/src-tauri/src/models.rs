@@ -60,7 +60,7 @@ mod tests {
         assert_eq!(channel.id, "123");
         assert_eq!(channel.platform, "kick");
         assert_eq!(channel.display_name, "xQc");
-        assert_eq!(channel.is_live, false);
+        assert!(!channel.is_live);
         assert!(channel.viewer_count.is_none());
     }
 }

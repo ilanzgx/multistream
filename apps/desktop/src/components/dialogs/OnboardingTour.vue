@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
+import { ref, watch } from "vue";
 import {
   Dialog,
   DialogContent,
@@ -11,8 +11,6 @@ import { Button } from "@/components/ui/button";
 import { TwitchIcon, KickIcon, YoutubeIcon } from "@/components/icons";
 import { ChevronLeft, ChevronRight, Check, Mic, ArrowDown, Video } from "@lucide/vue";
 import { useTranscription } from "@/composables/useTranscription";
-import { isTauri } from "@/composables/useUpdater";
-import { invoke } from "@tauri-apps/api/core";
 
 const props = withDefaults(
   defineProps<{
@@ -32,17 +30,6 @@ const emit = defineEmits<{
 
 const currentStep = ref(1);
 const { isSupported } = useTranscription();
-const isRecordingSupported = ref(false);
-
-onMounted(async () => {
-  if (isTauri()) {
-    try {
-      isRecordingSupported.value = await invoke<boolean>("is_recording_supported_cmd");
-    } catch {
-      isRecordingSupported.value = false;
-    }
-  }
-});
 
 // Reset step to 1 when dialog is opened
 watch(
@@ -69,13 +56,11 @@ function handleEscapeKey(e: Event) {
 function getNextStep(from: number): number {
   let step = from + 1;
   if (step === 5 && !isSupported.value) step++;
-  if (step === 6 && !isRecordingSupported.value) step++;
   return step;
 }
 
 function getPrevStep(from: number): number {
   let step = from - 1;
-  if (step === 6 && !isRecordingSupported.value) step--;
   if (step === 5 && !isSupported.value) step--;
   return step;
 }
@@ -125,7 +110,7 @@ function handleFinish() {
       </DialogHeader>
 
       <!-- Step Content Area -->
-      <div class="relative py-4 h-[380px] flex flex-col justify-between">
+      <div class="relative py-4 h-95 flex flex-col justify-between">
         <Transition name="fade" mode="out-in">
           <div :key="currentStep" class="flex-1 flex flex-col gap-4">
             <!-- Step Description -->
@@ -269,7 +254,7 @@ function handleFinish() {
                     class="relative w-full py-2.5 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-center justify-center shadow-inner"
                   >
                     <div
-                      class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"
+                      class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent opacity-60"
                     ></div>
                     <div class="relative flex flex-col items-center gap-1">
                       <p
@@ -279,7 +264,7 @@ function handleFinish() {
                       </p>
                       <ArrowDown class="size-2.5 text-white/50" />
                       <p
-                        class="text-[9px] sm:text-[10px] font-medium text-white px-2 py-0.5 bg-green-500/20 text-green-300 rounded text-center backdrop-blur-sm border border-green-500/20"
+                        class="text-[9px] sm:text-[10px] font-medium text-white px-2 py-0.5 bg-green-500/20 rounded text-center backdrop-blur-sm border border-green-500/20"
                       >
                         {{ $t("onboarding.step5.captionTranslation") }}
                       </p>
@@ -353,7 +338,7 @@ function handleFinish() {
                     class="relative w-full py-2.5 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-center justify-center shadow-inner"
                   >
                     <div
-                      class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"
+                      class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent opacity-60"
                     ></div>
                     <div class="relative flex items-center gap-3 px-4">
                       <div
@@ -592,7 +577,7 @@ function handleFinish() {
         <div class="flex items-center gap-0">
           <button
             v-for="step in 7"
-            v-show="(step !== 5 || isSupported) && (step !== 6 || isRecordingSupported)"
+            v-show="step !== 5 || isSupported"
             :key="step"
             class="p-2.5 group cursor-pointer"
             :aria-label="`Go to step ${step}`"

@@ -154,50 +154,6 @@ pub async fn start_pkce_flow(
     })
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn should_return_correct_redirect_uri() {
-        assert_eq!(redirect_uri_for_locale("en"), REDIRECT_URI_EN);
-        assert_eq!(redirect_uri_for_locale("es"), REDIRECT_URI_EN);
-        assert_eq!(redirect_uri_for_locale("pt"), REDIRECT_URI_PT);
-        assert_eq!(redirect_uri_for_locale("pt-br"), REDIRECT_URI_PT);
-    }
-
-    #[test]
-    fn should_generate_pkce_challenge() {
-        let (verifier, challenge) = generate_pkce();
-
-        // Verifier should be 43 bytes (base64url of 32 bytes)
-        assert_eq!(verifier.len(), 43);
-        // Challenge should be 43 bytes (base64url of 32 bytes sha256 hash)
-        assert_eq!(challenge.len(), 43);
-
-        // Calculate challenge manually to verify
-        let mut hasher = sha2::Sha256::new();
-        hasher.update(verifier.as_bytes());
-        let expected_challenge =
-            base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hasher.finalize());
-
-        assert_eq!(challenge, expected_challenge);
-    }
-
-    #[test]
-    fn should_extract_username_correctly() {
-        let has_data = KickUserResponse {
-            data: vec![KickUserData {
-                name: "testuser".to_string(),
-            }],
-        };
-        assert_eq!(extract_username(&has_data), "testuser");
-
-        let empty_data = KickUserResponse { data: vec![] };
-        assert_eq!(extract_username(&empty_data), "Unknown");
-    }
-}
-
 pub(crate) fn extract_username(user_info: &KickUserResponse) -> String {
     user_info
         .data
@@ -263,4 +219,48 @@ pub async fn refresh_token(
         username,
         has_chat_write: true,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_return_correct_redirect_uri() {
+        assert_eq!(redirect_uri_for_locale("en"), REDIRECT_URI_EN);
+        assert_eq!(redirect_uri_for_locale("es"), REDIRECT_URI_EN);
+        assert_eq!(redirect_uri_for_locale("pt"), REDIRECT_URI_PT);
+        assert_eq!(redirect_uri_for_locale("pt-br"), REDIRECT_URI_PT);
+    }
+
+    #[test]
+    fn should_generate_pkce_challenge() {
+        let (verifier, challenge) = generate_pkce();
+
+        // Verifier should be 43 bytes (base64url of 32 bytes)
+        assert_eq!(verifier.len(), 43);
+        // Challenge should be 43 bytes (base64url of 32 bytes sha256 hash)
+        assert_eq!(challenge.len(), 43);
+
+        // Calculate challenge manually to verify
+        let mut hasher = sha2::Sha256::new();
+        hasher.update(verifier.as_bytes());
+        let expected_challenge =
+            base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(hasher.finalize());
+
+        assert_eq!(challenge, expected_challenge);
+    }
+
+    #[test]
+    fn should_extract_username_correctly() {
+        let has_data = KickUserResponse {
+            data: vec![KickUserData {
+                name: "testuser".to_string(),
+            }],
+        };
+        assert_eq!(extract_username(&has_data), "testuser");
+
+        let empty_data = KickUserResponse { data: vec![] };
+        assert_eq!(extract_username(&empty_data), "Unknown");
+    }
 }

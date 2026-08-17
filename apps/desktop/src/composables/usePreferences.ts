@@ -5,7 +5,7 @@ export interface Preferences {
   sidebarOpen: boolean;
   notificationsEnabled: boolean;
   onboardingCompleted: boolean;
-  recordingEnabled: boolean;
+
   recordingQuality: string;
   recordingPath: string;
   nativePlayerEnabled: boolean;
@@ -16,7 +16,7 @@ const defaultPreferences: Preferences = {
   sidebarOpen: true,
   notificationsEnabled: true,
   onboardingCompleted: false,
-  recordingEnabled: false,
+
   recordingQuality: "best",
   recordingPath: "",
   nativePlayerEnabled: false,
@@ -53,11 +53,6 @@ const _usePreferences = () => {
   const onboardingCompleted = useStorage<boolean>(
     "preferences.onboardingCompleted",
     defaultPreferences.onboardingCompleted
-  );
-
-  const recordingEnabled = useStorage<boolean>(
-    "preferences.recordingEnabled",
-    defaultPreferences.recordingEnabled
   );
 
   const recordingQuality = useStorage<string>(
@@ -132,7 +127,7 @@ const _usePreferences = () => {
     sidebarOpen.value = defaultPreferences.sidebarOpen;
     notificationsEnabled.value = defaultPreferences.notificationsEnabled;
     onboardingCompleted.value = defaultPreferences.onboardingCompleted;
-    recordingEnabled.value = defaultPreferences.recordingEnabled;
+
     recordingQuality.value = defaultPreferences.recordingQuality;
     recordingPath.value = defaultPreferences.recordingPath;
     nativePlayerEnabled.value = defaultPreferences.nativePlayerEnabled;
@@ -144,7 +139,7 @@ const _usePreferences = () => {
     sidebarOpen,
     notificationsEnabled,
     onboardingCompleted,
-    recordingEnabled,
+
     recordingQuality,
     recordingPath,
     nativePlayerEnabled,

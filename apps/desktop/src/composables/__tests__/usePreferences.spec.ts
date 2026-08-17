@@ -119,7 +119,7 @@ describe("usePreferences composable unit tests", () => {
       nativePlayerEnabled,
       setRecordingQuality,
       setRecordingPath,
-      recordingEnabled,
+
       resetPreferences,
       selectedChat,
       sidebarOpen,
@@ -136,7 +136,6 @@ describe("usePreferences composable unit tests", () => {
     nativePlayerEnabled.value = true;
     setRecordingQuality("480p");
     setRecordingPath("C:/test");
-    recordingEnabled.value = true;
 
     expect(selectedChat.value).toBe("alanzoka_twitch");
     expect(sidebarOpen.value).toBe(false);
@@ -145,7 +144,6 @@ describe("usePreferences composable unit tests", () => {
     expect(nativePlayerEnabled.value).toBe(true);
     expect(recordingQuality.value).toBe("480p");
     expect(recordingPath.value).toBe("C:/test");
-    expect(recordingEnabled.value).toBe(true);
 
     // Act
     resetPreferences();
@@ -158,6 +156,5 @@ describe("usePreferences composable unit tests", () => {
     expect(nativePlayerEnabled.value).toBe(false);
     expect(recordingQuality.value).toBe("best");
     expect(recordingPath.value).toBe("");
-    expect(recordingEnabled.value).toBe(false);
   });
 });

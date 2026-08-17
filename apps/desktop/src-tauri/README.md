@@ -293,53 +293,94 @@ Generates capability schemas and prepares the Tauri security manifest. Must be t
 
 ## 7. Local Stream Recording
 
-Local stream recording is powered by [Streamlink](https://streamlink.github.io/) (and `ffmpeg` for remuxing), executed natively via `std::process::Command`.
+Local live stream recording is powered by [Streamlink](https://streamlink.github.io/) for HLS/DASH chunk capture and [FFmpeg](https://ffmpeg.org/) for stream-copy remuxing (`.ts` to `.mp4`), executed directly via `tokio::process::Command`. **Supported on Windows (x86_64), Linux (x86_64), and macOS.**
 
-### Architecture Insight: Why not use Tauri Sidecars?
+### Architecture Insight: On-Demand Portable Sandbox
 
-To maintain Multistream's core philosophy of being incredibly lightweight and performant, we intentionally avoided bundling Streamlink, Python, and FFmpeg as [Tauri Sidecars](https://v2.tauri.app/concept/sidecar/). 
+To maintain Multistream's core philosophy of being lightweight and performant, we intentionally avoid bundling Streamlink, Python, and FFmpeg as [Tauri Sidecars](https://v2.tauri.app/concept/sidecar/) in the installer.
 
-Bundling these executables would bloat the initial application installer by hundreds of megabytes. Instead, we use an **On-Demand Portable Environment**:
-- The dependencies are only downloaded if the user explicitly enables the Recording feature.
-- When enabled, the app downloads a standalone Python embed, installs the `streamlink` pip package, and fetches a standalone `ffmpeg.exe`.
-- Everything is kept isolated in `%APPDATA%\multistream\recording_env`.
-- We then interact with them directly via Rust's native `std::process::Command`, avoiding any heavy wrappers (like Node.js servers) and maintaining near-zero overhead.
+Instead, an **On-Demand Portable Environment** is provisioned dynamically when the user installs the feature:
+- **Windows:** Downloads official `python-3.11-embed-amd64.zip` and standalone `ffmpeg.exe`. Patches `python311._pth` to enable `site-packages`, downloads `get-pip.py`, and installs `streamlink` natively via pip.
+- **Linux:** Downloads `Streamlink.AppImage` and a static `ffmpeg` build, extracting them natively without relying on system FUSE.
+- **macOS:** Downloads a standalone Python build, installs `streamlink` via pip, and extracts a static macOS FFmpeg binary.
+- The environment is completely sandboxed in `%APPDATA%\multistream\recording_env` (or its equivalent on Unix) and does not pollute or rely on the host system PATH.
 
-### Recording Process
 
-```text
+### 2-Stage Recording & Remuxing Pipeline
+
+```
 start_recording
-  └─ Checks if the `recording_env` exists and is valid.
-  └─ Resolves the correct platform URL (e.g., `twitch.tv/<channel>`).
-  └─ Spawns the Streamlink process:
-       streamlink <url> <quality> --output <Videos>/Multistream/<platform>/<channel>_...ts
-  └─ Saves the `Child` process handle in a global `Arc<Mutex<HashMap<String, Child>>>`.
-  └─ Spawns a background thread to wait for the process to exit and handle remuxing.
+  ├─ Validates stream_id (UUID), channel, platform (twitch/kick/youtube), and quality
+  ├─ Checks available disk space (minimum 2.00 GB free required)
+  ├─ Resolves target path: <Videos>/Multistream/YYYY/MM/<platform>_<channel>_<timestamp>.ts
+  ├─ Spawns Streamlink process:
+  │    python.exe -m streamlink <url> <quality_fallbacks> --output <temp.ts> --force --retry-streams 5 --retry-open 5
+  ├─ Emits recording:started
+  └─ Monitors process exit in an asynchronous tokio task:
+       ├─ Clean exit / User stop → runs FFmpeg remuxing pipeline
+       ├─ Non-clean exit → emits recording:error
+       └─ Empty file (< 1 byte) → removes temp file and alerts frontend
+
+run_remux (Stream Copy)
+  ├─ Emits recording:remux-started
+  ├─ Checks disk space for conversion (free bytes >= ts_size)
+  ├─ Spawns FFmpeg in stream-copy mode (0% transcoding CPU overhead):
+  │    ffmpeg.exe -y -i <temp.ts> -c copy -movflags +faststart -progress pipe:1 -nostats <output.mp4>
+  ├─ Parses stdout `total_size=<bytes>` and emits recording:remux-progress
+  ├─ On success: deletes <temp.ts> and emits recording:remux-finished
+  └─ On failure: retains <temp.ts> for recovery and emits recording:remux-failed
 ```
 
-When a recording stops, the `.ts` file is automatically remuxed into an `.mp4` file using the portable `ffmpeg`, and the original `.ts` file is deleted. If the app closes abruptly, the `.ts` file remains as an "orphan". 
+### Safety, Disk Space & Process Tree Management
 
-### Orphan Recovery
+- **Process Tree Termination (`taskkill`):** When stopping a recording on Windows, `taskkill /F /T /PID` is executed with `CREATE_NO_WINDOW` (`0x08000000`) flag, cleanly terminating all child worker threads spawned by Python without leaving zombie processes.
+- **Pre-Flight Disk Space Checks:** Native OS APIs (`GetDiskFreeSpaceExW` on Windows) verify sufficient disk space before starting a stream and before launching FFmpeg remuxing.
+- **Graceful Application Shutdown:** When the application window is closing or the app is shutting down, `shutdown_all_recordings` terminates all active Streamlink processes and awaits up to 30s for any in-flight remuxing tasks to complete before exit.
+- **Input Sanitization:** All channel names, stream IDs, and qualities are validated against strict whitelists in `validation.rs` to eliminate command injection risks.
 
-`get_orphan_recordings` scans the Videos directory for `.ts` files. The user can choose to convert them to `.mp4` (`remux_orphan_recording`) or discard them (`delete_orphan_recording`).
+### Orphan Recording Recovery
+
+If the application is terminated abruptly during recording (e.g., system crash, power outage), the captured `.ts` file remains intact on disk.
+- `scan_orphans` scans the recording directory for `.ts` files without a matching `.mp4`.
+- `recover_orphan_recording` triggers the FFmpeg remux pipeline on the selected orphan.
+- `dismiss_orphan_recording` permanently deletes the unneeded `.ts` file.
 
 ### Folder Management
 
-`open_recording_folder` uses `tauri-plugin-opener` to natively open the `Videos/Multistream` directory in the OS file explorer without triggering deprecation warnings or blocking the main thread.
+`open_recording_folder` uses `tauri-plugin-opener` to open the configured recording directory (or default `Videos/Multistream/YYYY/MM`) in Windows File Explorer.
 
 ### IPC Commands
 
-| Command | Description |
-|---|---|
-| `is_recording_supported` | `true` if OS is Windows, macOS, or Linux |
-| `check_recording_dependencies` | Checks if Streamlink and FFmpeg are present |
-| `install_recording_dependencies` | Downloads and sets up the portable environment |
-| `start_recording` | Spawns Streamlink for a given channel and quality |
-| `stop_recording` | Kills the Streamlink process |
-| `get_orphan_recordings` | Returns a list of incomplete `.ts` files |
-| `remux_orphan_recording` | Converts a `.ts` file to `.mp4` using FFmpeg |
-| `delete_orphan_recording` | Deletes a `.ts` file |
-| `open_recording_folder` | Opens the target directory in the OS explorer |
+| Command | Parameters | Description |
+|---|---|---|
+| `is_recording_supported_cmd` | — | Returns `true` on supported architectures (Windows x86_64, Linux x86_64, macOS) |
+| `recording_check_dependencies` | — | Checks if Python, Streamlink, and FFmpeg are installed in `recording_env` |
+| `recording_install_dependencies` | — | Downloads and sets up the portable environment with SHA-256 validation |
+| `recording_uninstall_dependencies` | — | Completely deletes `%APPDATA%\multistream\recording_env` |
+| `recording_get_env_size` | — | Calculates total size in bytes of `recording_env` |
+| `start_recording` | `stream_id, channel, platform, quality, output_dir` | Starts Streamlink recording in the background |
+| `stop_recording` | `stream_id` | Terminates the recording process tree |
+| `is_recording` | `stream_id` | Checks if a specific stream is actively recording |
+| `list_recordings` | — | Returns all active recording entries and statuses |
+| `scan_orphans` | `output_dir` | Scans for incomplete `.ts` files |
+| `recover_orphan_recording` | `orphan_id` | Remuxes an orphaned `.ts` file into `.mp4` |
+| `dismiss_orphan_recording` | `orphan_id` | Deletes an orphaned `.ts` file from disk |
+| `open_recording_folder` | `stream_id, output_dir` | Opens the recording destination directory in File Explorer |
+
+### Emitted Events
+
+| Event | Payload | When |
+|---|---|---|
+| `recording-install-progress` | `{ step: string, progress: number }` | Progress updates during dependency download/installation |
+| `recording:started` | `{ streamId, channel, platform }` | Streamlink process successfully spawned |
+| `recording:stopping` | `{ streamId }` | Recording stop requested |
+| `recording:stream-ended` | `{ streamId, channel }` | Stream finished naturally (clean exit code 0) |
+| `recording:error` | `{ streamId, error }` | Streamlink process error or non-zero exit |
+| `recording:remux-started` | `{ streamId }` | FFmpeg `.ts` to `.mp4` remuxing started |
+| `recording:remux-progress` | `{ streamId, bytes, totalBytes }` | Real-time byte conversion progress from FFmpeg |
+| `recording:remux-finished` | `{ streamId }` | Remuxing completed successfully, `.ts` deleted |
+| `recording:remux-failed` | `{ streamId, error }` | FFmpeg remuxing failed |
+| `recording:orphans-found` | `{ orphans: OrphanRecording[] }` | Unconverted `.ts` files detected |
 
 ---
 

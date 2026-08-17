@@ -142,15 +142,11 @@ jobs:
           workspaces: "./apps/desktop/src-tauri -> target"
           key: ${{ matrix.target }}
 
-      - name: Cargo Check
-        run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --target ${{ matrix.target }}
-
       - name: Cargo Test
         run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --target ${{ matrix.target }}
 
       - name: Cargo Clippy
         run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --target ${{ matrix.target }} -- -D warnings
-
 
   e2e:
     name: E2E Tests (Playwright)
@@ -233,4 +229,3 @@ jobs:
       - name: Write Lighthouse Job Summary
         if: always()
         run: node .github/scripts/lighthouse-summary.mjs
-

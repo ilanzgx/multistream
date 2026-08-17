@@ -149,7 +149,7 @@
       "uninstallConfirmDescription": "这会删除独立的录制器环境并释放空间。您以后可以重新安装。",
       "uninstallConfirmButton": "卸载",
       "enableDescription": "使用 Streamlink 直接从源录制流。文件保存到您的视频文件夹。",
-      "unavailableOS": "录制仅在 Windows 上可用。",
+      "unavailableOS": "您的架构不支持录制。",
       "qualityTitle": "默认画质",
       "qualityPrefix": "画质: ",
       "qualityDescription": "首选流画质。如果未找到，则回退到最佳可用画质。",
