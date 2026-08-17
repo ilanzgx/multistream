@@ -25,13 +25,33 @@ export interface FollowedChannel {
 
 const _useFollowedChannels = () => {
   const twitchChannels = ref<FollowedChannel[]>([]);
-  const isFetchingTwitch = ref(false);
-  const platformFilter = ref<"all" | "twitch" | "kick">("all");
-
   const { authenticated: twitchAuthenticated } = useTwitchAuth();
   const { statuses, isChecking } = useLiveStatus();
-  const isLoading = computed(() => isFetchingTwitch.value || isChecking.value);
   const { favorites } = useFavorites();
+  const isFetchingTwitch = ref(false);
+  const platformFilter = ref<"all" | "twitch" | "kick">("all");
+  const hasLoadedTwitchOnce = ref(false);
+
+  const hasUncheckedFavorites = computed(() => {
+    if (favorites.value.length === 0) return false;
+    return favorites.value.some(
+      (f) =>
+        (f.platform === "twitch" || f.platform === "kick") &&
+        statuses.value[`${f.platform}:${f.channel.toLowerCase()}`] === undefined
+    );
+  });
+
+  const isInitialLoading = computed(() => {
+    if (twitchAuthenticated.value && !hasLoadedTwitchOnce.value && isFetchingTwitch.value) {
+      return true;
+    }
+    if (hasUncheckedFavorites.value && (isChecking?.value ?? false)) {
+      return true;
+    }
+    return false;
+  });
+
+  const isLoading = computed(() => isFetchingTwitch.value || (isChecking?.value ?? false));
   let pollInterval: ReturnType<typeof setInterval> | null = null;
 
   const kickChannels = computed<FollowedChannel[]>(() => {
@@ -127,6 +147,7 @@ const _useFollowedChannels = () => {
       console.error("Failed to refresh followed channels", e);
     } finally {
       isFetchingTwitch.value = false;
+      hasLoadedTwitchOnce.value = true;
     }
   };
 
@@ -143,14 +164,17 @@ const _useFollowedChannels = () => {
     }
   };
 
-  watch(twitchAuthenticated, () => {
-    if (typeof document !== "undefined" && document.visibilityState === "visible") {
+  watch(twitchAuthenticated, (isAuth) => {
+    if (isAuth) {
+      hasLoadedTwitchOnce.value = false;
+    }
+    if (typeof document === "undefined" || document.visibilityState === "visible") {
       refresh();
     }
   });
 
   const handleVisibilityChange = () => {
-    if (document.visibilityState === "visible") {
+    if (typeof document === "undefined" || document.visibilityState === "visible") {
       startPolling();
     } else {
       stopPolling();
@@ -161,7 +185,7 @@ const _useFollowedChannels = () => {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // Initial fetch
-    if (document.visibilityState === "visible") {
+    if (typeof document === "undefined" || document.visibilityState === "visible") {
       startPolling();
     }
 
@@ -174,6 +198,7 @@ const _useFollowedChannels = () => {
   return {
     channels: filteredChannels,
     isLoading,
+    isInitialLoading,
     platformFilter,
     refresh,
   };

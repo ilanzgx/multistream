@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useFollowedChannels } from "../useFollowedChannels";
 import type { FavoriteChannel } from "../useFavorites";
-import { ref } from "vue";
+import { ref, nextTick } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 
 // Mock Tauri invoke
@@ -31,7 +31,7 @@ vi.mock("../useKickAuth", () => ({
   useKickAuth: () => mockKickAuth,
 }));
 
-const mockLiveStatus = { statuses: ref({}) };
+const mockLiveStatus = { statuses: ref({}), isChecking: ref(false) };
 vi.mock("../useLiveStatus", () => ({
   useLiveStatus: () => mockLiveStatus,
 }));
@@ -44,10 +44,12 @@ vi.mock("../useFavorites", () => ({
 describe("useFollowedChannels", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(invoke).mockResolvedValue([]);
     mockIsTauri.mockReturnValue(true);
     mockTwitchAuth.authenticated.value = false;
     mockKickAuth.authenticated.value = false;
     mockLiveStatus.statuses.value = {};
+    mockLiveStatus.isChecking.value = false;
     mockFavorites.favorites.value = [];
     vi.useFakeTimers();
   });
@@ -206,5 +208,105 @@ describe("useFollowedChannels", () => {
     expect(channels.value).toEqual([]);
 
     consoleSpy.mockRestore();
+  });
+
+  it("should report isInitialLoading false for fresh install with no auth and no favorites", () => {
+    // Arrange
+    mockTwitchAuth.authenticated.value = false;
+    mockFavorites.favorites.value = [];
+
+    // Act
+    const { isInitialLoading } = useFollowedChannels();
+
+    // Assert
+    expect(isInitialLoading.value).toBe(false);
+  });
+
+  it("should handle isInitialLoading transition during initial authenticated load", async () => {
+    // Arrange
+    mockTwitchAuth.authenticated.value = true;
+    let resolveInvoke: (val: any) => void = () => {};
+    const pendingPromise = new Promise((resolve) => {
+      resolveInvoke = resolve;
+    });
+    vi.mocked(invoke).mockReturnValueOnce(pendingPromise as any);
+
+    // Act
+    const { refresh, isInitialLoading } = useFollowedChannels();
+    const refreshPromise = refresh();
+
+    // Assert (during fetch)
+    expect(isInitialLoading.value).toBe(true);
+
+    // Act (resolve fetch)
+    resolveInvoke([{ id: "123", platform: "twitch", displayName: "Streamer", isLive: true }]);
+    await refreshPromise;
+
+    // Assert (after initial fetch)
+    expect(isInitialLoading.value).toBe(false);
+  });
+
+  it("should trigger isInitialLoading when user logs in after launching app unauthenticated", async () => {
+    // Arrange
+    mockTwitchAuth.authenticated.value = false;
+    const { isInitialLoading } = useFollowedChannels();
+    expect(isInitialLoading.value).toBe(false);
+
+    let resolveInvoke: (val: any) => void = () => {};
+    const pendingPromise = new Promise((resolve) => {
+      resolveInvoke = resolve;
+    });
+    vi.mocked(invoke).mockReturnValueOnce(pendingPromise as any);
+
+    // Act - User logs in
+    mockTwitchAuth.authenticated.value = true;
+    await nextTick();
+
+    // Assert during fetch
+    expect(isInitialLoading.value).toBe(true);
+
+    // Resolve login fetch
+    resolveInvoke([{ id: "456", platform: "twitch", displayName: "Streamer2", isLive: true }]);
+    await nextTick();
+    await vi.runAllTimersAsync();
+
+    // Assert after fetch
+    expect(isInitialLoading.value).toBe(false);
+    expect(invoke).toHaveBeenCalledWith("twitch_get_followed_streams");
+  });
+
+  it("should trigger isInitialLoading when unauthenticated user adds a favorite channel with unchecked status", async () => {
+    // Arrange
+    mockTwitchAuth.authenticated.value = false;
+    mockFavorites.favorites.value = [];
+    const { isInitialLoading, channels } = useFollowedChannels();
+    expect(isInitialLoading.value).toBe(false);
+
+    // Act - User adds a favorite channel while checking status
+    mockFavorites.favorites.value = [
+      { channel: "streamer_kick", platform: "kick", addedAt: Date.now() },
+    ];
+    mockLiveStatus.isChecking.value = true;
+    await nextTick();
+
+    // Assert (during check of unchecked favorite)
+    expect(isInitialLoading.value).toBe(true);
+
+    // Act - Status check completes with live status
+    mockLiveStatus.statuses.value = {
+      "kick:streamer_kick": {
+        isLive: true,
+        viewerCount: 150,
+        title: "Playing game",
+        category: "Just Chatting",
+      } as any,
+    };
+    mockLiveStatus.isChecking.value = false;
+    await nextTick();
+
+    // Assert (after check, isInitialLoading false and channel is live)
+    expect(isInitialLoading.value).toBe(false);
+    expect(channels.value).toHaveLength(1);
+    expect(channels.value[0]?.displayName).toBe("streamer_kick");
   });
 });

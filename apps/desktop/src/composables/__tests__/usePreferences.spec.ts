@@ -87,6 +87,41 @@ describe("usePreferences composable unit tests", () => {
     expect(sidebarOpen.value).toBe(true);
   });
 
+  it("should toggle followed sidebar open state", () => {
+    // Arrange
+    const { toggleFollowedSidebar, followedSidebarOpen } = sut;
+    expect(followedSidebarOpen.value).toBe(false); // default
+
+    // Act
+    toggleFollowedSidebar();
+
+    // Assert
+    expect(followedSidebarOpen.value).toBe(true);
+
+    // Act again
+    toggleFollowedSidebar();
+
+    // Assert again
+    expect(followedSidebarOpen.value).toBe(false);
+  });
+
+  it("should set followed sidebar open state explicitly", () => {
+    // Arrange
+    const { setFollowedSidebarOpen, followedSidebarOpen } = sut;
+
+    // Act (set to true)
+    setFollowedSidebarOpen(true);
+
+    // Assert
+    expect(followedSidebarOpen.value).toBe(true);
+
+    // Act (set to false)
+    setFollowedSidebarOpen(false);
+
+    // Assert
+    expect(followedSidebarOpen.value).toBe(false);
+  });
+
   it("should set recording quality correctly", () => {
     // Arrange
     const { setRecordingQuality, recordingQuality } = sut;
@@ -114,6 +149,7 @@ describe("usePreferences composable unit tests", () => {
     const {
       setSelectedChat,
       setSidebarOpen,
+      setFollowedSidebarOpen,
       notificationsEnabled,
       setOnboardingCompleted,
       nativePlayerEnabled,
@@ -123,6 +159,7 @@ describe("usePreferences composable unit tests", () => {
       resetPreferences,
       selectedChat,
       sidebarOpen,
+      followedSidebarOpen,
       onboardingCompleted,
       recordingQuality,
       recordingPath,
@@ -131,6 +168,7 @@ describe("usePreferences composable unit tests", () => {
     // Tweak properties
     setSelectedChat("alanzoka_twitch");
     setSidebarOpen(false);
+    setFollowedSidebarOpen(true);
     notificationsEnabled.value = false;
     setOnboardingCompleted(true);
     nativePlayerEnabled.value = true;
@@ -139,6 +177,7 @@ describe("usePreferences composable unit tests", () => {
 
     expect(selectedChat.value).toBe("alanzoka_twitch");
     expect(sidebarOpen.value).toBe(false);
+    expect(followedSidebarOpen.value).toBe(true);
     expect(notificationsEnabled.value).toBe(false);
     expect(onboardingCompleted.value).toBe(true);
     expect(nativePlayerEnabled.value).toBe(true);
@@ -151,6 +190,7 @@ describe("usePreferences composable unit tests", () => {
     // Assert
     expect(selectedChat.value).toBe("");
     expect(sidebarOpen.value).toBe(true);
+    expect(followedSidebarOpen.value).toBe(false);
     expect(notificationsEnabled.value).toBe(true);
     expect(onboardingCompleted.value).toBe(false);
     expect(nativePlayerEnabled.value).toBe(false);

@@ -3,6 +3,7 @@ import { createSharedComposable, useStorage } from "@vueuse/core";
 export interface Preferences {
   selectedChat: string;
   sidebarOpen: boolean;
+  followedSidebarOpen: boolean;
   notificationsEnabled: boolean;
   onboardingCompleted: boolean;
 
@@ -14,6 +15,7 @@ export interface Preferences {
 const defaultPreferences: Preferences = {
   selectedChat: "",
   sidebarOpen: true,
+  followedSidebarOpen: false,
   notificationsEnabled: true,
   onboardingCompleted: false,
 
@@ -37,6 +39,14 @@ const _usePreferences = () => {
   const sidebarOpen = useStorage<boolean>(
     "preferences.sidebarOpen",
     defaultPreferences.sidebarOpen
+  );
+
+  /**
+   * @brief Followed channels sidebar open state
+   */
+  const followedSidebarOpen = useStorage<boolean>(
+    "preferences.followedSidebarOpen",
+    defaultPreferences.followedSidebarOpen
   );
 
   /**
@@ -108,6 +118,25 @@ const _usePreferences = () => {
   };
 
   /**
+   * @brief Toggle the followed channels sidebar
+   *
+   * @return void
+   */
+  const toggleFollowedSidebar = () => {
+    followedSidebarOpen.value = !followedSidebarOpen.value;
+  };
+
+  /**
+   * @brief Set the followed channels sidebar open state
+   *
+   * @param open The open state
+   * @return void
+   */
+  const setFollowedSidebarOpen = (open: boolean) => {
+    followedSidebarOpen.value = open;
+  };
+
+  /**
    * @brief Set the onboarding completed state
    *
    * @param completed The completed state
@@ -125,6 +154,7 @@ const _usePreferences = () => {
   const resetPreferences = () => {
     selectedChat.value = defaultPreferences.selectedChat;
     sidebarOpen.value = defaultPreferences.sidebarOpen;
+    followedSidebarOpen.value = defaultPreferences.followedSidebarOpen;
     notificationsEnabled.value = defaultPreferences.notificationsEnabled;
     onboardingCompleted.value = defaultPreferences.onboardingCompleted;
 
@@ -137,6 +167,7 @@ const _usePreferences = () => {
     // state
     selectedChat,
     sidebarOpen,
+    followedSidebarOpen,
     notificationsEnabled,
     onboardingCompleted,
 
@@ -148,6 +179,8 @@ const _usePreferences = () => {
     setSelectedChat,
     toggleSidebar,
     setSidebarOpen,
+    toggleFollowedSidebar,
+    setFollowedSidebarOpen,
     setOnboardingCompleted,
     setRecordingQuality,
     setRecordingPath,
