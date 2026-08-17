@@ -186,6 +186,18 @@ pub async fn start_recording(
                 );
             }
         }
+
+        #[cfg(unix)]
+        if is_user_stop {
+            // Coordinate remuxing with Unix process-group shutdown.
+            // When SIGTERM is sent to the process group, streamlink exits almost instantly,
+            // unblocking child.wait() above. However, the grandchild (ffmpeg) is still shutting down
+            // during the 300ms window before SIGKILL.
+            // Sleeping for 500ms ensures ffmpeg has completely exited and released the file lock
+            // before we attempt to remux the .ts file.
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
+
         run_remux(app_clone, sid).await;
     });
 

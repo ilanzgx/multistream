@@ -297,7 +297,7 @@ Local live stream recording is powered by [Streamlink](https://streamlink.github
 
 ### Architecture Insight: On-Demand Portable Sandbox
 
-To maintain Multistream's core philosophy of being lightweight and performant, we intentionally avoid bundling Streamlink, Python, and FFmpeg as [Tauri Sidecars](https://v2.tauri.app/concept/sidecar/) in the installer. 
+To maintain Multistream's core philosophy of being lightweight and performant, we intentionally avoid bundling Streamlink, Python, and FFmpeg as [Tauri Sidecars](https://v2.tauri.app/concept/sidecar/) in the installer.
 
 Instead, an **On-Demand Portable Environment** is provisioned dynamically when the user installs the feature:
 - **Windows:** Downloads official `python-3.11-embed-amd64.zip` and standalone `ffmpeg.exe`. Patches `python311._pth` to enable `site-packages`, downloads `get-pip.py`, and installs `streamlink` natively via pip.
@@ -340,7 +340,7 @@ run_remux (Stream Copy)
 
 ### Orphan Recording Recovery
 
-If the application is terminated abruptly during recording (e.g., system crash, power outage), the captured `.ts` file remains intact on disk. 
+If the application is terminated abruptly during recording (e.g., system crash, power outage), the captured `.ts` file remains intact on disk.
 - `scan_orphans` scans the recording directory for `.ts` files without a matching `.mp4`.
 - `recover_orphan_recording` triggers the FFmpeg remux pipeline on the selected orphan.
 - `dismiss_orphan_recording` permanently deletes the unneeded `.ts` file.

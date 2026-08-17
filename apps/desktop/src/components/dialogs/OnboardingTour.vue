@@ -110,7 +110,7 @@ function handleFinish() {
       </DialogHeader>
 
       <!-- Step Content Area -->
-      <div class="relative py-4 h-[380px] flex flex-col justify-between">
+      <div class="relative py-4 h-95 flex flex-col justify-between">
         <Transition name="fade" mode="out-in">
           <div :key="currentStep" class="flex-1 flex flex-col gap-4">
             <!-- Step Description -->
@@ -254,7 +254,7 @@ function handleFinish() {
                     class="relative w-full py-2.5 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-center justify-center shadow-inner"
                   >
                     <div
-                      class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"
+                      class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent opacity-60"
                     ></div>
                     <div class="relative flex flex-col items-center gap-1">
                       <p
@@ -264,7 +264,7 @@ function handleFinish() {
                       </p>
                       <ArrowDown class="size-2.5 text-white/50" />
                       <p
-                        class="text-[9px] sm:text-[10px] font-medium text-white px-2 py-0.5 bg-green-500/20 text-green-300 rounded text-center backdrop-blur-sm border border-green-500/20"
+                        class="text-[9px] sm:text-[10px] font-medium text-white px-2 py-0.5 bg-green-500/20 rounded text-center backdrop-blur-sm border border-green-500/20"
                       >
                         {{ $t("onboarding.step5.captionTranslation") }}
                       </p>
@@ -338,7 +338,7 @@ function handleFinish() {
                     class="relative w-full py-2.5 bg-[#0f1115] border border-[#2a2d33] rounded-lg overflow-hidden flex items-center justify-center shadow-inner"
                   >
                     <div
-                      class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-60"
+                      class="absolute inset-0 bg-linear-to-t from-black/80 to-transparent opacity-60"
                     ></div>
                     <div class="relative flex items-center gap-3 px-4">
                       <div
