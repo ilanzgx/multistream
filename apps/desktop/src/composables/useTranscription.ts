@@ -1,7 +1,7 @@
-import { ref, watch, onUnmounted } from "vue";
+import { ref, watch } from "vue";
 import { createSharedComposable, useStorage } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { listen } from "@tauri-apps/api/event";
 import { isTauri } from "./useUpdater";
 import { toast } from "vue-sonner";
 import { i18n } from "../i18n";
@@ -30,31 +30,30 @@ export interface TranscriptionLine {
   timestamp: number;
 }
 
+// --- GLOBAL MODULE STATE ---
+// Elevated to survive `createSharedComposable` unmounts and closure traps
 const lines = ref<TranscriptionLine[]>([]);
 const transcriptHistory = ref<TranscriptionLine[]>([]);
 let listenerRegistered = false;
 
-const _useTranscription = () => {
-  // State
-  const isSupported = ref(false); // Validated via backend during initialization
-  const installedModels = ref<string[]>([]);
-  const isDownloading = ref(false);
-  const downloadingModel = ref<string | null>(null);
-  const downloadProgress = ref<DownloadProgress>({ downloaded: 0, total: 0, percent: 0 });
-  const isActive = ref(false);
-  const status = ref<"active" | "processing" | "error" | "inactive">("inactive");
-  const lastCaptionTime = ref<number | null>(null);
+const isSupported = ref(false); // Validated via backend during initialization
+const installedModels = ref<string[]>([]);
+const isDownloading = ref(false);
+const downloadingModel = ref<string | null>(null);
+const downloadProgress = ref<DownloadProgress>({ downloaded: 0, total: 0, percent: 0 });
+const isActive = ref(false);
+const status = ref<"active" | "processing" | "error" | "inactive">("inactive");
+const lastCaptionTime = ref<number | null>(null);
 
+// Session State
+const isEnabled = ref(false);
+
+const _useTranscription = () => {
   // Persistent Settings
   const selectedModel = useStorage<string>("transcription.model", "base");
   const captionMode = useStorage<"original" | "translate">("transcription.captionMode", "original");
   const chunkDuration = useStorage<ChunkStep>("transcription.chunkDuration", 10);
   const showOverlay = useStorage<boolean>("transcription.showOverlay", true);
-
-  // Session State
-  const isEnabled = ref(false);
-
-  let unlistenProgress: UnlistenFn | null = null;
 
   // Refresh status from backend
   const updateStatus = async () => {
@@ -96,13 +95,6 @@ const _useTranscription = () => {
     downloadProgress.value = { downloaded: 0, total: 0, percent: 0 };
 
     try {
-      unlistenProgress = await listen<DownloadProgress>(
-        "transcription:download-progress",
-        (event) => {
-          downloadProgress.value = event.payload;
-        }
-      );
-
       await invoke("download_whisper_model", { modelName });
       await updateStatus();
 
@@ -116,10 +108,6 @@ const _useTranscription = () => {
     } finally {
       isDownloading.value = false;
       downloadingModel.value = null;
-      if (unlistenProgress) {
-        unlistenProgress();
-        unlistenProgress = null;
-      }
     }
   };
 
@@ -224,6 +212,13 @@ const _useTranscription = () => {
           (oldEnabled && (oldMode !== captionMode.value || oldModel !== selectedModel.value))
         ) {
           const started = await startTranscription();
+
+          // Anti-Race Condition: If the user toggled it off while it was starting
+          if (!isEnabled.value) {
+            await stopTranscription();
+            return;
+          }
+
           if (!started) return;
 
           const t = i18n.global.t;
@@ -274,17 +269,16 @@ const _useTranscription = () => {
                 status.value = event.payload as "active" | "processing" | "error";
               }
             }).catch(console.error);
+
+            listen<DownloadProgress>("transcription:download-progress", (event) => {
+              downloadProgress.value = event.payload;
+            }).catch(console.error);
           }
           updateStatus();
         }
       })
       .catch(console.error);
   }
-
-  // Cleanup on unmount (if not used as shared, but shared composables don't typically unmount)
-  onUnmounted(() => {
-    if (unlistenProgress) unlistenProgress();
-  });
 
   const clearTranscriptHistory = () => {
     transcriptHistory.value = [];
@@ -315,6 +309,21 @@ const _useTranscription = () => {
     updateStatus,
     clearTranscriptHistory,
   };
+};
+
+export const __test_resetTranscriptionState = () => {
+  lines.value = [];
+  transcriptHistory.value = [];
+  listenerRegistered = false;
+  isSupported.value = false;
+  installedModels.value = [];
+  isDownloading.value = false;
+  downloadingModel.value = null;
+  downloadProgress.value = { downloaded: 0, total: 0, percent: 0 };
+  isActive.value = false;
+  status.value = "inactive";
+  lastCaptionTime.value = null;
+  isEnabled.value = false;
 };
 
 export const useTranscription = createSharedComposable(_useTranscription);

@@ -1,6 +1,6 @@
 import { effectScope, EffectScope } from "vue";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useTranscription } from "../useTranscription";
+import { useTranscription, __test_resetTranscriptionState } from "../useTranscription";
 
 // Mock Tauri invoke and listen
 vi.mock("@tauri-apps/api/core", () => ({
@@ -43,6 +43,7 @@ describe("useTranscription composable unit tests", () => {
     // Arrange
     vi.clearAllMocks();
     localStorage.clear();
+    __test_resetTranscriptionState();
 
     // Default invoke mock
     (invoke as any).mockImplementation((cmd: string) => {
@@ -289,5 +290,112 @@ describe("useTranscription composable unit tests", () => {
       translate: true,
       chunkDuration: 10,
     });
+  });
+
+  it("should maintain global state across composable unmounts (Closure Isolation)", async () => {
+    // Arrange: Mount component, trigger initial fetch, unmount component.
+    const firstScope = effectScope();
+    const { isSupported: isSupportedFirst } = firstScope.run(() => useTranscription())!;
+    isSupportedFirst.value = true;
+    await new Promise((r) => setTimeout(r, 0)); // wait for initialization
+    firstScope.stop(); // Unmount
+
+    // Act: Re-mount component, simulate a status event.
+    const secondScope = effectScope();
+    const { isActive, status } = secondScope.run(() => useTranscription())!;
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Simulate Tauri listen callback for transcription:status
+    const listenMock = listen as ReturnType<typeof vi.fn>;
+    const statusCallback = listenMock.mock.calls.find((c) => c[0] === "transcription:status")?.[1];
+
+    // Must be active to receive status updates according to logic
+    isActive.value = true;
+    if (statusCallback) {
+      statusCallback({ payload: "processing" });
+    }
+
+    // Assert: The newly mounted instance correctly reflects the updated status.
+    expect(status.value).toBe("processing");
+    secondScope.stop();
+  });
+
+  it("should persist background download state when composable is unmounted", async () => {
+    // Arrange
+    const firstScope = effectScope();
+    const { downloadModel, isSupported } = firstScope.run(() => useTranscription())!;
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+
+    // Mock download to be pending so we can test state
+    let resolveDownload: any;
+    (invoke as any).mockImplementation((cmd: string) => {
+      if (cmd === "is_transcription_supported") return Promise.resolve(true);
+      if (cmd === "download_whisper_model")
+        return new Promise((r) => {
+          resolveDownload = r;
+        });
+      if (cmd === "get_transcription_status")
+        return Promise.resolve({ installed_models: [], active: false });
+      return Promise.resolve();
+    });
+
+    // Act: Start download, verify true, then unmount
+    downloadModel("tiny");
+    await new Promise((r) => setTimeout(r, 0));
+    firstScope.stop(); // Simulates closing settings dialog
+
+    // Act: Re-mount and check if it still knows it's downloading
+    const secondScope = effectScope();
+    const { isDownloading, downloadProgress } = secondScope.run(() => useTranscription())!;
+
+    // Simulate Tauri download progress event
+    const listenMock = listen as ReturnType<typeof vi.fn>;
+    const progressCallback = listenMock.mock.calls.find(
+      (c) => c[0] === "transcription:download-progress"
+    )?.[1];
+    if (progressCallback) {
+      progressCallback({ payload: { downloaded: 50, total: 100, percent: 50 } });
+    }
+
+    // Assert: It should still be downloading and reflect progress
+    expect(isDownloading.value).toBe(true);
+    expect(downloadProgress.value.percent).toBe(50);
+
+    resolveDownload(); // Clean up
+    secondScope.stop();
+  });
+
+  it("should handle watcher race condition when rapidly toggling isEnabled", async () => {
+    // Arrange
+    const { isEnabled, installedModels, selectedModel, isSupported } = scope.run(() =>
+      useTranscription()
+    )!;
+    isSupported.value = true;
+    await new Promise((r) => setTimeout(r, 0));
+    installedModels.value = ["base"];
+    selectedModel.value = "base";
+
+    let resolveStart: any;
+    (invoke as any).mockImplementation((cmd: string) => {
+      if (cmd === "start_transcription")
+        return new Promise((r) => {
+          resolveStart = r;
+        });
+      return Promise.resolve();
+    });
+
+    // Act: Toggle on, then immediately toggle off before start resolves
+    isEnabled.value = true;
+    await new Promise((r) => setTimeout(r, 0)); // let watcher trigger
+    isEnabled.value = false;
+    await new Promise((r) => setTimeout(r, 0)); // let watcher trigger again
+
+    // Resolve the start transcription now
+    resolveStart();
+    await new Promise((r) => setTimeout(r, 0)); // let async/await resume
+
+    // Assert: stop_transcription should have been called to fix the desync
+    expect(invoke).toHaveBeenCalledWith("stop_transcription");
   });
 });
