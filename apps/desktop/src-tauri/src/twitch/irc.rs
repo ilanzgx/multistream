@@ -124,7 +124,7 @@ pub async fn run_irc_loop(
         );
         emit_connection_state(&app, state_label).await;
 
-        let auth_info = {
+        let auth_info_opt = {
             let state = app.state::<TwitchState>();
             let auth = state.auth.lock().await.clone();
 
@@ -135,9 +135,9 @@ pub async fn run_irc_loop(
             };
 
             match super::commands::try_refresh_if_needed(&app, auth, &state, &http).await {
-                Ok(info) => info,
+                Ok(info) => Some(info),
                 Err(e) => {
-                    log::warn!("[twitch-irc] Auth refresh failed ({e}), stopping loop");
+                    log::warn!("[twitch-irc] Auth refresh failed ({e})");
                     emit_connection_state(&app, ConnectionState::Disconnected).await;
                     if matches!(e, TwitchError::TokenRefreshFailed) {
                         *state.auth.lock().await = None;
@@ -150,39 +150,43 @@ pub async fn run_irc_loop(
                                 username: None,
                             },
                         );
+                        break;
                     }
-                    break;
+                    None
                 }
             }
         };
 
-        match connect_irc(
-            &app,
-            &auth_info.access_token,
-            &auth_info.username,
-            &channels,
-            &mut shutdown_rx,
-            &mut outbound_rx,
-        )
-        .await
-        {
-            Ok(()) => {
-                log::info!("[twitch-irc] shutdown requested, exiting loop");
-                emit_connection_state(&app, ConnectionState::Disconnected).await;
-                break;
+        let start_time = tokio::time::Instant::now();
+
+        if let Some(auth_info) = auth_info_opt {
+            match connect_irc(
+                &app,
+                &auth_info.access_token,
+                &auth_info.username,
+                &channels,
+                &mut shutdown_rx,
+                &mut outbound_rx,
+            )
+            .await
+            {
+                Ok(()) => {
+                    log::info!("[twitch-irc] shutdown requested, exiting loop");
+                    emit_connection_state(&app, ConnectionState::Disconnected).await;
+                    break;
+                }
+                Err(TwitchError::OAuth(ref msg)) => {
+                    log::warn!("[twitch-irc] auth failure ({msg}), stopping loop");
+                    emit_connection_state(&app, ConnectionState::Disconnected).await;
+                }
+                Err(e) => {
+                    log::warn!("[twitch-irc] connect_irc returned error: {e}");
+                }
             }
-            Err(TwitchError::OAuth(ref msg)) => {
-                log::warn!("[twitch-irc] auth failure ({msg}), stopping loop");
-                emit_connection_state(&app, ConnectionState::Disconnected).await;
-                // Wait, if it's an OAuth error from connect_irc (like Login authentication failed),
-                // it might mean the token just expired before we connected.
-                // We shouldn't permanently break and clear auth, maybe just backoff and retry,
-                // because the next loop iteration will try to refresh it!
-                // So let's just let the loop continue and try to refresh on the next pass.
-            }
-            Err(e) => {
-                log::warn!("[twitch-irc] connect_irc returned error: {e}");
-            }
+        }
+
+        if start_time.elapsed() > Duration::from_secs(60) {
+            attempt = 0;
         }
 
         let delay = backoff_delay(attempt);

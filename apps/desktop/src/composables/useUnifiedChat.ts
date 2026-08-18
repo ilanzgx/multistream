@@ -95,6 +95,7 @@ const _useUnifiedChat = () => {
     streams.value.filter((s) => s.platform === "kick").map((s) => s.channel.toLowerCase())
   );
 
+  let disposed = false;
   let unlistenMessage: UnlistenFn | null = null;
   let unlistenKickMessage: UnlistenFn | null = null;
   let unlistenState: UnlistenFn | null = null;
@@ -352,10 +353,17 @@ const _useUnifiedChat = () => {
       connectionState.value = "disconnected";
     });
 
-    unlistenMessage = localUnlistenMessage;
-    unlistenKickMessage = localUnlistenKickMessage;
-    unlistenState = localUnlistenState;
-    unlistenAuthExpired = localUnlistenAuthExpired;
+    if (disposed) {
+      localUnlistenMessage();
+      localUnlistenKickMessage();
+      localUnlistenState();
+      localUnlistenAuthExpired();
+    } else {
+      unlistenMessage = localUnlistenMessage;
+      unlistenKickMessage = localUnlistenKickMessage;
+      unlistenState = localUnlistenState;
+      unlistenAuthExpired = localUnlistenAuthExpired;
+    }
   }
 
   watch(
@@ -404,6 +412,7 @@ const _useUnifiedChat = () => {
   );
 
   onScopeDispose(() => {
+    disposed = true;
     unlistenMessage?.();
     unlistenKickMessage?.();
     unlistenState?.();

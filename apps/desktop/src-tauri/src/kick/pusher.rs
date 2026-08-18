@@ -95,6 +95,8 @@ pub async fn run_pusher_loop(
         )
         .await;
 
+        let start_time = tokio::time::Instant::now();
+
         tokio::select! {
             res = connect_pusher(&app, &channels) => {
                 if let Err(e) = res {
@@ -105,6 +107,10 @@ pub async fn run_pusher_loop(
                 log::info!("[kick-pusher] shutdown requested, exiting loop");
                 break;
             }
+        }
+
+        if start_time.elapsed() > Duration::from_secs(60) {
+            attempt = 0;
         }
 
         let delay = backoff_delay(attempt);
