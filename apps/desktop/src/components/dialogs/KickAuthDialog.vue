@@ -14,6 +14,7 @@ import { useI18n } from "vue-i18n";
 import { useClipboard } from "@vueuse/core";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import KickIcon from "@/components/icons/KickIcon.vue";
+import { toast } from "vue-sonner";
 
 const props = defineProps<{
   open?: boolean;
@@ -24,7 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { startLogin, cancelLogin, authenticated, authUrl } = useKickAuth();
+const { startLogin, cancelLogin, authenticated, authUrl, username } = useKickAuth();
 const { copy, copied } = useClipboard();
 
 const authError = ref<string | null>(null);
@@ -35,7 +36,6 @@ async function startFlow() {
 }
 
 async function handleCancel() {
-  cancelLogin();
   emit("update:open", false);
 }
 
@@ -54,6 +54,10 @@ watch(
       } else {
         emit("update:open", false);
       }
+    } else {
+      if (!authenticated.value) {
+        cancelLogin();
+      }
     }
   },
   { immediate: true }
@@ -62,6 +66,10 @@ watch(
 watch(authenticated, (isAuth) => {
   if (isAuth) {
     if (props.open) {
+      toast.success(t("chat.unified.auth.successTitle", { platform: "Kick" }), {
+        description: t("chat.unified.auth.successDesc", { username: username.value || "User" }),
+        duration: 10000,
+      });
       emit("update:open", false);
     }
   }
@@ -78,6 +86,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("kick-auth-error", handleAuthError);
+  if (!authenticated.value) {
+    cancelLogin();
+  }
 });
 </script>
 
@@ -102,7 +113,7 @@ onUnmounted(() => {
             {{ t("chat.unified.auth.error") }} {{ authError }}
           </div>
           <Button
-            class="w-full bg-[#53FC18] hover:bg-[#2a2d33] hover:text-[#53FC18] text-[#14161a] font-semibold transition-colors"
+            class="w-full bg-[#53FC18] hover:bg-[#2a2d33] hover:text-white text-[#14161a] font-semibold transition-colors"
             @click="startFlow"
           >
             {{ t("chat.unified.auth.tryAgain") }}
@@ -111,12 +122,11 @@ onUnmounted(() => {
 
         <template v-else-if="authUrl">
           <div class="text-center space-y-2 w-full">
-            <p class="text-sm text-gray-400">{{ t("settings.auth.authorizeBrowser") }}</p>
-            <p class="text-xs text-gray-500 mb-4">{{ t("settings.auth.manualLink") }}</p>
+            <p class="text-sm text-gray-400">{{ t("chat.unified.auth.step1") }}</p>
             <div class="flex items-center gap-2 w-full">
               <Button
                 variant="outline"
-                class="flex-1 border-[#2a2d33] text-[#53FC18] hover:bg-[#2a2d33] hover:text-[#53FC18] hover:border-[#2a2d33] transition-all bg-transparent truncate"
+                class="flex-1 border-[#2a2d33] text-[#53FC18] hover:bg-[#2a2d33] hover:text-white hover:border-[#2a2d33] transition-all bg-transparent truncate"
                 @click="handleOpenLink"
               >
                 {{ t("settings.auth.openBrowser") }}

@@ -14,6 +14,7 @@ import { useTwitchAuth, type DeviceFlowResponse } from "@/composables/useTwitchA
 import { useI18n } from "vue-i18n";
 import { useClipboard } from "@vueuse/core";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
+import { toast } from "vue-sonner";
 
 const props = defineProps<{
   open?: boolean;
@@ -24,7 +25,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const { startLogin, cancelLogin, authenticated } = useTwitchAuth();
+const { startLogin, cancelLogin, authenticated, username } = useTwitchAuth();
 const { copy: copyUrl, copied: urlCopied } = useClipboard();
 const { copy: copyCode, copied: codeCopied } = useClipboard();
 
@@ -42,7 +43,6 @@ async function startFlow() {
 }
 
 async function handleCancel() {
-  await cancelLogin();
   emit("update:open", false);
 }
 
@@ -62,7 +62,7 @@ watch(
         emit("update:open", false);
       }
     } else {
-      if (deviceFlow.value && !authenticated.value) {
+      if (!authenticated.value) {
         cancelLogin();
         deviceFlow.value = null;
       }
@@ -74,6 +74,10 @@ watch(
 watch(authenticated, (isAuth) => {
   if (isAuth) {
     if (props.open) {
+      toast.success(t("chat.unified.auth.successTitle", { platform: "Twitch" }), {
+        description: t("chat.unified.auth.successDesc", { username: username.value || "User" }),
+        duration: 10000,
+      });
       emit("update:open", false);
       deviceFlow.value = null;
     }
@@ -92,7 +96,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("twitch-auth-error", handleAuthError);
-  if (deviceFlow.value) {
+  if (!authenticated.value) {
     cancelLogin();
   }
 });
