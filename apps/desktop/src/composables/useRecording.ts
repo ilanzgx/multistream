@@ -149,6 +149,7 @@ const _useRecording = () => {
 
     recordings.delete(payload.streamId);
     remuxProgressMap.delete(payload.streamId);
+    orphans.value = orphans.value.filter((o) => o.id !== payload.streamId);
     stopTickerIfIdle();
 
     const { recordingPath } = usePreferences();
@@ -264,17 +265,13 @@ const _useRecording = () => {
     (await unlistenRemuxProgress)();
   });
 
-  const actionLocks = new Set<string>();
-
   async function startRecording(stream: Stream, quality: string = "best"): Promise<void> {
     if (stream.platform === "custom") {
       toast.error(t("settings.recording.customNotSupported"));
       return;
     }
 
-    if (actionLocks.has(stream.id)) return;
-    actionLocks.add(stream.id);
-    setTimeout(() => actionLocks.delete(stream.id), 5500);
+    if (recordings.has(stream.id)) return;
 
     recordings.set(stream.id, {
       streamId: stream.id,
@@ -306,9 +303,10 @@ const _useRecording = () => {
   }
 
   async function stopRecording(streamId: string): Promise<void> {
-    if (actionLocks.has(streamId)) return;
-    actionLocks.add(streamId);
-    setTimeout(() => actionLocks.delete(streamId), 5500);
+    const entry = recordings.get(streamId);
+    if (!entry || entry.status === "stopping" || entry.status === "remuxing") return;
+
+    entry.status = "stopping";
 
     toast.info(t("settings.recording.stopping"), { id: `stop-${streamId}` });
     try {
@@ -316,6 +314,10 @@ const _useRecording = () => {
     } catch (e) {
       toast.dismiss(`stop-${streamId}`);
       toast.error(String(e));
+      if (recordings.has(streamId)) {
+        const reverted = recordings.get(streamId);
+        if (reverted) reverted.status = "recording";
+      }
     }
   }
 
@@ -388,6 +390,7 @@ const _useRecording = () => {
     try {
       await invoke("recording_uninstall_dependencies");
       isDependenciesInstalled.value = false;
+      orphans.value = [];
       toast.success(
         t("settings.recording.uninstallSuccess", "Dependencies uninstalled successfully")
       );

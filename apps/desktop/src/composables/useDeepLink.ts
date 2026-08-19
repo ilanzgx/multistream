@@ -9,6 +9,7 @@ import { i18n } from "../i18n";
 export function useDeepLink() {
   const { addStream, clearStreams } = useStreams();
   let unlisten: (() => void) | null = null;
+  let isUnmounted = false;
 
   const handleDeepLink = async (urls: string[] | null) => {
     if (!urls) return;
@@ -41,9 +42,16 @@ export function useDeepLink() {
 
   onMounted(async () => {
     try {
-      unlisten = await onOpenUrl(handleDeepLink);
+      const unlistenFn = await onOpenUrl(handleDeepLink);
+      if (isUnmounted) {
+        unlistenFn();
+      } else {
+        unlisten = unlistenFn;
+      }
 
       const initialUrls = await getCurrent();
+      if (isUnmounted) return;
+
       if (initialUrls && initialUrls.length > 0) {
         await handleDeepLink(initialUrls);
       }
@@ -53,6 +61,7 @@ export function useDeepLink() {
   });
 
   onUnmounted(() => {
+    isUnmounted = true;
     if (unlisten) {
       unlisten();
     }

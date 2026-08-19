@@ -52,7 +52,7 @@ export function useUpdater() {
 
         toast.info(`${t("toasts.update.newVersion")}: ${update.version}`, {
           action: {
-            label: "Update",
+            label: t("settings.updates.title"),
             onClick: () => installUpdate(),
           },
           duration: 10000,
@@ -78,7 +78,7 @@ export function useUpdater() {
    * @return void
    */
   async function installUpdate() {
-    if (!currentUpdate) return;
+    if (!currentUpdate || isDownloading.value) return;
 
     isDownloading.value = true;
     downloadProgress.value = 0;

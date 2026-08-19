@@ -115,4 +115,26 @@ describe("useDeepLink", () => {
 
     expect(mockUnlisten).toHaveBeenCalled();
   });
+
+  it("cleans up listener even if unmounted before promise resolves (zombie listener prevention)", async () => {
+    let resolveOpenUrl: (val: any) => void;
+    const pendingPromise = new Promise((resolve) => {
+      resolveOpenUrl = resolve;
+    });
+    vi.mocked(onOpenUrl).mockReturnValueOnce(pendingPromise as any);
+
+    useDeepLink();
+
+    // Component unmounts while promise is pending
+    const unmountCb = vi.mocked(onUnmounted).mock.calls[0]![0] as () => void;
+    unmountCb();
+
+    // Now the promise resolves from Tauri
+    resolveOpenUrl!(mockUnlisten);
+    await pendingPromise;
+    await new Promise((resolve) => setTimeout(resolve, 0)); // flush microtasks
+
+    // The cleanup function should have been called immediately upon resolution
+    expect(mockUnlisten).toHaveBeenCalled();
+  });
 });

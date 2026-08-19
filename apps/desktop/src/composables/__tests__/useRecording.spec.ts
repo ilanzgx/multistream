@@ -109,10 +109,42 @@ describe("useRecording", () => {
     scope.stop();
   });
 
+  it("should prevent double startRecording IPC calls", async () => {
+    // Arrange
+    const scope = effectScope();
+    const { startRecording } = scope.run(() => useRecording())!;
+
+    // Act
+    await startRecording(mockStream);
+    await startRecording(mockStream); // Second call
+
+    // Assert
+    const invokeCalls = vi.mocked(invoke).mock.calls.filter((c) => c[0] === "start_recording");
+    expect(invokeCalls.length).toBe(1);
+    scope.stop();
+  });
+
+  it("should prevent double stopRecording IPC calls", async () => {
+    // Arrange
+    const scope = effectScope();
+    const { startRecording, stopRecording } = scope.run(() => useRecording())!;
+    await startRecording(mockStream);
+
+    // Act
+    await stopRecording(mockStream.id);
+    await stopRecording(mockStream.id); // Second call
+
+    // Assert
+    const invokeCalls = vi.mocked(invoke).mock.calls.filter((c) => c[0] === "stop_recording");
+    expect(invokeCalls.length).toBe(1);
+    scope.stop();
+  });
+
   it("should call invoke when stopRecording is called", async () => {
     // Arrange
     const scope = effectScope();
-    const { stopRecording } = scope.run(() => useRecording())!;
+    const { startRecording, stopRecording } = scope.run(() => useRecording())!;
+    await startRecording(mockStream);
 
     // Act
     await scope.run(async () => {
@@ -231,8 +263,11 @@ describe("useRecording", () => {
   it("should uninstall dependencies successfully", async () => {
     // Arrange
     const scope = effectScope();
-    const { uninstallDependencies, isDependenciesInstalled } = scope.run(() => useRecording())!;
+    const { uninstallDependencies, isDependenciesInstalled, orphans } = scope.run(() =>
+      useRecording()
+    )!;
     isDependenciesInstalled.value = true;
+    orphans.value = [{ id: "orphan1", channel: "test", filename: "test.ts", sizeBytes: 100 }];
     vi.mocked(invoke).mockResolvedValueOnce(undefined);
 
     // Act
@@ -240,6 +275,7 @@ describe("useRecording", () => {
 
     // Assert
     expect(isDependenciesInstalled.value).toBe(false);
+    expect(orphans.value).toHaveLength(0);
     expect(toast.success).toHaveBeenCalledWith("settings.recording.uninstallSuccess");
     expect(invoke).toHaveBeenCalledWith("recording_uninstall_dependencies");
     scope.stop();
@@ -287,7 +323,8 @@ describe("useRecording", () => {
     it("should handle recording:remux-finished", async () => {
       // Arrange
       const scope = effectScope();
-      scope.run(() => useRecording());
+      const { orphans } = scope.run(() => useRecording())!;
+      orphans.value = [{ id: "stream1", channel: "test", filename: "test.ts", sizeBytes: 100 }];
       const listener = getListener("recording:remux-finished");
       expect(listener).toBeDefined();
 
@@ -298,6 +335,7 @@ describe("useRecording", () => {
         // Assert
         expect(toast.dismiss).toHaveBeenCalledWith("remux-stream1");
         expect(toast.success).toHaveBeenCalledWith("settings.recording.saved", expect.any(Object));
+        expect(orphans.value).toHaveLength(0);
       }
       scope.stop();
     });

@@ -40,7 +40,7 @@ This guide establishes the mandatory engineering protocol for critically evaluat
 [Phase 5: Automated Verification & Unit Tests]
 ```
 
-**Hard rule:** Do not write or edit implementation code until the Phase 1–3 artifacts below exist in your response. Jumping straight to a fix is exactly how the naive fix in the case study happened.
+**Hard rule:** You MUST stop and request explicit user authorization after presenting the Phase 1-3 artifacts. Do not write or edit any implementation code (Phases 4-5) until the user has approved the analysis. Jumping straight to a fix is exactly how the naive fix in the case study happened.
 
 ---
 
@@ -94,6 +94,8 @@ Then, red-team the code as it stands: **"If I were trying to break this on purpo
 ---
 
 ### Phase 4: Minimalist Root-Cause Remediation
+
+> **AUTHORIZATION GATE:** You must wait for the user to review the Phase 1-3 report and give explicit permission before executing Phase 4.
 
 Refactor the logic to handle all `Fix now` and `Fix if cheap` edge cases cleanly:
 
