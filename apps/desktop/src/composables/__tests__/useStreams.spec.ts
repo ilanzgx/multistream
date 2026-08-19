@@ -23,10 +23,12 @@ vi.mock("../useRecents", () => ({
   }),
 }));
 
+const mockIsRecording = vi.fn((_id: string) => false);
+const mockStopRecording = vi.fn((_id: string) => {});
 vi.mock("../useRecording", () => ({
   useRecording: () => ({
-    isRecording: vi.fn(() => false),
-    stopRecording: vi.fn(),
+    isRecording: mockIsRecording,
+    stopRecording: mockStopRecording,
   }),
 }));
 
@@ -143,6 +145,26 @@ describe("useStreams composable unit tests", () => {
     // Assert (check if streams were cleared and leaving is cleared)
     expect(streams.value.length).toBe(0);
     expect(isLeaving(s1Id)).toBe(false);
+  });
+
+  it("should stop background recordings when clearing all streams", () => {
+    // Arrange
+    const { addStream, clearStreams, streams } = sut;
+
+    addStream("s1", "twitch");
+    addStream("s2", "kick");
+    const s1Id = streams.value[0]!.id;
+    const s2Id = streams.value[1]!.id;
+
+    mockIsRecording.mockImplementation((id) => id === s1Id);
+
+    // Act
+    clearStreams();
+
+    // Assert
+    expect(mockStopRecording).toHaveBeenCalledWith(s1Id);
+    expect(mockStopRecording).not.toHaveBeenCalledWith(s2Id);
+    expect(streams.value.length).toBe(0);
   });
 
   describe("two-phase removal (requestRemoveStream)", () => {

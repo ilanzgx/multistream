@@ -229,6 +229,11 @@ const _useStreams = () => {
    * @return void
    */
   const clearStreams = () => {
+    const { isRecording, stopRecording } = useRecording();
+    streams.value.forEach((s) => {
+      if (isRecording(s.id)) stopRecording(s.id);
+    });
+
     flushAllWatchTime();
     streams.value = [];
     leavingIds.clear();
