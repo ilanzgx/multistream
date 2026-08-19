@@ -94,6 +94,24 @@ describe("useUpdater composable unit tests", () => {
       expect(sut.isDownloading.value).toBe(false);
       expect(toast.loading).not.toHaveBeenCalled();
     });
+
+    it("should return early if already downloading", async () => {
+      // Arrange
+      const mockUpdate = {
+        version: "1.0.0",
+        downloadAndInstall: vi.fn(),
+      };
+      vi.mocked(tauriUpdater.check).mockResolvedValueOnce(mockUpdate as any);
+      await sut.checkForUpdates(); // Sets currentUpdate
+
+      sut.isDownloading.value = true;
+
+      // Act
+      await sut.installUpdate();
+
+      // Assert
+      expect(mockUpdate.downloadAndInstall).not.toHaveBeenCalled();
+    });
   });
 
   describe("checkForUpdates", () => {
@@ -160,7 +178,7 @@ describe("useUpdater composable unit tests", () => {
       expect(toast.info).toHaveBeenCalledWith(
         "toasts.update.newVersion: 1.2.0",
         expect.objectContaining({
-          action: expect.objectContaining({ label: "Update" }),
+          action: expect.objectContaining({ label: "settings.updates.title" }),
           duration: 10000,
         })
       );
