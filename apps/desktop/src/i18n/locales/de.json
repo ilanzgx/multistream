@@ -248,7 +248,9 @@
         "step1": "1. Öffne den Verifizierungslink unten",
         "step2": "2. Gib diesen Code ein, um dein Konto zu verknüpfen",
         "waiting": "Warten auf Autorisierung...",
-        "cancel": "Abbrechen"
+        "cancel": "Abbrechen",
+        "successTitle": "Erfolgreich auf {platform} authentifiziert",
+        "successDesc": "Angemeldet als {username}"
       },
       "warningTwitchLoginToMerge": "Verbinde dein Twitch-Konto, um Twitch-Chats im vereinheitlichten Chat einzuschließen.",
       "warningTwitchLogin": "Verbinde dein Twitch-Konto, um den vereinheitlichten Chat zu aktivieren."

@@ -248,7 +248,9 @@
         "step1": "1. Aşağıdaki doğrulama bağlantısını açın",
         "step2": "2. Hesabınızı bağlamak için bu kodu girin",
         "waiting": "Yetkilendirme bekleniyor...",
-        "cancel": "İptal"
+        "cancel": "İptal",
+        "successTitle": "{platform} üzerinde başarıyla kimlik doğrulandı",
+        "successDesc": "{username} olarak giriş yapıldı"
       },
       "warningTwitchLoginToMerge": "Birleşik Sohbete Twitch sohbetlerini dahil etmek için Twitch hesabınızı bağlayın.",
       "warningTwitchLogin": "Birleşik Sohbeti etkinleştirmek için Twitch hesabınızı bağlayın."

@@ -248,7 +248,9 @@
         "step1": "1. 打开下方的验证链接",
         "step2": "2. 输入此代码以关联您的账户",
         "waiting": "等待授权中...",
-        "cancel": "取消"
+        "cancel": "取消",
+        "successTitle": "成功在 {platform} 认证",
+        "successDesc": "已登录为 {username}"
       },
       "warningTwitchLoginToMerge": "连接您的Twitch帐号以在统一聊天中包含Twitch聊天。",
       "warningTwitchLogin": "连接您的Twitch帐号以启用统一聊天。"

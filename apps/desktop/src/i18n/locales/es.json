@@ -248,7 +248,9 @@
         "step1": "1. Abre el enlace de verificación abajo",
         "step2": "2. Ingresa este código para vincular tu cuenta",
         "waiting": "Esperando autorización...",
-        "cancel": "Cancelar"
+        "cancel": "Cancelar",
+        "successTitle": "Autenticado con éxito en {platform}",
+        "successDesc": "Conectado como {username}"
       },
       "warningTwitchLoginToMerge": "Conecta tu cuenta de Twitch para incluir chats de Twitch en el Chat Unificado.",
       "warningTwitchLogin": "Conecta tu cuenta de Twitch para habilitar el Chat Unificado."

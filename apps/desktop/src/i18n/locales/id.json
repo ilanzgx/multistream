@@ -248,7 +248,9 @@
         "step1": "1. Buka tautan verifikasi di bawah ini",
         "step2": "2. Masukkan kode ini untuk menautkan akun Anda",
         "waiting": "Menunggu otorisasi...",
-        "cancel": "Batal"
+        "cancel": "Batal",
+        "successTitle": "Berhasil diautentikasi di {platform}",
+        "successDesc": "Masuk sebagai {username}"
       },
       "warningTwitchLoginToMerge": "Hubungkan akun Twitch Anda untuk menyertakan obrolan Twitch dalam Obrolan Terpadu.",
       "warningTwitchLogin": "Hubungkan akun Twitch Anda untuk mengaktifkan Obrolan Terpadu."
