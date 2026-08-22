@@ -104,10 +104,41 @@ jobs:
       - name: Check Endpoints
         run: bun run check:endpoints
 
-  rust:
+  rust-linux:
+    name: Backend (Rust) — linux-x64
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies (Linux only)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+          components: clippy
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./apps/desktop/src-tauri -> target"
+          key: x86_64-unknown-linux-gnu
+
+      - name: Cargo Clippy
+        run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --target x86_64-unknown-linux-gnu -- -D warnings
+
+      - name: Cargo Test
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --target x86_64-unknown-linux-gnu
+
+  rust-cross:
     name: Backend (Rust) — ${{ matrix.name }}
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
+    if: github.actor != 'dependabot[bot]'
     strategy:
       fail-fast: false
       matrix:
@@ -118,20 +149,11 @@ jobs:
           - platform: macos-latest
             target: x86_64-apple-darwin
             name: macos-x64
-          - platform: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            name: linux-x64
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             name: windows-x64
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install system dependencies (Linux only)
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable

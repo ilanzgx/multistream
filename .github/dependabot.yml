@@ -4,8 +4,9 @@ updates:
   - package-ecosystem: "bun"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
+    rebase-strategy: "disabled"
     open-pull-requests-limit: 5
     groups:
       minor-patch:
@@ -17,8 +18,9 @@ updates:
   - package-ecosystem: "cargo"
     directory: "/apps/desktop/src-tauri"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
+    rebase-strategy: "disabled"
     open-pull-requests-limit: 5
     groups:
       minor-patch:
