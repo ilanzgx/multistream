@@ -160,7 +160,7 @@ describe("useBackup composable unit tests", () => {
   });
 
   describe("importConfig", () => {
-    it("should import data into all local storage keys correctly", () => {
+    it("should perform an additive restore correctly (keeping grid, merging favorites/recents/history)", () => {
       // Arrange
       const {
         importConfig,
@@ -173,18 +173,49 @@ describe("useBackup composable unit tests", () => {
         watchHistory,
       } = backupComposable;
 
+      // Set some initial state before importing
+      streams.value = [{ id: "current_1", channel: "current_streamer", platform: "twitch" }];
+      favorites.value = [{ channel: "current_fav", platform: "kick", addedAt: 1000 }];
+      recents.value = [{ channel: "current_recent", platform: "youtube", addedAt: 1000 }];
+      watchHistory.value = { "twitch:current_streamer": 5000 };
+
       // Act
       importConfig(validBackup);
 
-      // Assert
-      expect(streams.value).toEqual(validBackup.streams);
-      expect(favorites.value).toEqual(validBackup.favorites);
-      expect(recents.value).toEqual(validBackup.recents);
+      // Assert - Grid (streams) should be INTACT (not merged with backup streams)
+      expect(streams.value).toEqual([
+        { id: "current_1", channel: "current_streamer", platform: "twitch" },
+      ]);
+
+      // Assert - Favorites should be merged
+      expect(favorites.value).toEqual([
+        { channel: "current_fav", platform: "kick", addedAt: 1000 },
+        ...validBackup.favorites,
+      ]);
+
+      // Assert - Recents should have current streams injected at top, then backup recents, then old recents
+      expect(recents.value).toEqual([
+        {
+          channel: "current_streamer",
+          platform: "twitch",
+          iframeUrl: undefined,
+          addedAt: expect.any(Number),
+        },
+        ...validBackup.recents,
+        { channel: "current_recent", platform: "youtube", addedAt: 1000 },
+      ]);
+
+      // Assert - Preferences should be overwritten
       expect(selectedChat.value).toBe("twitch_streamer");
       expect(sidebarOpen.value).toBe(false);
       expect(notificationsEnabled.value).toBe(true);
       expect(localStorage.getItem("locale")).toBe("pt");
-      expect(watchHistory.value).toEqual(validBackup.watchHistory);
+
+      // Assert - Watch History should be merged
+      expect(watchHistory.value).toEqual({
+        "twitch:current_streamer": 5000,
+        ...validBackup.watchHistory,
+      });
     });
   });
 
@@ -226,6 +257,7 @@ describe("useBackup composable unit tests", () => {
 
       it("should handle downloadDir failure but still open save dialog", async () => {
         // Arrange
+        const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         const { exportConfig } = backupComposable;
         tauriPath.downloadDir.mockRejectedValue(new Error("No download dir"));
         tauriDialog.save.mockResolvedValue("/chosen/path.json");
@@ -242,6 +274,7 @@ describe("useBackup composable unit tests", () => {
           })
         );
         expect(tauriFs.writeTextFile).toHaveBeenCalled();
+        consoleSpy.mockRestore();
       });
 
       it("should return false if user cancels native save dialog", async () => {
@@ -260,6 +293,7 @@ describe("useBackup composable unit tests", () => {
 
       it("should throw error if writeTextFile fails", async () => {
         // Arrange
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         const { exportConfig } = backupComposable;
         tauriPath.downloadDir.mockResolvedValue("/downloads");
         tauriDialog.save.mockResolvedValue("/chosen/path.json");
@@ -269,10 +303,12 @@ describe("useBackup composable unit tests", () => {
         await expect(exportConfig()).rejects.toThrow(
           "Failed to save file: Error: Permission denied"
         );
+        consoleSpy.mockRestore();
       });
 
       it("should fall back to legacy download if Tauri native save block throws an unexpected error", async () => {
         // Arrange
+        const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         const { exportConfig } = backupComposable;
 
         // Mock save to throw to simulate plugin failure, escaping the inner try/catch
@@ -299,6 +335,7 @@ describe("useBackup composable unit tests", () => {
         // Assert
         expect(result).toBe(true);
         expect(clickMock).toHaveBeenCalled(); // Legacy download triggered
+        consoleSpy.mockRestore();
       });
     });
 
@@ -415,6 +452,7 @@ describe("useBackup composable unit tests", () => {
 
     it("should fall back to legacy download if showSaveFilePicker throws non-AbortError", async () => {
       // Arrange
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
       const { exportConfig } = backupComposable;
 
       const genericError = new Error("Some Error");
@@ -445,6 +483,7 @@ describe("useBackup composable unit tests", () => {
       // Assert
       expect(result).toBe(true);
       expect(clickMock).toHaveBeenCalled();
+      consoleSpy.mockRestore();
 
       delete (globalThis as any).window;
     });
