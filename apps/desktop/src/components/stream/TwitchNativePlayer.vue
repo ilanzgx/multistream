@@ -17,6 +17,7 @@ import {
   Settings,
   Users,
   VideoOff,
+  Loader2,
 } from "@lucide/vue";
 import { TwitchIcon } from "@/components/icons";
 
@@ -34,6 +35,7 @@ const isCompact = computed(() => !props.isFocused && !isFullscreen.value);
 const videoRef = ref<HTMLVideoElement | null>(null);
 const containerRef = ref<HTMLDivElement | null>(null);
 const isLoading = ref(true);
+const isBuffering = ref(false);
 const hasError = ref(false);
 const isOffline = ref(false);
 const errorDetails = ref("");
@@ -176,6 +178,9 @@ function buildLevelLabel(level: { height: number; attrs?: Record<string, string>
 
 function scheduleRetry() {
   if (isDisposed) return;
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+  }
   retryCount++;
   const delay = Math.min(1000 * 2 ** retryCount, 10000);
   retryTimer = setTimeout(() => {
@@ -184,22 +189,27 @@ function scheduleRetry() {
   }, delay);
 }
 
+let currentLoadId = 0;
+
 async function loadStream() {
   if (isDisposed) return;
+  const loadId = ++currentLoadId;
+
   isLoading.value = true;
+  isBuffering.value = false;
   hasError.value = false;
   isOffline.value = false;
   errorDetails.value = "";
 
   try {
     const url = await invoke<string>("twitch_get_hls_url", { channel: props.channel });
-    if (isDisposed) return;
+    if (isDisposed || currentLoadId !== loadId) return;
 
     await nextTick();
     if (!videoRef.value) {
       await new Promise((r) => setTimeout(r, 100));
     }
-    if (isDisposed) return;
+    if (isDisposed || currentLoadId !== loadId) return;
 
     if (!videoRef.value) {
       hasError.value = true;
@@ -244,8 +254,16 @@ async function loadStream() {
       });
 
       let networkRetryCount = 0;
+
+      // Reset network retry counter on successful fragment load
+      hls.on(Hls.Events.FRAG_LOADED, () => {
+        networkRetryCount = 0;
+      });
+
       hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (!data.fatal || isDisposed) return;
+        if (isDisposed) return;
+
+        if (!data.fatal) return;
 
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
           if (data.response && data.response.code === 404) {
@@ -254,6 +272,19 @@ async function loadStream() {
             hasError.value = false;
             return;
           }
+
+          // If token expired (403), immediately get a fresh URL instead of startLoad()
+          if (data.response && data.response.code === 403) {
+            if (retryCount < MAX_RETRIES) {
+              scheduleRetry();
+            } else {
+              hasError.value = true;
+              errorDetails.value = `Access Denied (403). Stream token expired.`;
+              isLoading.value = false;
+            }
+            return;
+          }
+
           if (networkRetryCount < 3) {
             networkRetryCount++;
             hls?.startLoad();
@@ -264,9 +295,15 @@ async function loadStream() {
           return;
         }
 
-        hasError.value = true;
-        errorDetails.value = `HLS Error (${data.type}: ${data.details})`;
-        isLoading.value = false;
+        // If we reach here, it's a fatal error that Hls.js can't recover from natively.
+        // Pragmatic fix: fetch a new URL instead of freezing/dying.
+        if (retryCount < MAX_RETRIES) {
+          scheduleRetry();
+        } else {
+          hasError.value = true;
+          errorDetails.value = `HLS Error (${data.type}: ${data.details})`;
+          isLoading.value = false;
+        }
       });
 
       hls.loadSource(url);
@@ -302,7 +339,7 @@ async function loadStream() {
       isLoading.value = false;
     }
   } catch (err) {
-    if (isDisposed) return;
+    if (isDisposed || currentLoadId !== loadId) return;
     console.error("[TwitchNativePlayer] Failed to load stream:", err);
 
     const errStr = String(err).toLowerCase();
@@ -349,18 +386,82 @@ function handleVideoClick() {
   }
 }
 
+let stallWatchdog: ReturnType<typeof setTimeout> | null = null;
+let offlinePollingTimer: ReturnType<typeof setInterval> | null = null;
+
+function clearWatchdog() {
+  if (stallWatchdog) {
+    clearTimeout(stallWatchdog);
+    stallWatchdog = null;
+  }
+}
+
+function startOfflinePolling() {
+  if (offlinePollingTimer) return;
+  // Poll silently every 30 seconds to see if stream is back online
+  offlinePollingTimer = setInterval(async () => {
+    if (isDisposed) return;
+    try {
+      const url = await invoke<string>("twitch_get_hls_url", { channel: props.channel });
+      if (url && !isDisposed) {
+        stopOfflinePolling();
+        loadStream();
+      }
+    } catch {
+      // Still offline
+    }
+  }, 30000);
+}
+
+function stopOfflinePolling() {
+  if (offlinePollingTimer) {
+    clearInterval(offlinePollingTimer);
+    offlinePollingTimer = null;
+  }
+}
+
+watch(isOffline, (offline) => {
+  if (offline) {
+    startOfflinePolling();
+  } else {
+    stopOfflinePolling();
+  }
+});
+
 function onVideoPlaying() {
   isPlaying.value = true;
+  isBuffering.value = false;
+  clearWatchdog();
 }
 
 function onVideoPaused() {
   isPlaying.value = false;
 }
 
+function onVideoWaiting() {
+  isBuffering.value = true;
+  clearWatchdog();
+  // Auto-recover if stuck in buffering for 4 seconds
+  stallWatchdog = setTimeout(() => {
+    if (isBuffering.value && videoRef.value) {
+      // Simulate manual pause
+      videoRef.value.pause();
+      // Simulate quality switch to force buffer flush
+      if (hls) {
+        hls.nextLoadLevel = hls.currentLevel;
+      }
+      // Resume playback at live edge
+      snapToLive();
+    }
+  }, 4000);
+}
+
 function onVideoEnded() {
   isOffline.value = true;
   isLoading.value = false;
+  isBuffering.value = false;
   hasError.value = false;
+  clearWatchdog();
 }
 
 onMounted(() => {
@@ -382,6 +483,8 @@ onBeforeUnmount(() => {
     clearTimeout(clickTimer);
     clickTimer = null;
   }
+  clearWatchdog();
+  stopOfflinePolling();
   if (hls) {
     hls.destroy();
     hls = null;
@@ -448,6 +551,13 @@ onBeforeUnmount(() => {
       </p>
     </div>
 
+    <div
+      v-if="isBuffering && !isLoading && !hasError && !isOffline"
+      class="absolute inset-0 flex items-center justify-center pointer-events-none z-10"
+    >
+      <Loader2 class="size-8 text-white animate-spin opacity-75" />
+    </div>
+
     <video
       ref="videoRef"
       class="w-full h-full object-contain cursor-pointer"
@@ -456,7 +566,9 @@ onBeforeUnmount(() => {
       playsinline
       :muted="isMuted"
       @play="onVideoPlaying"
+      @playing="onVideoPlaying"
       @pause="onVideoPaused"
+      @waiting="onVideoWaiting"
       @ended="onVideoEnded"
       @click="handleVideoClick"
     />
