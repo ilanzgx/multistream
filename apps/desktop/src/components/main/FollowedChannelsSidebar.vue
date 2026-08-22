@@ -47,6 +47,13 @@ const formatViewers = (count: number) => {
     maximumFractionDigits: 1,
   }).format(count);
 };
+
+const getThumbnailUrl = (url?: string) => {
+  if (!url) return "";
+  const separator = url.includes("?") ? "&" : "?";
+  const cacheBuster = Math.floor(Date.now() / 300000); // 5 min cache
+  return `${url}${separator}t=${cacheBuster}`;
+};
 </script>
 
 <template>
@@ -164,6 +171,12 @@ const formatViewers = (count: number) => {
                       loading="lazy"
                       :src="channel.avatarUrl || CDN_CONFIG.avatarFallback(channel.displayName)"
                       class="w-7 h-7 rounded-full block object-cover"
+                      @error="
+                        (e) =>
+                          ((e.target as HTMLImageElement).src = CDN_CONFIG.avatarFallback(
+                            channel.displayName
+                          ))
+                      "
                     />
                   </div>
                   <div
@@ -210,9 +223,10 @@ const formatViewers = (count: number) => {
               <img
                 v-if="channel.thumbnailUrl"
                 loading="lazy"
-                :src="channel.thumbnailUrl"
+                :src="getThumbnailUrl(channel.thumbnailUrl)"
                 referrerpolicy="no-referrer"
                 class="w-full aspect-video object-cover"
+                @error="(e) => ((e.target as HTMLImageElement).style.display = 'none')"
               />
               <div v-else class="w-full aspect-video bg-[#14161a] border-b border-[#2a2d33]"></div>
               <div class="p-2">

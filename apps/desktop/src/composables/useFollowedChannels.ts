@@ -136,10 +136,12 @@ const _useFollowedChannels = () => {
           (e) => {
             console.error("Failed to fetch Twitch followed streams", e);
             debugErrors.value.push(`Twitch: ${String(e)}`);
-            return [];
+            return null;
           }
         );
-        twitchChannels.value = results;
+        if (results !== null) {
+          twitchChannels.value = results;
+        }
       } else {
         twitchChannels.value = [];
       }
