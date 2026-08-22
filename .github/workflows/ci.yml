@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+env:
+  CARGO_INCREMENTAL: 0
+
 jobs:
   frontend:
     name: Frontend (Vue)
@@ -142,11 +145,11 @@ jobs:
           workspaces: "./apps/desktop/src-tauri -> target"
           key: ${{ matrix.target }}
 
-      - name: Cargo Test
-        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --target ${{ matrix.target }}
-
       - name: Cargo Clippy
         run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --target ${{ matrix.target }} -- -D warnings
+
+      - name: Cargo Test
+        run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --target ${{ matrix.target }}
 
   e2e:
     name: E2E Tests (Playwright)
@@ -160,6 +163,19 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Get Playwright version
+        id: playwright-version
+        working-directory: ./apps/desktop
+        run: echo "version=$(bunx playwright --version | awk '{print $2}')" >> $GITHUB_OUTPUT
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/msplaywright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Install Playwright browsers
         working-directory: ./apps/desktop

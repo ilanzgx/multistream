@@ -207,3 +207,12 @@ Before completing any backend modification in `apps/desktop/src-tauri/`:
 5. **Sync Command in `lib.rs`:** Ensure any new `#[tauri::command]` function is registered in `tauri::generate_handler![...]` in `lib.rs` AND in capability permissions (`capabilities/default.json`).
 6. **Write Unit Tests:** Verify all parsing or data manipulation functions with `cargo test` using explicit `// Arrange`, `// Act`, `// Assert` blocks.
 7. **NEVER FORGET TESTS:** Whenever you add a new feature, a new rule, or modify existing behavior, you MUST add or update the corresponding tests. Never wait to be asked. NEVER delete tests.
+
+---
+
+## 5. Cross-Skill Dependencies
+
+To maintain cohesion across the Multistream ecosystem, **you MUST explicitly read these related skills** if you perform any of the following tasks:
+
+- **Refactoring Rust Code or Creating Complex Architectures:** 
+  You MUST read `@.agents/skills/code-structure-standards/SKILL.md` to ensure you are applying Clean Code, error handling aesthetics, and DRY principles correctly across the backend.

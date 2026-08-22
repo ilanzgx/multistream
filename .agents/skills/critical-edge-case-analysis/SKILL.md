@@ -179,3 +179,12 @@ const isInitialLoading = computed(() => {
   return false;
 });
 ```
+
+---
+
+## 4. Cross-Skill Dependencies
+
+To maintain cohesion across the Multistream ecosystem, **you MUST explicitly read these related skills** if you perform any of the following tasks:
+
+- **Writing or Updating Unit Tests after fixing an Edge Case:** 
+  You MUST read `@.agents/skills/desktop-frontend-testing/SKILL.md` (if working in the frontend) to learn how to properly write regression tests, mock Tauri IPC, isolate state, and structure Vitest tests cleanly.

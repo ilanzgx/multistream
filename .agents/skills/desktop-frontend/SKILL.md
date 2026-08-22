@@ -281,3 +281,16 @@ describe("useExample composable unit tests", () => {
 1. **Composable:** Create or update composable in `src/composables/`.
 2. **Unit Test (AAA):** Write comprehensive unit tests in `src/composables/__tests__/` with `// Arrange`, `// Act`, `// Assert`.
 3. **Connect UI:** Wire the composable into the UI component following the UI and Type Safety checklists above.
+
+---
+
+## 7. Cross-Skill Dependencies
+
+To maintain cohesion across the Multistream ecosystem, **you MUST explicitly read these related skills** if you perform any of the following tasks:
+
+- **Modifying Grid, Streams, or Iframes (`StreamGrid.vue`, `useStreams.ts`):** 
+  You MUST read `@.agents/skills/graveyard/SKILL.md` before attempting to delete or unmount iframes to prevent catastrophic Mojo crashes.
+- **Writing or Updating Tests for Components/Composables:** 
+  You MUST read `@.agents/skills/desktop-frontend-testing/SKILL.md` to learn how to properly mock Tauri IPC, isolate state, and structure tests in Vitest.
+- **Refactoring or Creating Large Files:** 
+  You MUST read `@.agents/skills/code-structure-standards/SKILL.md` to ensure you are applying Clean Code, early returns, and DRY principles correctly.

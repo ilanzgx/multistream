@@ -33,6 +33,7 @@ This repository contains custom, specialized skills for AI Agents located in the
 - **[`multistream-graveyard`](.agents/skills/graveyard/SKILL.md)**: Explains the Multistream Graveyard mechanism, how it works, and why it is necessary to prevent WebView IPC crashes.
 - **[`multistream-adding-language`](.agents/skills/adding-language/SKILL.md)**: Guides agents and developers through the exact process of adding a new language to the Multistream application.
 - **[`multistream-critical-edge-case-analysis`](.agents/skills/critical-edge-case-analysis/SKILL.md)**: Rigorous, egoless methodology for auditing business logic, identifying hidden edge cases, questioning assumptions, remediating logic flaws, and authoring bulletproof unit tests (AAA pattern) across Multistream.
+- **[`multistream-code-structure-standards`](.agents/skills/code-structure-standards/SKILL.md)**: Rigorous, judgment-driven refactoring protocol for TypeScript, Vue, and Rust in Multistream. Applies Clean Code, DRY, and readability rules with objective triggers, explicit exceptions, and mandatory proof that behavior didn't change.
 
 ## Tech Stack
 
