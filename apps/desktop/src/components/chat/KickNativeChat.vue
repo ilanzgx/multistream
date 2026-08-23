@@ -9,7 +9,7 @@ import ChatRichInput from "./ChatRichInput.vue";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useKickAuth } from "@/composables/useKickAuth";
 import { useI18n } from "vue-i18n";
 import { KickIcon } from "@/components/icons";
@@ -104,7 +104,9 @@ async function handleSend() {
     newMessage.value = "";
   } catch (error) {
     console.error("Failed to send message", error);
-    toast.error(typeof error === "string" ? error : t("chat.sendError"));
+    toast.error(typeof error === "string" ? error : t("chat.sendError"), {
+      position: "bottom-right",
+    });
   } finally {
     isSending.value = false;
   }
@@ -120,7 +122,7 @@ onMounted(async () => {
       if (username.value) {
         const lastText = removeLastLocalMessage(username.value);
         if (lastText) {
-          toast.error(message);
+          toast.error(message, { position: "bottom-right" });
           newMessage.value = lastText;
         }
       }
@@ -224,7 +226,7 @@ onUnmounted(async () => {
         <Button
           type="submit"
           size="icon"
-          class="shrink-0 h-[38px] w-[38px] bg-[#53fc18] hover:bg-[#6afc35] text-[#0f1115] disabled:opacity-50"
+          class="shrink-0 h-9.5 w-9.5 bg-[#53fc18] hover:bg-[#6afc35] text-[#0f1115] disabled:opacity-50"
           :disabled="!newMessage.trim() || connectionState !== 'connected' || isSending"
         >
           <Send class="w-4 h-4" />
