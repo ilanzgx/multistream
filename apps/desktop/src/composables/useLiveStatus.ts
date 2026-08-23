@@ -3,8 +3,11 @@ import { createSharedComposable, useDocumentVisibility } from "@vueuse/core";
 import { useRecents } from "./useRecents";
 import { useFavorites } from "./useFavorites";
 import { usePreferences } from "./usePreferences";
+import { useStreams } from "./useStreams";
 import type { Platform } from "./useStreams";
+import { toast } from "./useToast";
 import { invoke } from "@tauri-apps/api/core";
+
 import { i18n } from "@/i18n";
 import { isTauri, httpGet, httpPost } from "@/lib/http";
 
@@ -535,6 +538,7 @@ const _useLiveStatus = () => {
   const { recents } = useRecents();
   const { favorites } = useFavorites();
   const { notificationsEnabled } = usePreferences();
+  const { addStream } = useStreams();
   const visibility = useDocumentVisibility();
   const statuses = ref<StatusMap>({});
   const previousStatuses = ref<StatusMap>({});
@@ -641,18 +645,16 @@ const _useLiveStatus = () => {
             );
 
             if (newLiveChannels.length === 1) {
-              const { fav, status } = newLiveChannels[0]!;
-              invoke("send_notification", {
-                title: t("notifications.welcome"),
-                body: t("notifications.welcomeBodySingle", {
-                  channel: fav.channel,
-                }),
-                avatarUrl: status?.avatarUrl || null,
-                watchText: t("notifications.actionWatch"),
-                ignoreText: t("notifications.actionIgnore"),
-                channel: fav.channel,
-                platform: fav.platform,
-              }).catch(() => {});
+              const { fav } = newLiveChannels[0]!;
+              toast.info(t("notifications.welcome"), {
+                description: t("notifications.welcomeBodySingle", { channel: fav.channel }),
+                position: "bottom-left",
+                duration: 10000,
+                action: {
+                  label: t("notifications.actionWatch"),
+                  onClick: () => addStream(fav.channel, fav.platform),
+                },
+              });
             } else {
               const MAX_STREAMS = 12;
               const topStreams = newLiveChannels.slice(0, MAX_STREAMS);
@@ -660,18 +662,20 @@ const _useLiveStatus = () => {
               const remainingCount = newLiveChannels.length - MAX_STREAMS;
 
               if (remainingCount > 0) {
-                invoke("send_notification", {
-                  title: t("notifications.welcome"),
-                  body: t("notifications.welcomeBodyMore", {
+                toast.info(t("notifications.welcome"), {
+                  description: t("notifications.welcomeBodyMore", {
                     channels: names,
                     count: remainingCount,
                   }),
-                }).catch(() => {});
+                  position: "bottom-left",
+                  duration: 10000,
+                });
               } else {
-                invoke("send_notification", {
-                  title: t("notifications.welcome"),
-                  body: t("notifications.welcomeBody", { channels: names }),
-                }).catch(() => {});
+                toast.info(t("notifications.welcome"), {
+                  description: t("notifications.welcomeBody", { channels: names }),
+                  position: "bottom-left",
+                  duration: 10000,
+                });
               }
             }
           } else {

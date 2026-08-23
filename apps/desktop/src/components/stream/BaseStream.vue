@@ -7,7 +7,7 @@ import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useElementSize } from "@vueuse/core";
 import { useProfilePicture } from "@/composables/useProfilePicture";
@@ -316,7 +316,7 @@ const handleScreenshot = () => {
                 />
               </div>
               <div
-                class="font-medium tracking-wide animate-pulse text-white/30 text-center px-4"
+                class="font-medium tracking-wide text-white/30 text-center px-4"
                 :class="
                   skeletonSize === 'xs'
                     ? 'text-[9px]'

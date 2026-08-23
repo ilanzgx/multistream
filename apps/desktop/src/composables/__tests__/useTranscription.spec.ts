@@ -17,7 +17,7 @@ vi.mock("@/composables/useUpdater", () => ({
   useUpdater: () => ({ checkForUpdates: vi.fn(), isChecking: false }),
 }));
 
-vi.mock("vue-sonner", () => ({
+vi.mock("@/composables/useToast", () => ({
   toast: { success: vi.fn(), info: vi.fn() },
 }));
 

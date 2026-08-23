@@ -5,7 +5,7 @@ import { useTranscription } from "@/composables/useTranscription";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Copy, Trash2 } from "@lucide/vue";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
@@ -73,7 +73,7 @@ async function copyTranscript() {
 
   try {
     await navigator.clipboard.writeText(text);
-    toast.success(t("chat.transcript.copied"));
+    toast.success(t("chat.transcript.copied"), { position: "bottom-right" });
   } catch (err) {
     console.error("Failed to copy transcript", err);
   }

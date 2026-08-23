@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { useRecording, __test_resetState } from "../useRecording";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import type { Stream } from "../useStreams";
 import { nextTick, effectScope } from "vue";
 
@@ -14,13 +14,14 @@ vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn(() => Promise.resolve(vi.fn())),
 }));
 
-vi.mock("vue-sonner", () => {
+vi.mock("@/composables/useToast", () => {
   const toastMock = vi.fn();
   Object.assign(toastMock, {
     success: vi.fn(),
     error: vi.fn(),
     warning: vi.fn(),
     info: vi.fn(),
+    custom: vi.fn(),
     dismiss: vi.fn(),
   });
   return { toast: toastMock };
@@ -315,7 +316,7 @@ describe("useRecording", () => {
 
         // Assert
         expect(toast.dismiss).toHaveBeenCalledWith("stop-stream1");
-        expect(toast).toHaveBeenCalled();
+        expect(toast.custom).toHaveBeenCalled();
       }
       scope.stop();
     });

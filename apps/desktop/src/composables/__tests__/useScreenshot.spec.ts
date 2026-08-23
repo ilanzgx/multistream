@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useScreenshot } from "../useScreenshot";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import * as tauriCore from "@tauri-apps/api/core";
 import * as httpLib from "@/lib/http";
 
-vi.mock("vue-sonner", () => ({
+vi.mock("@/composables/useToast", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -216,7 +216,7 @@ describe("useScreenshot composable unit tests", () => {
     expect(mockAnchor.href).toBe("data:image/png;base64,mockdata");
     expect(mockAnchor.download).toMatch(/^shroud_youtube_.*\.png$/);
     expect(mockAnchor.click).toHaveBeenCalled();
-    expect(toast.success).toHaveBeenCalledWith("toasts.screenshot.saved");
+    expect(toast.success).toHaveBeenCalledWith("toasts.screenshot.saved", expect.any(Object));
 
     delete (globalThis as any).document;
   });

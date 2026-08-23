@@ -23,6 +23,12 @@ vi.mock("../usePreferences", () => ({
   }),
 }));
 
+vi.mock("vue-i18n", () => ({
+  useI18n: () => ({
+    t: (key: string) => key,
+  }),
+}));
+
 vi.mock("@/i18n", () => ({
   i18n: {
     global: {

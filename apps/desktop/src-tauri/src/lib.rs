@@ -123,6 +123,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             notifications::send_notification,
             screenshot::save_screenshot,
+            screenshot::open_screenshot_folder,
             audio::transcriber::is_transcription_supported,
             audio::transcriber::download_whisper_model,
             audio::transcriber::cancel_whisper_download,

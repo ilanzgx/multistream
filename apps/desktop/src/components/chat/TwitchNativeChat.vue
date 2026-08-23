@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ChatRichInput from "./ChatRichInput.vue";
 import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 import { useI18n } from "vue-i18n";
 import { TwitchIcon } from "@/components/icons";
@@ -80,7 +80,7 @@ onMounted(async () => {
         if (username.value) {
           const lastText = removeLastLocalMessage(channel, username.value);
           if (lastText) {
-            toast.error(message);
+            toast.error(message, { position: "bottom-right" });
             newMessage.value = lastText;
           }
         }
@@ -178,7 +178,7 @@ onUnmounted(() => {
         <Button
           type="submit"
           size="icon"
-          class="shrink-0 h-[38px] w-[38px] bg-[#9146FF] hover:bg-[#a970ff] text-white disabled:opacity-50"
+          class="shrink-0 h-9.5 w-9.5 bg-[#9146FF] hover:bg-[#a970ff] text-white disabled:opacity-50"
           :disabled="!newMessage.trim() || connectionState !== 'connected' || isSending"
         >
           <Send class="w-4 h-4" />

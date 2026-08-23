@@ -4,6 +4,7 @@ description = "Enables all custom app commands"
 commands.allow = [
     "send_notification",
     "save_screenshot",
+    "open_screenshot_folder",
     "is_transcription_supported",
     "download_whisper_model",
     "cancel_whisper_download",

@@ -2,7 +2,7 @@
 import { PLATFORMS } from "@/config/platforms";
 import type { ChannelSearchResult } from "@/composables/useChannelSearch";
 
-const props = defineProps<{
+defineProps<{
   results: ChannelSearchResult[];
   isLoading: boolean;
   activeIndex: number;
@@ -33,11 +33,11 @@ const emit = defineEmits<{
         <div
           v-for="i in 3"
           :key="i"
-          class="flex items-center gap-3 px-3 py-2.5 border-b border-[#1a1d21] last:border-0"
+          class="flex items-center gap-3 px-3 py-2.5 border-b border-[#1a1d21] last:border-0 opacity-50"
         >
-          <div class="h-3.5 w-3.5 rounded-full bg-[#2a2d33] animate-pulse shrink-0" />
-          <div class="h-3 flex-1 rounded bg-[#2a2d33] animate-pulse" />
-          <div class="h-3 w-16 rounded bg-[#2a2d33] animate-pulse" />
+          <div class="h-3.5 w-3.5 rounded-full bg-[#2a2d33] shrink-0" />
+          <div class="h-3 flex-1 rounded bg-[#2a2d33]" />
+          <div class="h-3 w-16 rounded bg-[#2a2d33]" />
         </div>
       </template>
 

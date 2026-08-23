@@ -4,7 +4,7 @@
   "version": "0.18.15",
   "identifier": "com.ilanzgx.multistream",
   "build": {
-    "removeUnusedCommands": false,
+    "removeUnusedCommands": true,
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "bun run dev",

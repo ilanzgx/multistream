@@ -14,7 +14,7 @@ import { useTwitchAuth, type DeviceFlowResponse } from "@/composables/useTwitchA
 import { useI18n } from "vue-i18n";
 import { useClipboard } from "@vueuse/core";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 
 const props = defineProps<{
   open?: boolean;

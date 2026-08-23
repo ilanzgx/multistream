@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useUpdater, isTauri } from "../useUpdater";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import * as tauriUpdater from "@tauri-apps/plugin-updater";
 import * as tauriProcess from "@tauri-apps/plugin-process";
 
@@ -10,7 +10,7 @@ vi.mock("vue-i18n", () => ({
   }),
 }));
 
-vi.mock("vue-sonner", () => ({
+vi.mock("@/composables/useToast", () => ({
   toast: {
     success: vi.fn(),
     warning: vi.fn(),

@@ -2,11 +2,11 @@ import { createSharedComposable } from "@vueuse/core";
 import { reactive, ref, onScopeDispose, h, markRaw } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import type { Stream } from "./useStreams";
 import { usePreferences } from "./usePreferences";
-import RemuxProgressToast from "@/components/ui/sonner/RemuxProgressToast.vue";
+import RemuxProgressToast from "@/components/ui/toast/RemuxProgressToast.vue";
 
 export interface RecordingState {
   streamId: string;
@@ -117,17 +117,13 @@ const _useRecording = () => {
 
     toast.dismiss(`stop-${payload.streamId}`);
 
-    toast(h(markRaw(RemuxProgressToast), { streamId: payload.streamId, channel: channelName }), {
-      id: `remux-${payload.streamId}`,
-      duration: Infinity,
-      unstyled: true,
-      style: {
-        backgroundColor: "transparent",
-        padding: "0",
-        border: "none",
-        boxShadow: "none",
-      },
-    });
+    toast.custom(
+      h(markRaw(RemuxProgressToast), { streamId: payload.streamId, channel: channelName }),
+      {
+        id: `remux-${payload.streamId}`,
+        duration: Infinity,
+      }
+    );
   });
 
   const unlisten4 = listen<{ streamId: string }>("recording:remux-finished", ({ payload }) => {

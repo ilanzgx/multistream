@@ -1,7 +1,7 @@
 import { effectScope, EffectScope } from "vue";
 import { describe, it, expect, beforeEach, beforeAll, afterAll, afterEach, vi } from "vitest";
 import { useStreams } from "../useStreams";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 
 vi.mock("vue-i18n", () => ({
   useI18n: () => ({
@@ -9,7 +9,7 @@ vi.mock("vue-i18n", () => ({
   }),
 }));
 
-vi.mock("vue-sonner", () => ({
+vi.mock("@/composables/useToast", () => ({
   toast: {
     success: vi.fn(),
     warning: vi.fn(),

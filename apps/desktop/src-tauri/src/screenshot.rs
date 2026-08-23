@@ -30,6 +30,23 @@ pub async fn save_screenshot(data_url: String, filename: String) -> Result<Strin
     Ok(file_path.to_string_lossy().to_string())
 }
 
+#[tauri::command]
+pub async fn open_screenshot_folder(app: tauri::AppHandle) -> Result<(), String> {
+    use std::path::PathBuf;
+    use tauri_plugin_opener::OpenerExt;
+
+    let pictures_dir = dirs::picture_dir().unwrap_or_else(|| PathBuf::from("."));
+    let save_dir = pictures_dir.join("Multistream");
+
+    if save_dir.exists() {
+        app.opener()
+            .open_path(save_dir.to_string_lossy().to_string(), None::<String>)
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

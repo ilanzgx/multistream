@@ -1,6 +1,6 @@
 import { createSharedComposable, useStorage } from "@vueuse/core";
 import { computed, reactive, ref, watch, onScopeDispose } from "vue";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { useRecents } from "./useRecents";
 import { useFocusedStream } from "./useFocusedStream";

@@ -39,7 +39,7 @@ import {
   Clock,
   FlaskConical,
 } from "@lucide/vue";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { watch, ref } from "vue";
 import { useBackup } from "@/composables/useBackup";
 import type { BackupData } from "@/composables/useBackup";
@@ -264,7 +264,7 @@ const processImportContent = (content: string) => {
     } else {
       toast.error(t("settings.backup.importError"));
     }
-  } catch (err) {
+  } catch {
     toast.error(t("settings.backup.importError"));
   }
 };

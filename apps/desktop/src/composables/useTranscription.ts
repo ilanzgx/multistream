@@ -3,7 +3,7 @@ import { createSharedComposable, useStorage } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { isTauri } from "./useUpdater";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { i18n } from "../i18n";
 
 /** Valid discrete chunk duration values in seconds. */

@@ -11,14 +11,14 @@ import {
 } from "@/components/ui/dialog";
 import Button from "../ui/button/Button.vue";
 import { useStreams } from "@/composables/useStreams";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { APP_LINKS } from "@/config/links";
 
 const { t, locale } = useI18n();
 
 // props
-const props = defineProps<{
+defineProps<{
   open?: boolean;
 }>();
 

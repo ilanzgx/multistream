@@ -10,8 +10,7 @@ import { useMediaCodecs } from "./composables/useMediaCodecs";
 import { useRecording } from "./composables/useRecording";
 import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import { useDeepLink } from "./composables/useDeepLink";
-import "vue-sonner/style.css";
-import { Toaster } from "./components/ui/sonner";
+import ToastProvider from "./components/ui/toast/ToastProvider.vue";
 import FollowedChannelsSidebar from "./components/main/FollowedChannelsSidebar.vue";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
 import StreamGrid from "./components/main/StreamGrid.vue";
@@ -20,7 +19,7 @@ import OnboardingTour from "./components/dialogs/OnboardingTour.vue";
 import TwitchAuthDialog from "./components/dialogs/TwitchAuthDialog.vue";
 import KickAuthDialog from "./components/dialogs/KickAuthDialog.vue";
 
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
 import { APP_LINKS } from "./config/links";
@@ -289,21 +288,7 @@ onUnmounted(() => {
       <Menu class="size-4 text-gray-400 group-hover:text-white transition-colors duration-200" />
     </button>
 
-    <!-- toast notifications -->
-    <Toaster
-      position="bottom-left"
-      theme="dark"
-      :duration="2500"
-      :toast-options="{
-        style: {
-          padding: '12px 16px',
-          fontSize: '13px',
-          backgroundColor: '#14161a',
-          color: '#fff',
-          borderColor: '#2a2d33',
-        },
-      }"
-    />
+    <ToastProvider />
 
     <!-- onboarding tour -->
     <OnboardingTour

@@ -1,6 +1,6 @@
 import { ref, h } from "vue";
 import { invoke } from "@tauri-apps/api/core";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { isTauri } from "@/lib/http";
 
@@ -52,25 +52,37 @@ export function useScreenshot() {
         const filename = `${channel}_${platform}_${timestamp}.png`;
 
         if (isTauri()) {
-          const savedPath = await invoke<string>("save_screenshot", {
+          await invoke<string>("save_screenshot", {
             dataUrl,
             filename,
-          });
-          toast.success(`${t("toasts.screenshot.saved")}`, {
-            description: h(
-              "span",
-              { class: "text-[10px] text-gray-400 truncate block max-w-[250px]" },
-              savedPath
-            ) as any,
-            duration: 3500,
           });
         } else {
           const link = document.createElement("a");
           link.href = dataUrl;
           link.download = filename;
           link.click();
-          toast.success(`${t("toasts.screenshot.saved")}`);
         }
+
+        const descriptionVNode = h("div", { class: "flex items-center mt-2" }, [
+          h("img", {
+            src: dataUrl,
+            class:
+              "w-full max-h-24 rounded border border-[#2a2d33] object-cover bg-black shadow-sm",
+          }),
+        ]) as any;
+
+        toast.success(`${t("toasts.screenshot.saved")}`, {
+          description: descriptionVNode,
+          duration: 6000,
+          action: isTauri()
+            ? {
+                label: t("settings.recording.openFolder"),
+                onClick: () => {
+                  invoke("open_screenshot_folder").catch(console.error);
+                },
+              }
+            : undefined,
+        });
       };
 
       const video = streamElement.querySelector("video");
