@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useDeepLink } from "../useDeepLink";
 import { useStreams } from "../useStreams";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
 import { onMounted, onUnmounted } from "vue";
 
@@ -19,7 +19,7 @@ vi.mock("../useStreams", () => ({
   useStreams: vi.fn(),
 }));
 
-vi.mock("vue-sonner", () => ({
+vi.mock("@/composables/useToast", () => ({
   toast: {
     success: vi.fn(),
   },

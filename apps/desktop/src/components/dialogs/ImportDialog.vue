@@ -12,7 +12,7 @@ import {
 import Button from "../ui/button/Button.vue";
 import { useStreams } from "@/composables/useStreams";
 import { parseUrlOptions } from "@/lib/parseUrlOptions";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { APP_LINKS } from "@/config/links";
 

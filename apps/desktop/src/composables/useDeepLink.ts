@@ -3,7 +3,7 @@ import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
 import { invoke } from "@tauri-apps/api/core";
 import { useStreams } from "./useStreams";
 import { parseUrlOptions } from "../lib/parseUrlOptions";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { i18n } from "../i18n";
 
 export function useDeepLink() {

@@ -2,9 +2,9 @@ import { ref, h } from "vue";
 import { isTauri as _isTauri } from "@tauri-apps/api/core";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
-import UpdateProgress from "@/components/ui/sonner/UpdateProgress.vue";
+import UpdateProgress from "@/components/ui/toast/UpdateProgress.vue";
 
 const updateAvailable = ref(false);
 const updateVersion = ref<string | null>(null);
@@ -93,6 +93,7 @@ export function useUpdater() {
         }),
         {
           id: "update-download",
+          duration: Infinity,
           class: "bg-transparent border-none shadow-none !p-0",
         }
       );
@@ -115,6 +116,7 @@ export function useUpdater() {
               }),
               {
                 id: "update-download",
+                duration: Infinity,
                 class: "bg-transparent border-none shadow-none !p-0",
               }
             );
@@ -127,6 +129,7 @@ export function useUpdater() {
             }),
             {
               id: "update-download",
+              duration: Infinity,
               class: "bg-transparent border-none shadow-none !p-0",
             }
           );

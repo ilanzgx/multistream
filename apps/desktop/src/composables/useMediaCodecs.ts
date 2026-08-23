@@ -1,4 +1,4 @@
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { isTauri } from "./useUpdater";
 import { createSharedComposable } from "@vueuse/core";

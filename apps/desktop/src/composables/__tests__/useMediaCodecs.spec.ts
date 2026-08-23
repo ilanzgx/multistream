@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import * as updaterMod from "../useUpdater";
-import { toast } from "vue-sonner";
+import { toast } from "@/composables/useToast";
 
 // Arrange
-vi.mock("vue-sonner", () => ({
+vi.mock("@/composables/useToast", () => ({
   toast: {
     warning: vi.fn(),
   },
