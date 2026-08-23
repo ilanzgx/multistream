@@ -114,7 +114,7 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
 
 ### Git
 
-- **Git Hooks:** `husky` is configured for pre-commit and pre-push hooks to enforce code quality.
+- **Git Hooks:** `husky` is configured for pre-commit and pre-push hooks to enforce code quality. ALWAYS execute one commit at a time and WAIT for the pre-commit hook to fully complete before starting the next commit.
 - **Git Commits:**
   - Follow the **Conventional Commits** specification.
   - **Format:** `<type>(<optional scope>): <description>` (e.g., `feat(ui): add share dialog`).

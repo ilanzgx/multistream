@@ -216,7 +216,7 @@ describe("useScreenshot composable unit tests", () => {
     expect(mockAnchor.href).toBe("data:image/png;base64,mockdata");
     expect(mockAnchor.download).toMatch(/^shroud_youtube_.*\.png$/);
     expect(mockAnchor.click).toHaveBeenCalled();
-    expect(toast.success).toHaveBeenCalledWith("toasts.screenshot.saved");
+    expect(toast.success).toHaveBeenCalledWith("toasts.screenshot.saved", expect.any(Object));
 
     delete (globalThis as any).document;
   });
