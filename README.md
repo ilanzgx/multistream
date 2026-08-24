@@ -17,11 +17,25 @@
     <a href="https://github.com/ilanzgx/multistream/issues">Request Feature</a>
   </p>
   <br />
+
+  <img src="./docs/preview.png" alt="Multistream Preview" width="100%" />
+  <br />
+  <br />
 </div>
 
 Most multistream setups are just browser tabs. Multistream is a desktop app built with [Tauri](https://v2.tauri.app/), [Rust](https://www.rust-lang.org/), and [Vue 3](https://vuejs.org/): Twitch, Kick, and YouTube side by side in one window, using less memory than a single Chrome tab, with no trackers or background processes.
 
-### Features
+## Why Multistream?
+
+| Feature | Multistream | Browser tabs / Web tools |
+| :--- | :--- | :--- |
+| **Memory usage** | Low (Tauri + Rust) | High (separate Chromium processes per tab) |
+| **Chat** | Unified Twitch & Kick feed | Split across separate tabs |
+| **Privacy** | 100% local, zero tracking | Third-party scripts and telemetry |
+| **Stream recording** | Direct recording to MP4 via Streamlink | Requires external tools or extensions |
+| **Live transcription** | Offline Whisper.cpp on CPU | Not supported natively |
+
+## Features
 
 - **Privacy by design**: Everything runs locally. No middleman servers, no data collection.
 - **Account Authentication & Unified Chat**: Log in to your Twitch and Kick accounts securely and read both chats together in one place, directly in the app. Free, no subscription. Supports 7TV, BTTV, and platform emotes.
@@ -31,6 +45,18 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 - **Available in 10 languages**: English, Portuguese, Spanish, German, Russian, Chinese, French, Turkish, Hindi, and Indonesian. _(Note: Languages other than English and Portuguese were AI-translated. Native speakers are highly welcome to open a PR to improve them!)_
 - **Cross-platform**: Works on Windows, macOS, and Linux.
 - **Local AI transcription**: _(Windows only)_ Real-time transcription powered by [Whisper.cpp](https://github.com/ggerganov/whisper.cpp), running fully offline on your CPU. Useful for streams in languages you don't speak. No API keys, no costs, no audio ever leaves your machine.
+
+## Downloads
+
+| Platform | Download |
+| :--- | :--- |
+| **Windows (x64)** | [Installer (.exe)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-windows-x64-setup.exe) · [MSI (.msi)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-windows-x64.msi) |
+| **macOS (Apple Silicon)** | [DMG (.dmg)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-macos-arm64.dmg) |
+| **macOS (Intel)** | [DMG (.dmg)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-macos-x64.dmg) |
+| **macOS (Homebrew)** | `brew install --cask ilanzgx/multistream/multistream` |
+| **Linux (x64)** | [AppImage (.AppImage)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.AppImage) · [Debian (.deb)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.deb) |
+
+You can also check previous versions and signatures on the [Releases page](https://github.com/ilanzgx/multistream/releases).
 
 ## Important for macOS Users
 
@@ -47,6 +73,7 @@ brew install --cask ilanzgx/multistream/multistream
 **2. Fix manually after downloading the DMG:**
 
 Move `Multistream.app` to your `/Applications` folder, then run:
+
 ```sh
 xattr -dr com.apple.quarantine /Applications/Multistream.app
 ```
@@ -55,19 +82,19 @@ xattr -dr com.apple.quarantine /Applications/Multistream.app
 
 You can navigate the app quickly using these global hotkeys (they even work when you are interacting with a stream iframe):
 
-| Shortcut | Action |
-| :--- | :--- |
+| Shortcut                    | Action                                                    |
+| :-------------------------- | :-------------------------------------------------------- |
 | <kbd>1</kbd> - <kbd>9</kbd> | Switch active chat tab to the corresponding stream number |
-| <kbd>D</kbd> | Open the "Add Stream" dialog |
-| <kbd>S</kbd> | Take a screenshot of the focused stream |
+| <kbd>D</kbd>                | Open the "Add Stream" dialog                              |
+| <kbd>S</kbd>                | Take a screenshot of the focused stream                   |
 
 ## Local Development
 
-If you want to compile the app yourself or contribute to the project, follow the instructions below to set up your local development environment.
+If you want to compile the app yourself or contribute to the project, follow the instructions below to set up your local development environment. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for full development workflows, translation guides, and testing commands.
 
 ### Prerequisites
 
-- [Bun](https://bun.sh/) or [Node.js](https://nodejs.org/)
+- [Bun](https://bun.sh/)
 - [Rust](https://www.rust-lang.org/)
 
 ### Setup
@@ -94,4 +121,4 @@ If you want to compile the app yourself or contribute to the project, follow the
 
 ## License
 
-Distributed under the GPL-3.0 License. See `LICENSE` for more information.
+Distributed under the GPL-3.0 License. See [`LICENSE`](./LICENSE) for more information.

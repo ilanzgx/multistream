@@ -114,7 +114,10 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
 
 ### Git
 
-- **Git Hooks:** `husky` is configured for pre-commit and pre-push hooks to enforce code quality. ALWAYS execute one commit at a time and WAIT for the pre-commit hook to fully complete before starting the next commit.
+- **Git Hooks & Background Tasks (CRITICAL):** `husky` is configured for pre-commit and pre-push hooks to enforce code quality. These take ~60 seconds to run.
+  - ALWAYS execute one commit at a time.
+  - If a terminal command is sent to the background as a task (e.g., `git commit`), you MUST STOP calling tools, end your turn, and wait for the system's asynchronous `<SYSTEM_MESSAGE>` with the task's final exit code before proceeding. 
+  - NEVER queue up sequential git commands blindly. NEVER assume a background task succeeded just because it didn't throw a synchronous error.
 - **Git Commits:**
   - Follow the **Conventional Commits** specification.
   - **Format:** `<type>(<optional scope>): <description>` (e.g., `feat(ui): add share dialog`).
