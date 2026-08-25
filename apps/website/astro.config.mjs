@@ -11,5 +11,17 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  integrations: [sitemap(), robotsTxt()],
+  integrations: [
+    sitemap({
+      filter: (page) => page !== "https://usemultistream.vercel.app/",
+      i18n: {
+        defaultLocale: "en",
+        locales: {
+          en: "en-US",
+          "pt-br": "pt-BR",
+        },
+      },
+    }),
+    robotsTxt(),
+  ],
 });

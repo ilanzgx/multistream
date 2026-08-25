@@ -6,8 +6,21 @@ bun run desktop:typecheck
 echo "Running unit tests..."
 bun run desktop:test
 
-echo "Running cargo test..."
-cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+changed_files=$(git diff --name-only @{u}..HEAD 2>/dev/null || git diff --name-only origin/main..HEAD 2>/dev/null || git diff --name-only HEAD~1..HEAD 2>/dev/null || true)
 
-echo "Running cargo clippy..."
-cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings
+if echo "$changed_files" | grep -q '^apps/desktop/src-tauri'; then
+  echo "Running cargo test..."
+  cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+  echo "Running cargo clippy..."
+  cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings
+else
+  echo "No src-tauri changes detected. Skipping Rust backend checks."
+fi
+
+if echo "$changed_files" | grep -q '^apps/website'; then
+  echo "Checking website..."
+  bun run website:check
+else
+  echo "No website changes detected. Skipping website checks."
+fi
