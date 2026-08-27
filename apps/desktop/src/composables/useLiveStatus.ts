@@ -53,7 +53,7 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
   const query = channels
     .map(
       (ch, i) => `
-    c${i}: user(login: "${ch.toLowerCase()}") {
+    c${i}: user(login: ${JSON.stringify(ch.toLowerCase())}) {
       profileImageURL(width: 70)
       stream {
         title
@@ -66,26 +66,42 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
   `
     )
     .join("\n");
+  let retries = 1;
+  let response = null;
+
+  while (retries >= 0) {
+    try {
+      response = await httpPost(
+        API_CONFIG.twitch.gqlUrl,
+        JSON.stringify({ query: `{ ${query} }` }),
+        {
+          "Client-Id": API_CONFIG.twitch.clientId,
+          "Content-Type": "application/json",
+        }
+      );
+
+      if (response.ok || (response.status >= 400 && response.status < 500)) {
+        break; // success or non-retryable client error
+      }
+    } catch (e) {
+      // network exception, fall through to retry
+      console.warn("Twitch API network error:", e);
+    }
+
+    retries--;
+    if (retries >= 0) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+  }
 
   try {
-    const response = await httpPost(
-      API_CONFIG.twitch.gqlUrl,
-      JSON.stringify({
-        query: `{ ${query} }`,
-      }),
-      {
-        // Public client ID used by the Twitch website
-        // Not official, but works for years
-        "Client-Id": API_CONFIG.twitch.clientId,
-        "Content-Type": "application/json",
-      }
-    );
-
-    if (!response.ok) return null;
+    if (!response || !response.ok) return null;
 
     const data = await response.json();
-
     if (!data?.data) return null;
+
+    const hasAnyData = channels.some((_, i) => `c${i}` in data.data);
+    if (!hasAnyData && channels.length > 0) return null;
 
     for (const ch of channels) {
       result[`twitch:${ch.toLowerCase()}`] = { isLive: false };
@@ -589,7 +605,6 @@ const _useLiveStatus = () => {
 
     if (twitchChannels.length === 0 && kickChannels.length === 0) {
       statuses.value = {};
-      previousStatuses.value = {};
       return;
     }
 
@@ -601,14 +616,21 @@ const _useLiveStatus = () => {
         checkKickStreams(kickChannels),
       ]);
 
-      const newStatuses: StatusMap = { ...statuses.value };
+      const twitchData = twitchResults.status === "fulfilled" ? twitchResults.value : null;
+      const kickData = kickResults.status === "fulfilled" ? kickResults.value : null;
 
-      if (twitchResults.status === "fulfilled" && twitchResults.value !== null) {
-        Object.assign(newStatuses, twitchResults.value);
-      }
-      if (kickResults.status === "fulfilled" && kickResults.value !== null) {
-        Object.assign(newStatuses, kickResults.value);
-      }
+      // Both APIs failed — skip update entirely to avoid poisoning previousStatuses
+      // with stale data that would trigger false "went live" notifications on recovery
+      if (twitchData === null && kickData === null) return;
+
+      const newStatuses: StatusMap = { ...statuses.value };
+      if (twitchData !== null) Object.assign(newStatuses, twitchData);
+      if (kickData !== null) Object.assign(newStatuses, kickData);
+
+      // Only consider channels for which we received fresh, confirmed data this cycle.
+      // This prevents channels that were NOT re-fetched (due to partial API failure)
+      // from incorrectly driving offline→online notification transitions.
+      const freshKeys = new Set([...Object.keys(twitchData ?? {}), ...Object.keys(kickData ?? {})]);
 
       // detect offline -> online transitions for favorites
       if (isTauri() && notificationsEnabled.value) {
@@ -620,6 +642,10 @@ const _useLiveStatus = () => {
           if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
 
           const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
+
+          // Skip channels without fresh data — their previousStatuses would be stale
+          if (!freshKeys.has(key)) continue;
+
           const hadPreviousStatus = key in previousStatuses.value;
           const wasLive = previousStatuses.value[key]?.isLive ?? false;
           const isNowLive = newStatuses[key]?.isLive ?? false;
@@ -714,7 +740,14 @@ const _useLiveStatus = () => {
         }
       }
 
-      previousStatuses.value = { ...newStatuses };
+      // Selectively update previousStatuses: only overwrite entries that have fresh data
+      // from this cycle. Entries for channels that weren't re-fetched are left unchanged,
+      // so a partial-failure cycle cannot reset their live→offline state falsely.
+      const nextPreviousStatuses = { ...previousStatuses.value };
+      for (const key of freshKeys) {
+        if (newStatuses[key] !== undefined) nextPreviousStatuses[key] = newStatuses[key]!;
+      }
+      previousStatuses.value = nextPreviousStatuses;
       statuses.value = newStatuses;
     } finally {
       isChecking.value = false;
@@ -773,10 +806,17 @@ const _useLiveStatus = () => {
     }
   };
 
-  // Debounced re-check: auto-start/stop polling when channels change
+  // Debounced re-check: auto-start/stop polling when channel set changes.
+  // Uses a serialized identity key so swapping a channel or changing its
+  // platform triggers a re-check even when the total count stays the same.
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   watch(
-    () => recents.value.length + favorites.value.length,
+    () =>
+      [...recents.value, ...favorites.value]
+        .filter((e) => e.platform === "twitch" || e.platform === "kick")
+        .map((e) => `${e.platform}:${e.channel.toLowerCase()}`)
+        .toSorted()
+        .join(","),
     () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
@@ -789,6 +829,12 @@ const _useLiveStatus = () => {
       }, 1000);
     }
   );
+
+  // Foreground wake-up: fire an immediate check when the tab becomes visible
+  // so statuses are never stale by more than the interval after returning.
+  watch(visibility, (newVisibility) => {
+    if (newVisibility === "visible") checkAll();
+  });
 
   /**
    * @brief Refresh suggestions with two-phase incremental loading

@@ -134,26 +134,27 @@ const getThumbnailUrl = (url?: string) => {
 
     <TooltipProvider :delay-duration="0" :disable-hoverable-content="true">
       <div class="flex-1 overflow-y-auto py-1 flex flex-col gap-0.5 px-1.5 custom-scrollbar">
-        <template v-if="isInitialLoading && liveChannels.length === 0">
-          <div v-for="i in 20" :key="i" class="flex items-center gap-2 p-1 rounded-md">
-            <div class="relative shrink-0">
-              <Skeleton class="w-7 h-7 rounded-full border border-[#2a2d33] bg-[#1f2227]" />
-              <div
-                class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[#14161a] flex items-center justify-center bg-[#0f1115]"
-              >
-                <Skeleton class="w-2.5 h-2.5 rounded-full bg-[#2a2d33]" />
-              </div>
-            </div>
-
-            <div v-if="isOpen" class="flex-1 min-w-0 flex flex-col justify-center">
-              <div class="flex items-center justify-between gap-2">
-                <Skeleton class="h-3.5 w-20 bg-[#1f2227]" />
-                <div class="flex items-center gap-1 shrink-0">
-                  <Skeleton class="w-1.5 h-1.5 rounded-full bg-[#1f2227]" />
-                  <Skeleton class="h-3 w-5 bg-[#1f2227]" />
+        <template v-if="isInitialLoading">
+          <div class="px-2 py-2">
+            <div v-for="i in 15" :key="i" class="flex items-center gap-2 mb-3">
+              <div class="relative shrink-0">
+                <Skeleton class="w-7 h-7 rounded-full border border-[#2a2d33] bg-[#1f2227]" />
+                <div
+                  class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border border-[#14161a] flex items-center justify-center bg-[#0f1115]"
+                >
+                  <Skeleton class="w-2.5 h-2.5 rounded-full bg-[#2a2d33]" />
                 </div>
               </div>
-              <Skeleton class="h-3 w-28 bg-[#1f2227] mt-1" />
+              <div v-if="isOpen" class="flex-1 min-w-0">
+                <div class="flex items-center justify-between mb-1">
+                  <Skeleton class="h-3.5 w-20 bg-[#1f2227]" />
+                  <div class="flex items-center gap-1 shrink-0">
+                    <Skeleton class="w-1.5 h-1.5 rounded-full bg-[#1f2227]" />
+                    <Skeleton class="h-3 w-5 bg-[#1f2227]" />
+                  </div>
+                </div>
+                <Skeleton class="h-3 w-28 bg-[#1f2227] mt-1" />
+              </div>
             </div>
           </div>
         </template>
@@ -172,7 +173,7 @@ const getThumbnailUrl = (url?: string) => {
                       :src="channel.avatarUrl || CDN_CONFIG.avatarFallback(channel.displayName)"
                       class="w-7 h-7 rounded-full block object-cover"
                       @error="
-                        (e) =>
+                        (e: any) =>
                           ((e.target as HTMLImageElement).src = CDN_CONFIG.avatarFallback(
                             channel.displayName
                           ))
@@ -226,7 +227,7 @@ const getThumbnailUrl = (url?: string) => {
                 :src="getThumbnailUrl(channel.thumbnailUrl)"
                 referrerpolicy="no-referrer"
                 class="w-full aspect-video object-cover"
-                @error="(e) => ((e.target as HTMLImageElement).style.display = 'none')"
+                @error="(e: any) => ((e.target as HTMLImageElement).style.display = 'none')"
               />
               <div v-else class="w-full aspect-video bg-[#14161a] border-b border-[#2a2d33]"></div>
               <div class="p-2">

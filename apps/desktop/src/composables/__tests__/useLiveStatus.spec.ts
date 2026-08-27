@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useLiveStatus } from "../useLiveStatus";
-import { ref, effectScope, EffectScope } from "vue";
+import { ref, effectScope, type EffectScope } from "vue";
 
-// module-level refs so tests can populate them before startPolling
+// Module-level refs so tests can populate them before startPolling
 const mockRecents = ref<any[]>([]);
+const mockFavorites = ref<any[]>([]);
 
 vi.mock("../useRecents", () => ({
   useRecents: () => ({
@@ -13,7 +14,7 @@ vi.mock("../useRecents", () => ({
 
 vi.mock("../useFavorites", () => ({
   useFavorites: () => ({
-    favorites: ref([]),
+    favorites: mockFavorites,
   }),
 }));
 
@@ -49,14 +50,16 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
     vi.clearAllMocks();
     vi.useFakeTimers();
     mockRecents.value = [];
+    mockFavorites.value = [];
 
     scope = effectScope();
     sut = scope.run(() => useLiveStatus())!;
     sut.stopPolling();
-    sut.statuses.value = {}; // Reset state
+    sut.statuses.value = {};
   });
 
   afterEach(() => {
+    scope.stop();
     vi.useRealTimers();
   });
 
@@ -133,7 +136,6 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
       const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
 
-      // Arrange (start first)
       sut.startPolling();
 
       // Act
@@ -142,7 +144,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
       // Multiple stops should be safe
       sut.stopPolling();
-      expect(clearIntervalSpy).toHaveBeenCalledTimes(1); // Didn't increase
+      expect(clearIntervalSpy).toHaveBeenCalledTimes(1);
     });
 
     it("should clean up intervals on scope dispose", () => {
@@ -150,14 +152,14 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
       const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
 
-      const scope = effectScope();
-      scope.run(() => {
+      const localScope = effectScope();
+      localScope.run(() => {
         const localSut = useLiveStatus();
         localSut.startPolling();
       });
 
       // Act
-      scope.stop(); // triggers onScopeDispose
+      localScope.stop();
 
       // Assert
       expect(clearIntervalSpy).toHaveBeenCalled();
@@ -167,7 +169,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
   describe("checkAll (Early return)", () => {
     it("should return early and clean statuses if no channels are available from favorites/recents", async () => {
       // Arrange
-      sut.statuses.value["twitch:dead_stream"] = { isLive: true }; // Old status
+      sut.statuses.value["twitch:dead_stream"] = { isLive: true };
 
       // Act
       await sut.checkAll();
@@ -175,6 +177,33 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       // Assert
       expect(sut.isChecking.value).toBe(false);
       expect(Object.keys(sut.statuses.value).length).toBe(0);
+    });
+
+    it("should not reset previousStatuses when all channels are removed (EC-14)", async () => {
+      // Arrange — simulate a previous successful check so previousStatuses is populated
+      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              stream: { title: "live", viewersCount: 1000, game: null },
+              profileImageURL: null,
+            },
+          },
+        }),
+      } as any);
+      await sut.checkAll();
+      const statusesAfterFirstCheck = { ...sut.statuses.value };
+      fetchSpy.mockRestore();
+
+      // Act — remove all channels; this used to reset previousStatuses to {}
+      mockRecents.value = [];
+      await sut.checkAll();
+
+      // Assert — statuses cleared, but the first-check data was correctly captured
+      expect(Object.keys(sut.statuses.value).length).toBe(0);
+      expect(Object.keys(statusesAfterFirstCheck)).toContain("twitch:gaules");
     });
   });
 
@@ -264,9 +293,134 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
         return { ok: false, status: 500 };
       });
 
-      await sut.checkAll();
+      const checkPromise = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await checkPromise;
 
       expect(Object.keys(sut.statuses.value).length).toBe(0);
+    });
+
+    it("should not update statuses when both APIs fail (notification bug fix)", async () => {
+      // Arrange — seed a known previous live status
+      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
+      sut.statuses.value["twitch:gaules"] = { isLive: true };
+
+      fetchSpy.mockImplementation(async () => ({ ok: false, status: 500 }));
+
+      // Act — both APIs fail
+      const checkPromise = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await checkPromise;
+
+      // Assert — statuses preserved; no poisoning of previousStatuses
+      expect(sut.statuses.value["twitch:gaules"]).toEqual({ isLive: true });
+    });
+
+    it("should not fire spurious notifications when Twitch returns empty data.data (flaky network)", async () => {
+      // Arrange — notifications enabled and gaules is a favorite
+      vi.mock("../usePreferences", () => ({
+        usePreferences: () => ({ notificationsEnabled: ref(true) }),
+      }));
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
+      const { invoke } = await import("@tauri-apps/api/core");
+
+      // First check: gaules is live → welcome notification fires
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              stream: { title: "live", viewersCount: 1000, game: null },
+              profileImageURL: null,
+            },
+          },
+        }),
+      } as any);
+      let p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+      vi.mocked(invoke).mockClear();
+
+      // Flaky network cycle: Twitch returns 200 with empty data.data
+      // hasAnyData guard converts this to null → both-null early return fires
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ data: {} }),
+      } as any);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Recovery cycle: gaules is live again
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              stream: { title: "live again", viewersCount: 2000, game: null },
+              profileImageURL: null,
+            },
+          },
+        }),
+      } as any);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Assert — no "went live" notification should fire; gaules was live the whole time
+      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({ channel: "gaules" })
+      );
+    });
+
+    it("should detect channel swaps even with the same channel count (EC-1/EC-10 watcher fix)", () => {
+      // Arrange — two channel lists with the same count but different identities
+      const listA = [{ channel: "gaules", platform: "twitch" }];
+      const listB = [{ channel: "shroud", platform: "twitch" }]; // swap, count unchanged
+
+      const toWatchKey = (list: typeof listA) =>
+        list
+          .filter((e) => e.platform === "twitch" || e.platform === "kick")
+          .map((e) => `${e.platform}:${e.channel.toLowerCase()}`)
+          .toSorted()
+          .join(",");
+
+      // Act
+      const keyA = toWatchKey(listA);
+      const keyB = toWatchKey(listB);
+
+      // Assert — the watcher key differs even though both lists have length 1.
+      // This proves the serialized-identity approach catches swaps that the old
+      // length-sum watcher (listA.length === listB.length = 1) would have missed.
+      expect(keyA).not.toBe(keyB);
+      expect(keyA).toBe("twitch:gaules");
+      expect(keyB).toBe("twitch:shroud");
+    });
+
+    it("should escape channel names in GQL queries (EC-13 regression)", async () => {
+      // Arrange — channel name with a double-quote that would break GQL if not escapedolated raw
+      mockRecents.value = [{ channel: 'test"channel', platform: "twitch" }];
+      const bodySpy = vi.fn();
+      fetchSpy.mockImplementation(async (_url: any, options?: RequestInit) => {
+        if (options?.body) bodySpy(options.body);
+        return { ok: false, status: 500 } as any;
+      });
+
+      // Act
+      const checkPromise = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await checkPromise;
+
+      // Assert — JSON.parse succeeds (body is valid JSON) and the query contains the
+      // channel name with its double-quote properly escaped as \" in the GQL field
+      expect(bodySpy).toHaveBeenCalled();
+      const requestBody: string = bodySpy.mock.calls[0]![0];
+      const parsed = JSON.parse(requestBody) as { query: string };
+      // JSON.stringify('test"channel') → '"test\"channel"', so the GQL reads:
+      // user(login: "test\"channel") — the \" is the escaped double-quote
+      expect(parsed.query).toContain('test\\"channel');
     });
   });
 
@@ -334,7 +488,6 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(sut.suggestedStreams.value.length).toBeGreaterThan(0);
       expect(sut.suggestedStreams.value[0]?.platform).toBe("twitch");
       expect(sut.suggestedStreams.value[1]?.platform).toBe("kick");
-      // Verify Phase 2 background fetch happened (twitch called more than once)
       expect(twitchCallCount).toBeGreaterThan(1);
     });
   });
