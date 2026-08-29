@@ -115,6 +115,20 @@ const selectSearchResult = (result: { channel: string }) => {
 };
 
 const handleSearchKeydown = (e: KeyboardEvent) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const selected =
+      isDropdownOpen.value && activeSearchIndex.value >= 0
+        ? searchResults.value[activeSearchIndex.value]
+        : undefined;
+    if (selected) {
+      selectSearchResult(selected);
+    } else {
+      handleAddStream();
+    }
+    return;
+  }
+
   if (!isDropdownOpen.value) return;
 
   if (e.key === "ArrowDown") {
@@ -123,10 +137,6 @@ const handleSearchKeydown = (e: KeyboardEvent) => {
   } else if (e.key === "ArrowUp") {
     e.preventDefault();
     activeSearchIndex.value = Math.max(activeSearchIndex.value - 1, -1);
-  } else if (e.key === "Enter" && activeSearchIndex.value >= 0) {
-    e.preventDefault();
-    const selected = searchResults.value[activeSearchIndex.value];
-    if (selected) selectSearchResult(selected);
   } else if (e.key === "Escape") {
     e.preventDefault();
     e.stopPropagation();
@@ -134,6 +144,10 @@ const handleSearchKeydown = (e: KeyboardEvent) => {
     activeSearchIndex.value = -1;
   }
 };
+
+watch(searchResults, () => {
+  activeSearchIndex.value = -1;
+});
 
 const handleChannelBlur = () => {
   // Delay so mousedown on a dropdown item fires before blur clears results
@@ -248,6 +262,13 @@ const handleAddStream = () => {
   emit("update:open", false);
 };
 
+const PLATFORM_ACTIVE_CLASSES: Record<Platform, string> = {
+  twitch: "bg-[#9146FF]/10 border-[#9146FF]/50 text-white shadow-xs",
+  kick: "bg-[#53FC18]/10 border-[#53FC18]/50 text-white shadow-xs",
+  youtube: "bg-[#FF0000]/10 border-[#FF0000]/50 text-white shadow-xs",
+  custom: "bg-[#6366F1]/10 border-[#6366F1]/50 text-white shadow-xs",
+};
+
 const splitLabel = (label: string) => {
   const match = label.match(/^(.*?)\s*[(（](.*?)[)）]$/);
   if (match) {
@@ -255,6 +276,8 @@ const splitLabel = (label: string) => {
   }
   return { main: label, sub: "" };
 };
+
+const customNameLabelParts = computed(() => splitLabel(t("add.customNameLabel")));
 
 const isValidCustomUrl = computed(() => {
   const url = iframeUrl.value.trim();
@@ -272,7 +295,7 @@ const isValidCustomUrl = computed(() => {
 
 const canSubmit = computed(() => {
   if (isCustom.value) {
-    return isValidCustomUrl.value && channelName.value.trim().length > 0;
+    return isValidCustomUrl.value;
   }
   return channelName.value.trim().length > 0;
 });
@@ -280,7 +303,7 @@ const canSubmit = computed(() => {
 
 <template>
   <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
-    <DialogContent class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl lg:max-w-3xl">
+    <DialogContent class="bg-[#14161a] border-[#262930] max-w-xl md:max-w-2xl lg:max-w-3xl">
       <DialogHeader>
         <DialogTitle class="text-white">
           {{ $t("add.title") }}
@@ -292,7 +315,7 @@ const canSubmit = computed(() => {
 
       <div class="space-y-4">
         <!-- add stream manually -->
-        <div class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl">
+        <div class="flex flex-col gap-4 border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
           <!-- platform selector with icons -->
           <div class="space-y-2">
             <label class="text-sm font-medium text-gray-300">{{ $t("add.platform") }}</label>
@@ -301,17 +324,22 @@ const canSubmit = computed(() => {
                 v-for="platform in PLATFORMS"
                 :key="platform.id"
                 type="button"
-                class="flex flex-col items-center gap-2 p-3 rounded-lg border transition-all duration-200 cursor-pointer hover:scale-[1.03] active:scale-[0.97]"
+                class="flex flex-col items-center gap-2 p-3 rounded-lg border transition-colors duration-150 cursor-pointer"
                 :class="[
                   selectedPlatform === platform.id
-                    ? 'bg-[#2a2d33] border-white/20 ring-1 ring-white/10'
-                    : 'bg-[#0f1115] border-[#2a2d33] hover:bg-[#1a1d21] hover:border-[#3a3f4b]',
+                    ? PLATFORM_ACTIVE_CLASSES[platform.id]
+                    : 'bg-[#181a1f] border-[#262930] text-gray-400 hover:bg-[#1f2229] hover:border-[#353943] hover:text-white',
                 ]"
                 :data-testid="`platform-${platform.id}`"
                 @click="selectedPlatform = platform.id as Platform"
               >
-                <component :is="platform.icon" :size="24" :style="{ color: platform.color }" />
-                <span class="text-xs text-white capitalize">{{
+                <component
+                  :is="platform.icon"
+                  :size="22"
+                  :style="{ color: platform.color }"
+                  class="shrink-0"
+                />
+                <span class="text-xs font-medium capitalize">{{
                   platform.id === "custom" ? $t("add.platformCustom") : platform.name
                 }}</span>
               </button>
@@ -319,29 +347,40 @@ const canSubmit = computed(() => {
           </div>
 
           <!-- custom iframe URL input -->
-          <div v-if="isCustom" class="flex flex-col sm:flex-row gap-2 w-full">
-            <div class="sm:w-2/3">
-              <label class="text-sm font-medium text-gray-300">{{
+          <div v-if="isCustom" class="flex flex-col sm:flex-row gap-3 w-full">
+            <div class="sm:w-2/3 flex flex-col gap-1.5">
+              <label class="block text-sm font-medium text-gray-300">{{
                 $t("add.iframeUrlLabel")
               }}</label>
-              <input
-                v-model="iframeUrl"
-                type="text"
-                :placeholder="$t('add.iframeUrlPlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-400"
-                @keyup.enter="handleAddStream"
-                @paste="handleIframePaste"
-                @blur="handleIframeBlur"
-              />
-            </div>
-            <div class="sm:w-1/3">
-              <label class="text-sm font-medium text-gray-300">
-                <span>{{ splitLabel($t("add.customNameLabel")).main }}</span>
+              <div class="relative flex items-center">
                 <span
-                  v-if="splitLabel($t('add.customNameLabel')).sub"
+                  class="absolute left-3.5 pointer-events-none text-gray-400 flex items-center justify-center"
+                >
+                  <component
+                    :is="PLATFORMS.custom.icon"
+                    :size="15"
+                    :style="{ color: PLATFORMS.custom.color }"
+                  />
+                </span>
+                <input
+                  v-model="iframeUrl"
+                  type="text"
+                  :placeholder="$t('add.iframeUrlPlaceholder')"
+                  class="w-full pl-10 pr-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#262930] text-sm transition-colors duration-150 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 hover:border-[#353943] placeholder:text-gray-400"
+                  @keyup.enter="handleAddStream"
+                  @paste="handleIframePaste"
+                  @blur="handleIframeBlur"
+                />
+              </div>
+            </div>
+            <div class="sm:w-1/3 flex flex-col gap-1.5">
+              <label class="block text-sm font-medium text-gray-300">
+                <span>{{ customNameLabelParts.main }}</span>
+                <span
+                  v-if="customNameLabelParts.sub"
                   class="text-[10px] text-gray-400 font-normal lowercase tracking-wide shrink-0 ml-2"
                 >
-                  ({{ splitLabel($t("add.customNameLabel")).sub }})
+                  ({{ customNameLabelParts.sub }})
                 </span>
               </label>
               <input
@@ -349,31 +388,39 @@ const canSubmit = computed(() => {
                 v-model="channelName"
                 type="text"
                 :placeholder="$t('add.customNamePlaceholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-400"
+                class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#262930] text-sm transition-colors duration-150 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 hover:border-[#353943] placeholder:text-gray-400"
               />
             </div>
           </div>
 
           <!-- channel name (for non-custom platforms) -->
-          <div v-else class="space-y-2">
+          <div v-else class="flex flex-col gap-1.5">
             <label
               v-if="selectedPlatform === 'kick' || selectedPlatform === 'twitch'"
-              class="text-sm font-medium text-gray-300"
+              class="block text-sm font-medium text-gray-300"
               >{{ $t("add.channelLabel") }}</label
             >
-            <label v-else class="text-sm font-medium text-gray-300">{{
+            <label v-else class="block text-sm font-medium text-gray-300">{{
               $t("add.videoIdLabel")
             }}</label>
-            <div class="relative">
+            <div class="relative flex items-center">
+              <span
+                class="absolute left-3.5 pointer-events-none text-gray-400 flex items-center justify-center"
+              >
+                <component
+                  :is="PLATFORMS[selectedPlatform]?.icon"
+                  :size="15"
+                  :style="{ color: PLATFORMS[selectedPlatform]?.color }"
+                />
+              </span>
               <input
                 v-model="channelName"
                 data-testid="channel-input"
                 type="text"
                 :placeholder="$t('add.placeholder')"
-                class="w-full px-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#2a2d33] text-sm transition-all duration-200 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 focus:shadow-[0_0_0_3px_rgba(255,255,255,0.06)] hover:border-[#3a3f4b] placeholder:text-gray-400"
+                class="w-full pl-10 pr-3.5 py-2.5 rounded-lg bg-[#0f1115] text-white border border-[#262930] text-sm transition-colors duration-150 focus:outline-none focus:border-white/30 focus:ring-1 focus:ring-white/20 hover:border-[#353943] placeholder:text-gray-400"
                 autocomplete="off"
                 @keydown="handleSearchKeydown"
-                @keyup.enter="!isDropdownOpen && handleAddStream()"
                 @paste="handlePaste"
                 @blur="handleChannelBlur"
               />
@@ -389,80 +436,69 @@ const canSubmit = computed(() => {
         </div>
 
         <!-- recent channels -->
-        <section
-          v-if="recents.length"
-          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
-        >
-          <!-- recent title -->
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <History class="size-5 text-gray-400" />
-            </div>
+        <div v-if="recents.length" class="space-y-2">
+          <div class="flex items-center gap-2 px-1">
+            <History class="size-4 text-gray-400 shrink-0" />
             <div>
-              <p class="text-white text-sm font-medium">
+              <h3 class="text-white text-sm font-medium">
                 {{ $t("add.historyLabel") }}
-              </p>
-              <p class="text-xs text-gray-400">
+              </h3>
+              <p class="text-gray-400 text-xs">
                 {{ $t("add.recents") }}
               </p>
             </div>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
-            <StreamChip
-              v-for="recent in recents"
-              :key="`${recent.platform}:${recent.channel}`"
-              :channel="recent.channel"
-              :platform="recent.platform"
-              class="w-full"
-              @click="handleQuickAdd(recent.channel, recent.platform, recent.iframeUrl)"
-              @remove="removeRecent(recent.channel, recent.platform)"
-            />
+          <div class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl">
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
+              <StreamChip
+                v-for="recent in recents"
+                :key="`${recent.platform}:${recent.channel}`"
+                :channel="recent.channel"
+                :platform="recent.platform"
+                class="w-full"
+                @click="handleQuickAdd(recent.channel, recent.platform, recent.iframeUrl)"
+                @remove="removeRecent(recent.channel, recent.platform)"
+              />
+            </div>
           </div>
-        </section>
+        </div>
 
         <!-- favorites -->
-        <section
-          v-if="sortedFavorites.length"
-          class="flex flex-col gap-4 border border-[#2a2d33] bg-[#14161a] p-4 rounded-xl"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="flex items-center justify-center size-10 rounded-lg bg-[#14161a] border border-[#2a2d33]"
-            >
-              <Heart class="size-5 text-gray-400" />
-            </div>
+        <div v-if="sortedFavorites.length" class="space-y-2">
+          <div class="flex items-center gap-2 px-1">
+            <Heart class="size-4 text-gray-400 shrink-0" />
             <div>
-              <p class="text-white text-sm font-medium">
+              <h3 class="text-white text-sm font-medium">
                 {{ $t("add.favoritesLabel") }}
-              </p>
-              <p class="text-xs text-gray-400">
+              </h3>
+              <p class="text-gray-400 text-xs">
                 {{ $t("add.favoritesDescription") }}
               </p>
             </div>
           </div>
-          <div
-            class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 overflow-y-auto max-h-[15vh] md:max-h-[20vh] pr-1 py-1 overflow-x-hidden"
-          >
-            <StreamChip
-              v-for="favorite in sortedFavorites"
-              :key="`${favorite.platform}:${favorite.channel}`"
-              :channel="favorite.channel"
-              :platform="favorite.platform"
-              class="w-full"
-              @click="handleQuickAdd(favorite.channel, favorite.platform)"
-              @remove="removeFavorite(favorite.channel, favorite.platform)"
-            />
+          <div class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl">
+            <div
+              class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5 overflow-y-auto max-h-[15vh] md:max-h-[20vh] pr-1 py-0.5 overflow-x-hidden scrollbar-thin"
+            >
+              <StreamChip
+                v-for="favorite in sortedFavorites"
+                :key="`${favorite.platform}:${favorite.channel}`"
+                :channel="favorite.channel"
+                :platform="favorite.platform"
+                class="w-full"
+                @click="handleQuickAdd(favorite.channel, favorite.platform)"
+                @remove="removeFavorite(favorite.channel, favorite.platform)"
+              />
+            </div>
           </div>
-        </section>
+        </div>
       </div>
 
-      <DialogFooter class="pt-5 border-t border-[#2a2d33]/50">
+      <DialogFooter class="pt-5 border-t border-[#262930]/60">
         <DialogClose as-child>
           <Button
             variant="outline"
-            class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200"
+            class="border-[#262930] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#353943] transition-colors duration-150"
           >
             {{ $t("common.close") }}
           </Button>
@@ -470,7 +506,7 @@ const canSubmit = computed(() => {
         <Button
           :disabled="!canSubmit"
           data-testid="add-submit-btn"
-          class="bg-white text-[#14161a] font-medium border-transparent hover:bg-gray-200 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+          class="bg-white text-[#14161a] font-medium border-transparent hover:bg-gray-200 active:scale-[0.98] transition-colors duration-150 disabled:opacity-35 disabled:cursor-not-allowed"
           @click="handleAddStream"
         >
           {{ $t("add.addButton") }}

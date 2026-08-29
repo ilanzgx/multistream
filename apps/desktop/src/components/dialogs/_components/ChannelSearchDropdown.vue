@@ -25,31 +25,31 @@ const emit = defineEmits<{
   >
     <div
       v-if="isLoading || results.length > 0"
-      class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-[#2a2d33] bg-[#0f1115] shadow-xl overflow-hidden"
+      class="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-lg border border-[#262930] bg-[#14161a] shadow-xl overflow-hidden"
       role="listbox"
     >
       <!-- Loading skeletons -->
-      <template v-if="isLoading && results.length === 0">
+      <template v-if="isLoading">
         <div
           v-for="i in 3"
           :key="i"
-          class="flex items-center gap-3 px-3 py-2.5 border-b border-[#1a1d21] last:border-0 opacity-50"
+          class="flex items-center gap-3 px-3 py-2.5 border-b border-[#262930]/40 last:border-0 opacity-50"
         >
-          <div class="h-3.5 w-3.5 rounded-full bg-[#2a2d33] shrink-0" />
-          <div class="h-3 flex-1 rounded bg-[#2a2d33]" />
-          <div class="h-3 w-16 rounded bg-[#2a2d33]" />
+          <div class="h-3.5 w-3.5 rounded-full bg-[#262930] shrink-0" />
+          <div class="h-3 flex-1 rounded bg-[#262930]" />
+          <div class="h-3 w-16 rounded bg-[#262930]" />
         </div>
       </template>
 
       <!-- Results -->
       <template v-else>
-        <button
+        <div
           v-for="(result, index) in results"
           :key="`${result.platform}:${result.channel}`"
-          type="button"
           role="option"
+          tabindex="-1"
           :aria-selected="index === activeIndex"
-          class="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-100 cursor-pointer border-b border-[#1a1d21] last:border-0 focus:outline-none"
+          class="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors duration-100 cursor-pointer border-b border-[#262930]/40 last:border-0 focus:outline-none"
           :class="[
             index === activeIndex
               ? 'bg-[#1a1d21] text-white'
@@ -67,12 +67,12 @@ const emit = defineEmits<{
           />
 
           <!-- Channel name -->
-          <span class="text-sm font-medium truncate flex-1">{{ result.channel }}</span>
+          <span class="text-sm font-medium text-white truncate flex-1">{{ result.channel }}</span>
 
           <!-- Live badge -->
           <span v-if="result.isLive" class="flex items-center gap-1.5 shrink-0">
-            <span class="h-1.5 w-1.5 rounded-full bg-red-500" />
-            <span class="text-[10px] font-semibold uppercase tracking-wide text-red-400">{{
+            <span class="size-1.5 rounded-full bg-rose-500" />
+            <span class="text-[10px] font-semibold uppercase tracking-wide text-rose-400">{{
               $t("nativePlayer.live")
             }}</span>
           </span>
@@ -84,7 +84,7 @@ const emit = defineEmits<{
           >
             {{ result.category }}
           </span>
-        </button>
+        </div>
       </template>
     </div>
   </Transition>
