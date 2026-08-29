@@ -1,4 +1,5 @@
 import type { Platform } from "../composables/useStreams";
+import { decodeBase64 } from "./base64";
 
 export interface ParsedStream {
   channel: string;
@@ -36,7 +37,7 @@ export function parseUrlOptions(queryString: string): ParsedStream[] | null {
   if (customParam) {
     let raw: any[];
     try {
-      raw = JSON.parse(atob(customParam));
+      raw = JSON.parse(decodeBase64(customParam));
     } catch {
       throw new Error("Invalid custom streams payload");
     }

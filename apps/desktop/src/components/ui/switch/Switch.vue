@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue";
+import { computed } from "vue";
 import { SwitchRoot, SwitchThumb } from "reka-ui";
 import { cn } from "@/lib/utils";
 
@@ -8,22 +9,22 @@ const checked = defineModel<boolean>("checked");
 const modelValue = defineModel<boolean>();
 
 // Sync them in case reka-ui uses modelValue
-const isChecked = () => {
+const isChecked = computed(() => {
   if (checked.value !== undefined) return checked.value;
   if (modelValue.value !== undefined) return modelValue.value;
   return false;
-};
+});
 
 const updateChecked = (v: boolean) => {
-  if (checked.value !== undefined) checked.value = v;
-  if (modelValue.value !== undefined) modelValue.value = v;
+  checked.value = v;
+  modelValue.value = v;
 };
 </script>
 
 <template>
   <SwitchRoot
     data-slot="switch"
-    :model-value="isChecked()"
+    :model-value="isChecked"
     :disabled="props.disabled"
     :class="
       cn(

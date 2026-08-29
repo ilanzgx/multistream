@@ -14,6 +14,7 @@ import { useStreams } from "@/composables/useStreams";
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { APP_LINKS } from "@/config/links";
+import { encodeBase64 } from "@/lib/base64";
 
 const { t, locale } = useI18n();
 
@@ -59,7 +60,7 @@ const shareLink = computed(() => {
       n: s.channel,
       u: s.iframeUrl || "",
     }));
-    params.push(`c=${btoa(JSON.stringify(customData))}`);
+    params.push(`c=${encodeBase64(JSON.stringify(customData))}`);
   }
 
   return `${url}?${params.join("&")}`;
@@ -71,9 +72,13 @@ const copyLink = async () => {
     return;
   }
 
-  await navigator.clipboard.writeText(shareLink.value);
-  toast.success(t("share.toast"));
-  emit("update:open", false);
+  try {
+    await navigator.clipboard.writeText(shareLink.value);
+    toast.success(t("share.toast"));
+    emit("update:open", false);
+  } catch {
+    toast.error(t("share.noStreams"));
+  }
 };
 </script>
 

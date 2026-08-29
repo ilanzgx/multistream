@@ -18,7 +18,7 @@ const {
   showOverlay,
 } = useTranscription();
 const { t } = useI18n();
-const now = useNow();
+const now = useNow({ interval: 1000 });
 const scrollContainer = ref<HTMLElement | null>(null);
 
 const timeAgoText = computed(() => {

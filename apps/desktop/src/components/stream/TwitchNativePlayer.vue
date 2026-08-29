@@ -439,14 +439,17 @@ function onVideoPlaying() {
 
 function onVideoPaused() {
   isPlaying.value = false;
+  isBuffering.value = false;
+  clearWatchdog();
 }
 
 function onVideoWaiting() {
+  if (!isPlaying.value) return;
   isBuffering.value = true;
   clearWatchdog();
   // Auto-recover if stuck in buffering for 4 seconds
   stallWatchdog = setTimeout(() => {
-    if (isBuffering.value && videoRef.value) {
+    if (isBuffering.value && isPlaying.value && videoRef.value) {
       // Simulate manual pause
       videoRef.value.pause();
       // Simulate quality switch to force buffer flush

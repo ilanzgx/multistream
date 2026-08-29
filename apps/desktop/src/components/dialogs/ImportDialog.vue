@@ -42,7 +42,7 @@ const handleImport = () => {
     const url = new URL(link);
     const parsedStreams = parseUrlOptions(url.search);
 
-    if (parsedStreams === null) {
+    if (!parsedStreams || parsedStreams.length === 0) {
       toast.error(t("import.invalidLink"));
       return;
     }

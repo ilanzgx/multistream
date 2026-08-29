@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { parseUrlOptions as sut } from "../parseUrlOptions";
+import { encodeBase64, decodeBase64 } from "../base64";
 
 describe("parseUrlOptions util unit tests", () => {
   it("should return null when no query params are passed", () => {
@@ -189,5 +190,35 @@ describe("parseUrlOptions util unit tests", () => {
     expect(result?.length).toBe(2);
     expect(result?.[0]).toEqual({ channel: "caze", platform: "youtube" });
     expect(result?.[1]).toEqual({ channel: "mch", platform: "twitch" });
+  });
+
+  it("should parse custom streams with non-ASCII / UTF-8 characters properly", () => {
+    // Arrange
+    const payload = [
+      { n: "Transmissão Ao Vivo 🎮", u: "https://example.com/stream" },
+      { n: "日本語ストリーム", u: "https://example.com/jp" },
+    ];
+    const base64Param = encodeBase64(JSON.stringify(payload));
+
+    // Act
+    const result = sut(`?c=${encodeURIComponent(base64Param)}`);
+
+    // Assert
+    expect(result).not.toBeNull();
+    expect(result?.length).toBe(2);
+    expect(result?.[0]?.channel).toBe("Transmissão Ao Vivo 🎮");
+    expect(result?.[1]?.channel).toBe("日本語ストリーム");
+  });
+
+  it("should correctly encode and decode arbitrary UTF-8 strings in base64", () => {
+    // Arrange
+    const input = "Transmissão do Ilan 🚀 — Español, Русский, 日本語";
+
+    // Act
+    const encoded = encodeBase64(input);
+    const decoded = decodeBase64(encoded);
+
+    // Assert
+    expect(decoded).toBe(input);
   });
 });
