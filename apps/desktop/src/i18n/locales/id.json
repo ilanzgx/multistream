@@ -21,7 +21,9 @@
     "categoryAll": "Semua",
     "searchLoading": "Mencari...",
     "searchNoResults": "Saluran tidak ditemukan",
-    "removeStream": "Hapus stream"
+    "removeStream": "Hapus stream",
+    "customStreamDefault": "Streaming Kustom",
+    "platformCustom": "Kustom"
   },
   "settings": {
     "tooltip": "Pengaturan",
@@ -204,7 +206,8 @@
     "tooltip": "Sembunyikan"
   },
   "stream": {
-    "watching": "Menonton"
+    "watching": "Menonton",
+    "viewers": "{count} penonton"
   },
   "empty": {
     "title": "Tidak ada stream yang dipilih",
@@ -250,7 +253,9 @@
         "waiting": "Menunggu otorisasi...",
         "cancel": "Batal",
         "successTitle": "Berhasil diautentikasi di {platform}",
-        "successDesc": "Masuk sebagai {username}"
+        "successDesc": "Masuk sebagai {username}",
+        "initFailed": "Gagal menginisialisasi alur login.",
+        "defaultUser": "Pengguna"
       },
       "warningTwitchLoginToMerge": "Hubungkan akun Twitch Anda untuk menyertakan obrolan Twitch dalam Obrolan Terpadu.",
       "warningTwitchLogin": "Hubungkan akun Twitch Anda untuk mengaktifkan Obrolan Terpadu."
@@ -267,7 +272,16 @@
         "global": "Global",
         "channel": "Saluran"
       }
-    }
+    },
+    "you": "Anda",
+    "streamTooltip": "Streaming: {channel}",
+    "badges": {
+      "broadcaster": "Penyiar",
+      "moderator": "Moderator",
+      "vip": "VIP",
+      "subscriber": "Pelanggan"
+    },
+    "sendError": "Gagal mengirim pesan"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "Layar Penuh",
     "exitFullscreen": "Keluar Layar Penuh",
     "settings": "Pengaturan",
-    "volume": "Volume"
+    "volume": "Volume",
+    "confirm": "Konfirmasi",
+    "cancel": "Batal"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "Ambil tangkapan layar dari stream yang difokuskan",
       "chat": "Beralih ke obrolan stream {keys}",
       "screenshotTitle": "Tangkapan Layar"
-    }
+    },
+    "goToStep": "Buka langkah {step}"
   },
   "webBanner": {
     "title": "Multistream berjalan lebih baik di aplikasi desktop.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "LANGSUNG",
     "quality": {
-      "auto": "Otomatis"
+      "auto": "Otomatis",
+      "audio": "Audio"
     },
     "offline": {
       "title": "Stream Berakhir",
       "description": "Penyiar telah mengakhiri stream ini."
+    },
+    "errors": {
+      "tokenExpired": "Akses Ditolak (403). Token streaming kedaluwarsa.",
+      "hlsError": "Kesalahan HLS ({type}: {details})",
+      "playbackError": "Kesalahan pemutaran native"
     }
   }
 }

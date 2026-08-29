@@ -21,7 +21,9 @@
     "categoryAll": "Все",
     "searchLoading": "Поиск...",
     "searchNoResults": "Каналы не найдены",
-    "removeStream": "Удалить стрим"
+    "removeStream": "Удалить стрим",
+    "customStreamDefault": "Пользовательский стрим",
+    "platformCustom": "Пользовательский"
   },
   "settings": {
     "tooltip": "Настройки",
@@ -204,7 +206,8 @@
     "tooltip": "Скрыть"
   },
   "stream": {
-    "watching": "Просмотр"
+    "watching": "Просмотр",
+    "viewers": "{count} зрителей"
   },
   "empty": {
     "title": "Нет выбранных трансляций",
@@ -250,7 +253,9 @@
         "waiting": "Ожидание авторизации...",
         "cancel": "Отмена",
         "successTitle": "Успешная аутентификация на {platform}",
-        "successDesc": "Вошли как {username}"
+        "successDesc": "Вошли как {username}",
+        "initFailed": "Не удалось инициализировать процесс входа.",
+        "defaultUser": "Пользователь"
       },
       "warningTwitchLoginToMerge": "Подключите аккаунт Twitch, чтобы добавить чаты Twitch в Единый чат.",
       "warningTwitchLogin": "Подключите аккаунт Twitch, чтобы включить Единый чат."
@@ -267,7 +272,16 @@
         "global": "Глобальные",
         "channel": "Канал"
       }
-    }
+    },
+    "you": "Вы",
+    "streamTooltip": "Стрим: {channel}",
+    "badges": {
+      "broadcaster": "Стример",
+      "moderator": "Модератор",
+      "vip": "VIP",
+      "subscriber": "Подписчик"
+    },
+    "sendError": "Не удалось отправить сообщение"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "На весь экран",
     "exitFullscreen": "Выйти из полноэкранного режима",
     "settings": "Настройки",
-    "volume": "Громкость"
+    "volume": "Громкость",
+    "confirm": "Подтвердить",
+    "cancel": "Отмена"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "Сделать скриншот фокусного стрима",
       "chat": "Переключиться на чат стрима {keys}",
       "screenshotTitle": "Скриншот"
-    }
+    },
+    "goToStep": "Перейти к шагу {step}"
   },
   "webBanner": {
     "title": "Multistream работает лучше в десктопном приложении.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "LIVE",
     "quality": {
-      "auto": "Авто"
+      "auto": "Авто",
+      "audio": "Аудио"
     },
     "offline": {
       "title": "Трансляция завершена",
       "description": "Стример завершил эту трансляцию."
+    },
+    "errors": {
+      "tokenExpired": "Доступ запрещен (403). Токен трансляции истек.",
+      "hlsError": "Ошибка HLS ({type}: {details})",
+      "playbackError": "Ошибка воспроизведения"
     }
   }
 }

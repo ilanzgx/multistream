@@ -36,7 +36,7 @@ async function startFlow() {
   authError.value = null;
   const flow = await startLogin();
   if (!flow) {
-    authError.value = "Failed to initialize login flow.";
+    authError.value = t("chat.unified.auth.initFailed");
     return;
   }
   deviceFlow.value = flow;
@@ -75,7 +75,9 @@ watch(authenticated, (isAuth) => {
   if (isAuth) {
     if (props.open) {
       toast.success(t("chat.unified.auth.successTitle", { platform: "Twitch" }), {
-        description: t("chat.unified.auth.successDesc", { username: username.value || "User" }),
+        description: t("chat.unified.auth.successDesc", {
+          username: username.value || t("chat.unified.auth.defaultUser"),
+        }),
         duration: 10000,
       });
       emit("update:open", false);

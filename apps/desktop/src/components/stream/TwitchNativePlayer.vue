@@ -169,7 +169,7 @@ function onFullscreenChange() {
 }
 
 function buildLevelLabel(level: { height: number; attrs?: Record<string, string> }) {
-  if (!level.height) return "Audio";
+  if (!level.height) return t("nativePlayer.quality.audio");
   const fps = level.attrs?.["FRAME-RATE"];
   const fpsNum = fps ? Math.round(parseFloat(fps)) : null;
   const suffix = fpsNum && fpsNum > 30 ? fpsNum.toString() : "";
@@ -279,7 +279,7 @@ async function loadStream() {
               scheduleRetry();
             } else {
               hasError.value = true;
-              errorDetails.value = `Access Denied (403). Stream token expired.`;
+              errorDetails.value = t("nativePlayer.errors.tokenExpired");
               isLoading.value = false;
             }
             return;
@@ -301,7 +301,10 @@ async function loadStream() {
           scheduleRetry();
         } else {
           hasError.value = true;
-          errorDetails.value = `HLS Error (${data.type}: ${data.details})`;
+          errorDetails.value = t("nativePlayer.errors.hlsError", {
+            type: data.type,
+            details: data.details,
+          });
           isLoading.value = false;
         }
       });
@@ -327,7 +330,7 @@ async function loadStream() {
             scheduleRetry();
           } else {
             hasError.value = true;
-            errorDetails.value = "Native playback error";
+            errorDetails.value = t("nativePlayer.errors.playbackError");
             isLoading.value = false;
           }
         },
@@ -511,7 +514,7 @@ onBeforeUnmount(() => {
       </p>
       <p
         v-if="errorDetails"
-        class="text-gray-400 text-xs font-mono max-w-xs wrap-break-word opacity-80"
+        class="text-gray-400 text-xs font-mono max-w-xs break-words opacity-80"
       >
         {{ errorDetails }}
       </p>

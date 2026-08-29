@@ -21,7 +21,9 @@
     "categoryAll": "सभी",
     "searchLoading": "खोज रहा है...",
     "searchNoResults": "कोई चैनल नहीं मिला",
-    "removeStream": "स्ट्रीम हटाएं"
+    "removeStream": "स्ट्रीम हटाएं",
+    "customStreamDefault": "कस्टम स्ट्रीम",
+    "platformCustom": "कस्टम"
   },
   "settings": {
     "tooltip": "सेटिंग्स",
@@ -204,7 +206,8 @@
     "tooltip": "छिपाएं"
   },
   "stream": {
-    "watching": "देख रहे हैं"
+    "watching": "देख रहे हैं",
+    "viewers": "{count} दर्शक"
   },
   "empty": {
     "title": "कोई स्ट्रीम नहीं चुनी गई",
@@ -250,7 +253,9 @@
         "waiting": "प्राधिकरण की प्रतीक्षा कर रहा है...",
         "cancel": "रद्द करें",
         "successTitle": "{platform} पर सफलतापूर्वक प्रमाणित",
-        "successDesc": "{username} के रूप में लॉग इन किया गया"
+        "successDesc": "{username} के रूप में लॉग इन किया गया",
+        "initFailed": "लॉगिन प्रक्रिया शुरू करने में विफल।",
+        "defaultUser": "उपयोगकर्ता"
       },
       "warningTwitchLoginToMerge": "एकीकृत चैट में ट्विच चैट शामिल करने के लिए अपना ट्विच खाता कनेक्ट करें।",
       "warningTwitchLogin": "एकीकृत चैट सक्षम करने के लिए अपना ट्विच खाता कनेक्ट करें।"
@@ -267,7 +272,16 @@
         "global": "वैश्विक",
         "channel": "चैनल"
       }
-    }
+    },
+    "you": "आप",
+    "streamTooltip": "स्ट्रीम: {channel}",
+    "badges": {
+      "broadcaster": "प्रसारक",
+      "moderator": "मध्यस्थ",
+      "vip": "वीआईपी",
+      "subscriber": "सब्सक्राइबर"
+    },
+    "sendError": "संदेश भेजने में विफल"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "पूर्ण स्क्रीन",
     "exitFullscreen": "पूर्ण स्क्रीन से बाहर निकलें",
     "settings": "सेटिंग्स",
-    "volume": "वॉल्यूम"
+    "volume": "वॉल्यूम",
+    "confirm": "पुष्टि करें",
+    "cancel": "रद्द करें"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "केंद्रित स्ट्रीम का स्क्रीनशॉट लें",
       "chat": "स्ट्रीम चैट पर स्विच करें {keys}",
       "screenshotTitle": "स्क्रीनशॉट"
-    }
+    },
+    "goToStep": "चरण {step} पर जाएं"
   },
   "webBanner": {
     "title": "मल्टीस्ट्रीम डेस्कटॉप ऐप पर बेहतर चलता है।",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "लाइव",
     "quality": {
-      "auto": "ऑटो"
+      "auto": "ऑटो",
+      "audio": "ऑडियो"
     },
     "offline": {
       "title": "स्ट्रीम समाप्त",
       "description": "प्रसारक ने इस स्ट्रीम को समाप्त कर दिया है।"
+    },
+    "errors": {
+      "tokenExpired": "पहुँच अस्वीकृत (403)। स्ट्रीम टोकन समाप्त हो गया।",
+      "hlsError": "HLS त्रुटि ({type}: {details})",
+      "playbackError": "मूल प्लेबैक त्रुटि"
     }
   }
 }

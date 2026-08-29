@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
+import { useI18n } from "vue-i18n";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ const { addStream } = useStreams();
 const { recents, removeRecent } = useRecents();
 const { getStatus, checkAll } = useLiveStatus();
 const { favorites, removeFavorite } = useFavorites();
+const { t } = useI18n();
 
 const sortedFavorites = computed(() => {
   return [...favorites.value].toSorted((a, b) => {
@@ -197,7 +199,7 @@ const handleAddStream = () => {
 
   if (isCustom.value) {
     let url = iframeUrl.value.trim();
-    const name = channelName.value.trim() || "Custom Stream";
+    const name = channelName.value.trim() || t("add.customStreamDefault");
 
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       url = `https://${url}`;
@@ -218,7 +220,7 @@ const handleAddStream = () => {
     selectedPlatform.value = parsedResult.platform;
     if (parsedResult.platform === "custom") {
       let url = parsedResult.iframeUrl || "";
-      const name = "Custom Stream";
+      const name = t("add.customStreamDefault");
       addStream(name, "custom", url);
       channelName.value = "";
       iframeUrl.value = "";
@@ -247,7 +249,7 @@ const handleAddStream = () => {
 };
 
 const splitLabel = (label: string) => {
-  const match = label.match(/^(.*?)\s*\((.*?)\)$/);
+  const match = label.match(/^(.*?)\s*[(（](.*?)[)）]$/);
   if (match) {
     return { main: match[1], sub: match[2] };
   }
@@ -309,7 +311,9 @@ const canSubmit = computed(() => {
                 @click="selectedPlatform = platform.id as Platform"
               >
                 <component :is="platform.icon" :size="24" :style="{ color: platform.color }" />
-                <span class="text-xs text-white capitalize">{{ platform.name }}</span>
+                <span class="text-xs text-white capitalize">{{
+                  platform.id === "custom" ? $t("add.platformCustom") : platform.name
+                }}</span>
               </button>
             </div>
           </div>

@@ -21,7 +21,9 @@
     "categoryAll": "Todos",
     "searchLoading": "Buscando...",
     "searchNoResults": "No se encontraron canales",
-    "removeStream": "Eliminar stream"
+    "removeStream": "Eliminar stream",
+    "customStreamDefault": "Transmisión personalizada",
+    "platformCustom": "Personalizado"
   },
   "settings": {
     "tooltip": "Configuraciones",
@@ -204,7 +206,8 @@
     "tooltip": "Ocultar"
   },
   "stream": {
-    "watching": "Viendo"
+    "watching": "Viendo",
+    "viewers": "{count} espectadores"
   },
   "empty": {
     "title": "Ninguna transmisión seleccionada",
@@ -250,7 +253,9 @@
         "waiting": "Esperando autorización...",
         "cancel": "Cancelar",
         "successTitle": "Autenticado con éxito en {platform}",
-        "successDesc": "Conectado como {username}"
+        "successDesc": "Conectado como {username}",
+        "initFailed": "Error al iniciar el flujo de inicio de sesión.",
+        "defaultUser": "Usuario"
       },
       "warningTwitchLoginToMerge": "Conecta tu cuenta de Twitch para incluir chats de Twitch en el Chat Unificado.",
       "warningTwitchLogin": "Conecta tu cuenta de Twitch para habilitar el Chat Unificado."
@@ -267,7 +272,16 @@
         "global": "Globales",
         "channel": "Canal"
       }
-    }
+    },
+    "you": "Tú",
+    "streamTooltip": "Transmisión: {channel}",
+    "badges": {
+      "broadcaster": "Emisor",
+      "moderator": "Moderador",
+      "vip": "VIP",
+      "subscriber": "Suscriptor"
+    },
+    "sendError": "Error al enviar el mensaje"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "Pantalla completa",
     "exitFullscreen": "Salir de pantalla completa",
     "settings": "Configuración",
-    "volume": "Volumen"
+    "volume": "Volumen",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "Tomar captura de pantalla del stream enfocado",
       "chat": "Cambiar al chat del stream {keys}",
       "screenshotTitle": "Captura de pantalla"
-    }
+    },
+    "goToStep": "Ir al paso {step}"
   },
   "webBanner": {
     "title": "Multistream funciona mejor en la app de escritorio.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "EN VIVO",
     "quality": {
-      "auto": "Automático"
+      "auto": "Automático",
+      "audio": "Audio"
     },
     "offline": {
       "title": "Transmisión Finalizada",
       "description": "El streamer ha finalizado esta transmisión."
+    },
+    "errors": {
+      "tokenExpired": "Acceso denegado (403). El token de transmisión ha caducado.",
+      "hlsError": "Error de HLS ({type}: {details})",
+      "playbackError": "Error de reproducción nativa"
     }
   }
 }

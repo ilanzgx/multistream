@@ -21,7 +21,9 @@
     "categoryAll": "Tout",
     "searchLoading": "Recherche en cours...",
     "searchNoResults": "Aucune chaîne trouvée",
-    "removeStream": "Supprimer le flux"
+    "removeStream": "Supprimer le flux",
+    "customStreamDefault": "Stream personnalisé",
+    "platformCustom": "Personnalisé"
   },
   "settings": {
     "tooltip": "Paramètres",
@@ -204,7 +206,8 @@
     "tooltip": "Masquer"
   },
   "stream": {
-    "watching": "En cours de visionnage"
+    "watching": "En cours de visionnage",
+    "viewers": "{count} spectateurs"
   },
   "empty": {
     "title": "Aucun flux sélectionné",
@@ -250,7 +253,9 @@
         "waiting": "En attente d'autorisation...",
         "cancel": "Annuler",
         "successTitle": "Authentifié avec succès sur {platform}",
-        "successDesc": "Connecté en tant que {username}"
+        "successDesc": "Connecté en tant que {username}",
+        "initFailed": "Échec de l'initialisation du flux de connexion.",
+        "defaultUser": "Utilisateur"
       },
       "warningTwitchLoginToMerge": "Connectez votre compte Twitch pour inclure les chats Twitch dans le chat unifié.",
       "warningTwitchLogin": "Connectez votre compte Twitch pour activer le chat unifié."
@@ -267,7 +272,16 @@
         "global": "Globales",
         "channel": "Chaîne"
       }
-    }
+    },
+    "you": "Vous",
+    "streamTooltip": "Stream : {channel}",
+    "badges": {
+      "broadcaster": "Diffuseur",
+      "moderator": "Modérateur",
+      "vip": "VIP",
+      "subscriber": "Abonné"
+    },
+    "sendError": "Échec de l'envoi du message"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "Plein écran",
     "exitFullscreen": "Quitter le plein écran",
     "settings": "Paramètres",
-    "volume": "Volume"
+    "volume": "Volume",
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "Faire une capture d'écran du flux sélectionné",
       "chat": "Passer au chat du flux {keys}",
       "screenshotTitle": "Capture d'écran"
-    }
+    },
+    "goToStep": "Aller à l'étape {step}"
   },
   "webBanner": {
     "title": "Multistream fonctionne mieux sur l'application de bureau.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "EN DIRECT",
     "quality": {
-      "auto": "Auto"
+      "auto": "Auto",
+      "audio": "Audio"
     },
     "offline": {
       "title": "Flux terminé",
       "description": "Le diffuseur a mis fin à ce flux."
+    },
+    "errors": {
+      "tokenExpired": "Accès refusé (403). Jeton de diffusion expiré.",
+      "hlsError": "Erreur HLS ({type}: {details})",
+      "playbackError": "Erreur de lecture native"
     }
   }
 }

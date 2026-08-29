@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import { X } from "@lucide/vue";
 import { PLATFORMS } from "@/config/platforms";
 import type { Platform } from "@/composables/useStreams";
@@ -16,12 +17,15 @@ const emit = defineEmits<{
 }>();
 
 const { getStatus } = useLiveStatus();
+const { locale } = useI18n();
 const status = computed(() => getStatus(props.channel, props.platform));
 
 const formatViewers = (count?: number): string => {
-  if (!count) return "";
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-  return String(count);
+  if (count === undefined || count === null) return "";
+  return new Intl.NumberFormat(locale.value, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(count);
 };
 </script>
 
@@ -36,7 +40,7 @@ const formatViewers = (count?: number): string => {
     ]"
     :title="
       status?.isLive
-        ? `🔴 LIVE — ${status?.viewerCount?.toLocaleString() ?? '?'} viewers${status?.category ? ` • ${status?.category}` : ''}`
+        ? `🔴 ${$t('nativePlayer.live')} — ${$t('stream.viewers', { count: status?.viewerCount !== undefined ? formatViewers(status.viewerCount) : '?' })}${status?.category ? ` • ${status?.category}` : ''}`
         : undefined
     "
     @click="emit('click')"

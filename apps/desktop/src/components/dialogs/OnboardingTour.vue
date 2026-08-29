@@ -470,7 +470,7 @@ function handleFinish() {
                       <span
                         class="ml-auto text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#9146FF]/20 text-white border border-[#9146FF]/30"
                       >
-                        Connected
+                        {{ $t("settings.auth.connected") }}
                       </span>
                     </div>
 
@@ -483,7 +483,7 @@ function handleFinish() {
                       <span
                         class="ml-auto text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#53FC18]/20 text-white border border-[#53FC18]/30"
                       >
-                        Connected
+                        {{ $t("settings.auth.connected") }}
                       </span>
                     </div>
                   </div>
@@ -580,7 +580,7 @@ function handleFinish() {
             v-show="step !== 5 || isSupported"
             :key="step"
             class="p-2.5 group cursor-pointer"
-            :aria-label="`Go to step ${step}`"
+            :aria-label="$t('onboarding.goToStep', { step })"
             @click="currentStep = step"
           >
             <div

@@ -46,8 +46,8 @@ async function sendKickMessage(channel: string, message: string) {
   addLocalMessage({
     id: pendingId,
     channel,
-    username: username.value || "You",
-    display_name: username.value || "You",
+    username: username.value || t("chat.you"),
+    display_name: username.value || t("chat.you"),
     message: encodedMessage,
     timestamp_ms: Date.now(),
     badges: [],
@@ -69,7 +69,7 @@ async function sendKickMessage(channel: string, message: string) {
       message: encodedMessage,
     });
   } catch (error) {
-    removeLastLocalMessage(username.value || "You");
+    removeLastLocalMessage(username.value || t("chat.you"));
     throw error;
   }
 }
@@ -96,7 +96,7 @@ function scrollToBottom() {
 
 async function handleSend() {
   const text = newMessage.value.trim();
-  if (!text) return;
+  if (!text || isSending.value) return;
 
   isSending.value = true;
   try {

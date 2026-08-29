@@ -67,7 +67,9 @@ watch(authenticated, (isAuth) => {
   if (isAuth) {
     if (props.open) {
       toast.success(t("chat.unified.auth.successTitle", { platform: "Kick" }), {
-        description: t("chat.unified.auth.successDesc", { username: username.value || "User" }),
+        description: t("chat.unified.auth.successDesc", {
+          username: username.value || t("chat.unified.auth.defaultUser"),
+        }),
         duration: 10000,
       });
       emit("update:open", false);
@@ -98,7 +100,7 @@ onUnmounted(() => {
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2 text-white">
           <KickIcon class="w-5 h-5 text-[#53FC18]" />
-          {{ t("settings.auth.kickConnect", "Conectar com a Kick") }}
+          {{ t("settings.auth.kickConnect") }}
         </DialogTitle>
         <DialogDescription class="text-gray-400">
           {{ t("settings.auth.description") }}
@@ -110,7 +112,7 @@ onUnmounted(() => {
           <div
             class="text-red-400 bg-red-400/10 p-4 rounded-lg w-full text-center text-sm border border-red-400/20"
           >
-            {{ t("chat.unified.auth.error") }} {{ authError }}
+            {{ t("chat.unified.auth.error") + authError }}
           </div>
           <Button
             class="w-full bg-[#53FC18] hover:bg-[#2a2d33] hover:text-white text-[#14161a] font-semibold transition-colors"

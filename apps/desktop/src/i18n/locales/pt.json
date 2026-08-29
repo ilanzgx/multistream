@@ -21,7 +21,9 @@
     "categoryAll": "Todos",
     "searchLoading": "Buscando...",
     "searchNoResults": "Nenhum canal encontrado",
-    "removeStream": "Remover stream"
+    "removeStream": "Remover stream",
+    "customStreamDefault": "Stream Personalizada",
+    "platformCustom": "Personalizado"
   },
   "settings": {
     "tooltip": "Configurações",
@@ -204,7 +206,8 @@
     "tooltip": "Ocultar"
   },
   "stream": {
-    "watching": "Assistindo"
+    "watching": "Assistindo",
+    "viewers": "{count} espectadores"
   },
   "empty": {
     "title": "Nenhuma transmissão selecionada",
@@ -250,7 +253,9 @@
         "waiting": "Aguardando autorização...",
         "cancel": "Cancelar",
         "successTitle": "Autenticado com sucesso na {platform}",
-        "successDesc": "Conectado como {username}"
+        "successDesc": "Conectado como {username}",
+        "initFailed": "Falha ao iniciar fluxo de login.",
+        "defaultUser": "Usuário"
       },
       "warningTwitchLoginToMerge": "Conecte sua conta da Twitch para incluir chats da Twitch no Chat Unificado.",
       "warningTwitchLogin": "Conecte sua conta da Twitch para habilitar o Chat Unificado."
@@ -267,7 +272,16 @@
         "global": "Globais",
         "channel": "Canal"
       }
-    }
+    },
+    "you": "Você",
+    "streamTooltip": "Transmissão: {channel}",
+    "badges": {
+      "broadcaster": "Transmissor",
+      "moderator": "Moderador",
+      "vip": "VIP",
+      "subscriber": "Inscrito"
+    },
+    "sendError": "Falha ao enviar mensagem"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "Tela Cheia",
     "exitFullscreen": "Sair da Tela Cheia",
     "settings": "Configurações",
-    "volume": "Volume"
+    "volume": "Volume",
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
   },
   "toasts": {
     "add": {
@@ -342,7 +358,7 @@
     "finish": "Começar",
     "step1": {
       "title": "Adicionar Streams",
-      "description": "Clique no botão '+' no menu lateral ou pressione a tecla {key} para adicionar uma stream, Kick ou YouTube."
+      "description": "Clique no botão '+' no menu lateral ou pressione a tecla {key} para adicionar uma stream da Twitch, Kick ou YouTube."
     },
     "step2": {
       "title": "Selecionar Chat",
@@ -388,7 +404,8 @@
       "screenshot": "Tirar captura de tela da stream focada",
       "chat": "Alternar para o chat da stream {keys}",
       "screenshotTitle": "Captura de tela"
-    }
+    },
+    "goToStep": "Ir para a etapa {step}"
   },
   "webBanner": {
     "title": "O Multistream roda melhor no app desktop.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "AO VIVO",
     "quality": {
-      "auto": "Auto"
+      "auto": "Auto",
+      "audio": "Áudio"
     },
     "offline": {
       "title": "Transmissão Encerrada",
       "description": "O streamer encerrou esta transmissão."
+    },
+    "errors": {
+      "tokenExpired": "Acesso negado (403). Token da transmissão expirou.",
+      "hlsError": "Erro de HLS ({type}: {details})",
+      "playbackError": "Erro de reprodução nativa"
     }
   }
 }

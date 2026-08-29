@@ -21,7 +21,9 @@
     "categoryAll": "全部",
     "searchLoading": "搜索中...",
     "searchNoResults": "未找到频道",
-    "removeStream": "移除直播流"
+    "removeStream": "移除直播流",
+    "customStreamDefault": "自定义直播",
+    "platformCustom": "自定义"
   },
   "settings": {
     "tooltip": "设置",
@@ -204,7 +206,8 @@
     "tooltip": "隐藏"
   },
   "stream": {
-    "watching": "观看时间"
+    "watching": "观看时间",
+    "viewers": "{count} 位观众"
   },
   "empty": {
     "title": "没有选择的直播",
@@ -250,7 +253,9 @@
         "waiting": "等待授权中...",
         "cancel": "取消",
         "successTitle": "成功在 {platform} 认证",
-        "successDesc": "已登录为 {username}"
+        "successDesc": "已登录为 {username}",
+        "initFailed": "初始化登录流程失败。",
+        "defaultUser": "用户"
       },
       "warningTwitchLoginToMerge": "连接您的Twitch帐号以在统一聊天中包含Twitch聊天。",
       "warningTwitchLogin": "连接您的Twitch帐号以启用统一聊天。"
@@ -267,7 +272,16 @@
         "global": "全局",
         "channel": "频道"
       }
-    }
+    },
+    "you": "你",
+    "streamTooltip": "直播：{channel}",
+    "badges": {
+      "broadcaster": "主播",
+      "moderator": "房管",
+      "vip": "VIP",
+      "subscriber": "订阅者"
+    },
+    "sendError": "发送消息失败"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "全屏",
     "exitFullscreen": "退出全屏",
     "settings": "设置",
-    "volume": "音量"
+    "volume": "音量",
+    "confirm": "确认",
+    "cancel": "取消"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "获取焦点流的截屏",
       "chat": "切换到流聊天 {keys}",
       "screenshotTitle": "截屏"
-    }
+    },
+    "goToStep": "前往第 {step} 步"
   },
   "webBanner": {
     "title": "Multistream 在桌面应用上运行得更好。",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "直播中",
     "quality": {
-      "auto": "自动"
+      "auto": "自动",
+      "audio": "仅音频"
     },
     "offline": {
       "title": "直播结束",
       "description": "主播已结束此直播。"
+    },
+    "errors": {
+      "tokenExpired": "访问被拒绝 (403)。直播令牌已过期。",
+      "hlsError": "HLS 错误 ({type}: {details})",
+      "playbackError": "原生播放错误"
     }
   }
 }

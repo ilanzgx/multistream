@@ -40,7 +40,8 @@ import {
   FlaskConical,
 } from "@lucide/vue";
 import { toast } from "@/composables/useToast";
-import { watch, ref } from "vue";
+import { watch, ref, onMounted } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 import { useBackup } from "@/composables/useBackup";
 import type { BackupData } from "@/composables/useBackup";
 import { useI18n } from "vue-i18n";
@@ -112,9 +113,7 @@ const confirmDismiss = () => {
   }
 };
 
-import { invoke } from "@tauri-apps/api/core";
-import { ref as vueRef, onMounted } from "vue";
-const isRecordingSupported = vueRef<boolean>(false);
+const isRecordingSupported = ref<boolean>(false);
 onMounted(() => {
   if (isRunningInTauri) {
     invoke<boolean>("is_recording_supported_cmd").then((v) => {
@@ -867,7 +866,7 @@ watch(
                             </div>
                             <button
                               class="text-gray-400 hover:text-red-400 transition-colors p-0.5"
-                              title="Cancelar download"
+                              :title="$t('common.cancel')"
                               @click="cancelDownload"
                             >
                               <X class="w-3 h-3" />
@@ -958,9 +957,7 @@ watch(
                       @click="requestUninstall"
                     >
                       <Trash2 class="size-4 mr-1.5" />
-                      {{
-                        $t("settings.recording.uninstallDependencies", "Desinstalar funcionalidade")
-                      }}
+                      {{ $t("settings.recording.uninstallDependencies") }}
                     </Button>
                   </div>
                 </template>
@@ -1207,14 +1204,9 @@ watch(
 
     <ConfirmDialog
       :open="showUninstallConfirm"
-      :title="$t('settings.recording.uninstallConfirmTitle', 'Desinstalar funcionalidade?')"
-      :description="
-        $t(
-          'settings.recording.uninstallConfirmDescription',
-          'Isso removerá o ambiente isolado do gravador e liberará espaço. Você poderá instalar novamente mais tarde.'
-        )
-      "
-      :confirm-text="$t('settings.recording.uninstallConfirmButton', 'Desinstalar')"
+      :title="$t('settings.recording.uninstallConfirmTitle')"
+      :description="$t('settings.recording.uninstallConfirmDescription')"
+      :confirm-text="$t('settings.recording.uninstallConfirmButton')"
       :cancel-text="$t('common.close')"
       variant="destructive"
       @update:open="showUninstallConfirm = $event"

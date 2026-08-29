@@ -63,7 +63,7 @@ const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
 const { checkVideoCodecs } = useMediaCodecs();
 const { checkDependencies } = useRecording();
-const { locale } = useI18n();
+const { locale, t } = useI18n();
 
 useDeepLink();
 
@@ -139,10 +139,10 @@ watch(streams, (newStreams, oldStreams) => {
   // when none streams are selected, auto load the chat of the first stream
   // if have more than 1 stream and remove one, auto load the chat of the first stream
   // if something wrong happens, falls on fallback
+  const prevLen = oldStreams?.length ?? 0;
   if (
     selectedChat.value !== UNIFIED_CHAT_ID &&
-    ((oldStreams.length === 0 && newStreams.length === 1) ||
-      (oldStreams.length > 1 && newStreams.length === 1))
+    ((prevLen === 0 && newStreams.length === 1) || (prevLen > 1 && newStreams.length === 1))
   ) {
     const first = newStreams.find((s) => s.platform !== "custom");
     if (first) {
@@ -221,7 +221,7 @@ onMounted(async () => {
       window.history.replaceState({}, "", window.location.pathname);
     }
   } catch {
-    toast.error("Failed to parse custom streams");
+    toast.error(t("import.invalidCustom"));
     window.history.replaceState({}, "", window.location.pathname);
   }
 });

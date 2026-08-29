@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import { ref, computed, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useStreams } from "@/composables/useStreams";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import type { SuggestedStream } from "@/composables/useLiveStatus";
@@ -14,6 +15,7 @@ import { ChevronLeft, ChevronRight } from "@lucide/vue";
 
 const { addStream } = useStreams();
 const { suggestedStreams, isLoadingSuggestions, fetchStreamsForCategory } = useLiveStatus();
+const { locale } = useI18n();
 
 const PAGE_SIZE = 18;
 const currentPage = ref(1);
@@ -122,9 +124,11 @@ async function selectCategory(category: string | null) {
 }
 
 const formatViewers = (count?: number) => {
-  if (!count) return "";
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-  return String(count);
+  if (count === undefined || count === null) return "";
+  return new Intl.NumberFormat(locale.value, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(count);
 };
 </script>
 
@@ -214,14 +218,17 @@ const formatViewers = (count?: number) => {
             class="absolute top-2 left-2 flex items-center gap-1.5 px-1 rounded bg-red-600 shadow-lg shadow-red-900/20"
           >
             <span class="h-2 w-2 rounded-full bg-white" />
-            <span class="text-[10px] font-bold text-white tracking-wide">LIVE</span>
+            <span class="text-[10px] font-bold text-white tracking-wide">{{
+              $t("nativePlayer.live")
+            }}</span>
           </div>
 
           <!-- Viewers -->
           <div
+            v-if="stream.viewerCount"
             class="absolute bottom-2 right-2 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm border border-white/10 text-[11px] font-medium text-white/90 tabular-nums"
           >
-            {{ formatViewers(stream.viewerCount) }} viewers
+            {{ $t("stream.viewers", { count: formatViewers(stream.viewerCount) }) }}
           </div>
         </div>
 

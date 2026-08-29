@@ -21,7 +21,9 @@
     "categoryAll": "Alle",
     "searchLoading": "Suche läuft...",
     "searchNoResults": "Keine Kanäle gefunden",
-    "removeStream": "Stream entfernen"
+    "removeStream": "Stream entfernen",
+    "customStreamDefault": "Benutzerdefinierter Stream",
+    "platformCustom": "Benutzerdefiniert"
   },
   "settings": {
     "tooltip": "Einstellungen",
@@ -204,7 +206,8 @@
     "tooltip": "Ausblenden"
   },
   "stream": {
-    "watching": "Zuschauen"
+    "watching": "Zuschauen",
+    "viewers": "{count} Zuschauer"
   },
   "empty": {
     "title": "Keine Streams ausgewählt",
@@ -250,7 +253,9 @@
         "waiting": "Warten auf Autorisierung...",
         "cancel": "Abbrechen",
         "successTitle": "Erfolgreich auf {platform} authentifiziert",
-        "successDesc": "Angemeldet als {username}"
+        "successDesc": "Angemeldet als {username}",
+        "initFailed": "Fehler beim Initialisieren des Anmeldevorgangs.",
+        "defaultUser": "Benutzer"
       },
       "warningTwitchLoginToMerge": "Verbinde dein Twitch-Konto, um Twitch-Chats im vereinheitlichten Chat einzuschließen.",
       "warningTwitchLogin": "Verbinde dein Twitch-Konto, um den vereinheitlichten Chat zu aktivieren."
@@ -267,7 +272,16 @@
         "global": "Global",
         "channel": "Kanal"
       }
-    }
+    },
+    "you": "Du",
+    "streamTooltip": "Stream: {channel}",
+    "badges": {
+      "broadcaster": "Broadcaster",
+      "moderator": "Moderator",
+      "vip": "VIP",
+      "subscriber": "Abonnent"
+    },
+    "sendError": "Fehler beim Senden der Nachricht"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "Vollbild",
     "exitFullscreen": "Vollbild beenden",
     "settings": "Einstellungen",
-    "volume": "Lautstärke"
+    "volume": "Lautstärke",
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "Screenshot des fokussierten Streams erstellen",
       "chat": "Zum Stream-Chat {keys} wechseln",
       "screenshotTitle": "Screenshot"
-    }
+    },
+    "goToStep": "Gehe zu Schritt {step}"
   },
   "webBanner": {
     "title": "Multistream läuft besser als Desktop-App.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "LIVE",
     "quality": {
-      "auto": "Automatisch"
+      "auto": "Automatisch",
+      "audio": "Audio"
     },
     "offline": {
       "title": "Stream Beendet",
       "description": "Der Streamer hat diese Übertragung beendet."
+    },
+    "errors": {
+      "tokenExpired": "Zugriff verweigert (403). Stream-Token abgelaufen.",
+      "hlsError": "HLS-Fehler ({type}: {details})",
+      "playbackError": "Nativer Wiedergabefehler"
     }
   }
 }

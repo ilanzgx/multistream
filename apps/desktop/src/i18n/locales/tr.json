@@ -21,7 +21,9 @@
     "categoryAll": "Tümü",
     "searchLoading": "Aranıyor...",
     "searchNoResults": "Kanal bulunamadı",
-    "removeStream": "Yayını kaldır"
+    "removeStream": "Yayını kaldır",
+    "customStreamDefault": "Özel Yayın",
+    "platformCustom": "Özel"
   },
   "settings": {
     "tooltip": "Ayarlar",
@@ -204,7 +206,8 @@
     "tooltip": "Gizle"
   },
   "stream": {
-    "watching": "İzleniyor"
+    "watching": "İzleniyor",
+    "viewers": "{count} izleyici"
   },
   "empty": {
     "title": "Seçili yayın yok",
@@ -250,7 +253,9 @@
         "waiting": "Yetkilendirme bekleniyor...",
         "cancel": "İptal",
         "successTitle": "{platform} üzerinde başarıyla kimlik doğrulandı",
-        "successDesc": "{username} olarak giriş yapıldı"
+        "successDesc": "{username} olarak giriş yapıldı",
+        "initFailed": "Giriş akışı başlatılamadı.",
+        "defaultUser": "Kullanıcı"
       },
       "warningTwitchLoginToMerge": "Birleşik Sohbete Twitch sohbetlerini dahil etmek için Twitch hesabınızı bağlayın.",
       "warningTwitchLogin": "Birleşik Sohbeti etkinleştirmek için Twitch hesabınızı bağlayın."
@@ -267,7 +272,16 @@
         "global": "Genel",
         "channel": "Kanal"
       }
-    }
+    },
+    "you": "Sen",
+    "streamTooltip": "Yayın: {channel}",
+    "badges": {
+      "broadcaster": "Yayıncı",
+      "moderator": "Moderatör",
+      "vip": "VIP",
+      "subscriber": "Abone"
+    },
+    "sendError": "Mesaj gönderilemedi"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "Tam Ekran",
     "exitFullscreen": "Tam Ekrandan Çık",
     "settings": "Ayarlar",
-    "volume": "Ses"
+    "volume": "Ses",
+    "confirm": "Onayla",
+    "cancel": "İptal"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "Odaklanmış yayının ekran görüntüsünü al",
       "chat": "Yayın sohbetine geç {keys}",
       "screenshotTitle": "Ekran Görüntüsü"
-    }
+    },
+    "goToStep": "{step}. adıma git"
   },
   "webBanner": {
     "title": "Multistream masaüstü uygulamasında daha iyi çalışır.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "CANLI",
     "quality": {
-      "auto": "Otomatik"
+      "auto": "Otomatik",
+      "audio": "Ses"
     },
     "offline": {
       "title": "Yayın Sona Erdi",
       "description": "Yayıncı bu yayını sonlandırdı."
+    },
+    "errors": {
+      "tokenExpired": "Erişim Reddedildi (403). Yayın belirtecinin süresi doldu.",
+      "hlsError": "HLS Hatası ({type}: {details})",
+      "playbackError": "Yerel oynatma hatası"
     }
   }
 }

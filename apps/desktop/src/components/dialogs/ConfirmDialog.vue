@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import Button from "@/components/ui/button/Button.vue";
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    open: boolean;
+    open?: boolean;
     title: string;
     description: string;
     confirmText?: string;
@@ -19,8 +19,7 @@ const props = withDefaults(
     variant?: "default" | "destructive";
   }>(),
   {
-    confirmText: "Confirm",
-    cancelText: "Cancel",
+    open: false,
     variant: "default",
   }
 );
@@ -59,7 +58,7 @@ const handleCancel = () => {
           class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200"
           @click="handleCancel"
         >
-          {{ cancelText }}
+          {{ cancelText || $t("common.cancel") }}
         </Button>
         <Button
           :class="
@@ -69,7 +68,7 @@ const handleCancel = () => {
           "
           @click="handleConfirm"
         >
-          {{ confirmText }}
+          {{ confirmText || $t("common.confirm") }}
         </Button>
       </DialogFooter>
     </DialogContent>

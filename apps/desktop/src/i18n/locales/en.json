@@ -21,7 +21,9 @@
     "categoryAll": "All",
     "searchLoading": "Searching...",
     "searchNoResults": "No channels found",
-    "removeStream": "Remove stream"
+    "removeStream": "Remove stream",
+    "customStreamDefault": "Custom Stream",
+    "platformCustom": "Custom"
   },
   "settings": {
     "tooltip": "Settings",
@@ -204,7 +206,8 @@
     "tooltip": "Hide"
   },
   "stream": {
-    "watching": "Watching"
+    "watching": "Watching",
+    "viewers": "{count} viewers"
   },
   "empty": {
     "title": "No streams selected",
@@ -250,7 +253,9 @@
         "waiting": "Waiting for authorization...",
         "cancel": "Cancel",
         "successTitle": "Successfully authenticated on {platform}",
-        "successDesc": "Logged in as {username}"
+        "successDesc": "Logged in as {username}",
+        "initFailed": "Failed to initialize login flow.",
+        "defaultUser": "User"
       },
       "warningTwitchLoginToMerge": "Connect your Twitch account to include Twitch chats in Unified Chat.",
       "warningTwitchLogin": "Connect your Twitch account to enable Unified Chat."
@@ -267,7 +272,16 @@
         "global": "Global",
         "channel": "Channel"
       }
-    }
+    },
+    "you": "You",
+    "streamTooltip": "Stream: {channel}",
+    "badges": {
+      "broadcaster": "Broadcaster",
+      "moderator": "Moderator",
+      "vip": "VIP",
+      "subscriber": "Subscriber"
+    },
+    "sendError": "Failed to send message"
   },
   "confirm": {
     "deleteOrphan": {
@@ -286,7 +300,9 @@
     "fullscreen": "Fullscreen",
     "exitFullscreen": "Exit Fullscreen",
     "settings": "Settings",
-    "volume": "Volume"
+    "volume": "Volume",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
   },
   "toasts": {
     "add": {
@@ -388,7 +404,8 @@
       "screenshot": "Take screenshot of focused stream",
       "chat": "Switch to stream chat {keys}",
       "screenshotTitle": "Screenshot"
-    }
+    },
+    "goToStep": "Go to step {step}"
   },
   "webBanner": {
     "title": "Multistream runs better on the desktop app.",
@@ -406,11 +423,17 @@
   "nativePlayer": {
     "live": "LIVE",
     "quality": {
-      "auto": "Auto"
+      "auto": "Auto",
+      "audio": "Audio"
     },
     "offline": {
       "title": "Stream Ended",
       "description": "The broadcaster has ended this stream."
+    },
+    "errors": {
+      "tokenExpired": "Access Denied (403). Stream token expired.",
+      "hlsError": "HLS Error ({type}: {details})",
+      "playbackError": "Native playback error"
     }
   }
 }

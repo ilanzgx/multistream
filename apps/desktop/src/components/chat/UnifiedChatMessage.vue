@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 import type { UnifiedChatMessage } from "@/composables/useUnifiedChat";
 import type { KickChatMessage } from "@/composables/useKickChat";
 import { useEmotes } from "@/composables/useEmotes";
@@ -29,6 +30,8 @@ const parsedTokens = computed(() => {
   return parseMessage(props.message.message, props.message.emotes ?? null, props.message.channel);
 });
 
+const { t } = useI18n();
+
 const parsedBadges = computed(() => {
   const badges = [];
   // Ensure we have an array (just in case the backend sent null or something)
@@ -39,23 +42,28 @@ const parsedBadges = computed(() => {
         type,
         icon: Crown,
         color: "text-red-500 fill-red-500/20",
-        label: "Broadcaster",
+        label: t("chat.badges.broadcaster"),
       });
     else if (type === "moderator")
       badges.push({
         type,
         icon: Sword,
         color: "text-green-500 fill-green-500/20",
-        label: "Moderator",
+        label: t("chat.badges.moderator"),
       });
     else if (type === "vip")
-      badges.push({ type, icon: Gem, color: "text-pink-400 fill-pink-400/20", label: "VIP" });
+      badges.push({
+        type,
+        icon: Gem,
+        color: "text-pink-400 fill-pink-400/20",
+        label: t("chat.badges.vip"),
+      });
     else if (type === "subscriber" || type === "founder")
       badges.push({
         type,
         icon: Star,
         color: "text-purple-400 fill-purple-400/20",
-        label: "Subscriber",
+        label: t("chat.badges.subscriber"),
       });
   }
   return badges;
@@ -91,14 +99,14 @@ const handleLinkClick = async (url: string) => {
           v-if="props.channelAvatar"
           :src="props.channelAvatar"
           :alt="props.message.channel"
-          :title="`Stream: ${props.message.channel}`"
+          :title="$t('chat.streamTooltip', { channel: props.message.channel })"
           class="w-[18px] h-[18px] rounded-full object-cover mt-[1px] shrink-0 border border-white/5"
         />
         <div
           v-else
           class="w-[18px] h-[18px] rounded-full mt-[1px] shrink-0 border border-white/5 flex items-center justify-center text-[8px] font-bold text-white/50 uppercase"
           :style="{ backgroundColor: props.channelColor + '40' }"
-          :title="`Stream: ${props.message.channel}`"
+          :title="$t('chat.streamTooltip', { channel: props.message.channel })"
         >
           {{ props.message.channel.charAt(0) }}
         </div>
