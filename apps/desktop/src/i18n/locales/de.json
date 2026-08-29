@@ -207,7 +207,17 @@
   },
   "stream": {
     "watching": "Zuschauen",
-    "viewers": "{count} Zuschauer"
+    "viewers": "{count} Zuschauer",
+    "actions": {
+      "remove": "Stream entfernen",
+      "favorite": "Zu Favoriten hinzufügen",
+      "unfavorite": "Aus Favoriten entfernen",
+      "screenshot": "Screenshot aufnehmen",
+      "record": "Stream aufnehmen",
+      "stopRecord": "Aufnahme stoppen",
+      "focus": "Stream fokussieren",
+      "unfocus": "Fokus aufheben"
+    }
   },
   "empty": {
     "title": "Keine Streams ausgewählt",

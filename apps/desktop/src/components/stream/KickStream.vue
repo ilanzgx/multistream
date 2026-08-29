@@ -11,6 +11,7 @@ defineProps<{ channel: string; channelid: string }>();
 <template>
   <BaseStream :channelid="channelid" :channel="channel" platform="kick">
     <iframe
+      :title="`Kick Stream: ${channel}`"
       :src="PLATFORMS.kick.getEmbedUrl(channel)"
       allowfullscreen
       frameborder="0"

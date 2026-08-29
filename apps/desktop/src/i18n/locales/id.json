@@ -207,7 +207,17 @@
   },
   "stream": {
     "watching": "Menonton",
-    "viewers": "{count} penonton"
+    "viewers": "{count} penonton",
+    "actions": {
+      "remove": "Hapus streaming",
+      "favorite": "Tambah ke favorit",
+      "unfavorite": "Hapus dari favorit",
+      "screenshot": "Ambil tangkapan layar",
+      "record": "Rekam streaming",
+      "stopRecord": "Hentikan rekaman",
+      "focus": "Fokuskan streaming",
+      "unfocus": "Batal fokuskan"
+    }
   },
   "empty": {
     "title": "Tidak ada stream yang dipilih",

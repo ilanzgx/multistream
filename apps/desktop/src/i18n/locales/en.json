@@ -207,7 +207,17 @@
   },
   "stream": {
     "watching": "Watching",
-    "viewers": "{count} viewers"
+    "viewers": "{count} viewers",
+    "actions": {
+      "remove": "Remove stream",
+      "favorite": "Favorite stream",
+      "unfavorite": "Remove from favorites",
+      "screenshot": "Take screenshot",
+      "record": "Record stream",
+      "stopRecord": "Stop recording",
+      "focus": "Focus stream",
+      "unfocus": "Unfocus stream"
+    }
   },
   "empty": {
     "title": "No streams selected",

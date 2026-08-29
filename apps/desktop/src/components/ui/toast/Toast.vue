@@ -81,7 +81,8 @@ function handleAction() {
         </div>
 
         <button
-          class="opacity-0 group-hover:opacity-100 p-1 -mt-1 -mr-1 text-gray-500 hover:text-white transition-all rounded focus:outline-none"
+          :aria-label="$t('common.close')"
+          class="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1 -mt-1 -mr-1 text-gray-500 hover:text-white transition-all rounded focus:outline-none focus-visible:ring-1 focus-visible:ring-white/20 cursor-pointer"
           @click="emit('dismiss', toast.id)"
         >
           <X class="w-3.5 h-3.5" />

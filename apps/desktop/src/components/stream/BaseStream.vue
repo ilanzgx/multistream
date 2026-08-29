@@ -420,6 +420,7 @@ const handleScreenshot = () => {
     >
       <button
         :data-testid="`remove-stream-${channel}`"
+        :aria-label="$t('stream.actions.remove')"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-red-500/80 hover:text-white hover:border-red-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
@@ -429,6 +430,7 @@ const handleScreenshot = () => {
         <X :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <button
+        :aria-label="isFavorite ? $t('stream.actions.unfavorite') : $t('stream.actions.favorite')"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-pink-500/80 hover:text-white hover:border-pink-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
@@ -443,6 +445,7 @@ const handleScreenshot = () => {
       <!-- screenshot button -->
       <button
         :disabled="isCapturing"
+        :aria-label="$t('stream.actions.screenshot')"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-blue-500/80 hover:text-white hover:border-blue-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',
@@ -456,6 +459,11 @@ const handleScreenshot = () => {
       <template v-if="isDependenciesInstalled && props.platform !== 'custom'">
         <button
           :data-testid="`record-stream-${props.channel}`"
+          :aria-label="
+            isRecording(props.channelid)
+              ? $t('stream.actions.stopRecord')
+              : $t('stream.actions.record')
+          "
           :class="[
             'relative pointer-events-auto flex flex-col items-center justify-center rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
             isMiniaturized ? 'size-5' : 'size-8',
@@ -481,6 +489,7 @@ const handleScreenshot = () => {
       </template>
       <!-- focus mode button -->
       <button
+        :aria-label="isStreamFocused ? $t('stream.actions.unfocus') : $t('stream.actions.focus')"
         :class="[
           'pointer-events-auto flex items-center justify-center rounded-lg backdrop-blur-sm border transition-all duration-200 hover:scale-110 cursor-pointer',
           isMiniaturized ? 'size-5' : 'size-8',

@@ -13,6 +13,7 @@ const { authenticated } = useTwitchAuth();
   <TwitchNativeChat v-if="authenticated" :channel="channel" />
   <BaseChat v-else platform="twitch">
     <iframe
+      :title="`Twitch Chat: ${channel}`"
       :src="PLATFORMS.twitch.getChatUrl(channel)"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"

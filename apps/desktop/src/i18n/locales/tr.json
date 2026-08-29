@@ -207,7 +207,17 @@
   },
   "stream": {
     "watching": "İzleniyor",
-    "viewers": "{count} izleyici"
+    "viewers": "{count} izleyici",
+    "actions": {
+      "remove": "Yayını kaldır",
+      "favorite": "Favorilere ekle",
+      "unfavorite": "Favorilerden kaldır",
+      "screenshot": "Ekran görüntüsü al",
+      "record": "Yayını kaydet",
+      "stopRecord": "Kaydı durdur",
+      "focus": "Yayına odaklan",
+      "unfocus": "Odaklanmayı kaldır"
+    }
   },
   "empty": {
     "title": "Seçili yayın yok",

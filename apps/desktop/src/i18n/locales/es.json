@@ -207,7 +207,17 @@
   },
   "stream": {
     "watching": "Viendo",
-    "viewers": "{count} espectadores"
+    "viewers": "{count} espectadores",
+    "actions": {
+      "remove": "Eliminar stream",
+      "favorite": "Añadir a favoritos",
+      "unfavorite": "Eliminar de favoritos",
+      "screenshot": "Capturar pantalla",
+      "record": "Grabar stream",
+      "stopRecord": "Detener grabación",
+      "focus": "Enfocar stream",
+      "unfocus": "Desenfocar stream"
+    }
   },
   "empty": {
     "title": "Ninguna transmisión seleccionada",

@@ -367,6 +367,7 @@ onUnmounted(() => {
               <TooltipTrigger as-child>
                 <Button
                   data-testid="add-stream-btn"
+                  :aria-label="$t('add.tooltip')"
                   class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="addDialogOpen = true"
@@ -387,6 +388,7 @@ onUnmounted(() => {
                   class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   data-testid="settings-btn"
+                  :aria-label="$t('settings.title')"
                   @click="settingsDialogOpen = true"
                 >
                   <Settings
@@ -403,6 +405,7 @@ onUnmounted(() => {
               <TooltipTrigger as-child>
                 <Button
                   data-testid="share-dialog-btn"
+                  :aria-label="$t('share.tooltip')"
                   class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="shareDialogOpen = true"
@@ -421,6 +424,7 @@ onUnmounted(() => {
               <TooltipTrigger as-child>
                 <Button
                   data-testid="import-dialog-btn"
+                  :aria-label="$t('import.tooltip')"
                   class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="importDialogOpen = true"
@@ -440,6 +444,7 @@ onUnmounted(() => {
                 <Button
                   class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
+                  :aria-label="$t('hide.tooltip')"
                   @click="sidebarOpen = !sidebarOpen"
                 >
                   <PanelRightClose

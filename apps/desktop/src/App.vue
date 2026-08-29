@@ -258,7 +258,8 @@ onUnmounted(() => {
             >{{ $t("webBanner.button") }}</a
           >
           <button
-            class="text-[#787774] hover:text-white transition-colors flex items-center justify-center"
+            :aria-label="$t('common.close')"
+            class="text-[#787774] hover:text-white transition-colors flex items-center justify-center cursor-pointer"
             @click="dismissedWebBanner = true"
           >
             <X class="w-3.5 h-3.5" />

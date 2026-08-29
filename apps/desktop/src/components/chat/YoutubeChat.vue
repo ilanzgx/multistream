@@ -8,6 +8,7 @@ defineProps<{ channel: string }>();
 <template>
   <BaseChat platform="youtube">
     <iframe
+      :title="`YouTube Chat: ${channel}`"
       :src="PLATFORMS.youtube.getChatUrl(channel)"
       frameborder="0"
       sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"

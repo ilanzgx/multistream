@@ -178,6 +178,7 @@ onUnmounted(() => {
         <Button
           type="submit"
           size="icon"
+          :aria-label="t('chat.sendPlaceholder')"
           class="shrink-0 h-9.5 w-9.5 bg-[#9146FF] hover:bg-[#a970ff] text-white disabled:opacity-50"
           :disabled="!newMessage.trim() || connectionState !== 'connected' || isSending"
         >

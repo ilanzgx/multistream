@@ -137,6 +137,7 @@ onUnmounted(() => {
               <Button
                 variant="outline"
                 size="icon"
+                :aria-label="t('share.copyButton')"
                 class="border-[#2a2d33] bg-transparent hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors shrink-0"
                 @click="copy(authUrl)"
               >

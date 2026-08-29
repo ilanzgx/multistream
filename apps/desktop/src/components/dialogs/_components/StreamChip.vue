@@ -30,9 +30,10 @@ const formatViewers = (count?: number): string => {
 </script>
 
 <template>
-  <button
-    type="button"
-    class="group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer border hover:-translate-y-px active:scale-[0.97]"
+  <div
+    role="group"
+    tabindex="0"
+    class="group relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-sm font-medium transition-all duration-200 cursor-pointer border hover:-translate-y-px active:scale-[0.97] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
     :class="[
       status?.isLive
         ? 'bg-[#1a1d21] text-white border-transparent hover:bg-[#2a2d33]'
@@ -44,6 +45,7 @@ const formatViewers = (count?: number): string => {
         : undefined
     "
     @click="emit('click')"
+    @keydown.enter.space.prevent="emit('click')"
   >
     <!-- live indicator dot -->
     <span v-if="status?.isLive" class="h-2 w-2 shrink-0 rounded-full bg-red-500" />
@@ -69,15 +71,13 @@ const formatViewers = (count?: number): string => {
       {{ formatViewers(status?.viewerCount) }}
     </span>
 
-    <span
-      role="button"
-      tabindex="0"
+    <button
+      type="button"
       :aria-label="$t('add.removeStream')"
-      class="absolute -top-1 -right-1 hidden group-hover:flex items-center justify-center w-4 h-4 rounded-full bg-[#2a2d33] border border-[#3a3f4b] transition-colors hover:bg-red-500/80 hover:border-red-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400"
+      class="absolute -top-1 -right-1 hidden group-hover:flex focus-visible:flex items-center justify-center w-4 h-4 rounded-full bg-[#2a2d33] border border-[#3a3f4b] transition-colors hover:bg-red-500/80 hover:border-red-400 cursor-pointer focus:outline-none focus:ring-1 focus:ring-red-400"
       @click.stop="emit('remove')"
-      @keydown.enter.space.prevent.stop="emit('remove')"
     >
       <X :size="8" class="text-white" />
-    </span>
-  </button>
+    </button>
+  </div>
 </template>

@@ -207,7 +207,17 @@
   },
   "stream": {
     "watching": "En cours de visionnage",
-    "viewers": "{count} spectateurs"
+    "viewers": "{count} spectateurs",
+    "actions": {
+      "remove": "Supprimer le stream",
+      "favorite": "Ajouter aux favoris",
+      "unfavorite": "Retirer des favoris",
+      "screenshot": "Faire une capture",
+      "record": "Enregistrer le stream",
+      "stopRecord": "Arrêter l'enregistrement",
+      "focus": "Centrer le stream",
+      "unfocus": "Quitter le centrage"
+    }
   },
   "empty": {
     "title": "Aucun flux sélectionné",

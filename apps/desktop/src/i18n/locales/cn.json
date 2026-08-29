@@ -207,7 +207,17 @@
   },
   "stream": {
     "watching": "观看时间",
-    "viewers": "{count} 位观众"
+    "viewers": "{count} 位观众",
+    "actions": {
+      "remove": "删除直播",
+      "favorite": "收藏直播",
+      "unfavorite": "取消收藏",
+      "screenshot": "截取屏幕",
+      "record": "录制直播",
+      "stopRecord": "停止录制",
+      "focus": "聚焦直播",
+      "unfocus": "取消聚焦"
+    }
   },
   "empty": {
     "title": "没有选择的直播",

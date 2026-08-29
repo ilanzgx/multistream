@@ -33,6 +33,7 @@ const isStreamFocused = computed(() => isFocused(props.channelid));
     />
     <iframe
       v-else
+      :title="`Twitch Stream: ${channel}`"
       :src="PLATFORMS.twitch.getEmbedUrl(channel)"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"

@@ -29,6 +29,11 @@ const safeUrl = computed(() => {
 
 <template>
   <BaseStream :channelid="channelid" :channel="channel" platform="custom">
-    <iframe :src="safeUrl" allowfullscreen allow="autoplay; encrypted-media; fullscreen" />
+    <iframe
+      :title="`Custom Stream: ${channel}`"
+      :src="safeUrl"
+      allowfullscreen
+      allow="autoplay; encrypted-media; fullscreen"
+    />
   </BaseStream>
 </template>

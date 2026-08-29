@@ -12,6 +12,7 @@ defineProps<{ channel: string }>();
   <KickNativeChat v-if="isTauri()" :channel="channel" />
   <BaseChat v-else platform="kick">
     <iframe
+      :title="`Kick Chat: ${channel}`"
       class="w-full h-full flex-1 border-none"
       :src="PLATFORMS.kick.getChatUrl(channel)"
       frameborder="0"

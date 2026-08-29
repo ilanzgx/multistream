@@ -8,6 +8,7 @@ defineProps<{ channel: string; channelid: string }>();
 <template>
   <BaseStream :channelid="channelid" :channel="channel" platform="youtube">
     <iframe
+      :title="`YouTube Stream: ${channel}`"
       :src="PLATFORMS.youtube.getEmbedUrl(channel)"
       allowfullscreen
       allow="
