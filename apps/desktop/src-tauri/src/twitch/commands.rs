@@ -50,12 +50,12 @@ pub async fn twitch_login(
         loop {
             tokio::select! {
                 _ = &mut abort_rx => {
-                    println!("Auth polling aborted");
+                    log::info!("[twitch-oauth] Auth polling aborted");
                     break;
                 }
                 _ = ticker.tick() => {
                     if start.elapsed() > expires_in {
-                        println!("Auth polling expired");
+                        log::warn!("[twitch-oauth] Auth polling expired");
                         let _ = app_handle.emit("twitch-auth-error", "Expired");
                         break;
                     }
@@ -63,7 +63,7 @@ pub async fn twitch_login(
                     let poll_result = tokio::select! {
                         res = oauth::poll_device_token(&http, &device_code) => res,
                         _ = &mut abort_rx => {
-                            println!("Auth polling aborted during request");
+                            log::info!("[twitch-oauth] Auth polling aborted during request");
                             break;
                         }
                     };
@@ -84,7 +84,7 @@ pub async fn twitch_login(
                             // Pending, continue polling
                         }
                         Err(e) => {
-                            println!("Auth polling error: {}", e);
+                            log::error!("[twitch-oauth] Auth polling error: {}", e);
                             let _ = app_handle.emit("twitch-auth-error", e.to_string());
                             break;
                         }
@@ -122,18 +122,9 @@ pub async fn twitch_logout(
         let _ = tx.send(());
     }
 
-    *state.auth.lock().await = None;
+    revoke_auth_and_notify(&app, &state).await;
     *state.connection_state.lock().await = ConnectionState::Disconnected;
     state.messages.lock().await.clear();
-
-    oauth::clear_auth(&app);
-    let _ = app.emit(
-        "twitch-auth-changed",
-        AuthState {
-            authenticated: false,
-            username: None,
-        },
-    );
 
     Ok(())
 }
@@ -175,16 +166,7 @@ pub async fn twitch_set_channels(
         Ok(_) => {}
         Err(TwitchError::TokenRefreshFailed) => {
             // Token refresh failed or is invalid
-            *state.auth.lock().await = None;
-            oauth::clear_auth(&app);
-            let _ = app.emit("twitch-auth-expired", ());
-            let _ = app.emit(
-                "twitch-auth-changed",
-                AuthState {
-                    authenticated: false,
-                    username: None,
-                },
-            );
+            revoke_auth_and_notify(&app, &state).await;
             return Err(TwitchError::TokenRefreshFailed);
         }
         Err(e) => return Err(e),
@@ -243,7 +225,7 @@ pub async fn twitch_send_message(
             message: text,
             timestamp_ms: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
+                .unwrap_or_default()
                 .as_millis() as u64,
             color: None,
             badges: Vec::new(),
@@ -256,6 +238,19 @@ pub async fn twitch_send_message(
         return Err(TwitchError::WebSocket("Not connected to IRC".to_owned()));
     }
     Ok(())
+}
+
+pub(crate) async fn revoke_auth_and_notify(app: &AppHandle, state: &TwitchState) {
+    *state.auth.lock().await = None;
+    oauth::clear_auth(app);
+    let _ = app.emit("twitch-auth-expired", ());
+    let _ = app.emit(
+        "twitch-auth-changed",
+        AuthState {
+            authenticated: false,
+            username: None,
+        },
+    );
 }
 
 pub(crate) async fn try_refresh_if_needed(
@@ -328,16 +323,7 @@ pub async fn twitch_get_followed_streams(
     let auth = match try_refresh_if_needed(&app, auth, &state, &http).await {
         Ok(auth) => auth,
         Err(TwitchError::TokenRefreshFailed) => {
-            *state.auth.lock().await = None;
-            oauth::clear_auth(&app);
-            let _ = app.emit("twitch-auth-expired", ());
-            let _ = app.emit(
-                "twitch-auth-changed",
-                super::state::AuthState {
-                    authenticated: false,
-                    username: None,
-                },
-            );
+            revoke_auth_and_notify(&app, &state).await;
             return Err(TwitchError::TokenRefreshFailed);
         }
         Err(e) => return Err(e),

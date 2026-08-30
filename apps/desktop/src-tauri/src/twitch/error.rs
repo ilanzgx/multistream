@@ -19,6 +19,12 @@ pub enum TwitchError {
 
     #[error("API error: {0}")]
     Api(String),
+
+    #[error("Proactive token refresh required")]
+    ProactiveRefresh,
+
+    #[error("Internal error: {0}")]
+    Internal(String),
 }
 
 impl serde::Serialize for TwitchError {

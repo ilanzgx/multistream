@@ -179,29 +179,33 @@ pub async fn refresh_token(
 pub fn store_auth(_app: &AppHandle, auth: &TwitchAuthInfo) -> Result<(), TwitchError> {
     let json = serde_json::to_string(auth).map_err(|e| TwitchError::Storage(e.to_string()))?;
 
-    std::fs::write(auth_file_path(), json.as_bytes())
+    std::fs::write(auth_file_path()?, json.as_bytes())
         .map_err(|e| TwitchError::Storage(e.to_string()))
 }
 
 pub fn load_auth(_app: &AppHandle) -> Option<TwitchAuthInfo> {
-    let path = auth_file_path();
+    let path = auth_file_path().ok()?;
     let bytes = std::fs::read(&path).ok()?;
     serde_json::from_slice(&bytes).ok()
 }
 
 pub fn clear_auth(_app: &AppHandle) {
-    let _ = std::fs::remove_file(auth_file_path());
+    if let Ok(path) = auth_file_path() {
+        let _ = std::fs::remove_file(path);
+    }
 }
 
-fn auth_file_path() -> std::path::PathBuf {
-    let mut path = dirs::config_dir().unwrap_or_else(|| std::path::PathBuf::from("."));
+fn auth_file_path() -> Result<std::path::PathBuf, TwitchError> {
+    let mut path = dirs::config_dir().ok_or_else(|| {
+        TwitchError::Storage("Could not determine user config directory".to_owned())
+    })?;
     path.push("multistream");
     let _ = std::fs::create_dir_all(&path);
     #[cfg(debug_assertions)]
     path.push(format!("{}_dev", STRONGHOLD_KEY));
     #[cfg(not(debug_assertions))]
     path.push(STRONGHOLD_KEY);
-    path.with_extension("json")
+    Ok(path.with_extension("json"))
 }
 
 pub(crate) fn is_authorization_pending(body: &str) -> bool {

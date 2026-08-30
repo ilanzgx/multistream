@@ -2,25 +2,21 @@ use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 use futures_util::{SinkExt, StreamExt};
-use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::oneshot;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 use super::error::TwitchError;
 use super::state::{
-    ConnectionState, OutboundIrcMessage, TwitchState, UnifiedChatMessage, MAX_MESSAGES,
+    ConnectionState, ConnectionStateEvent, OutboundIrcMessage, TwitchState, UnifiedChatMessage,
+    MAX_MESSAGES,
 };
 
 const IRC_URL: &str = "wss://irc-ws.chat.twitch.tv:443";
 const JOIN_DELAY_MS: u64 = 350;
 const HEARTBEAT_INTERVAL_SECS: u64 = 60;
 const HEARTBEAT_TIMEOUT_SECS: u64 = 360;
-
-#[derive(Debug, Serialize, Clone)]
-pub struct ConnectionStateEvent {
-    pub state: ConnectionState,
-}
+const TOKEN_PROACTIVE_REFRESH_SECS: u64 = 3 * 60 * 60 + 30 * 60; // 3h30m — Twitch access tokens expire after ~4h
 
 fn parse_tags(raw: &str) -> HashMap<String, String> {
     raw.split(';')
@@ -57,10 +53,18 @@ pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
         .cloned()
         .unwrap_or_else(|| username.clone());
 
+    let timestamp_ms = u64::try_from(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis(),
+    )
+    .unwrap_or(u64::MAX);
+
     let id = tags
         .get("id")
         .cloned()
-        .unwrap_or_else(|| format!("{}-{}", channel, username));
+        .unwrap_or_else(|| format!("{}-{}-{}", channel, username, timestamp_ms));
 
     let color = tags.get("color").filter(|s| !s.is_empty()).cloned();
     let emotes = tags.get("emotes").filter(|s| !s.is_empty()).cloned();
@@ -70,11 +74,6 @@ pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
         .filter(|s| !s.is_empty())
         .map(|s| s.split(',').map(str::to_owned).collect())
         .unwrap_or_default();
-
-    let timestamp_ms = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64;
 
     Some(UnifiedChatMessage {
         id,
@@ -90,7 +89,7 @@ pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
 }
 
 async fn emit_connection_state(app: &AppHandle, state: ConnectionState) {
-    if let Ok(twitch_state) = app.try_state::<TwitchState>().ok_or(()) {
+    if let Some(twitch_state) = app.try_state::<TwitchState>() {
         *twitch_state.connection_state.lock().await = state.clone();
     }
     let _ = app.emit("twitch-connection-state", ConnectionStateEvent { state });
@@ -104,7 +103,11 @@ pub async fn run_irc_loop(
 ) {
     let mut attempt: u32 = 0;
 
-    let http = match reqwest::Client::builder().use_rustls_tls().build() {
+    let http = match reqwest::Client::builder()
+        .use_rustls_tls()
+        .timeout(Duration::from_secs(10))
+        .build()
+    {
         Ok(c) => c,
         Err(e) => {
             log::error!("[twitch-irc] Failed to create HTTP client: {}", e);
@@ -113,6 +116,21 @@ pub async fn run_irc_loop(
     };
 
     loop {
+        use tokio::sync::oneshot::error::TryRecvError;
+        match shutdown_rx.try_recv() {
+            Ok(()) => {
+                log::info!("[twitch-irc] shutdown signalled at loop top, exiting");
+                emit_connection_state(&app, ConnectionState::Disconnected).await;
+                break;
+            }
+            Err(TryRecvError::Closed) => {
+                log::info!("[twitch-irc] shutdown sender dropped, exiting");
+                emit_connection_state(&app, ConnectionState::Disconnected).await;
+                break;
+            }
+            Err(TryRecvError::Empty) => {}
+        }
+
         let state_label = if attempt == 0 {
             ConnectionState::Disconnected
         } else {
@@ -140,16 +158,7 @@ pub async fn run_irc_loop(
                     log::warn!("[twitch-irc] Auth refresh failed ({e})");
                     emit_connection_state(&app, ConnectionState::Disconnected).await;
                     if matches!(e, TwitchError::TokenRefreshFailed) {
-                        *state.auth.lock().await = None;
-                        super::oauth::clear_auth(&app);
-                        let _ = app.emit("twitch-auth-expired", ());
-                        let _ = app.emit(
-                            "twitch-auth-changed",
-                            super::state::AuthState {
-                                authenticated: false,
-                                username: None,
-                            },
-                        );
+                        super::commands::revoke_auth_and_notify(&app, &state).await;
                         break;
                     }
                     None
@@ -157,9 +166,9 @@ pub async fn run_irc_loop(
             }
         };
 
-        let start_time = tokio::time::Instant::now();
-
         if let Some(auth_info) = auth_info_opt {
+            let start_time = tokio::time::Instant::now();
+
             match connect_irc(
                 &app,
                 &auth_info.access_token,
@@ -175,18 +184,66 @@ pub async fn run_irc_loop(
                     emit_connection_state(&app, ConnectionState::Disconnected).await;
                     break;
                 }
+                Err(TwitchError::ProactiveRefresh) => {
+                    log::info!("[twitch-irc] proactive token renewal triggered, refreshing before reconnect");
+                    let state = app.state::<TwitchState>();
+                    if let Some(auth) = state.auth.lock().await.clone() {
+                        match super::oauth::refresh_token(&http, &auth.refresh_token).await {
+                            Ok(new_auth) => {
+                                if let Err(e) = super::oauth::store_auth(&app, &new_auth) {
+                                    log::error!(
+                                        "[twitch-irc] failed to persist refreshed token: {e}"
+                                    );
+                                }
+                                *state.auth.lock().await = Some(new_auth);
+                                log::info!(
+                                    "[twitch-irc] token refreshed proactively, will reconnect"
+                                );
+                            }
+                            Err(TwitchError::TokenRefreshFailed) => {
+                                log::error!("[twitch-irc] token permanently revoked during proactive refresh");
+                                super::commands::revoke_auth_and_notify(&app, &state).await;
+                                emit_connection_state(&app, ConnectionState::Disconnected).await;
+                                break;
+                            }
+                            Err(e) => {
+                                log::warn!("[twitch-irc] proactive refresh transient error ({e}), reconnecting with current token");
+                            }
+                        }
+                    }
+                    emit_connection_state(&app, ConnectionState::Disconnected).await;
+                }
                 Err(TwitchError::OAuth(ref msg)) => {
-                    log::warn!("[twitch-irc] auth failure ({msg}), stopping loop");
+                    log::warn!("[twitch-irc] auth failure from IRC ({msg}), attempting token refresh before reconnect");
+                    let state = app.state::<TwitchState>();
+                    if let Some(auth) = state.auth.lock().await.clone() {
+                        match super::commands::try_refresh_if_needed(&app, auth, &state, &http)
+                            .await
+                        {
+                            Ok(_) => {
+                                log::info!("[twitch-irc] token refreshed after auth failure, will reconnect");
+                            }
+                            Err(TwitchError::TokenRefreshFailed) => {
+                                log::error!("[twitch-irc] token permanently revoked after auth failure, stopping");
+                                super::commands::revoke_auth_and_notify(&app, &state).await;
+                                emit_connection_state(&app, ConnectionState::Disconnected).await;
+                                break;
+                            }
+                            Err(e) => {
+                                log::warn!("[twitch-irc] refresh attempt after auth failure returned transient error ({e}), will retry");
+                            }
+                        }
+                    }
                     emit_connection_state(&app, ConnectionState::Disconnected).await;
                 }
                 Err(e) => {
                     log::warn!("[twitch-irc] connect_irc returned error: {e}");
                 }
             }
-        }
 
-        if start_time.elapsed() > Duration::from_secs(60) {
-            attempt = 0;
+            if start_time.elapsed() > Duration::from_secs(60) {
+                attempt = 0;
+            }
         }
 
         let delay = backoff_delay(attempt);
@@ -249,7 +306,14 @@ async fn connect_irc(
 
     for (i, channel) in channels.iter().enumerate() {
         if i > 0 && i % 20 == 0 {
-            tokio::time::sleep(Duration::from_millis(10_000)).await;
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_millis(10_000)) => {}
+                _ = &mut *shutdown_rx => {
+                    log::info!("[twitch-irc] shutdown during JOIN batch, aborting");
+                    let _ = write.send(Message::Close(None)).await;
+                    return Ok(());
+                }
+            }
         }
         write
             .send(Message::Text(format!("JOIN #{channel}")))
@@ -265,6 +329,10 @@ async fn connect_irc(
     let mut heartbeat = tokio::time::interval(Duration::from_secs(HEARTBEAT_INTERVAL_SECS));
     heartbeat.tick().await;
 
+    let token_refresh_deadline =
+        tokio::time::sleep(Duration::from_secs(TOKEN_PROACTIVE_REFRESH_SECS));
+    tokio::pin!(token_refresh_deadline);
+
     let mut loop_iteration: u64 = 0;
     let mut total_messages_received: u64 = 0;
     let mut total_pings_received: u64 = 0;
@@ -275,6 +343,7 @@ async fn connect_irc(
     loop {
         loop_iteration += 1;
         tokio::select! {
+            biased;
             msg = read.next() => {
                 let elapsed_since_last = last_read_activity.elapsed();
                 last_read_activity = tokio::time::Instant::now();
@@ -330,8 +399,21 @@ async fn connect_irc(
                             if line.contains("NOTICE") {
                                 total_notices_received += 1;
 
-                                if line.contains("Login authentication failed") {
-                                    log::error!("[twitch-irc] fatal NOTICE: Login authentication failed");
+                                let tags = if line.starts_with('@') {
+                                    line.split_once(' ')
+                                        .map(|(t, _)| parse_tags(t.trim_start_matches('@')))
+                                        .unwrap_or_default()
+                                } else {
+                                    HashMap::new()
+                                };
+                                let is_auth_failure = tags
+                                    .get("msg-id")
+                                    .map(|id| id == "msg_bad_auth")
+                                    .unwrap_or(false)
+                                    || line.contains("Login authentication failed");
+
+                                if is_auth_failure {
+                                    log::error!("[twitch-irc] fatal NOTICE: auth failed (msg-id or text match)");
                                     return Err(TwitchError::OAuth("IRC auth failed".to_owned()));
                                 }
 
@@ -402,6 +484,42 @@ async fn connect_irc(
                     }
                 }
             }
+            _ = &mut *shutdown_rx => {
+                log::info!(
+                    "[twitch-irc] shutdown signal received at iteration={loop_iteration}, \
+                     msgs_rx={total_messages_received}, outbound={total_outbound_sent}"
+                );
+                let _ = write.send(Message::Close(None)).await;
+                return Ok(());
+            }
+            _ = &mut token_refresh_deadline => {
+                log::info!(
+                    "[twitch-irc] proactive token refresh deadline reached after {}s, \
+                     reconnecting to renew session (iteration={loop_iteration})",
+                    TOKEN_PROACTIVE_REFRESH_SECS
+                );
+                let _ = write.send(Message::Close(None)).await;
+                return Err(TwitchError::ProactiveRefresh);
+            }
+            _ = heartbeat.tick() => {
+                let idle = last_read_activity.elapsed();
+                let timeout = Duration::from_secs(HEARTBEAT_TIMEOUT_SECS);
+                log::debug!(
+                    "[twitch-irc] heartbeat check: idle={idle:?}, timeout={timeout:?}, \
+                     iteration={loop_iteration}, msgs_rx={total_messages_received}, \
+                     pings={total_pings_received}, pongs={total_pongs_sent}, \
+                     outbound={total_outbound_sent}, notices={total_notices_received}"
+                );
+                if idle > timeout {
+                    log::error!(
+                        "[twitch-irc] no data received for {idle:?} (> {timeout:?}), \
+                         assuming dead connection. iteration={loop_iteration}"
+                    );
+                    return Err(TwitchError::WebSocket(
+                        format!("no data received for {idle:?}, connection presumed dead")
+                    ));
+                }
+            }
             msg = outbound_rx.recv() => {
                 match msg {
                     Some(out_msg) => {
@@ -426,36 +544,9 @@ async fn connect_irc(
                              (sender dropped) at iteration={loop_iteration}, \
                              msgs_rx={total_messages_received}, outbound={total_outbound_sent}"
                         );
-                        return Err(TwitchError::WebSocket("outbound channel closed".to_owned()));
+                        return Err(TwitchError::Internal("outbound channel closed".to_owned()));
                     }
                 }
-            }
-            _ = heartbeat.tick() => {
-                let idle = last_read_activity.elapsed();
-                let timeout = Duration::from_secs(HEARTBEAT_TIMEOUT_SECS);
-                log::debug!(
-                    "[twitch-irc] heartbeat check: idle={idle:?}, timeout={timeout:?}, \
-                     iteration={loop_iteration}, msgs_rx={total_messages_received}, \
-                     pings={total_pings_received}, pongs={total_pongs_sent}, \
-                     outbound={total_outbound_sent}, notices={total_notices_received}"
-                );
-                if idle > timeout {
-                    log::error!(
-                        "[twitch-irc] no data received for {idle:?} (> {timeout:?}), \
-                         assuming dead connection. iteration={loop_iteration}"
-                    );
-                    return Err(TwitchError::WebSocket(
-                        format!("no data received for {idle:?}, connection presumed dead")
-                    ));
-                }
-            }
-            _ = &mut *shutdown_rx => {
-                log::info!(
-                    "[twitch-irc] shutdown signal received at iteration={loop_iteration}, \
-                     msgs_rx={total_messages_received}, outbound={total_outbound_sent}"
-                );
-                let _ = write.send(Message::Close(None)).await;
-                return Ok(());
             }
         }
     }
@@ -576,7 +667,7 @@ mod tests {
         // Assert
         assert_eq!(tags.get("color").unwrap(), "#1E90FF");
         assert_eq!(tags.get("display-name").unwrap(), "TestUser");
-        assert_eq!(tags.get("badge-info").unwrap(), ""); // Empty value
+        assert_eq!(tags.get("badge-info").unwrap(), "");
         assert_eq!(tags.get("badges").unwrap(), "moderator/1,subscriber/12");
         assert_eq!(tags.get("nonexistent"), None);
     }
@@ -591,15 +682,14 @@ mod tests {
 
         // Assert
         assert_eq!(tags.get("key1").unwrap(), "val1");
-        assert_eq!(tags.get("key2").unwrap(), ""); // Missing '=' means empty value
+        assert_eq!(tags.get("key2").unwrap(), "");
         assert_eq!(tags.get("key3").unwrap(), "val3");
-        assert_eq!(tags.get("").unwrap(), ""); // "=" parses as empty key and empty value
+        assert_eq!(tags.get("").unwrap(), "");
     }
 
     #[test]
     fn should_fallback_to_username_when_display_name_is_empty() {
         // Arrange
-        // Missing display-name tag completely
         let line = "@color=#1E90FF;id=abc-123 :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello world";
 
         // Act
@@ -612,16 +702,56 @@ mod tests {
     #[test]
     fn should_parse_privmsg_without_tags() {
         // Arrange
-        // Raw IRC PRIVMSG without Twitch capabilities (no @tags prefix)
         let line = ":testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello basic irc";
 
         // Act
-        // Because of the current logic `line.strip_prefix('@')?`, our parser STRICTLY expects tags.
-        // If Twitch sends a message without tags, our parse_privmsg will return None.
-        // Let's assert this behavior to protect against regressions if we ever change it.
         let result = parse_privmsg(line);
 
         // Assert
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn should_generate_unique_fallback_id_including_timestamp() {
+        // Arrange — message without an `id` tag so the fallback path runs
+        let line =
+            "@color=#1E90FF :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert — fallback id must contain channel, username, and a timestamp component
+        assert!(
+            msg.id.starts_with("gaules-testuser-"),
+            "id should start with 'channel-username-', got: {}",
+            msg.id
+        );
+    }
+
+    #[test]
+    fn proactive_refresh_deadline_is_less_than_twitch_token_lifetime() {
+        // Arrange
+        let twitch_token_lifetime_secs: u64 = 4 * 60 * 60;
+
+        // Act + Assert
+        assert!(
+            TOKEN_PROACTIVE_REFRESH_SECS < twitch_token_lifetime_secs,
+            "proactive refresh ({TOKEN_PROACTIVE_REFRESH_SECS}s) must fire before token expires ({twitch_token_lifetime_secs}s)"
+        );
+    }
+
+    #[test]
+    fn proactive_refresh_error_is_dedicated_variant() {
+        // Arrange
+        let err = TwitchError::ProactiveRefresh;
+
+        // Act
+        let msg = err.to_string();
+
+        // Assert — the dedicated variant must have a distinct display string
+        assert!(
+            msg.contains("roactive"),
+            "ProactiveRefresh display string should mention proactive refresh, got: {msg}"
+        );
     }
 }
