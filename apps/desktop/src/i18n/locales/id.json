@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "Memuat stream",
-    "loadingChannel": "Memuat {channel}..."
+    "loadingChannel": "Memuat {channel}...",
+    "streamDiagnostics": "diagnostik_siaran"
   },
   "notifications": {
     "welcome": "Favorit sedang siaran",

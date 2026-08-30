@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "Chargement du flux",
-    "loadingChannel": "Chargement de {channel}..."
+    "loadingChannel": "Chargement de {channel}...",
+    "streamDiagnostics": "diagnostics_du_stream"
   },
   "notifications": {
     "welcome": "Les favoris sont en direct",

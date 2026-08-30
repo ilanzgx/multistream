@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "Yayın yükleniyor",
-    "loadingChannel": "{channel} yükleniyor..."
+    "loadingChannel": "{channel} yükleniyor...",
+    "streamDiagnostics": "yayin_tanilamasi"
   },
   "notifications": {
     "welcome": "Favoriler canlı yayında",

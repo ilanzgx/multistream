@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "Loading stream",
-    "loadingChannel": "Loading {channel}..."
+    "loadingChannel": "Loading {channel}...",
+    "streamDiagnostics": "stream_diagnostics"
   },
   "notifications": {
     "welcome": "Favorites are live",

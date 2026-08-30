@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "Carregando transmissão",
-    "loadingChannel": "Carregando {channel}..."
+    "loadingChannel": "Carregando {channel}...",
+    "streamDiagnostics": "diagnosticos_da_transmissão"
   },
   "notifications": {
     "welcome": "Favoritos ao vivo",

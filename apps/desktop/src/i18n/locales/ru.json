@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "Загрузка трансляции",
-    "loadingChannel": "Загрузка {channel}..."
+    "loadingChannel": "Загрузка {channel}...",
+    "streamDiagnostics": "диагностика_стрима"
   },
   "notifications": {
     "welcome": "Избранные стримеры онлайн",

@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "स्ट्रीम लोड हो रही है",
-    "loadingChannel": "{channel} लोड हो रहा है..."
+    "loadingChannel": "{channel} लोड हो रहा है...",
+    "streamDiagnostics": "स्ट्रीम_निदान"
   },
   "notifications": {
     "welcome": "पसंदीदा लाइव हैं",

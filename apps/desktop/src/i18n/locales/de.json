@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "Stream wird geladen",
-    "loadingChannel": "{channel} wird geladen..."
+    "loadingChannel": "{channel} wird geladen...",
+    "streamDiagnostics": "stream_diagnose"
   },
   "notifications": {
     "welcome": "Favoriten sind live",

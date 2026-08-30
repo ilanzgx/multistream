@@ -346,7 +346,8 @@
   },
   "skeleton": {
     "loading": "加载直播",
-    "loadingChannel": "正在加载 {channel}..."
+    "loadingChannel": "正在加载 {channel}...",
+    "streamDiagnostics": "直播_诊断"
   },
   "notifications": {
     "welcome": "收藏主播正在直播",

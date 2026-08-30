@@ -332,12 +332,13 @@ const handleScreenshot = () => {
                 v-if="skeletonSize === 'lg' || skeletonSize === 'md'"
                 class="font-mono text-white/30 space-y-1.5 w-full px-4 flex flex-col items-center"
                 :class="skeletonSize === 'md' ? 'text-[8px]' : 'text-[10px]'"
+                aria-hidden="true"
               >
                 <div class="w-fit max-w-full">
                   <div
-                    class="text-[8px] text-white/15 uppercase tracking-widest border-b border-white/6 pb-1 mb-1.5 font-semibold text-left w-full"
+                    class="text-[8px] text-white/15 uppercase tracking-widest border-b border-white/6 pb-1 mb-1.5 font-semibold text-center w-full"
                   >
-                    [stream_diagnostics]
+                    [{{ t("skeleton.streamDiagnostics") }}]
                   </div>
 
                   <div
