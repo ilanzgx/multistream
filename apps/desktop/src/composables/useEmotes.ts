@@ -46,6 +46,24 @@ type RawToken =
   | { type: "link"; content: string; url: string };
 
 const URL_REGEX = /(?:https?:\/\/|www\.)[^\s]+/gi;
+const KICK_EMOTE_REGEX = /\[emote:(\d+):([^\]]+)\]/g;
+const TRAILING_PUNCTUATION_REGEX = /[.,;:!?)]+$/;
+const SPLIT_WHITESPACE_REGEX = /(\s+)/;
+
+const MAX_TOKEN_CACHE_SIZE = 1000;
+const tokenCache = new Map<string, ParsedToken[]>();
+const channelVersions = new Map<string, number>();
+let globalVersion = 0;
+
+export const __test_resetEmotesState = (): void => {
+  tokenCache.clear();
+  channelVersions.clear();
+  globalVersion = 0;
+};
+
+export const __test_getTokenCacheSize = (): number => {
+  return tokenCache.size;
+};
 
 const fetchTwitchId = async (username: string): Promise<string | null> => {
   try {
@@ -113,8 +131,10 @@ const _useEmotes = () => {
   const loadGlobalEmotes = async (): Promise<void> => {
     if (globalEmotesLoaded.value) return;
     await Promise.allSettled([fetchTwitchGlobal(), fetch7TVGlobal(), fetchBTTVGlobal()]);
-    triggerRef(globalEmotes);
     globalEmotesLoaded.value = true;
+    globalVersion++;
+    tokenCache.clear();
+    triggerRef(globalEmotes);
   };
 
   const fetch7TVChannel = async (userId: string, map: EmoteMap): Promise<void> => {
@@ -217,13 +237,33 @@ const _useEmotes = () => {
 
     await Promise.allSettled(promises);
     channelEmotes[username] = new Map(map); // trigger shallowReactive
+
+    const normUser = username.toLowerCase();
+    const nextVer = (channelVersions.get(normUser) || 0) + 1;
+    channelVersions.set(normUser, nextVer);
+    for (const key of tokenCache.keys()) {
+      if (key.startsWith(`${normUser}:`)) {
+        tokenCache.delete(key);
+      }
+    }
   };
 
   const parseMessage = (
     text: string,
     twitchEmotesStr: string | null | undefined,
-    channel: string
+    channel: string = ""
   ): ParsedToken[] => {
+    if (!text) return [];
+
+    const normChannel = channel.toLowerCase();
+    const chanVer = channelVersions.get(normChannel) || 0;
+    const cacheKey = `${normChannel}:${chanVer}:${globalVersion}:${twitchEmotesStr || ""}:${text}`;
+
+    const cached = tokenCache.get(cacheKey);
+    if (cached) {
+      return cached.slice();
+    }
+
     const tokens: ParsedToken[] = [];
 
     const emoteReplacements: { start: number; end: number; url: string; code: string }[] = [];
@@ -251,13 +291,13 @@ const _useEmotes = () => {
       }
     }
 
-    const kickRegex = /\[emote:(\d+):([^\]]+)\]/g;
-    let match;
-    while ((match = kickRegex.exec(text)) !== null) {
-      const start = match.index;
-      const end = kickRegex.lastIndex - 1;
-      const id = match[1] || "";
-      const code = match[2] || "";
+    KICK_EMOTE_REGEX.lastIndex = 0;
+    let kickMatch: RegExpExecArray | null;
+    while ((kickMatch = KICK_EMOTE_REGEX.exec(text)) !== null) {
+      const start = kickMatch.index;
+      const end = KICK_EMOTE_REGEX.lastIndex - 1;
+      const id = kickMatch[1] || "";
+      const code = kickMatch[2] || "";
       emoteReplacements.push({
         start,
         end,
@@ -287,7 +327,7 @@ const _useEmotes = () => {
       rawTokens.push({ type: "text", content: text });
     }
 
-    const channelMap = channelEmotes[channel];
+    const channelMap = channelEmotes[normChannel] || channelEmotes[channel];
 
     for (const rt of rawTokens) {
       if (rt.type === "emote") {
@@ -295,7 +335,7 @@ const _useEmotes = () => {
         continue;
       }
 
-      const words = rt.content.split(/(\s+)/);
+      const words = rt.content.split(SPLIT_WHITESPACE_REGEX);
 
       for (const word of words) {
         if (!word) continue;
@@ -337,14 +377,14 @@ const _useEmotes = () => {
     for (const t of mergedTokens) {
       if (t.type === "text") {
         let lastIndex = 0;
-        let match;
+        let urlMatch: RegExpExecArray | null;
         URL_REGEX.lastIndex = 0;
 
-        while ((match = URL_REGEX.exec(t.content)) !== null) {
-          let url = match[0];
-          const start = match.index;
+        while ((urlMatch = URL_REGEX.exec(t.content)) !== null) {
+          let url = urlMatch[0];
+          const start = urlMatch.index;
 
-          const trailingPunctuationMatch = url.match(/[.,;:!?)]+$/);
+          const trailingPunctuationMatch = url.match(TRAILING_PUNCTUATION_REGEX);
           if (trailingPunctuationMatch) {
             let punct = trailingPunctuationMatch[0];
             // Don't strip closing parenthesis if the URL contains an opening parenthesis (e.g. Wikipedia links)
@@ -379,12 +419,20 @@ const _useEmotes = () => {
       }
     }
 
+    if (tokenCache.size >= MAX_TOKEN_CACHE_SIZE) {
+      const firstKey = tokenCache.keys().next().value;
+      if (firstKey !== undefined) {
+        tokenCache.delete(firstKey);
+      }
+    }
+    tokenCache.set(cacheKey, finalTokens.slice());
+
     return finalTokens;
   };
 
   const encodeKickMessage = (text: string, channel: string): string => {
     const channelMap = kickEmotes[channel];
-    const words = text.split(/(\s+)/);
+    const words = text.split(SPLIT_WHITESPACE_REGEX);
 
     for (let i = 0; i < words.length; i++) {
       const word = words[i];

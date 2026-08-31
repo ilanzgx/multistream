@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { useEmotes } from "../useEmotes";
+import { useEmotes, __test_resetEmotesState, __test_getTokenCacheSize } from "../useEmotes";
 
 const mockFetch = vi.fn();
 vi.stubGlobal("fetch", mockFetch);
@@ -9,6 +9,7 @@ describe("useEmotes", () => {
 
   beforeEach(() => {
     vi.resetModules();
+    __test_resetEmotesState();
     mockFetch.mockReset();
     mockFetch.mockImplementation(async (url: string) => {
       if (url?.includes("emotes.adamcy.pl/v1/global/emotes/twitch")) {
@@ -310,5 +311,66 @@ describe("useEmotes", () => {
     // Assert
     expect(dict.has("Kappa")).toBe(true);
     expect(dict.get("Kappa")?.url).toContain("jtvnw.net");
+  });
+
+  it("should memoize tokenization for repeated messages via tokenCache", () => {
+    // Arrange
+    const text = "LUL GG poggers";
+    const channel = "streamer";
+
+    // Act
+    const firstResult = sut.parseMessage(text, null, channel);
+    const initialCacheSize = __test_getTokenCacheSize();
+    const secondResult = sut.parseMessage(text, null, channel);
+    const finalCacheSize = __test_getTokenCacheSize();
+
+    // Assert
+    expect(firstResult).toEqual(secondResult);
+    expect(initialCacheSize).toBe(1);
+    expect(finalCacheSize).toBe(1);
+  });
+
+  it("should evict channel token cache when loadChannelEmotes updates the channel", async () => {
+    // Arrange
+    const text = "LUL hello world";
+    const channel = "streamer";
+    mockFetch.mockImplementation(async (url: string) => {
+      if (url?.includes("7tv.io/v3/users/kick/streamer")) {
+        return {
+          ok: true,
+          json: async () => ({
+            emote_set: {
+              emotes: [{ id: "7tv-lul", name: "LUL" }],
+            },
+          }),
+        };
+      }
+      return { ok: true, json: async () => ({}), text: async () => "" };
+    });
+
+    // Act 1: Parse before channel emotes are loaded
+    const beforeEmotesResult = sut.parseMessage(text, null, channel);
+    expect(beforeEmotesResult[0]?.type).toBe("text");
+
+    // Act 2: Load channel emotes (should invalidate cached tokens for 'streamer')
+    await sut.loadChannelEmotes(channel);
+    const afterEmotesResult = sut.parseMessage(text, null, channel);
+
+    // Assert
+    expect(afterEmotesResult[0]?.type).toBe("emote");
+    expect(afterEmotesResult[0]?.content).toContain("7tv-lul");
+  });
+
+  it("should bound token cache size to MAX_TOKEN_CACHE_SIZE (1000)", () => {
+    // Arrange
+    const channel = "streamer";
+
+    // Act
+    for (let i = 0; i < 1050; i++) {
+      sut.parseMessage(`Unique message number ${i}`, null, channel);
+    }
+
+    // Assert
+    expect(__test_getTokenCacheSize()).toBe(1000);
   });
 });

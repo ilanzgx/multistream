@@ -74,7 +74,7 @@ const nameColor = computed(() => props.message.color || "#e5e7eb"); // Default t
 const handleLinkClick = async (url: string) => {
   try {
     await openUrl(url);
-  } catch (e) {
+  } catch {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 };
@@ -101,6 +101,8 @@ const handleLinkClick = async (url: string) => {
           :alt="props.message.channel"
           :title="$t('chat.streamTooltip', { channel: props.message.channel })"
           class="w-[18px] h-[18px] rounded-full object-cover mt-[1px] shrink-0 border border-white/5"
+          loading="lazy"
+          decoding="async"
         />
         <div
           v-else
@@ -157,8 +159,10 @@ const handleLinkClick = async (url: string) => {
             :src="token.content"
             :alt="token.code"
             :title="token.code"
-            class="inline-block object-contain mx-0.5 align-middle drop-shadow-sm"
+            class="inline-block object-contain mx-0.5 align-middle"
             style="height: 1.5em; max-width: 100%"
+            loading="lazy"
+            decoding="async"
           />
         </template>
       </p>
