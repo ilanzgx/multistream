@@ -134,7 +134,7 @@ const formatViewers = (count?: number) => {
 
 <template>
   <div
-    v-if="suggestedStreams.length && !isLoadingSuggestions"
+    v-if="suggestedStreams.length"
     class="mt-6 flex flex-col items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 w-full max-w-5xl md:max-w-6xl lg:max-w-8xl"
   >
     <div
@@ -235,9 +235,11 @@ const formatViewers = (count?: number) => {
         <!-- Info -->
         <div class="p-3 pt-2 flex flex-col gap-0.5 relative z-10">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-bold text-white truncate max-w-28" :title="stream.channel">{{
-              stream.channel
-            }}</span>
+            <span
+              class="text-xs font-bold text-white truncate max-w-28"
+              :title="stream.displayName || stream.channel"
+              >{{ stream.displayName || stream.channel }}</span
+            >
             <component
               :is="PLATFORMS[stream.platform]?.icon"
               v-if="PLATFORMS[stream.platform]"
