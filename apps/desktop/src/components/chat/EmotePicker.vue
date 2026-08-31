@@ -78,15 +78,29 @@ const parsedEmotes = computed<PickerEmote[]>(() => {
 
 const filteredEmotes = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
-  let list =
-    activeTab.value === "recent"
-      ? recentEmotes.value.filter((e) => props.emotes.has(e.name))
-      : parsedEmotes.value.filter((e) => e.provider === activeTab.value);
-
   if (query) {
-    list = list.filter((e) => e.name.toLowerCase().includes(query));
+    return parsedEmotes.value
+      .filter((e) => e.name.toLowerCase().includes(query))
+      .toSorted((a, b) => {
+        const aLower = a.name.toLowerCase();
+        const bLower = b.name.toLowerCase();
+        const aExact = aLower === query;
+        const bExact = bLower === query;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+
+        const aStarts = aLower.startsWith(query);
+        const bStarts = bLower.startsWith(query);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+
+        return aLower.localeCompare(bLower);
+      });
   }
-  return list;
+
+  return activeTab.value === "recent"
+    ? recentEmotes.value.filter((e) => props.emotes.has(e.name))
+    : parsedEmotes.value.filter((e) => e.provider === activeTab.value);
 });
 
 const EMOTES_PER_ROW = 8;
@@ -110,8 +124,13 @@ const {
   itemHeight: ROW_HEIGHT,
 });
 
+watch(searchQuery, () => {
+  scrollTo(0);
+});
+
 const setTab = (tab: EmoteProvider | "recent") => {
   activeTab.value = tab;
+  searchQuery.value = "";
   scrollTo(0);
 };
 
@@ -183,7 +202,7 @@ const tabs = computed<{ value: EmoteProvider | "recent"; label: string }[]>(() =
               :key="tab.value"
               class="px-2 py-1 text-xs font-medium rounded transition-colors"
               :class="
-                activeTab === tab.value
+                !searchQuery && activeTab === tab.value
                   ? 'bg-[#2a2d33] text-white'
                   : 'text-gray-400 hover:text-gray-300'
               "
