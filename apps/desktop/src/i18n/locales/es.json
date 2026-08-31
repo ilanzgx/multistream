@@ -23,7 +23,10 @@
     "searchNoResults": "No se encontraron canales",
     "removeStream": "Eliminar stream",
     "customStreamDefault": "Transmisión personalizada",
-    "platformCustom": "Personalizado"
+    "platformCustom": "Personalizado",
+    "suggestedLabel": "Transmisiones Sugeridas",
+    "suggestedDescription": "Transmisiones en vivo populares ahora",
+    "noSuggestions": "No se encontraron transmisiones"
   },
   "settings": {
     "tooltip": "Configuraciones",
@@ -223,7 +226,9 @@
     "title": "Ninguna transmisión seleccionada",
     "description": "Comienza agregando tus canales favoritos para verlos simultáneamente.",
     "addButton": "Agregar Stream",
-    "tourLink": "¿Necesitas ayuda? Haz el tour"
+    "tourLink": "¿Necesitas ayuda? Haz el tour",
+    "refresh": "Actualizar",
+    "loading": "Cargando..."
   },
   "chat": {
     "controlTitle": "Control de Chat",
