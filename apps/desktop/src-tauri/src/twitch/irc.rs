@@ -187,28 +187,20 @@ pub async fn run_irc_loop(
                 Err(TwitchError::ProactiveRefresh) => {
                     log::info!("[twitch-irc] proactive token renewal triggered, refreshing before reconnect");
                     let state = app.state::<TwitchState>();
-                    if let Some(auth) = state.auth.lock().await.clone() {
-                        match super::oauth::refresh_token(&http, &auth.refresh_token).await {
-                            Ok(new_auth) => {
-                                if let Err(e) = super::oauth::store_auth(&app, &new_auth) {
-                                    log::error!(
-                                        "[twitch-irc] failed to persist refreshed token: {e}"
-                                    );
-                                }
-                                *state.auth.lock().await = Some(new_auth);
-                                log::info!(
-                                    "[twitch-irc] token refreshed proactively, will reconnect"
-                                );
-                            }
-                            Err(TwitchError::TokenRefreshFailed) => {
-                                log::error!("[twitch-irc] token permanently revoked during proactive refresh");
-                                super::commands::revoke_auth_and_notify(&app, &state).await;
-                                emit_connection_state(&app, ConnectionState::Disconnected).await;
-                                break;
-                            }
-                            Err(e) => {
-                                log::warn!("[twitch-irc] proactive refresh transient error ({e}), reconnecting with current token");
-                            }
+                    match super::commands::force_refresh_token(&app, &state, &http).await {
+                        Ok(_) => {
+                            log::info!("[twitch-irc] token refreshed proactively, will reconnect");
+                        }
+                        Err(TwitchError::TokenRefreshFailed) => {
+                            log::error!(
+                                "[twitch-irc] token permanently revoked during proactive refresh"
+                            );
+                            super::commands::revoke_auth_and_notify(&app, &state).await;
+                            emit_connection_state(&app, ConnectionState::Disconnected).await;
+                            break;
+                        }
+                        Err(e) => {
+                            log::warn!("[twitch-irc] proactive refresh transient error ({e}), reconnecting with current token");
                         }
                     }
                     emit_connection_state(&app, ConnectionState::Disconnected).await;
@@ -304,26 +296,18 @@ async fn connect_irc(
             .map_err(|e| TwitchError::WebSocket(e.to_string()))?;
     }
 
-    for (i, channel) in channels.iter().enumerate() {
-        if i > 0 && i % 20 == 0 {
-            tokio::select! {
-                _ = tokio::time::sleep(Duration::from_millis(10_000)) => {}
-                _ = &mut *shutdown_rx => {
-                    log::info!("[twitch-irc] shutdown during JOIN batch, aborting");
-                    let _ = write.send(Message::Close(None)).await;
-                    return Ok(());
-                }
-            }
-        }
-        write
-            .send(Message::Text(format!("JOIN #{channel}")))
-            .await
-            .map_err(|e| TwitchError::WebSocket(e.to_string()))?;
-        tokio::time::sleep(Duration::from_millis(JOIN_DELAY_MS)).await;
-    }
+    let mut pending_joins: Vec<String> = channels.iter().cloned().collect();
+    pending_joins.reverse();
+    let mut join_ticker = tokio::time::interval(Duration::from_millis(JOIN_DELAY_MS));
+    join_ticker.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    let mut join_batch_count = 0;
+    let mut batch_sleep_until: Option<tokio::time::Instant> = None;
 
     emit_connection_state(app, ConnectionState::Connected).await;
-    log::info!("[twitch-irc] connected, joined {} channels", channels.len());
+    log::info!(
+        "[twitch-irc] connected, starting to join {} channels...",
+        channels.len()
+    );
 
     let mut last_read_activity = tokio::time::Instant::now();
     let mut heartbeat = tokio::time::interval(Duration::from_secs(HEARTBEAT_INTERVAL_SECS));
@@ -343,7 +327,24 @@ async fn connect_irc(
     loop {
         loop_iteration += 1;
         tokio::select! {
-            biased;
+            _ = join_ticker.tick(), if !pending_joins.is_empty() && batch_sleep_until.is_none() => {
+                if let Some(channel) = pending_joins.pop() {
+                    if let Err(e) = write.send(Message::Text(format!("JOIN #{}", channel))).await {
+                        log::error!("[twitch-irc] failed to send JOIN: {e}");
+                        return Err(TwitchError::WebSocket(e.to_string()));
+                    }
+                    join_batch_count += 1;
+                    if join_batch_count > 0 && join_batch_count % 20 == 0 {
+                        batch_sleep_until = Some(tokio::time::Instant::now() + Duration::from_secs(10));
+                    }
+                }
+                if pending_joins.is_empty() {
+                    log::info!("[twitch-irc] finished joining all channels");
+                }
+            }
+            _ = tokio::time::sleep_until(batch_sleep_until.unwrap_or_else(tokio::time::Instant::now)), if batch_sleep_until.is_some() => {
+                batch_sleep_until = None;
+            }
             msg = read.next() => {
                 let elapsed_since_last = last_read_activity.elapsed();
                 last_read_activity = tokio::time::Instant::now();

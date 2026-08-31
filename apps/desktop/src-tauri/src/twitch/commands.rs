@@ -232,12 +232,38 @@ pub async fn twitch_send_message(
             emotes: None,
         };
 
-        state.messages.lock().await.push_back(message.clone());
+        let mut buf = state.messages.lock().await;
+        if buf.len() >= super::state::MAX_MESSAGES {
+            buf.pop_front();
+        }
+        buf.push_back(message.clone());
+        drop(buf);
+
         let _ = app.emit("unified-chat-message", message);
     } else {
         return Err(TwitchError::WebSocket("Not connected to IRC".to_owned()));
     }
     Ok(())
+}
+
+pub(crate) async fn force_refresh_token(
+    app: &AppHandle,
+    state: &TwitchState,
+    http: &reqwest::Client,
+) -> Result<TwitchAuthInfo, TwitchError> {
+    let _guard = state.auth_refresh_lock.lock().await;
+
+    let current_auth = state.auth.lock().await.clone();
+    let Some(auth) = current_auth else {
+        return Err(TwitchError::OAuth(
+            "No auth state available to refresh".to_owned(),
+        ));
+    };
+
+    let refreshed = oauth::refresh_token(http, &auth.refresh_token).await?;
+    oauth::store_auth(app, &refreshed)?;
+    *state.auth.lock().await = Some(refreshed.clone());
+    Ok(refreshed)
 }
 
 pub(crate) async fn revoke_auth_and_notify(app: &AppHandle, state: &TwitchState) {
