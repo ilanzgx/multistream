@@ -86,7 +86,7 @@ pub async fn poll_device_token(
 
     if response.status() == 400 {
         let body = response.text().await.unwrap_or_default();
-        if is_authorization_pending(&body) {
+        if should_continue_polling(&body) {
             return Ok(None);
         }
         return Err(TwitchError::OAuth(format!("Polling failed: {}", body)));
@@ -178,9 +178,14 @@ pub async fn refresh_token(
 
 pub fn store_auth(_app: &AppHandle, auth: &TwitchAuthInfo) -> Result<(), TwitchError> {
     let json = serde_json::to_string(auth).map_err(|e| TwitchError::Storage(e.to_string()))?;
+    let target_path = auth_file_path()?;
+    let tmp_path = target_path.with_extension("tmp");
 
-    std::fs::write(auth_file_path()?, json.as_bytes())
-        .map_err(|e| TwitchError::Storage(e.to_string()))
+    std::fs::write(&tmp_path, json.as_bytes())
+        .map_err(|e| TwitchError::Storage(format!("Failed to write tmp auth file: {}", e)))?;
+
+    std::fs::rename(&tmp_path, &target_path)
+        .map_err(|e| TwitchError::Storage(format!("Failed to finalize auth storage: {}", e)))
 }
 
 pub fn load_auth(_app: &AppHandle) -> Option<TwitchAuthInfo> {
@@ -200,7 +205,8 @@ fn auth_file_path() -> Result<std::path::PathBuf, TwitchError> {
         TwitchError::Storage("Could not determine user config directory".to_owned())
     })?;
     path.push("multistream");
-    let _ = std::fs::create_dir_all(&path);
+    std::fs::create_dir_all(&path)
+        .map_err(|e| TwitchError::Storage(format!("Failed to create config directory: {}", e)))?;
     #[cfg(debug_assertions)]
     path.push(format!("{}_dev", STRONGHOLD_KEY));
     #[cfg(not(debug_assertions))]
@@ -208,9 +214,12 @@ fn auth_file_path() -> Result<std::path::PathBuf, TwitchError> {
     Ok(path.with_extension("json"))
 }
 
-pub(crate) fn is_authorization_pending(body: &str) -> bool {
+pub(crate) fn should_continue_polling(body: &str) -> bool {
     let body_lower = body.to_lowercase();
-    body_lower.contains("authorization_pending") || body_lower.contains("authorization pending")
+    body_lower.contains("authorization_pending")
+        || body_lower.contains("authorization pending")
+        || body_lower.contains("slow_down")
+        || body_lower.contains("slow down")
 }
 
 #[cfg(test)]
@@ -221,22 +230,25 @@ mod tests {
     fn should_detect_authorization_pending_variants() {
         // Standard Twitch API format
         let standard = r#"{"status":400,"message":"authorization_pending"}"#;
-        assert!(is_authorization_pending(standard));
+        assert!(should_continue_polling(standard));
 
         // Sometimes Twitch returns it with space instead of underscore
         let with_space = r#"{"status":400,"message":"authorization pending"}"#;
-        assert!(is_authorization_pending(with_space));
+        assert!(should_continue_polling(with_space));
 
         // Case insensitivity check
         let uppercase = r#"{"message":"AUTHORIZATION_PENDING"}"#;
-        assert!(is_authorization_pending(uppercase));
+        assert!(should_continue_polling(uppercase));
+
+        let slow_down = r#"{"status":400,"message":"slow_down"}"#;
+        assert!(should_continue_polling(slow_down));
 
         // Unrelated error
         let unrelated = r#"{"status":400,"message":"invalid_client"}"#;
-        assert!(!is_authorization_pending(unrelated));
+        assert!(!should_continue_polling(unrelated));
 
         // Empty body
         let empty = "";
-        assert!(!is_authorization_pending(empty));
+        assert!(!should_continue_polling(empty));
     }
 }

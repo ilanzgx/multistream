@@ -30,7 +30,7 @@ twitch_login
   └─ Emits twitch-auth-url → frontend displays the link/QR to the user
   └─ Polling loop (tokio::select! + oneshot abort channel)
        → POST /token every `interval` seconds
-       → authorization_pending → keep polling
+       → authorization_pending or slow_down → keep polling (avoids crashing on jitter)
        → token received → GET /validate (fetches login + user_id)
        → Persists credentials → emits twitch-auth-changed
 ```
@@ -39,7 +39,7 @@ twitch_login
 
 ### Persistence
 
-Credentials are saved to `%APPDATA%\multistream\twitch_auth.json`. Loaded on app startup — if the token is expired, a refresh is attempted in the background. Network errors **do not** clear credentials.
+Credentials are saved to `%APPDATA%\multistream\twitch_auth.json` using **Atomic Writes** (write to `.tmp` then OS-level `rename`) to prevent JSON corruption during power outages (Disk Tearing). Loaded on app startup — if the token is expired, a refresh is attempted in the background. Network errors **do not** clear credentials. Strict directory creation ensures silent IO errors do not leave ghost sessions.
 
 ### IRC Chat
 
