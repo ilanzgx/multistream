@@ -1,38 +1,78 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+use tauri::ipc::{InvokeBody, Request};
+
 pub(crate) fn extract_base64(data_url: &str) -> Result<&str, &'static str> {
     data_url.split(',').nth(1).ok_or("Invalid data URL format")
 }
 
-// invokable function to save a screenshot to the Pictures/Multistream directory
-// receives a base64-encoded data URL from the frontend and writes it as a PNG file
+pub(crate) fn sanitize_filename(filename: &str) -> Result<&str, String> {
+    Path::new(filename)
+        .file_name()
+        .and_then(|f| f.to_str())
+        .filter(|f| !f.is_empty())
+        .ok_or_else(|| "Invalid filename".to_string())
+}
+
 #[tauri::command]
-pub async fn save_screenshot(data_url: String, filename: String) -> Result<String, String> {
-    use std::fs;
-    use std::path::PathBuf;
+pub async fn save_screenshot(request: Request<'_>) -> Result<String, String> {
+    let (bytes, raw_filename): (Vec<u8>, String) = match request.body() {
+        InvokeBody::Raw(raw_bytes) => {
+            let filename_header = request
+                .headers()
+                .get("x-filename")
+                .and_then(|v| v.to_str().ok())
+                .ok_or_else(|| "Missing x-filename header".to_string())?;
 
-    // extract base64 data from data URL ("data:image/png;base64,AAAA...")
-    let base64_data = extract_base64(&data_url)?;
+            let decoded_filename = urlencoding::decode(filename_header)
+                .map_err(|e| format!("Failed to decode filename: {}", e))?
+                .into_owned();
 
-    // decode base64 into raw bytes
-    use base64::Engine;
-    let image_data = base64::engine::general_purpose::STANDARD
-        .decode(base64_data)
-        .map_err(|e| format!("Failed to decode image: {}", e))?;
+            (raw_bytes.to_vec(), decoded_filename)
+        }
+        InvokeBody::Json(json_val) => {
+            #[derive(serde::Deserialize)]
+            struct ScreenshotPayload {
+                #[serde(alias = "data_url")]
+                data_url: Option<String>,
+                #[serde(alias = "dataUrl")]
+                data_url_camel: Option<String>,
+                filename: String,
+            }
 
-    // resolve save directory: ~/Pictures/Multistream/
+            let payload: ScreenshotPayload = serde_json::from_value(json_val.clone())
+                .map_err(|e| format!("Invalid screenshot payload: {}", e))?;
+
+            let data_url = payload
+                .data_url
+                .or(payload.data_url_camel)
+                .ok_or_else(|| "Missing data_url in payload".to_string())?;
+
+            let base64_data = extract_base64(&data_url)?;
+
+            use base64::Engine;
+            let decoded = base64::engine::general_purpose::STANDARD
+                .decode(base64_data)
+                .map_err(|e| format!("Failed to decode image: {}", e))?;
+
+            (decoded, payload.filename)
+        }
+    };
+
+    let safe_name = sanitize_filename(&raw_filename)?;
+
     let pictures_dir = dirs::picture_dir().unwrap_or_else(|| PathBuf::from("."));
-
     let save_dir = pictures_dir.join("Multistream");
     fs::create_dir_all(&save_dir).map_err(|e| format!("Failed to create directory: {}", e))?;
 
-    let file_path = save_dir.join(&filename);
-    fs::write(&file_path, &image_data).map_err(|e| format!("Failed to save screenshot: {}", e))?;
+    let file_path = save_dir.join(safe_name);
+    fs::write(&file_path, &bytes).map_err(|e| format!("Failed to save screenshot: {}", e))?;
 
     Ok(file_path.to_string_lossy().to_string())
 }
 
 #[tauri::command]
 pub async fn open_screenshot_folder(app: tauri::AppHandle) -> Result<(), String> {
-    use std::path::PathBuf;
     use tauri_plugin_opener::OpenerExt;
 
     let pictures_dir = dirs::picture_dir().unwrap_or_else(|| PathBuf::from("."));
@@ -86,5 +126,29 @@ mod tests {
 
         // Assert
         assert_eq!(result, Ok(""));
+    }
+
+    #[test]
+    fn should_sanitize_filename_preventing_path_traversal() {
+        // Arrange
+        let malicious_filename = "../../etc/evil.png";
+
+        // Act
+        let sanitized = sanitize_filename(malicious_filename);
+
+        // Assert
+        assert_eq!(sanitized, Ok("evil.png"));
+    }
+
+    #[test]
+    fn should_reject_empty_filename() {
+        // Arrange
+        let empty_filename = "";
+
+        // Act
+        let result = sanitize_filename(empty_filename);
+
+        // Assert
+        assert!(result.is_err());
     }
 }

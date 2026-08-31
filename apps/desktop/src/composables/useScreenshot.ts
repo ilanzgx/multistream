@@ -15,6 +15,18 @@ import { isTauri } from "@/lib/http";
  * On Tauri, the image is saved to the user's Pictures/Multistream folder.
  * On web, it triggers a browser download.
  */
+export function dataUrlToUint8Array(dataUrl: string): Uint8Array {
+  const commaIndex = dataUrl.indexOf(",");
+  const base64 = commaIndex >= 0 ? dataUrl.slice(commaIndex + 1) : dataUrl;
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
 export function useScreenshot() {
   const { t } = useI18n();
   const isCapturing = ref(false);
@@ -52,9 +64,11 @@ export function useScreenshot() {
         const filename = `${channel}_${platform}_${timestamp}.png`;
 
         if (isTauri()) {
-          await invoke<string>("save_screenshot", {
-            dataUrl,
-            filename,
+          const bytes = dataUrlToUint8Array(dataUrl);
+          await invoke<string>("save_screenshot", bytes, {
+            headers: {
+              "x-filename": encodeURIComponent(filename),
+            },
           });
         } else {
           const link = document.createElement("a");
@@ -73,7 +87,7 @@ export function useScreenshot() {
 
         toast.success(`${t("toasts.screenshot.saved")}`, {
           description: descriptionVNode,
-          duration: 6000,
+          duration: 3000,
           action: isTauri()
             ? {
                 label: t("settings.recording.openFolder"),

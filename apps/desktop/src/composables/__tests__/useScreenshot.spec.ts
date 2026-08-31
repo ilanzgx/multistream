@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { useScreenshot } from "../useScreenshot";
+import { useScreenshot, dataUrlToUint8Array } from "../useScreenshot";
 import { toast } from "@/composables/useToast";
 import * as tauriCore from "@tauri-apps/api/core";
 import * as httpLib from "@/lib/http";
@@ -147,7 +147,7 @@ describe("useScreenshot composable unit tests", () => {
                 type: "MULTISTREAM_CAPTURE_RESULT",
                 requestId: data.requestId,
                 success: true,
-                dataUrl: "data:image/png;base64,mockdata",
+                dataUrl: "data:image/png;base64,bW9ja2RhdGE=",
               },
             });
           }
@@ -163,11 +163,28 @@ describe("useScreenshot composable unit tests", () => {
     await sut.captureStream(dummyDiv, "gaules", "twitch");
 
     // Assert
-    expect(tauriCore.invoke).toHaveBeenCalledWith("save_screenshot", {
-      dataUrl: "data:image/png;base64,mockdata",
-      filename: expect.stringMatching(/^gaules_twitch_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png$/),
+    expect(tauriCore.invoke).toHaveBeenCalledWith("save_screenshot", expect.any(Uint8Array), {
+      headers: {
+        "x-filename": expect.stringMatching(
+          /^gaules_twitch_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png$/
+        ),
+      },
     });
     expect(toast.success).toHaveBeenCalledWith("toasts.screenshot.saved", expect.any(Object));
+  });
+
+  it("should convert base64 dataUrl into Uint8Array correctly", () => {
+    // Arrange
+    const text = "Multistream Screenshot";
+    const base64 = btoa(text);
+    const dataUrl = `data:image/png;base64,${base64}`;
+
+    // Act
+    const bytes = dataUrlToUint8Array(dataUrl);
+
+    // Assert
+    const decoded = new TextDecoder().decode(bytes);
+    expect(decoded).toBe(text);
   });
 
   it("should trigger browser download if isTauri is false", async () => {
