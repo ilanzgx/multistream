@@ -18,85 +18,170 @@ export interface KickChatMessage {
 }
 
 const MAX_FRONTEND_MESSAGES = 500;
+const BATCH_FLUSH_INTERVAL_MS = 50;
 
 const activeKickChannels = new Map<string, number>(); // slug -> chatroom_id
 const activeBroadcasters = new Map<string, number>(); // slug -> broadcaster_user_id
+const pendingJoinControllers = new Map<string, AbortController>(); // slug -> AbortController
 
-export function __test_resetKickChatState() {
-  activeKickChannels.clear();
-  activeBroadcasters.clear();
-}
+let pendingMessages: KickChatMessage[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
 const channelMessagesMap = shallowRef<Record<string, KickChatMessage[]>>({});
 const connectionState = ref<"connected" | "disconnected" | "reconnecting">("disconnected");
 
 let isListening = false;
+let unlistenState: (() => void) | null = null;
+let unlistenMessage: (() => void) | null = null;
+
+export function flushPendingKickMessages() {
+  if (flushTimer) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  if (pendingMessages.length === 0) return;
+
+  const batch = pendingMessages;
+  pendingMessages = [];
+
+  const newMap = { ...channelMessagesMap.value };
+  let mapChanged = false;
+
+  const byChannel = new Map<string, KickChatMessage[]>();
+  for (const msg of batch) {
+    const chan = msg.channel.toLowerCase();
+    const list = byChannel.get(chan) || [];
+    list.push(msg);
+    byChannel.set(chan, list);
+  }
+
+  for (const [chan, msgs] of byChannel.entries()) {
+    const existing = newMap[chan] ? [...newMap[chan]] : [];
+
+    for (const msg of msgs) {
+      const pendingIdx = existing.findIndex(
+        (m) =>
+          m.isPending &&
+          m.username.toLowerCase() === msg.username.toLowerCase() &&
+          m.message === msg.message
+      );
+
+      if (pendingIdx !== -1) {
+        existing.splice(pendingIdx, 1);
+      }
+
+      existing.unshift(msg);
+    }
+
+    if (existing.length > MAX_FRONTEND_MESSAGES) {
+      existing.length = MAX_FRONTEND_MESSAGES;
+    }
+
+    newMap[chan] = existing;
+    mapChanged = true;
+  }
+
+  if (mapChanged) {
+    channelMessagesMap.value = newMap;
+  }
+}
+
+export function __test_resetKickChatState() {
+  if (flushTimer) {
+    clearTimeout(flushTimer);
+    flushTimer = null;
+  }
+  pendingMessages = [];
+  activeKickChannels.clear();
+  activeBroadcasters.clear();
+  pendingJoinControllers.forEach((controller) => controller.abort());
+  pendingJoinControllers.clear();
+  channelMessagesMap.value = {};
+  connectionState.value = "disconnected";
+
+  if (unlistenState) {
+    unlistenState();
+    unlistenState = null;
+  }
+  if (unlistenMessage) {
+    unlistenMessage();
+    unlistenMessage = null;
+  }
+  isListening = false;
+}
 
 async function setupListeners() {
   if (isListening) return;
   isListening = true;
 
-  await listen<{ state: "connected" | "disconnected" | "reconnecting" }>(
-    "kick-connection-state",
-    (event) => {
-      connectionState.value = event.payload.state;
-    }
-  ).catch(console.error);
-
-  await listen<KickChatMessage>("kick-chat-message", (event) => {
-    const msg = event.payload;
-    msg.platform = "kick";
-
-    const chan = msg.channel.toLowerCase();
-    const existing = channelMessagesMap.value[chan] || [];
-
-    const pendingIdx = existing.findIndex(
-      (m) =>
-        m.isPending &&
-        m.username.toLowerCase() === msg.username.toLowerCase() &&
-        m.message === msg.message
+  try {
+    unlistenState = await listen<{ state: "connected" | "disconnected" | "reconnecting" }>(
+      "kick-connection-state",
+      (event) => {
+        connectionState.value = event.payload.state;
+      }
     );
 
-    const newMsgs = [...existing];
-    if (pendingIdx !== -1) {
-      newMsgs.splice(pendingIdx, 1);
-    }
+    unlistenMessage = await listen<KickChatMessage>("kick-chat-message", (event) => {
+      const msg = event.payload;
+      msg.platform = "kick";
+      pendingMessages.push(msg);
 
-    newMsgs.unshift(msg);
-    if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
-      newMsgs.length = MAX_FRONTEND_MESSAGES;
-    }
-
-    channelMessagesMap.value = {
-      ...channelMessagesMap.value,
-      [chan]: newMsgs,
-    };
-  }).catch(console.error);
+      if (!flushTimer) {
+        flushTimer = setTimeout(flushPendingKickMessages, BATCH_FLUSH_INTERVAL_MS);
+      }
+    });
+  } catch (err) {
+    console.error("Failed to setup Kick chat listeners:", err);
+  }
 }
 
 export function useKickChat(channelSlug: string) {
   setupListeners();
 
   async function joinChannel() {
-    if (activeKickChannels.has(channelSlug)) return;
+    if (activeKickChannels.has(channelSlug) || pendingJoinControllers.has(channelSlug)) return;
+
+    const controller = new AbortController();
+    pendingJoinControllers.set(channelSlug, controller);
 
     try {
-      const res = await fetch(API_CONFIG.kick.apiV1Url(channelSlug));
+      const res = await fetch(API_CONFIG.kick.apiV1Url(channelSlug), {
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
       if (!res.ok) throw new Error("Channel not found");
       const data = await res.json();
-      const chatroomId = data.chatroom.id;
+      if (controller.signal.aborted) return;
+      const chatroomId = data.chatroom?.id;
 
-      activeKickChannels.set(channelSlug, chatroomId);
-      activeBroadcasters.set(channelSlug, data.user_id);
-      await updateSubscriptions();
-    } catch (e) {
+      if (chatroomId) {
+        activeKickChannels.set(channelSlug, chatroomId);
+        if (data.user_id) {
+          activeBroadcasters.set(channelSlug, data.user_id);
+        }
+        await updateSubscriptions();
+      }
+    } catch (e: unknown) {
+      if (controller.signal.aborted || (e instanceof DOMException && e.name === "AbortError")) {
+        return;
+      }
       console.error("Failed to fetch Kick chatroom ID for", channelSlug, e);
+    } finally {
+      pendingJoinControllers.delete(channelSlug);
     }
   }
 
   async function leaveChannel() {
+    const pendingController = pendingJoinControllers.get(channelSlug);
+    if (pendingController) {
+      pendingController.abort();
+      pendingJoinControllers.delete(channelSlug);
+    }
+
     if (activeKickChannels.has(channelSlug)) {
       activeKickChannels.delete(channelSlug);
+      activeBroadcasters.delete(channelSlug);
       await updateSubscriptions();
     }
   }
@@ -107,6 +192,7 @@ export function useKickChat(channelSlug: string) {
   }
 
   function removeLastLocalMessage(username: string): string | null {
+    flushPendingKickMessages();
     const chan = channelSlug.toLowerCase();
     const existing = channelMessagesMap.value[chan] || [];
     let idx = -1;
@@ -136,6 +222,7 @@ export function useKickChat(channelSlug: string) {
   }
 
   function addLocalMessage(msg: KickChatMessage) {
+    flushPendingKickMessages();
     const chan = channelSlug.toLowerCase();
     const existing = channelMessagesMap.value[chan] || [];
     channelMessagesMap.value = {

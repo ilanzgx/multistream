@@ -11,6 +11,7 @@ export default tseslint.config(
     ignores: [
       "dist/",
       "dist-ssr/",
+      "apps/desktop/dist/",
       "apps/desktop/coverage/",
       "node_modules/",
       "apps/desktop/src-tauri/",

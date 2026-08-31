@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { Send, WifiOff, RefreshCw, ArrowDown } from "@lucide/vue";
 import { useUnifiedChat } from "@/composables/useUnifiedChat";
 import { useEmotes } from "@/composables/useEmotes";
@@ -66,36 +66,59 @@ async function handleSend() {
   }
 }
 
+let isDisposed = false;
 let unlistenError: UnlistenFn | null = null;
-
-import { onMounted, onUnmounted } from "vue";
+let initTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(async () => {
-  await loadChannelEmotes(props.channel);
-  unlistenError = await listen<{ channel: string; message: string }>(
-    "twitch-chat-error",
-    (event) => {
-      const { channel, message } = event.payload;
-      if (channel === props.channel) {
-        if (username.value) {
-          const lastText = removeLastLocalMessage(channel, username.value);
-          if (lastText) {
-            toast.error(message, { position: "bottom-right" });
-            newMessage.value = lastText;
+  try {
+    await loadChannelEmotes(props.channel);
+  } catch (e) {
+    console.error("Failed to load Twitch channel emotes", e);
+  }
+  if (isDisposed) return;
+
+  try {
+    const unlisten = await listen<{ channel: string; message: string }>(
+      "twitch-chat-error",
+      (event) => {
+        const { channel, message } = event.payload;
+        if (channel.toLowerCase() === props.channel.toLowerCase()) {
+          if (username.value) {
+            const lastText = removeLastLocalMessage(channel, username.value);
+            if (lastText) {
+              toast.error(message, { position: "bottom-right" });
+              newMessage.value = lastText;
+            }
           }
         }
       }
-    }
-  );
+    );
 
-  setTimeout(() => {
+    if (isDisposed) {
+      unlisten();
+    } else {
+      unlistenError = unlisten;
+    }
+  } catch (e) {
+    console.error("Failed to setup twitch-chat-error listener", e);
+  }
+
+  if (isDisposed) return;
+  initTimer = setTimeout(() => {
     isInitializing.value = false;
   }, 800);
 });
 
 onUnmounted(() => {
+  isDisposed = true;
+  if (initTimer) {
+    clearTimeout(initTimer);
+    initTimer = null;
+  }
   if (unlistenError) {
     unlistenError();
+    unlistenError = null;
   }
 });
 </script>

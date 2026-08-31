@@ -112,33 +112,61 @@ async function handleSend() {
   }
 }
 
+let isDisposed = false;
 let unlistenError: UnlistenFn | null = null;
+let initTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(async () => {
-  await Promise.all([joinChannel(), loadChannelEmotes(props.channel)]);
-  unlistenError = await listen<{ channel: string; message: string }>("kick-chat-error", (event) => {
-    const { channel, message } = event.payload;
-    if (channel.toLowerCase() === props.channel.toLowerCase()) {
-      if (username.value) {
-        const lastText = removeLastLocalMessage(username.value);
-        if (lastText) {
-          toast.error(message, { position: "bottom-right" });
-          newMessage.value = lastText;
+  try {
+    await Promise.all([joinChannel(), loadChannelEmotes(props.channel)]);
+  } catch (e) {
+    console.error("Failed to initialize Kick channel or emotes", e);
+  }
+  if (isDisposed) return;
+
+  try {
+    const unlisten = await listen<{ channel: string; message: string }>(
+      "kick-chat-error",
+      (event) => {
+        const { channel, message } = event.payload;
+        if (channel.toLowerCase() === props.channel.toLowerCase()) {
+          if (username.value) {
+            const lastText = removeLastLocalMessage(username.value);
+            if (lastText) {
+              toast.error(message, { position: "bottom-right" });
+              newMessage.value = lastText;
+            }
+          }
         }
       }
-    }
-  });
+    );
 
-  setTimeout(() => {
+    if (isDisposed) {
+      unlisten();
+    } else {
+      unlistenError = unlisten;
+    }
+  } catch (e) {
+    console.error("Failed to setup kick-chat-error listener", e);
+  }
+
+  if (isDisposed) return;
+  initTimer = setTimeout(() => {
     isInitializing.value = false;
   }, 800);
 });
 
-onUnmounted(async () => {
+onUnmounted(() => {
+  isDisposed = true;
+  if (initTimer) {
+    clearTimeout(initTimer);
+    initTimer = null;
+  }
   if (unlistenError) {
     unlistenError();
+    unlistenError = null;
   }
-  await leaveChannel();
+  leaveChannel().catch(console.error);
 });
 </script>
 
