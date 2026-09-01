@@ -130,33 +130,6 @@ const formatViewers = (count?: number): string => {
   }).format(count);
 };
 
-// Refresh statuses and suggestions when dialog opens
-watch(
-  () => props.open,
-  (isOpen) => {
-    if (isOpen) {
-      checkAll();
-      if (suggestedStreams.value.length === 0) {
-        refreshSuggestions();
-      }
-      selectedCategory.value = null;
-      failedThumbnails.value.clear();
-    } else {
-      clearSearch();
-      activeSearchIndex.value = -1;
-      channelName.value = "";
-      iframeUrl.value = "";
-      selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
-    }
-  },
-  { immediate: true }
-);
-
-const handleQuickAdd = (channel: string, platform: Platform, iframeUrl?: string) => {
-  addStream(channel, platform, iframeUrl);
-  emit("update:open", false);
-};
-
 // local state
 const channelName = ref("");
 const iframeUrl = ref("");
@@ -372,6 +345,33 @@ const canSubmit = computed(() => {
   }
   return channelName.value.trim().length > 0;
 });
+
+const handleQuickAdd = (channel: string, platform: Platform, iframeUrl?: string) => {
+  addStream(channel, platform, iframeUrl);
+  emit("update:open", false);
+};
+
+// Refresh statuses and suggestions when dialog opens
+watch(
+  () => props.open,
+  (isOpen) => {
+    if (isOpen) {
+      checkAll();
+      if (suggestedStreams.value.length === 0) {
+        refreshSuggestions();
+      }
+      selectedCategory.value = null;
+      failedThumbnails.value.clear();
+    } else {
+      clearSearch();
+      activeSearchIndex.value = -1;
+      channelName.value = "";
+      iframeUrl.value = "";
+      selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>

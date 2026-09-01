@@ -44,7 +44,9 @@ pub fn parse_viewer_count(text: &str) -> u64 {
         || without_thousands.contains("млн");
 
     let is_million = normalized.contains("milhões") || normalized.contains("million") || has_m;
+    let is_ten_thousand = !is_million && normalized.contains('万');
     let is_thousand = !is_million
+        && !is_ten_thousand
         && (normalized.contains('k')
             || normalized.contains("mil")
             || normalized.contains("тыс")
@@ -67,6 +69,11 @@ pub fn parse_viewer_count(text: &str) -> u64 {
         let clean = num_str.replace(',', ".");
         if let Ok(val) = clean.parse::<f64>() {
             return (val * 1_000_000.0).round() as u64;
+        }
+    } else if is_ten_thousand {
+        let clean = num_str.replace(',', ".");
+        if let Ok(val) = clean.parse::<f64>() {
+            return (val * 10_000.0).round() as u64;
         }
     } else if is_thousand {
         let clean = num_str.replace(',', ".");
@@ -263,6 +270,8 @@ mod tests {
         assert_eq!(parse_viewer_count("1.234 assistindo agora"), 1234);
         assert_eq!(parse_viewer_count("42 espectadores"), 42);
         assert_eq!(parse_viewer_count("10 тыс. зрителей"), 10000);
+        assert_eq!(parse_viewer_count("1.2万人正在观看"), 12000);
+        assert_eq!(parse_viewer_count("35万人正在观看"), 350000);
         assert_eq!(parse_viewer_count("invalid"), 0);
     }
 
