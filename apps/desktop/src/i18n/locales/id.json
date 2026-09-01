@@ -23,7 +23,10 @@
     "searchNoResults": "Saluran tidak ditemukan",
     "removeStream": "Hapus stream",
     "customStreamDefault": "Streaming Kustom",
-    "platformCustom": "Kustom"
+    "platformCustom": "Kustom",
+    "suggestedLabel": "Stream yang Disarankan",
+    "suggestedDescription": "Siaran langsung populer saat ini",
+    "noSuggestions": "Tidak ada stream ditemukan"
   },
   "settings": {
     "tooltip": "Pengaturan",
@@ -223,7 +226,9 @@
     "title": "Tidak ada stream yang dipilih",
     "description": "Mulailah dengan menambahkan saluran favorit Anda untuk ditonton secara bersamaan.",
     "addButton": "Tambah Stream",
-    "tourLink": "Butuh bantuan? Ikuti tur"
+    "tourLink": "Butuh bantuan? Ikuti tur",
+    "refresh": "Segarkan",
+    "loading": "Memuat..."
   },
   "chat": {
     "controlTitle": "Kontrol Obrolan",

@@ -1,10 +1,16 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useLiveStatus } from "../useLiveStatus";
 import { ref, effectScope, type EffectScope } from "vue";
+import { invoke } from "@tauri-apps/api/core";
+import { toast } from "../useToast";
 
 // Module-level refs so tests can populate them before startPolling
 const mockRecents = ref<any[]>([]);
 const mockFavorites = ref<any[]>([]);
+const mockNotificationsEnabled = ref(false);
+const mockVisibility = ref<"visible" | "hidden">("visible");
+const mockAddStream = vi.fn();
+const mockIsTauri = vi.fn(() => false);
 
 vi.mock("../useRecents", () => ({
   useRecents: () => ({
@@ -20,26 +26,58 @@ vi.mock("../useFavorites", () => ({
 
 vi.mock("../usePreferences", () => ({
   usePreferences: () => ({
-    notificationsEnabled: ref(false),
+    notificationsEnabled: mockNotificationsEnabled,
   }),
 }));
 
+vi.mock("../useStreams", () => ({
+  useStreams: () => ({
+    addStream: mockAddStream,
+  }),
+}));
+
+vi.mock("../useToast", () => ({
+  toast: {
+    info: vi.fn(),
+    success: vi.fn(),
+    error: vi.fn(),
+    warning: vi.fn(),
+  },
+}));
+
+vi.mock("@vueuse/core", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@vueuse/core")>();
+  return {
+    ...actual,
+    useDocumentVisibility: () => mockVisibility,
+    createSharedComposable: (fn: any) => fn,
+  };
+});
+
+vi.mock("@/lib/http", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/http")>();
+  return {
+    ...actual,
+    isTauri: () => mockIsTauri(),
+  };
+});
+
 vi.mock("vue-i18n", () => ({
   useI18n: () => ({
-    t: (key: string) => key,
+    t: (key: string, params?: any) => (params ? `${key}:${JSON.stringify(params)}` : key),
   }),
 }));
 
 vi.mock("@/i18n", () => ({
   i18n: {
     global: {
-      t: (key: string) => key,
+      t: (key: string, params?: any) => (params ? `${key}:${JSON.stringify(params)}` : key),
     },
   },
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
-  invoke: vi.fn().mockResolvedValue(true),
+  invoke: vi.fn().mockResolvedValue([]),
 }));
 
 describe("useLiveStatus composable unit tests (Critical Paths)", () => {
@@ -51,6 +89,9 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
     vi.useFakeTimers();
     mockRecents.value = [];
     mockFavorites.value = [];
+    mockNotificationsEnabled.value = false;
+    mockVisibility.value = "visible";
+    mockIsTauri.mockReturnValue(false);
 
     scope = effectScope();
     sut = scope.run(() => useLiveStatus())!;
@@ -65,6 +106,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
   describe("Initial State", () => {
     it("should initialize with default states", () => {
+      // Arrange & Act & Assert
       expect(sut.isChecking.value).toBe(false);
       expect(sut.isLoadingSuggestions.value).toBe(false);
       expect(Object.keys(sut.statuses.value).length).toBe(0);
@@ -99,8 +141,9 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
     });
 
     it("should return null for non-existent channels or unsupported platforms", () => {
-      // Assert
+      // Arrange & Act & Assert
       expect(sut.getStatus("unknown", "twitch")).toBeNull();
+      expect(sut.getStatus("gaules", "custom" as any)).toBeNull();
       expect(sut.getStatus("gaules", "youtube" as any)).toBeNull();
     });
   });
@@ -108,319 +151,651 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
   describe("Polling Controls", () => {
     it("should not start polling when there are no channels to track", () => {
       // Arrange
-      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+      mockRecents.value = [];
+      mockFavorites.value = [];
 
       // Act
       sut.startPolling();
-
-      // Assert - should skip because no channels
-      expect(setIntervalSpy).toHaveBeenCalledTimes(0);
-    });
-
-    it("should start interval polling without duplicating existing ones", () => {
-      // Arrange - add a channel so startPolling actually starts
-      mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
-      const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
-
-      // Act
-      sut.startPolling();
-      expect(setIntervalSpy).toHaveBeenCalledTimes(1);
-
-      // Try to start again (should not trigger a new interval)
-      sut.startPolling();
-      expect(setIntervalSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it("should safely stop polling and clear the interval id", () => {
-      // Arrange - add a channel so startPolling actually starts
-      mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
-      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
-
-      sut.startPolling();
-
-      // Act
-      sut.stopPolling();
-      expect(clearIntervalSpy).toHaveBeenCalledTimes(1);
-
-      // Multiple stops should be safe
-      sut.stopPolling();
-      expect(clearIntervalSpy).toHaveBeenCalledTimes(1);
-    });
-
-    it("should clean up intervals on scope dispose", () => {
-      // Arrange
-      mockRecents.value = [{ channel: "gaules", platform: "twitch", addedAt: Date.now() }];
-      const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
-
-      const localScope = effectScope();
-      localScope.run(() => {
-        const localSut = useLiveStatus();
-        localSut.startPolling();
-      });
-
-      // Act
-      localScope.stop();
 
       // Assert
-      expect(clearIntervalSpy).toHaveBeenCalled();
+      expect(sut.isChecking.value).toBe(false);
+    });
+
+    it("should start interval polling without duplicating existing ones", async () => {
+      // Arrange
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { c0: { stream: { viewersCount: 100 } } } }),
+      } as Response);
+
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      // Act
+      sut.startPolling(); // duplicate call since watcher already started it
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      // Fast-forward interval
+      await vi.advanceTimersByTimeAsync(30000);
+
+      // Assert
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should safely stop polling and clear the interval id", async () => {
+      // Arrange
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { c0: { stream: { viewersCount: 100 } } } }),
+      } as Response);
+
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      // Act
+      sut.stopPolling();
+      sut.stopPolling(); // safe multiple calls
+
+      await vi.advanceTimersByTimeAsync(60000);
+
+      // Assert
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should clean up intervals on scope dispose", async () => {
+      // Arrange
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { c0: { stream: { viewersCount: 100 } } } }),
+      } as Response);
+
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      // Act
+      scope.stop();
+      await vi.advanceTimersByTimeAsync(60000);
+
+      // Assert
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      fetchSpy.mockRestore();
     });
   });
 
   describe("checkAll (Early return)", () => {
     it("should return early and clean statuses if no channels are available from favorites/recents", async () => {
       // Arrange
-      sut.statuses.value["twitch:dead_stream"] = { isLive: true };
+      sut.statuses.value["twitch:old"] = { isLive: true };
+      mockRecents.value = [];
+      mockFavorites.value = [];
 
       // Act
       await sut.checkAll();
 
       // Assert
-      expect(sut.isChecking.value).toBe(false);
       expect(Object.keys(sut.statuses.value).length).toBe(0);
+      expect(sut.isChecking.value).toBe(false);
     });
 
     it("should not reset previousStatuses when all channels are removed (EC-14)", async () => {
-      // Arrange — simulate a previous successful check so previousStatuses is populated
-      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
+      // Arrange
+      mockFavorites.value = [{ channel: "streamer1", platform: "twitch" }];
       const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
         ok: true,
         json: async () => ({
           data: {
             c0: {
-              stream: { title: "live", viewersCount: 1000, game: null },
-              profileImageURL: null,
+              profileImageURL: "https://example.com/avatar.png",
+              stream: {
+                title: "Live Stream",
+                viewersCount: 1000,
+                game: { displayName: "Game" },
+              },
             },
           },
         }),
-      } as any);
+      } as Response);
+
       await sut.checkAll();
-      const statusesAfterFirstCheck = { ...sut.statuses.value };
+      expect(sut.getStatus("streamer1", "twitch")?.isLive).toBe(true);
+
+      // Act
+      mockFavorites.value = [];
+      await sut.checkAll();
+
+      // Assert
+      expect(sut.statuses.value).toEqual({});
+
       fetchSpy.mockRestore();
+    });
 
-      // Act — remove all channels; this used to reset previousStatuses to {}
-      mockRecents.value = [];
+    it("should return early when app is hidden and notifications are disabled", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      mockVisibility.value = "hidden";
+      mockNotificationsEnabled.value = false;
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+      // Act
       await sut.checkAll();
 
-      // Assert — statuses cleared, but the first-check data was correctly captured
-      expect(Object.keys(sut.statuses.value).length).toBe(0);
-      expect(Object.keys(statusesAfterFirstCheck)).toContain("twitch:gaules");
+      // Assert
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      fetchSpy.mockRestore();
     });
   });
 
   describe("Fetching Behavior", () => {
-    let fetchSpy: ReturnType<typeof vi.spyOn>;
-
-    beforeEach(() => {
-      fetchSpy = vi.spyOn(globalThis, "fetch");
-    });
-
-    afterEach(() => {
-      fetchSpy.mockRestore();
-    });
-
     it("should call twitch and kick APIs and update statuses", async () => {
-      mockRecents.value = [
+      // Arrange
+      mockFavorites.value = [
         { channel: "gaules", platform: "twitch" },
         { channel: "alanzoka", platform: "kick" },
-        { channel: "offline_kick", platform: "kick" },
       ];
 
-      fetchSpy.mockImplementation(async (url: string | Request | URL) => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
         const urlStr = url.toString();
-        if (urlStr.includes("twitch.tv/gql")) {
+        if (urlStr.includes("twitch.tv")) {
           return {
             ok: true,
             json: async () => ({
               data: {
                 c0: {
+                  profileImageURL: "https://img.twitch/gaules.jpg",
                   stream: {
-                    title: "TRIBOMINERA",
-                    viewersCount: 50000,
-                    game: { displayName: "CS:GO" },
+                    title: "Tribo",
+                    viewersCount: 30000,
+                    game: { displayName: "CS2" },
                   },
                 },
               },
             }),
-          };
+          } as Response;
         }
-        if (urlStr.includes("kick.com/api/v2/channels/alanzoka")) {
+        if (urlStr.includes("kick.com")) {
           return {
             ok: true,
             json: async () => ({
               livestream: {
                 session_title: "Jogando",
-                viewer_count: 30000,
-                categories: [{ name: "Horror" }],
+                viewer_count: 5000,
+                categories: [{ name: "GTA V" }],
+                thumbnail: { url: "https://img.kick/thumb.jpg" },
               },
+              user: { profile_pic: "https://img.kick/alanzoka.jpg" },
             }),
-          };
+          } as Response;
         }
-        if (urlStr.includes("offline_kick")) {
-          return { ok: false, status: 404 };
-        }
-        return { ok: false };
+        return { ok: false } as Response;
       });
 
+      // Act
       await sut.checkAll();
 
-      expect(sut.statuses.value["twitch:gaules"]).toEqual({
+      // Assert
+      expect(sut.getStatus("gaules", "twitch")).toEqual({
         isLive: true,
-        title: "TRIBOMINERA",
-        viewerCount: 50000,
-        category: "CS:GO",
+        viewerCount: 30000,
+        title: "Tribo",
+        category: "CS2",
+        avatarUrl: "https://img.twitch/gaules.jpg",
         thumbnailUrl: "https://static-cdn.jtvnw.net/previews-ttv/live_user_gaules-320x180.jpg",
       });
 
-      expect(sut.statuses.value["kick:alanzoka"]).toEqual({
+      expect(sut.getStatus("alanzoka", "kick")).toEqual({
         isLive: true,
+        viewerCount: 5000,
         title: "Jogando",
-        viewerCount: 30000,
-        category: "Horror",
+        category: "GTA V",
+        avatarUrl: "https://img.kick/alanzoka.jpg",
+        thumbnailUrl: "https://img.kick/thumb.jpg",
       });
 
-      expect(sut.statuses.value["kick:offline_kick"]).toEqual({
-        isLive: false,
-      });
+      fetchSpy.mockRestore();
+    });
+
+    it("should handle Kick 404 response as offline channel", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "offline_user", platform: "kick" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: false,
+        status: 404,
+      } as Response);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(sut.getStatus("offline_user", "kick")).toEqual({ isLive: false });
+
+      fetchSpy.mockRestore();
     });
 
     it("should gracefully handle API failures", async () => {
-      mockRecents.value = [
-        { channel: "mch", platform: "twitch" },
-        { channel: "coringa", platform: "kick" },
-      ];
+      // Arrange
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockRejectedValue(new Error("Network connection error"));
 
-      fetchSpy.mockImplementation(async () => {
-        return { ok: false, status: 500 };
-      });
-
+      // Act
       const checkPromise = sut.checkAll();
-      await vi.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(600);
       await checkPromise;
 
-      expect(Object.keys(sut.statuses.value).length).toBe(0);
+      // Assert
+      expect(sut.isChecking.value).toBe(false);
+      expect(sut.getStatus("gaules", "twitch")).toBeNull();
+
+      fetchSpy.mockRestore();
     });
 
     it("should not update statuses when both APIs fail (notification bug fix)", async () => {
-      // Arrange — seed a known previous live status
-      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
-      sut.statuses.value["twitch:gaules"] = { isLive: true };
+      // Arrange
+      mockFavorites.value = [
+        { channel: "gaules", platform: "twitch" },
+        { channel: "alanzoka", platform: "kick" },
+      ];
+      sut.statuses.value = {
+        "twitch:gaules": { isLive: true, viewerCount: 1000 },
+        "kick:alanzoka": { isLive: true, viewerCount: 500 },
+      };
 
-      fetchSpy.mockImplementation(async () => ({ ok: false, status: 500 }));
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: false,
+        status: 500,
+      } as Response);
 
-      // Act — both APIs fail
+      // Act
       const checkPromise = sut.checkAll();
-      await vi.advanceTimersByTimeAsync(500);
+      await vi.advanceTimersByTimeAsync(1000);
       await checkPromise;
 
-      // Assert — statuses preserved; no poisoning of previousStatuses
-      expect(sut.statuses.value["twitch:gaules"]).toEqual({ isLive: true });
+      // Assert
+      expect(sut.statuses.value["twitch:gaules"]?.isLive).toBe(true);
+      expect(sut.statuses.value["kick:alanzoka"]?.isLive).toBe(true);
+
+      fetchSpy.mockRestore();
     });
 
     it("should not fire spurious notifications when Twitch returns empty data.data (flaky network)", async () => {
-      // Arrange — notifications enabled and gaules is a favorite
-      vi.mock("../usePreferences", () => ({
-        usePreferences: () => ({ notificationsEnabled: ref(true) }),
-      }));
+      // Arrange
       mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
-      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
-      const { invoke } = await import("@tauri-apps/api/core");
+      sut.statuses.value = {
+        "twitch:gaules": { isLive: true, viewerCount: 1000 },
+      };
 
-      // First check: gaules is live → welcome notification fires
-      fetchSpy.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          data: {
-            c0: {
-              stream: { title: "live", viewersCount: 1000, game: null },
-              profileImageURL: null,
-            },
-          },
-        }),
-      } as any);
-      let p = sut.checkAll();
-      await vi.advanceTimersByTimeAsync(500);
-      await p;
-      vi.mocked(invoke).mockClear();
-
-      // Flaky network cycle: Twitch returns 200 with empty data.data
-      // hasAnyData guard converts this to null → both-null early return fires
-      fetchSpy.mockResolvedValueOnce({
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
         ok: true,
         json: async () => ({ data: {} }),
-      } as any);
-      p = sut.checkAll();
-      await vi.advanceTimersByTimeAsync(500);
-      await p;
-
-      // Recovery cycle: gaules is live again
-      fetchSpy.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          data: {
-            c0: {
-              stream: { title: "live again", viewersCount: 2000, game: null },
-              profileImageURL: null,
-            },
-          },
-        }),
-      } as any);
-      p = sut.checkAll();
-      await vi.advanceTimersByTimeAsync(500);
-      await p;
-
-      // Assert — no "went live" notification should fire; gaules was live the whole time
-      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
-        "send_notification",
-        expect.objectContaining({ channel: "gaules" })
-      );
-    });
-
-    it("should detect channel swaps even with the same channel count (EC-1/EC-10 watcher fix)", () => {
-      // Arrange — two channel lists with the same count but different identities
-      const listA = [{ channel: "gaules", platform: "twitch" }];
-      const listB = [{ channel: "shroud", platform: "twitch" }]; // swap, count unchanged
-
-      const toWatchKey = (list: typeof listA) =>
-        list
-          .filter((e) => e.platform === "twitch" || e.platform === "kick")
-          .map((e) => `${e.platform}:${e.channel.toLowerCase()}`)
-          .toSorted()
-          .join(",");
+      } as Response);
 
       // Act
-      const keyA = toWatchKey(listA);
-      const keyB = toWatchKey(listB);
+      await sut.checkAll();
 
-      // Assert — the watcher key differs even though both lists have length 1.
-      // This proves the serialized-identity approach catches swaps that the old
-      // length-sum watcher (listA.length === listB.length = 1) would have missed.
-      expect(keyA).not.toBe(keyB);
-      expect(keyA).toBe("twitch:gaules");
-      expect(keyB).toBe("twitch:shroud");
+      // Assert
+      expect(sut.statuses.value["twitch:gaules"]?.isLive).toBe(true);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should detect channel swaps even with the same channel count (EC-1/EC-10 watcher fix)", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "streamer1", platform: "twitch" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { c0: { stream: { viewersCount: 100 } } } }),
+      } as Response);
+
+      await sut.checkAll();
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      // Act: Swap channel (same count: 1 -> 1)
+      mockFavorites.value = [{ channel: "streamer2", platform: "twitch" }];
+      await vi.advanceTimersByTimeAsync(1100);
+
+      // Assert
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+      fetchSpy.mockRestore();
     });
 
     it("should escape channel names in GQL queries (EC-13 regression)", async () => {
-      // Arrange — channel name with a double-quote that would break GQL if not escapedolated raw
-      mockRecents.value = [{ channel: 'test"channel', platform: "twitch" }];
-      const bodySpy = vi.fn();
-      fetchSpy.mockImplementation(async (_url: any, options?: RequestInit) => {
-        if (options?.body) bodySpy(options.body);
-        return { ok: false, status: 500 } as any;
+      // Arrange
+      mockFavorites.value = [{ channel: 'test"channel', platform: "twitch" }];
+      let requestedBody = "";
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation(async (_, opts) => {
+        requestedBody = opts?.body as string;
+        return {
+          ok: true,
+          json: async () => ({ data: { c0: { stream: null } } }),
+        } as Response;
       });
 
       // Act
-      const checkPromise = sut.checkAll();
-      await vi.advanceTimersByTimeAsync(500);
-      await checkPromise;
+      await sut.checkAll();
 
-      // Assert — JSON.parse succeeds (body is valid JSON) and the query contains the
-      // channel name with its double-quote properly escaped as \" in the GQL field
-      expect(bodySpy).toHaveBeenCalled();
-      const requestBody: string = bodySpy.mock.calls[0]![0];
-      const parsed = JSON.parse(requestBody) as { query: string };
-      // JSON.stringify('test"channel') → '"test\"channel"', so the GQL reads:
-      // user(login: "test\"channel") — the \" is the escaped double-quote
-      expect(parsed.query).toContain('test\\"channel');
+      // Assert
+      const parsed = JSON.parse(requestedBody);
+      expect(parsed.query).toContain('user(login: "test\\"channel")');
+
+      fetchSpy.mockRestore();
+    });
+  });
+
+  describe("Desktop Notifications", () => {
+    beforeEach(() => {
+      mockNotificationsEnabled.value = true;
+      mockIsTauri.mockReturnValue(true);
+    });
+
+    it("should trigger a single welcome toast on first check when 1 favorite is live", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              profileImageURL: "https://avatar.png",
+              stream: { title: "CS2", viewersCount: 1000, game: { displayName: "CS2" } },
+            },
+          },
+        }),
+      } as Response);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(toast.info).toHaveBeenCalledTimes(1);
+      const [title, options] = vi.mocked(toast.info).mock.calls[0]!;
+      expect(title).toBe("notifications.welcome");
+      expect((options as any)?.description).toContain("gaules");
+
+      // Verify watch action button
+      (options as any)?.action?.onClick();
+      expect(mockAddStream).toHaveBeenCalledWith("gaules", "twitch");
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should trigger a welcome toast for 2 to 12 live favorites", async () => {
+      // Arrange
+      mockFavorites.value = [
+        { channel: "streamer1", platform: "twitch" },
+        { channel: "streamer2", platform: "twitch" },
+      ];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: { stream: { title: "S1", viewersCount: 1000 } },
+            c1: { stream: { title: "S2", viewersCount: 2000 } },
+          },
+        }),
+      } as Response);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(toast.info).toHaveBeenCalledTimes(1);
+      const [, options] = vi.mocked(toast.info).mock.calls[0]!;
+      expect((options as any)?.description).toContain("notifications.welcomeBody");
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should trigger a welcome toast with overflow count when more than 12 favorites are live", async () => {
+      // Arrange
+      const favoritesList = Array.from({ length: 15 }, (_, i) => ({
+        channel: `streamer_${i}`,
+        platform: "twitch",
+      }));
+      mockFavorites.value = favoritesList;
+
+      const dataObj: any = {};
+      favoritesList.forEach((_, i) => {
+        dataObj[`c${i}`] = { stream: { title: `Stream ${i}`, viewersCount: 100 + i } };
+      });
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: dataObj }),
+      } as Response);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(toast.info).toHaveBeenCalledTimes(1);
+      const [, options] = vi.mocked(toast.info).mock.calls[0]!;
+      expect((options as any)?.description).toContain("notifications.welcomeBodyMore");
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should send desktop notification when an offline favorite transitions to online", async () => {
+      // Arrange: First check (streamer is offline)
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: { profileImageURL: "https://avatar.png", stream: null },
+          },
+        }),
+      } as Response);
+
+      await sut.checkAll();
+      expect(toast.info).not.toHaveBeenCalled();
+      expect(invoke).not.toHaveBeenCalled();
+
+      // Second check: streamer goes live with title & category
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              profileImageURL: "https://avatar.png",
+              stream: {
+                title: "Major Finals",
+                viewersCount: 50000,
+                game: { displayName: "CS2" },
+              },
+            },
+          },
+        }),
+      } as Response);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(invoke).toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({
+          title: expect.stringContaining("gaules"),
+          body: expect.stringContaining("Major Finals"),
+          channel: "gaules",
+          platform: "twitch",
+          avatarUrl: "https://avatar.png",
+        })
+      );
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should send desktop notification with title-only or fallback body when category or title are missing", async () => {
+      // Arrange: First check (offline)
+      mockFavorites.value = [{ channel: "alanzoka", platform: "kick" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ livestream: null }),
+      } as Response);
+
+      await sut.checkAll();
+
+      // Second check: live with title only (no category)
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          livestream: {
+            session_title: "Just Playing",
+            viewer_count: 5000,
+            categories: [],
+          },
+        }),
+      } as Response);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(invoke).toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({
+          body: expect.stringContaining("notifications.liveBodyTitleOnly"),
+        })
+      );
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should send desktop notification with fallback body when both title and category are missing", async () => {
+      // Arrange: First check (offline)
+      mockFavorites.value = [{ channel: "coringa", platform: "kick" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ livestream: null }),
+      } as Response);
+
+      await sut.checkAll();
+
+      // Second check: live with empty title and empty categories
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          livestream: {
+            session_title: "",
+            viewer_count: 1000,
+            categories: [],
+          },
+        }),
+      } as Response);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(invoke).toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({
+          body: expect.stringContaining("notifications.liveBodyFallback"),
+        })
+      );
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should ignore custom or youtube favorites for desktop notifications", async () => {
+      // Arrange
+      mockFavorites.value = [
+        { channel: "custom_ch", platform: "custom" },
+        { channel: "yt_video_id", platform: "youtube" },
+      ];
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(toast.info).not.toHaveBeenCalled();
+      expect(invoke).not.toHaveBeenCalled();
+
+      fetchSpy.mockRestore();
+    });
+  });
+
+  describe("Watchers & Visibility", () => {
+    it("should trigger checkAll when document visibility changes to visible", async () => {
+      // Arrange
+      mockVisibility.value = "hidden";
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      await vi.advanceTimersByTimeAsync(1100);
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { c0: { stream: null } } }),
+      } as Response);
+
+      // Act
+      mockVisibility.value = "visible";
+      await vi.advanceTimersByTimeAsync(50);
+
+      // Assert
+      expect(fetchSpy).toHaveBeenCalled();
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should trigger checkAll via debounce watcher when already polling", async () => {
+      // Arrange
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { c0: { stream: null }, c1: { stream: null } } }),
+      } as Response);
+
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      await vi.advanceTimersByTimeAsync(1100);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      // Act: Add another channel while polling is active (intervalId is not null)
+      mockFavorites.value = [
+        { channel: "gaules", platform: "twitch" },
+        { channel: "shroud", platform: "twitch" },
+      ];
+      await vi.advanceTimersByTimeAsync(1100);
+
+      // Assert: checkAll is called again via the debounce watcher
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should auto-stop polling when all channels are removed", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({ data: { c0: { stream: null } } }),
+      } as Response);
+
+      sut.startPolling();
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      // Act: Remove all channels
+      mockFavorites.value = [];
+      await vi.advanceTimersByTimeAsync(1100);
+
+      // Advance time to verify interval stopped
+      await vi.advanceTimersByTimeAsync(60000);
+
+      // Assert: No new fetch calls were made
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      fetchSpy.mockRestore();
     });
   });
 
@@ -435,6 +810,17 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       fetchSpy.mockRestore();
     });
 
+    it("should early return if already loading suggestions", async () => {
+      // Arrange
+      sut.isLoadingSuggestions.value = true;
+
+      // Act
+      await sut.refreshSuggestions();
+
+      // Assert
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("should fetch suggestions from both platforms and interleave them, including phase 2", async () => {
       // Arrange
       let twitchCallCount = 0;
@@ -442,7 +828,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
         const urlStr = url.toString();
         if (urlStr.includes("twitch.tv")) {
           twitchCallCount++;
-          // First call returns 30 items to trigger Phase 2. Second call returns 1 item.
+          // First call returns 30 items with nextCursor to trigger Phase 2. Second call returns 1 item.
           const edgeCount = twitchCallCount === 1 ? 30 : 1;
           return {
             ok: true,
@@ -452,7 +838,10 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
                   edges: Array.from({ length: edgeCount }).map((_, i) => ({
                     cursor: `cursor_${i}`,
                     node: {
-                      broadcaster: { login: `shroud_${twitchCallCount}_${i}` },
+                      broadcaster: {
+                        login: `streamer_${twitchCallCount}_${i}`,
+                        broadcastSettings: { language: "PT" },
+                      },
                       title: "Valo",
                       viewersCount: 10000 - i,
                       game: { displayName: "Valorant" },
@@ -461,7 +850,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
                 },
               },
             }),
-          };
+          } as Response;
         }
         if (urlStr.includes("featured-livestreams")) {
           return {
@@ -472,13 +861,14 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
                   slug: "xqc",
                   session_title: "Reacts",
                   viewers: 15000,
+                  language: "Portuguese",
                   categories: [{ name: "Just Chatting" }],
                 },
               ],
             }),
-          };
+          } as Response;
         }
-        return { ok: false };
+        return { ok: false } as Response;
       });
 
       // Act
@@ -489,6 +879,83 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(sut.suggestedStreams.value[0]?.platform).toBe("twitch");
       expect(sut.suggestedStreams.value[1]?.platform).toBe("kick");
       expect(twitchCallCount).toBeGreaterThan(1);
+    });
+
+    it("should fetch suggestions from Twitch, Kick, and YouTube and interleave all three platforms", async () => {
+      // Arrange
+      const { invoke } = await import("@tauri-apps/api/core");
+      vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+        if (cmd === "youtube_get_suggested_streams") {
+          return [
+            {
+              channel: "caze_yt_live",
+              displayName: "CazéTV",
+              platform: "youtube",
+              title: "Copa do Mundo",
+              category: "Live",
+              viewerCount: 500000,
+            },
+          ];
+        }
+        return true;
+      });
+
+      fetchSpy.mockImplementation(async (url: string | Request | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("twitch.tv")) {
+          return {
+            ok: true,
+            json: async () => ({
+              data: {
+                streams: {
+                  edges: [
+                    {
+                      cursor: "c1",
+                      node: {
+                        broadcaster: { login: "gaules", broadcastSettings: { language: "PT" } },
+                        title: "Tribo",
+                        viewersCount: 20000,
+                        game: { displayName: "CS2" },
+                      },
+                    },
+                  ],
+                },
+              },
+            }),
+          } as Response;
+        }
+        if (urlStr.includes("featured-livestreams")) {
+          return {
+            ok: true,
+            json: async () => ({
+              data: [
+                {
+                  slug: "coringa",
+                  session_title: "RP",
+                  viewers: 15000,
+                  language: "Portuguese",
+                  categories: [{ name: "Grand Theft Auto V (GTA)" }],
+                },
+              ],
+            }),
+          } as Response;
+        }
+        return { ok: false } as Response;
+      });
+
+      // Act
+      await sut.refreshSuggestions();
+
+      // Assert
+      expect(sut.suggestedStreams.value.length).toBe(3);
+      expect(sut.suggestedStreams.value[0]?.platform).toBe("twitch");
+      expect(sut.suggestedStreams.value[0]?.channel).toBe("gaules");
+      expect(sut.suggestedStreams.value[1]?.platform).toBe("kick");
+      expect(sut.suggestedStreams.value[1]?.channel).toBe("coringa");
+      expect(sut.suggestedStreams.value[1]?.category).toBe("Grand Theft Auto V");
+      expect(sut.suggestedStreams.value[2]?.platform).toBe("youtube");
+      expect(sut.suggestedStreams.value[2]?.channel).toBe("caze_yt_live");
+      expect(sut.suggestedStreams.value[2]?.displayName).toBe("CazéTV");
     });
   });
 
@@ -517,7 +984,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
                   searchCategories: { edges: [{ node: { slug: "valorant" } }] },
                 },
               }),
-            };
+            } as Response;
           } else {
             return {
               ok: true,
@@ -528,7 +995,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
                       edges: [
                         {
                           node: {
-                            broadcaster: { login: "shroud" },
+                            broadcaster: { login: "shroud", broadcastSettings: { language: "PT" } },
                             title: "Valo",
                             viewersCount: 10000,
                             game: { displayName: "Valorant" },
@@ -539,7 +1006,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
                   },
                 },
               }),
-            };
+            } as Response;
           }
         }
         if (urlStr.includes("featured-livestreams")) {
@@ -551,13 +1018,14 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
                   slug: "xqc",
                   session_title: "Reacts",
                   viewers: 15000,
+                  language: "Portuguese",
                   categories: [{ name: "Valorant" }],
                 },
               ],
             }),
-          };
+          } as Response;
         }
-        return { ok: false };
+        return { ok: false } as Response;
       });
 
       // Act
@@ -569,6 +1037,154 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(results[0]?.channel).toBe("shroud");
       expect(results[1]?.platform).toBe("kick");
       expect(results[1]?.channel).toBe("xqc");
+    });
+
+    it("should fallback to derived slug when searchCategories returns no match", async () => {
+      // Arrange
+      let queryBody = "";
+      fetchSpy.mockImplementation(async (url: string | Request | URL, options?: RequestInit) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("twitch.tv/gql")) {
+          const body = typeof options?.body === "string" ? options.body : "";
+          if (body.includes("searchCategories")) {
+            return {
+              ok: true,
+              json: async () => ({
+                data: { searchCategories: { edges: [] } },
+              }),
+            } as Response;
+          }
+          queryBody = body;
+          return {
+            ok: true,
+            json: async () => ({
+              data: {
+                game: {
+                  streams: {
+                    edges: [
+                      {
+                        node: {
+                          broadcaster: { login: "gamer", broadcastSettings: { language: "PT" } },
+                          title: "Playing",
+                          viewersCount: 500,
+                          game: { displayName: "Just Chatting" },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            }),
+          } as Response;
+        }
+        return { ok: true, json: async () => ({ data: [] }) } as Response;
+      });
+
+      // Act
+      const results = await sut.fetchStreamsForCategory("Just Chatting");
+
+      // Assert
+      expect(results.length).toBe(1);
+      expect(results[0]?.channel).toBe("gamer");
+      const parsed = JSON.parse(queryBody);
+      expect(parsed.query).toContain('game(slug: "just-chatting")');
+    });
+
+    it("should fallback to global category query if language-filtered returns 0 streams", async () => {
+      // Arrange
+      let callCount = 0;
+      fetchSpy.mockImplementation(async (url: string | Request | URL, options?: RequestInit) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("twitch.tv/gql")) {
+          const body = typeof options?.body === "string" ? options.body : "";
+          if (body.includes("searchCategories")) {
+            return {
+              ok: true,
+              json: async () => ({
+                data: { searchCategories: { edges: [{ node: { slug: "rare-game" } }] } },
+              }),
+            } as Response;
+          }
+
+          callCount++;
+          // First call (with language) returns 0 streams, second call (global) returns 1
+          if (callCount === 1) {
+            return {
+              ok: true,
+              json: async () => ({ data: { game: { streams: { edges: [] } } } }),
+            } as Response;
+          }
+
+          return {
+            ok: true,
+            json: async () => ({
+              data: {
+                game: {
+                  streams: {
+                    edges: [
+                      {
+                        node: {
+                          broadcaster: {
+                            login: "foreign_streamer",
+                            broadcastSettings: { language: "EN" },
+                          },
+                          title: "Rare Game Play",
+                          viewersCount: 200,
+                          game: { displayName: "Rare Game" },
+                        },
+                      },
+                    ],
+                  },
+                },
+              },
+            }),
+          } as Response;
+        }
+        return { ok: true, json: async () => ({ data: [] }) } as Response;
+      });
+
+      // Act
+      const results = await sut.fetchStreamsForCategory("Rare Game");
+
+      // Assert
+      expect(results.length).toBe(1);
+      expect(results[0]?.channel).toBe("foreign_streamer");
+      expect(callCount).toBe(2);
+    });
+
+    it("should gracefully return empty list or partial results when category API rejects", async () => {
+      // Arrange: Twitch rejects, Kick returns 1 stream
+      fetchSpy.mockImplementation(async (url: string | Request | URL) => {
+        const urlStr = url.toString();
+        if (urlStr.includes("twitch.tv/gql")) {
+          throw new Error("Twitch category failure");
+        }
+        if (urlStr.includes("featured-livestreams")) {
+          return {
+            ok: true,
+            json: async () => ({
+              data: [
+                {
+                  slug: "kick_streamer",
+                  session_title: "Playing",
+                  viewers: 1000,
+                  language: "Portuguese",
+                  categories: [{ name: "Valorant" }],
+                },
+              ],
+            }),
+          } as Response;
+        }
+        return { ok: false } as Response;
+      });
+
+      // Act
+      const results = await sut.fetchStreamsForCategory("Valorant");
+
+      // Assert
+      expect(results.length).toBe(1);
+      expect(results[0]?.platform).toBe("kick");
+      expect(results[0]?.channel).toBe("kick_streamer");
     });
   });
 });

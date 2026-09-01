@@ -23,7 +23,10 @@
     "searchNoResults": "कोई चैनल नहीं मिला",
     "removeStream": "स्ट्रीम हटाएं",
     "customStreamDefault": "कस्टम स्ट्रीम",
-    "platformCustom": "कस्टम"
+    "platformCustom": "कस्टम",
+    "suggestedLabel": "सुझाए गए स्ट्रीम",
+    "suggestedDescription": "इस समय के लोकप्रिय लाइव स्ट्रीम",
+    "noSuggestions": "कोई स्ट्रीम नहीं मिला"
   },
   "settings": {
     "tooltip": "सेटिंग्स",
@@ -223,7 +226,9 @@
     "title": "कोई स्ट्रीम नहीं चुनी गई",
     "description": "एक साथ देखने के लिए अपने पसंदीदा चैनल जोड़कर प्रारंभ करें।",
     "addButton": "स्ट्रीम जोड़ें",
-    "tourLink": "मदद चाहिए? टूर लें"
+    "tourLink": "मदद चाहिए? टूर लें",
+    "refresh": "रीफ्रेश करें",
+    "loading": "लोड हो रहा है..."
   },
   "chat": {
     "controlTitle": "चैट नियंत्रण",

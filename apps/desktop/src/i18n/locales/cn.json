@@ -23,7 +23,10 @@
     "searchNoResults": "未找到频道",
     "removeStream": "移除直播流",
     "customStreamDefault": "自定义直播",
-    "platformCustom": "自定义"
+    "platformCustom": "自定义",
+    "suggestedLabel": "推荐直播",
+    "suggestedDescription": "当前热门直播",
+    "noSuggestions": "未找到直播"
   },
   "settings": {
     "tooltip": "设置",
@@ -223,7 +226,9 @@
     "title": "没有选择的直播",
     "description": "首先添加您喜爱的频道以同时观看。",
     "addButton": "添加直播",
-    "tourLink": "需要帮助？查看新手教程"
+    "tourLink": "需要帮助？查看新手教程",
+    "refresh": "刷新",
+    "loading": "加载中..."
   },
   "chat": {
     "controlTitle": "聊天控制",

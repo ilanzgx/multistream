@@ -23,7 +23,10 @@
     "searchNoResults": "Aucune chaîne trouvée",
     "removeStream": "Supprimer le flux",
     "customStreamDefault": "Stream personnalisé",
-    "platformCustom": "Personnalisé"
+    "platformCustom": "Personnalisé",
+    "suggestedLabel": "Streams suggérés",
+    "suggestedDescription": "Diffusions en direct populaires en ce moment",
+    "noSuggestions": "Aucun stream trouvé"
   },
   "settings": {
     "tooltip": "Paramètres",
@@ -223,7 +226,9 @@
     "title": "Aucun flux sélectionné",
     "description": "Commencez par ajouter vos chaînes favorites pour les regarder simultanément.",
     "addButton": "Ajouter un flux",
-    "tourLink": "Besoin d'aide ? Suivez la visite guidée"
+    "tourLink": "Besoin d'aide ? Suivez la visite guidée",
+    "refresh": "Actualiser",
+    "loading": "Chargement..."
   },
   "chat": {
     "controlTitle": "Contrôle du chat",

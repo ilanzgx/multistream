@@ -23,7 +23,10 @@
     "searchNoResults": "No channels found",
     "removeStream": "Remove stream",
     "customStreamDefault": "Custom Stream",
-    "platformCustom": "Custom"
+    "platformCustom": "Custom",
+    "suggestedLabel": "Suggested Streams",
+    "suggestedDescription": "Popular live streams right now",
+    "noSuggestions": "No streams found"
   },
   "settings": {
     "tooltip": "Settings",
@@ -223,7 +226,9 @@
     "title": "No streams selected",
     "description": "Start by adding your favorite channels to watch simultaneously.",
     "addButton": "Add Stream",
-    "tourLink": "Need help? Take the tour"
+    "tourLink": "Need help? Take the tour",
+    "refresh": "Refresh",
+    "loading": "Loading..."
   },
   "chat": {
     "controlTitle": "Chat Control",

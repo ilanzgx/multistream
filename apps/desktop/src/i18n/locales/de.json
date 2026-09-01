@@ -23,7 +23,10 @@
     "searchNoResults": "Keine Kanäle gefunden",
     "removeStream": "Stream entfernen",
     "customStreamDefault": "Benutzerdefinierter Stream",
-    "platformCustom": "Benutzerdefiniert"
+    "platformCustom": "Benutzerdefiniert",
+    "suggestedLabel": "Vorgeschlagene Streams",
+    "suggestedDescription": "Beliebte Livestreams im Moment",
+    "noSuggestions": "Keine Streams gefunden"
   },
   "settings": {
     "tooltip": "Einstellungen",
@@ -223,7 +226,9 @@
     "title": "Keine Streams ausgewählt",
     "description": "Fügen Sie zunächst Ihre Lieblingskanäle hinzu, um sie gleichzeitig anzusehen.",
     "addButton": "Stream hinzufügen",
-    "tourLink": "Hilfe benötigt? Tour machen"
+    "tourLink": "Hilfe benötigt? Tour machen",
+    "refresh": "Aktualisieren",
+    "loading": "Wird geladen..."
   },
   "chat": {
     "controlTitle": "Chat-Steuerung",

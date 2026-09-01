@@ -44,5 +44,6 @@ commands.allow = [
     "recording_get_env_size",
     "scan_orphans",
     "splashscreen_ready",
-    "close_splashscreen"
+    "close_splashscreen",
+    "youtube_get_suggested_streams"
 ]

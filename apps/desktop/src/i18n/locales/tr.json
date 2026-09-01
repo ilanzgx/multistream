@@ -23,7 +23,10 @@
     "searchNoResults": "Kanal bulunamadı",
     "removeStream": "Yayını kaldır",
     "customStreamDefault": "Özel Yayın",
-    "platformCustom": "Özel"
+    "platformCustom": "Özel",
+    "suggestedLabel": "Önerilen Yayınlar",
+    "suggestedDescription": "Şu anda popüler canlı yayınlar",
+    "noSuggestions": "Yayın bulunamadı"
   },
   "settings": {
     "tooltip": "Ayarlar",
@@ -223,7 +226,9 @@
     "title": "Seçili yayın yok",
     "description": "Aynı anda izlemek için favori kanallarınızı ekleyerek başlayın.",
     "addButton": "Yayın Ekle",
-    "tourLink": "Yardıma mı ihtiyacınız var? Tura katılın"
+    "tourLink": "Yardıma mı ihtiyacınız var? Tura katılın",
+    "refresh": "Yenile",
+    "loading": "Yükleniyor..."
   },
   "chat": {
     "controlTitle": "Sohbet Kontrolü",
