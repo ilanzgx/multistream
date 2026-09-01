@@ -44,3 +44,31 @@ fr: {
 }
 ```
 If you forget to define `apiCodes`, the suggestions feature in `apps/desktop/src/composables/useLiveStatus.ts` will fail to filter streams by the new language properly.
+
+## 7. Register YouTube Trending Locale in Backend Rust
+YouTube trending streams are fetched via the Rust backend in `apps/desktop/src-tauri/src/youtube/api.rs`.
+Open `api.rs` and add the new language code/prefix to the `get_youtube_locale_meta` matcher:
+```rust
+"fr" => YoutubeLocaleMeta {
+    hl: "fr",
+    gl: "FR",
+    accept_lang: "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+},
+```
+- `hl`: The host language parameter for YouTube UI strings.
+- `gl`: The geolocation region code for YouTube trending feeds.
+- `accept_lang`: The HTTP `Accept-Language` header value.
+
+If omitted, YouTube falls back to English (`en-US`), causing trending recommendations to be non-localized.
+
+## 8. Validate Viewer Count Parsing in Backend Rust
+YouTube viewer counts are extracted from localized strings (e.g. `"15K watching"`, `"15 mil assistindo"`, `"10 тыс. зрителей"`, `"1.2万人正在观看"`).
+Check `parse_viewer_count` in `apps/desktop/src-tauri/src/youtube/parser.rs`:
+- If the new language uses specific abbreviations or non-standard multiplier characters (like `万` for 10,000, or unique million/thousand suffixes), make sure they are handled in `parser.rs`.
+- Add test assertions for the new language in `should_parse_various_viewer_count_formats` in `parser.rs`.
+
+## 9. Verification & Quality Assurance
+Always execute the following checks after adding a new language:
+1. **i18n Key Parity:** `bun run desktop:test -- keys.spec.ts`
+2. **TypeScript Validation:** `bun run desktop:typecheck`
+3. **Rust Backend Validation:** `cargo check` and `cargo test youtube::parser` (from `apps/desktop/src-tauri/`)
