@@ -186,45 +186,19 @@ pub fn run() {
                     };
                     let state = app_handle.state::<TwitchState>();
 
-                    let validate_resp = http
-                        .get("https://id.twitch.tv/oauth2/validate")
-                        .bearer_auth(&stored_auth.access_token)
-                        .send()
-                        .await;
-
-                    match validate_resp {
-                        Ok(resp) if resp.status().is_success() => {
-                            // Valid
+                    match twitch::commands::try_refresh_if_needed(
+                        &app_handle,
+                        stored_auth,
+                        &state,
+                        &http,
+                    )
+                    .await
+                    {
+                        Ok(_) => {}
+                        Err(twitch::error::TwitchError::TokenRefreshFailed) => {
+                            twitch::commands::revoke_auth_and_notify(&app_handle, &state).await;
                         }
-                        Ok(_) => {
-                            match twitch::oauth::refresh_token(&http, &stored_auth.refresh_token)
-                                .await
-                            {
-                                Ok(refreshed) => {
-                                    let _ = twitch::oauth::store_auth(&app_handle, &refreshed);
-                                    *state.auth.lock().await = Some(refreshed);
-                                }
-                                Err(twitch::error::TwitchError::TokenRefreshFailed) => {
-                                    *state.auth.lock().await = None;
-                                    twitch::oauth::clear_auth(&app_handle);
-                                    use twitch::state::AuthState;
-                                    let _ = app_handle.emit("twitch-auth-expired", ());
-                                    let _ = app_handle.emit(
-                                        "twitch-auth-changed",
-                                        AuthState {
-                                            authenticated: false,
-                                            username: None,
-                                        },
-                                    );
-                                }
-                                Err(_) => {
-                                    // Network error during refresh - preserve credentials
-                                }
-                            }
-                        }
-                        Err(_) => {
-                            // Network error - do not clear credentials
-                        }
+                        Err(_) => {}
                     }
                 });
             }

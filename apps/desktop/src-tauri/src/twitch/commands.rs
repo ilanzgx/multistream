@@ -263,6 +263,10 @@ pub(crate) async fn force_refresh_token(
     let refreshed = oauth::refresh_token(http, &auth.refresh_token).await?;
     oauth::store_auth(app, &refreshed)?;
     *state.auth.lock().await = Some(refreshed.clone());
+    log::info!(
+        "[twitch-auth] proactive token refresh successful for '{}'",
+        refreshed.username
+    );
     Ok(refreshed)
 }
 
@@ -295,22 +299,27 @@ pub(crate) async fn try_refresh_if_needed(
     match validate_resp {
         Ok(resp) if resp.status().is_success() => Ok(auth),
         Ok(resp) if resp.status() == reqwest::StatusCode::UNAUTHORIZED => {
+            log::warn!("[twitch-auth] access token invalid (401), acquiring refresh lock...");
             let _guard = state.auth_refresh_lock.lock().await;
 
-            // Check if it was refreshed while waiting for the lock
             let current_auth = state.auth.lock().await.clone();
             if let Some(current) = current_auth {
                 if current.access_token != auth.access_token {
-                    // It was refreshed by another thread. Re-validate or just assume it's good.
-                    // For performance, we can just return the new token and let the caller use it.
+                    log::info!("[twitch-auth] stale token detected — another caller already refreshed. Reusing.");
                     return Ok(current);
                 }
-            }
 
-            let refreshed = oauth::refresh_token(http, &auth.refresh_token).await?;
-            oauth::store_auth(app, &refreshed)?;
-            *state.auth.lock().await = Some(refreshed.clone());
-            Ok(refreshed)
+                let refreshed = oauth::refresh_token(http, &current.refresh_token).await?;
+                oauth::store_auth(app, &refreshed)?;
+                *state.auth.lock().await = Some(refreshed.clone());
+                log::info!(
+                    "[twitch-auth] token refreshed successfully for '{}'",
+                    refreshed.username
+                );
+                Ok(refreshed)
+            } else {
+                Err(TwitchError::OAuth("Auth cleared during refresh".to_owned()))
+            }
         }
         Ok(resp) => {
             // Transient error like 429 or 5xx. Don't refresh the token and don't delete local auth.
@@ -362,6 +371,8 @@ pub async fn twitch_get_followed_streams(
 
     let mut live_streams = Vec::new();
     let mut after = String::new();
+    let mut current_access_token = auth.access_token.clone();
+    let mut has_retried_auth = false;
 
     loop {
         let url = if after.is_empty() {
@@ -372,25 +383,40 @@ pub async fn twitch_get_followed_streams(
 
         let res = http
             .get(&url)
-            .bearer_auth(&auth.access_token)
+            .bearer_auth(&current_access_token)
             .header("Client-Id", super::oauth::client_id())
             .send()
             .await
             .map_err(TwitchError::Http)?;
 
-        if !res.status().is_success() {
-            if res.status() == reqwest::StatusCode::UNAUTHORIZED {
-                *state.auth.lock().await = None;
-                oauth::clear_auth(&app);
-                let _ = app.emit("twitch-auth-expired", ());
-                let _ = app.emit(
-                    "twitch-auth-changed",
-                    super::state::AuthState {
-                        authenticated: false,
-                        username: None,
-                    },
-                );
+        if res.status() == reqwest::StatusCode::UNAUTHORIZED {
+            if has_retried_auth {
+                log::error!("[twitch-streams] 401 persists after token refresh — revoking session permanently");
+                revoke_auth_and_notify(&app, &state).await;
+                return Err(TwitchError::TokenRefreshFailed);
             }
+            has_retried_auth = true;
+
+            let fresh_auth = state.auth.lock().await.clone();
+            match fresh_auth {
+                Some(a) => match try_refresh_if_needed(&app, a, &state, &http).await {
+                    Ok(refreshed) => {
+                        current_access_token = refreshed.access_token;
+                        continue;
+                    }
+                    Err(TwitchError::TokenRefreshFailed) => {
+                        revoke_auth_and_notify(&app, &state).await;
+                        return Err(TwitchError::TokenRefreshFailed);
+                    }
+                    Err(e) => return Err(e),
+                },
+                None => {
+                    return Err(TwitchError::OAuth("Not authenticated".to_string()));
+                }
+            }
+        }
+
+        if !res.status().is_success() {
             return Err(TwitchError::OAuth(format!(
                 "Failed to fetch streams: {}",
                 res.status()
@@ -439,7 +465,7 @@ pub async fn twitch_get_followed_streams(
 
         let res = http
             .get(&users_url)
-            .bearer_auth(&auth.access_token)
+            .bearer_auth(&current_access_token)
             .header("Client-Id", super::oauth::client_id())
             .send()
             .await;
