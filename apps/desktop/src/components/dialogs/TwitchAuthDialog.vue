@@ -105,11 +105,11 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <Dialog :open="open" @update:open="$emit('update:open', $event)">
+  <Dialog :open="open" @update:open="emit('update:open', $event)">
     <DialogContent class="sm:max-w-md bg-[#14161a] border-[#2a2d33] text-white">
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2 text-white">
-          <TwitchIcon class="w-5 h-5 text-[#bf94ff]" />
+          <TwitchIcon class="w-5 h-5 text-[#9146FF]" />
           {{ t("chat.unified.connectTitle") }}
         </DialogTitle>
         <DialogDescription class="text-gray-400">
@@ -129,7 +129,7 @@ onUnmounted(() => {
             }}
           </div>
           <Button
-            class="w-full bg-[#bf94ff] hover:bg-[#2a2d33] hover:text-white text-[#14161a] font-semibold transition-colors"
+            class="w-full bg-[#9146FF] hover:bg-[#2a2d33] hover:text-white text-white font-semibold transition-colors"
             @click="startFlow"
           >
             {{ t("chat.unified.auth.tryAgain") }}
@@ -142,7 +142,7 @@ onUnmounted(() => {
             <div class="flex items-center gap-2 w-full">
               <Button
                 variant="outline"
-                class="flex-1 border-[#2a2d33] text-[#bf94ff] hover:bg-[#2a2d33] hover:text-white hover:border-[#2a2d33] transition-all bg-transparent truncate"
+                class="flex-1 border-[#2a2d33] text-[#9146FF] hover:bg-[#2a2d33] hover:text-white hover:border-[#2a2d33] transition-all bg-transparent truncate"
                 @click="handleOpenLink"
               >
                 <span class="truncate">{{ deviceFlow.verification_uri }}</span>
@@ -183,7 +183,7 @@ onUnmounted(() => {
           </div>
 
           <div class="flex items-center justify-center gap-3 pt-4 text-gray-400">
-            <Loader2 class="w-5 h-5 animate-spin text-[#bf94ff]" />
+            <Loader2 class="w-5 h-5 animate-spin text-[#9146FF]" />
             <span class="text-sm font-medium animate-pulse">{{
               t("chat.unified.auth.waiting")
             }}</span>
@@ -192,7 +192,7 @@ onUnmounted(() => {
 
         <template v-else>
           <div class="flex items-center justify-center py-8 text-gray-400">
-            <Loader2 class="w-8 h-8 animate-spin text-[#bf94ff]" />
+            <Loader2 class="w-8 h-8 animate-spin text-[#9146FF]" />
           </div>
         </template>
       </div>

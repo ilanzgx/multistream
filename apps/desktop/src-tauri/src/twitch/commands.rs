@@ -544,7 +544,7 @@ pub async fn twitch_get_followed_streams(
 
 #[tauri::command]
 pub async fn twitch_get_hls_url(
-    state: State<'_, TwitchState>,
+    _state: State<'_, TwitchState>,
     channel: String,
 ) -> Result<String, TwitchError> {
     let http = reqwest::Client::builder()
@@ -561,13 +561,7 @@ pub async fn twitch_get_hls_url(
     {
         return Err(TwitchError::Api("Invalid channel name format".into()));
     }
-    let access_token = state
-        .auth
-        .lock()
-        .await
-        .as_ref()
-        .map(|a| a.access_token.clone());
-    let custom_client_id = oauth::client_id();
+    let web_client_id = "kimne78kx3ncx6brgo4mv6wki5h1ko";
 
     let gql_body = serde_json::json!({
         "operationName": "PlaybackAccessToken",
@@ -578,51 +572,22 @@ pub async fn twitch_get_hls_url(
         }
     });
 
-    let send_request = |c_id: &str, auth: Option<&str>| {
-        let mut req = http
-            .post("https://gql.twitch.tv/gql")
-            .header("Client-ID", c_id)
-            .header("Client-Session-Id", format!("{:x}", rand::random::<u64>()))
-            .json(&gql_body);
+    let res = http
+        .post("https://gql.twitch.tv/gql")
+        .header("Client-ID", web_client_id)
+        .header("Client-Session-Id", format!("{:x}", rand::random::<u64>()))
+        .json(&gql_body)
+        .send()
+        .await
+        .map_err(TwitchError::Http)?;
 
-        if let Some(tok) = auth {
-            req = req.header("Authorization", format!("OAuth {}", tok));
-        }
-        req
-    };
-
-    let web_client_id = "kimne78kx3ncx6brgo4mv6wki5h1ko";
-    let mut resp = None;
-    let mut used_client_id = web_client_id;
-
-    // Pass 1: Try authenticated request if access_token and custom_client_id exist
-    if let (Some(tok), false) = (&access_token, custom_client_id.is_empty()) {
-        if let Ok(res) = send_request(custom_client_id, Some(tok)).send().await {
-            if res.status().is_success() {
-                resp = Some(res);
-                used_client_id = custom_client_id;
-            }
-        }
+    if !res.status().is_success() {
+        let status = res.status();
+        let err = res.text().await.unwrap_or_default();
+        return Err(TwitchError::OAuth(format!("GQL HTTP {}: {}", status, err)));
     }
 
-    // Pass 2: Fallback to web client ID without Authorization header
-    if resp.is_none() {
-        let res = send_request(web_client_id, None)
-            .send()
-            .await
-            .map_err(TwitchError::Http)?;
-
-        if !res.status().is_success() {
-            let status = res.status();
-            let err = res.text().await.unwrap_or_default();
-            return Err(TwitchError::OAuth(format!("GQL HTTP {}: {}", status, err)));
-        }
-        resp = Some(res);
-        used_client_id = web_client_id;
-    }
-
-    let response = resp.unwrap();
-    let body: Value = response
+    let body: Value = res
         .json()
         .await
         .map_err(|e| TwitchError::OAuth(e.to_string()))?;
@@ -658,7 +623,7 @@ pub async fn twitch_get_hls_url(
     let master_playlist_url = format!(
         "https://usher.ttvnw.net/api/channel/hls/{}.m3u8?client_id={}&token={}&sig={}&allow_source=true&allow_audio_only=true&fast_bread=true&p={}",
         channel_clean,
-        used_client_id,
+        web_client_id,
         encoded_token,
         signature,
         random_p
