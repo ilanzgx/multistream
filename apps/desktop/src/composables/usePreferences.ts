@@ -10,6 +10,7 @@ export interface Preferences {
   recordingQuality: string;
   recordingPath: string;
   nativePlayerEnabled: boolean;
+  adblockEnabled: boolean;
 }
 
 const defaultPreferences: Preferences = {
@@ -22,6 +23,7 @@ const defaultPreferences: Preferences = {
   recordingQuality: "best",
   recordingPath: "",
   nativePlayerEnabled: false,
+  adblockEnabled: true,
 };
 
 const _usePreferences = () => {
@@ -80,6 +82,11 @@ const _usePreferences = () => {
     defaultPreferences.nativePlayerEnabled
   );
 
+  const adblockEnabled = useStorage<boolean>(
+    "preferences.adblockEnabled",
+    defaultPreferences.adblockEnabled
+  );
+
   /**
    * @brief Set the selected chat
    *
@@ -96,6 +103,10 @@ const _usePreferences = () => {
 
   const setRecordingPath = (path: string) => {
     recordingPath.value = path;
+  };
+
+  const setAdblockEnabled = (enabled: boolean) => {
+    adblockEnabled.value = enabled;
   };
 
   /**
@@ -161,6 +172,7 @@ const _usePreferences = () => {
     recordingQuality.value = defaultPreferences.recordingQuality;
     recordingPath.value = defaultPreferences.recordingPath;
     nativePlayerEnabled.value = defaultPreferences.nativePlayerEnabled;
+    adblockEnabled.value = defaultPreferences.adblockEnabled;
   };
 
   return {
@@ -174,6 +186,7 @@ const _usePreferences = () => {
     recordingQuality,
     recordingPath,
     nativePlayerEnabled,
+    adblockEnabled,
 
     // actions
     setSelectedChat,
@@ -184,6 +197,7 @@ const _usePreferences = () => {
     setOnboardingCompleted,
     setRecordingQuality,
     setRecordingPath,
+    setAdblockEnabled,
     resetPreferences,
   };
 };

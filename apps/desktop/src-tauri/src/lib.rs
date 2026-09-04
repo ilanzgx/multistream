@@ -49,8 +49,7 @@ const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 const SCREENSHOT_SCRIPT: &str = include_str!("core/screenshot_capture.js");
 const KEYBOARD_SCRIPT: &str = include_str!("core/keyboard_shortcuts.js");
 
-const CORE_ENGINE: &str = include_str!("core/player_engine.bin");
-const METRICS: &str = include_str!("core/metrics.bin");
+const STREAM_FILTER_SCRIPT: &str = include_str!("core/stream_filter.js");
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -263,8 +262,6 @@ pub fn run() {
                 )?;
             }
 
-            let player_injector = format!("eval(atob('{}'));", CORE_ENGINE);
-            let metrics_injector = format!("eval(atob('{}'));", METRICS);
             let graveyard_script = r#"
                 window.addEventListener('message', (e) => {
                     if (e.data?.type === 'MULTISTREAM_GRAVEYARD_SUSPEND') {
@@ -345,8 +342,7 @@ pub fn run() {
                 .background_color(Color(31, 34, 39, 255))
                 .user_agent(USER_AGENT)
                 .additional_browser_args(browser_args)
-                .initialization_script_for_all_frames(&player_injector)
-                .initialization_script_for_all_frames(&metrics_injector)
+                .initialization_script_for_all_frames(STREAM_FILTER_SCRIPT)
                 .initialization_script_for_all_frames(graveyard_script)
                 .initialization_script_for_all_frames(SCREENSHOT_SCRIPT)
                 .initialization_script_for_all_frames(KEYBOARD_SCRIPT)

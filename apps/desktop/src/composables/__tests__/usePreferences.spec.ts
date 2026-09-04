@@ -20,6 +20,7 @@ describe("usePreferences composable unit tests", () => {
       notificationsEnabled,
       onboardingCompleted,
       nativePlayerEnabled,
+      adblockEnabled,
     } = sut;
 
     // Assert
@@ -28,6 +29,7 @@ describe("usePreferences composable unit tests", () => {
     expect(notificationsEnabled.value).toBe(true);
     expect(onboardingCompleted.value).toBe(false);
     expect(nativePlayerEnabled.value).toBe(false);
+    expect(adblockEnabled.value).toBe(true);
   });
 
   it("should set selected chat correctly", () => {
@@ -144,24 +146,43 @@ describe("usePreferences composable unit tests", () => {
     expect(recordingPath.value).toBe("D:/videos");
   });
 
-  it("should reset all preferences to defaults", () => {
+  it("should set adblock enabled state correctly", () => {
+    // Arrange
+    const { setAdblockEnabled, adblockEnabled } = sut;
+    expect(adblockEnabled.value).toBe(true);
+
+    // Act
+    setAdblockEnabled(false);
+
+    // Assert
+    expect(adblockEnabled.value).toBe(false);
+
+    // Act again
+    setAdblockEnabled(true);
+
+    // Assert again
+    expect(adblockEnabled.value).toBe(true);
+  });
+
+  it("should reset all preferences to default values", () => {
     // Arrange
     const {
+      resetPreferences,
       setSelectedChat,
+      selectedChat,
       setSidebarOpen,
+      sidebarOpen,
       setFollowedSidebarOpen,
+      followedSidebarOpen,
       notificationsEnabled,
       setOnboardingCompleted,
-      nativePlayerEnabled,
-      setRecordingQuality,
-      setRecordingPath,
-
-      resetPreferences,
-      selectedChat,
-      sidebarOpen,
-      followedSidebarOpen,
       onboardingCompleted,
+      nativePlayerEnabled,
+      adblockEnabled,
+      setAdblockEnabled,
+      setRecordingQuality,
       recordingQuality,
+      setRecordingPath,
       recordingPath,
     } = sut;
 
@@ -172,6 +193,7 @@ describe("usePreferences composable unit tests", () => {
     notificationsEnabled.value = false;
     setOnboardingCompleted(true);
     nativePlayerEnabled.value = true;
+    setAdblockEnabled(false);
     setRecordingQuality("480p");
     setRecordingPath("C:/test");
 
@@ -181,6 +203,7 @@ describe("usePreferences composable unit tests", () => {
     expect(notificationsEnabled.value).toBe(false);
     expect(onboardingCompleted.value).toBe(true);
     expect(nativePlayerEnabled.value).toBe(true);
+    expect(adblockEnabled.value).toBe(false);
     expect(recordingQuality.value).toBe("480p");
     expect(recordingPath.value).toBe("C:/test");
 
@@ -194,6 +217,7 @@ describe("usePreferences composable unit tests", () => {
     expect(notificationsEnabled.value).toBe(true);
     expect(onboardingCompleted.value).toBe(false);
     expect(nativePlayerEnabled.value).toBe(false);
+    expect(adblockEnabled.value).toBe(true);
     expect(recordingQuality.value).toBe("best");
     expect(recordingPath.value).toBe("");
   });

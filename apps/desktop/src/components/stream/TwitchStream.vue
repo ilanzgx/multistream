@@ -10,7 +10,7 @@ import { useFocusedStream } from "@/composables/useFocusedStream";
 
 const props = defineProps<{ channel: string; channelid: string }>();
 
-const { nativePlayerEnabled } = usePreferences();
+const { nativePlayerEnabled, adblockEnabled } = usePreferences();
 const { getStatus } = useLiveStatus();
 const { getProfilePicture } = useProfilePicture();
 const { isFocused } = useFocusedStream();
@@ -18,6 +18,10 @@ const { isFocused } = useFocusedStream();
 const liveStatus = computed(() => getStatus(props.channel, "twitch"));
 const profilePicture = getProfilePicture(props.channel, "twitch");
 const isStreamFocused = computed(() => isFocused(props.channelid));
+const embedUrl = computed(() => {
+  const base = PLATFORMS.twitch.getEmbedUrl(props.channel);
+  return `${base}#ms-adblock=${adblockEnabled.value ? "1" : "0"}`;
+});
 </script>
 
 <template>
@@ -33,8 +37,10 @@ const isStreamFocused = computed(() => isFocused(props.channelid));
     />
     <iframe
       v-else
+      :key="`${channel}-${adblockEnabled}`"
+      :name="`multistream-player-${adblockEnabled ? 'adblock' : 'vanilla'}`"
       :title="`Twitch Stream: ${channel}`"
-      :src="PLATFORMS.twitch.getEmbedUrl(channel)"
+      :src="embedUrl"
       allowfullscreen
       allow="autoplay; encrypted-media; fullscreen"
     />
