@@ -64,7 +64,8 @@
         "readChat": "Baca pesan obrolan",
         "sendChat": "Kirim pesan obrolan",
         "followedChannels": "Daftar saluran yang diikuti"
-      }
+      },
+      "disclaimer": "Multistream adalah klien sumber terbuka independen dan tidak berafiliasi dengan, didukung, atau disponsori oleh Twitch, Kick, YouTube, atau Amazon."
     },
     "help": {
       "title": "Bantuan",
@@ -131,14 +132,34 @@
       "data": "Data",
       "connections": "Koneksi",
       "resources": "Transkripsi",
-      "recording": "Perekaman"
+      "recording": "Perekaman",
+      "about": "Tentang"
+    },
+    "about": {
+      "title": "Tentang Multistream",
+      "description": "Informasi dan detail tentang aplikasi",
+      "version": "Versi",
+      "buildDate": "Tanggal Pembuatan",
+      "license": "Lisensi",
+      "licenseType": "Lisensi GPL-3.0",
+      "appDescription": "Tonton beberapa siaran langsung secara bersamaan dengan privasi terjamin dan obrolan terintegrasi.",
+      "links": "Tautan",
+      "starGithub": "Beri Bintang di GitHub",
+      "feedback": "Kirim Masukan",
+      "website": "Situs Web Resmi"
     },
     "nativePlayer": {
-      "title": "Pemutar Twitch Kustom (Eksperimental)",
+      "title": "Pemutar Bawaan untuk Twitch (Eksperimental)",
       "description": "Gunakan mesin stream bawaan alih-alih pemutar tersemat. Dapat meningkatkan kinerja dan kompatibilitas.",
       "loadError": "Gagal memuat stream. Pemutar kustom mungkin untuk sementara tidak tersedia.",
       "videoRefError": "Referensi elemen video tidak terikat",
       "notSupportedError": "Pemutaran media tidak didukung oleh browser Anda"
+    },
+    "adblock": {
+      "title": "Pemblokir Iklan Bawaan",
+      "description": "Blokir iklan video dan banner pada siaran Twitch dan YouTube",
+      "toastEnabled": "Pemblokir iklan diaktifkan",
+      "toastDisabled": "Pemblokir iklan dinonaktifkan"
     },
     "recording": {
       "tabLabel": "Perekaman",

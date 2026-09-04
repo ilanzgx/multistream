@@ -64,7 +64,8 @@
         "readChat": "读取聊天消息",
         "sendChat": "发送聊天消息",
         "followedChannels": "关注频道列表"
-      }
+      },
+      "disclaimer": "Multistream 是一个独立的开源客户端，与 Twitch、Kick、YouTube 或 Amazon 均无关联，亦未获得其认可或赞助。"
     },
     "backup": {
       "title": "数据与备份",
@@ -131,14 +132,34 @@
       "data": "数据",
       "connections": "连接",
       "resources": "转录",
-      "recording": "录制"
+      "recording": "录制",
+      "about": "关于"
+    },
+    "about": {
+      "title": "关于 Multistream",
+      "description": "应用程序信息和详情",
+      "version": "版本",
+      "buildDate": "构建日期",
+      "license": "许可证",
+      "licenseType": "GPL-3.0 许可证",
+      "appDescription": "同时观看多个直播流，注重隐私设计并集成原生聊天。",
+      "links": "链接",
+      "starGithub": "在 GitHub 上点赞 Star",
+      "feedback": "提交反馈",
+      "website": "官方网站"
     },
     "nativePlayer": {
-      "title": "Twitch 自定义播放器（实验性）",
+      "title": "Twitch 内置播放器（实验性）",
       "description": "使用内置流媒体引擎代替嵌入式播放器。可能会提升性能和兼容性。",
       "loadError": "无法加载直播。自定义播放器可能暂时不可用。",
       "videoRefError": "视频元素引用未绑定",
       "notSupportedError": "浏览器不支持媒体播放"
+    },
+    "adblock": {
+      "title": "内置广告拦截器",
+      "description": "拦截 Twitch 和 YouTube 直播中的视频和横幅广告",
+      "toastEnabled": "广告拦截器已启用",
+      "toastDisabled": "广告拦截器已禁用"
     },
     "recording": {
       "tabLabel": "录制",

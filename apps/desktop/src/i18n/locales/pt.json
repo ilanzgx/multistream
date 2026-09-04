@@ -64,7 +64,8 @@
         "readChat": "Ler mensagens do chat",
         "sendChat": "Enviar mensagens no chat",
         "followedChannels": "Lista de canais seguidos"
-      }
+      },
+      "disclaimer": "O Multistream é um cliente independente de código aberto e não é afiliado, endossado ou patrocinado por Twitch, Kick, YouTube ou Amazon."
     },
     "help": {
       "title": "Ajuda",
@@ -131,14 +132,34 @@
       "data": "Dados",
       "connections": "Conexões",
       "resources": "Transcrição",
-      "recording": "Gravação"
+      "recording": "Gravação",
+      "about": "Sobre"
+    },
+    "about": {
+      "title": "Sobre o Multistream",
+      "description": "Informações e detalhes sobre o aplicativo",
+      "version": "Versão",
+      "buildDate": "Data do build",
+      "license": "Licença",
+      "licenseType": "Licença GPL-3.0",
+      "appDescription": "Assista a múltiplas transmissões ao vivo simultaneamente com privacidade por design e chat integrado.",
+      "links": "Links",
+      "starGithub": "Dar estrela no GitHub",
+      "feedback": "Enviar Feedback",
+      "website": "Site Oficial"
     },
     "nativePlayer": {
-      "title": "Player Twitch Customizado (Experimental)",
+      "title": "Player Integrado para Twitch (Experimental)",
       "description": "Usar o motor de stream integrado em vez de players incorporados. Pode melhorar o desempenho e a compatibilidade.",
       "loadError": "Falha ao carregar stream. O player customizado pode estar temporariamente indisponível.",
       "videoRefError": "Referência do elemento de vídeo não vinculada",
       "notSupportedError": "Reprodução de mídia não é suportada pelo navegador"
+    },
+    "adblock": {
+      "title": "Bloqueador de Anúncios Integrado",
+      "description": "Bloqueie anúncios de vídeo e banners em transmissões da Twitch e YouTube",
+      "toastEnabled": "Bloqueador de anúncios ativado",
+      "toastDisabled": "Bloqueador de anúncios desativado"
     },
     "recording": {
       "tabLabel": "Gravação",

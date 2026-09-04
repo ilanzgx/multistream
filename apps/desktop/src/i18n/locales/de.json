@@ -64,7 +64,8 @@
         "readChat": "Chat-Nachrichten lesen",
         "sendChat": "Chat-Nachrichten senden",
         "followedChannels": "Liste der gefolgten Kanäle"
-      }
+      },
+      "disclaimer": "Multistream ist ein unabhängiger Open-Source-Client und steht in keiner Verbindung zu Twitch, Kick, YouTube oder Amazon und wird von diesen weder unterstützt noch gesponsert."
     },
     "backup": {
       "title": "Daten & Backup",
@@ -131,14 +132,34 @@
       "data": "Daten",
       "connections": "Verbindungen",
       "resources": "Transkription",
-      "recording": "Aufnahme"
+      "recording": "Aufnahme",
+      "about": "Über"
+    },
+    "about": {
+      "title": "Über Multistream",
+      "description": "Informationen und Details zur Anwendung",
+      "version": "Version",
+      "buildDate": "Build-Datum",
+      "license": "Lizenz",
+      "licenseType": "GPL-3.0-Lizenz",
+      "appDescription": "Mehrere Livestreams gleichzeitig ansehen mit integrierter Privatsphäre und Chat.",
+      "links": "Links",
+      "starGithub": "Stern auf GitHub vergeben",
+      "feedback": "Feedback senden",
+      "website": "Offizielle Website"
     },
     "nativePlayer": {
-      "title": "Benutzerdefinierter Twitch Player (Experimentell)",
+      "title": "Integrierter Player für Twitch (Experimentell)",
       "description": "Die integrierte Stream-Engine anstelle eingebetteter Player verwenden. Kann Leistung und Kompatibilität verbessern.",
       "loadError": "Stream konnte nicht geladen werden. Der benutzerdefinierte Player ist möglicherweise vorübergehend nicht verfügbar.",
       "videoRefError": "Videoelement-Referenz nicht gebunden",
       "notSupportedError": "Medienwiedergabe wird vom Browser nicht unterstützt"
+    },
+    "adblock": {
+      "title": "Integrierter Werbeblocker",
+      "description": "Video- und Bannerwerbung in Twitch- und YouTube-Streams blockieren",
+      "toastEnabled": "Werbeblocker aktiviert",
+      "toastDisabled": "Werbeblocker deaktiviert"
     },
     "recording": {
       "tabLabel": "Aufnahme",

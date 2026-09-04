@@ -64,7 +64,8 @@
         "readChat": "Leer mensajes del chat",
         "sendChat": "Enviar mensajes en el chat",
         "followedChannels": "Lista de canales seguidos"
-      }
+      },
+      "disclaimer": "Multistream es un cliente de código abierto independiente y no está afiliado, respaldado ni patrocinado por Twitch, Kick, YouTube o Amazon."
     },
     "backup": {
       "title": "Datos y Copia de seguridad",
@@ -131,14 +132,34 @@
       "data": "Datos",
       "connections": "Conexiones",
       "resources": "Transcripción",
-      "recording": "Grabación"
+      "recording": "Grabación",
+      "about": "Acerca de"
+    },
+    "about": {
+      "title": "Acerca de Multistream",
+      "description": "Información y detalles sobre la aplicación",
+      "version": "Versión",
+      "buildDate": "Fecha de compilación",
+      "license": "Licencia",
+      "licenseType": "Licencia GPL-3.0",
+      "appDescription": "Mira múltiples transmisiones en vivo simultáneamente con privacidad por diseño y chat integrado.",
+      "links": "Enlaces",
+      "starGithub": "Dar estrella en GitHub",
+      "feedback": "Enviar comentarios",
+      "website": "Sitio Oficial"
     },
     "nativePlayer": {
-      "title": "Reproductor Twitch Personalizado (Experimental)",
+      "title": "Reproductor Integrado para Twitch (Experimental)",
       "description": "Usar el motor de streaming integrado en lugar de reproductores embebidos. Puede mejorar el rendimiento y la compatibilidad.",
       "loadError": "Error al cargar la transmisión. El reproductor personalizado puede estar temporalmente no disponible.",
       "videoRefError": "Referencia del elemento de video no vinculada",
       "notSupportedError": "La reproducción multimedia no es compatible con su navegador"
+    },
+    "adblock": {
+      "title": "Bloqueador de Anuncios Integrado",
+      "description": "Bloquea anuncios de video y banners en transmisiones de Twitch y YouTube",
+      "toastEnabled": "Bloqueador de anuncios activado",
+      "toastDisabled": "Bloqueador de anuncios desactivado"
     },
     "recording": {
       "tabLabel": "Grabación",

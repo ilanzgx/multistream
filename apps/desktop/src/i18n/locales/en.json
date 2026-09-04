@@ -64,7 +64,8 @@
         "readChat": "Read chat messages",
         "sendChat": "Send chat messages",
         "followedChannels": "Followed channels list"
-      }
+      },
+      "disclaimer": "Multistream is an independent open-source client and is not affiliated with, endorsed by, or sponsored by Twitch, Kick, YouTube, or Amazon."
     },
     "help": {
       "title": "Help",
@@ -131,14 +132,34 @@
       "data": "Data",
       "connections": "Connections",
       "resources": "Transcription",
-      "recording": "Recording"
+      "recording": "Recording",
+      "about": "About"
+    },
+    "about": {
+      "title": "About Multistream",
+      "description": "Information and details about the application",
+      "version": "Version",
+      "buildDate": "Build Date",
+      "license": "License",
+      "licenseType": "GPL-3.0 License",
+      "appDescription": "Watch multiple live streams simultaneously with privacy by design and integrated chat.",
+      "links": "Links",
+      "starGithub": "Star on GitHub",
+      "feedback": "Submit Feedback",
+      "website": "Official Website"
     },
     "nativePlayer": {
-      "title": "Custom Twitch Player (Experimental)",
+      "title": "Built-in Player for Twitch (Experimental)",
       "description": "Use the built-in stream engine instead of embedded players. May improve performance and compatibility.",
       "loadError": "Failed to load stream. The custom player may be temporarily unavailable.",
       "videoRefError": "Video element reference not bound",
       "notSupportedError": "Media playback is not supported by your browser"
+    },
+    "adblock": {
+      "title": "Built-in Ad Blocker",
+      "description": "Block video and banner ads on Twitch and YouTube streams",
+      "toastEnabled": "Ad blocker enabled",
+      "toastDisabled": "Ad blocker disabled"
     },
     "recording": {
       "tabLabel": "Recording",

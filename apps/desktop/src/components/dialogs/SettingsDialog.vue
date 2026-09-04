@@ -38,22 +38,32 @@ import {
   ChevronsDown,
   Clock,
   FlaskConical,
+  ShieldCheck,
+  Info,
+  MessageSquare,
+  Star,
 } from "@lucide/vue";
 import { toast } from "@/composables/useToast";
-import { watch, ref, onMounted } from "vue";
+import { watch, ref, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { useBackup } from "@/composables/useBackup";
 import type { BackupData } from "@/composables/useBackup";
 import { useI18n } from "vue-i18n";
 import { SUPPORTED_LANGUAGES } from "@/config/i18n";
 import { PLATFORMS } from "@/config/platforms";
+import { APP_LINKS } from "@/config/links";
 import { useTranscription, CHUNK_STEPS } from "@/composables/useTranscription";
 import { Slider } from "@/components/ui/slider";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
 
 const { checkForUpdates, isChecking } = useUpdater();
-const { notificationsEnabled, recordingQuality, recordingPath, nativePlayerEnabled } =
-  usePreferences();
+const {
+  notificationsEnabled,
+  recordingQuality,
+  recordingPath,
+  nativePlayerEnabled,
+  adblockEnabled,
+} = usePreferences();
 const { locale, t } = useI18n();
 
 import { useRecording } from "@/composables/useRecording";
@@ -228,6 +238,37 @@ const handleCheckUpdates = () => {
   checkForUpdates(true);
 };
 
+const appVersion = import.meta.env.VITE_APP_VERSION || "0.18.17";
+const formattedBuildDate = computed(() => {
+  const raw = import.meta.env.VITE_APP_BUILD_TIME;
+  if (!raw) return "-";
+  try {
+    return new Date(raw).toLocaleString(locale.value, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  } catch {
+    return raw.slice(0, 19).replace("T", ", ");
+  }
+});
+
+const openExternalLink = async (url: string) => {
+  if (isRunningInTauri) {
+    try {
+      const { open: openUrl } = await import("@tauri-apps/plugin-shell");
+      await openUrl(url);
+      return;
+    } catch (e) {
+      console.error("Failed to open URL via Tauri plugin-shell:", e);
+    }
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+};
+
 const startTour = () => {
   window.dispatchEvent(
     new CustomEvent("multistream-show-dialog", {
@@ -345,6 +386,18 @@ watch(notificationsEnabled, (enabled) => {
   }
 });
 
+watch(adblockEnabled, (enabled) => {
+  if (enabled) {
+    toast.success(t("settings.adblock.toastEnabled"), {
+      duration: 2000,
+    });
+  } else {
+    toast.info(t("settings.adblock.toastDisabled"), {
+      duration: 2000,
+    });
+  }
+});
+
 // all platforms except custom
 const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
 
@@ -364,7 +417,7 @@ watch(
 <template>
   <Dialog :open="open" :modal="false" @update:open="emit('update:open', $event)">
     <DialogContent
-      class="bg-[#14161a] border-[#2a2d33] max-w-xl md:max-w-2xl flex flex-col h-195 max-h-[90vh]"
+      class="bg-[#14161a] border-[#2a2d33] max-w-2xl md:max-w-3xl flex flex-col h-195 max-h-[90vh]"
     >
       <DialogHeader>
         <DialogTitle class="text-white">
@@ -380,10 +433,10 @@ watch(
           :class="[
             'grid w-full bg-[#1e2127]',
             isRunningInTauri && isSupported && isRecordingSupported
-              ? 'grid-cols-5'
+              ? 'grid-cols-6'
               : (isRunningInTauri && isSupported) || (isRunningInTauri && isRecordingSupported)
-                ? 'grid-cols-4'
-                : 'grid-cols-3',
+                ? 'grid-cols-5'
+                : 'grid-cols-4',
           ]"
         >
           <TabsTrigger
@@ -423,6 +476,13 @@ watch(
           >
             <Video class="size-4 shrink-0" />
             <span class="truncate">{{ $t("settings.recording.tabLabel") }}</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="sobre"
+            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
+          >
+            <Info class="size-4 shrink-0" />
+            <span class="truncate">{{ $t("settings.tabs.about") }}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -494,6 +554,24 @@ watch(
               </div>
               <div class="shrink-0 flex items-center justify-end">
                 <Switch id="native-player-switch" v-model:checked="nativePlayerEnabled" />
+              </div>
+            </div>
+
+            <!-- Ad Blocker Section -->
+            <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
+              <div class="flex items-center gap-2 px-1">
+                <ShieldCheck class="size-4 text-gray-400 shrink-0" />
+                <div class="pr-8">
+                  <h3 class="text-white text-sm font-medium">
+                    {{ $t("settings.adblock.title") }}
+                  </h3>
+                  <p class="text-gray-400 text-xs">
+                    {{ $t("settings.adblock.description") }}
+                  </p>
+                </div>
+              </div>
+              <div class="shrink-0 flex items-center justify-end">
+                <Switch id="adblock-switch" v-model:checked="adblockEnabled" />
               </div>
             </div>
 
@@ -594,7 +672,7 @@ watch(
                         </span>
                         <span class="text-white font-medium">{{ platform.name }}</span>
                         <span
-                          class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
+                          class="ml-auto text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
                         >
                           {{ $t("chat.unified.connectButton") }}
                         </span>
@@ -645,7 +723,7 @@ watch(
                         </span>
                         <span class="text-white font-medium">{{ platform.name }}</span>
                         <span
-                          class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
+                          class="ml-auto text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
                         >
                           {{ $t("chat.unified.connectButton") }}
                         </span>
@@ -673,7 +751,7 @@ watch(
                         </span>
                         <span class="text-white font-medium">{{ platform.name }}</span>
                         <span
-                          class="ml-auto text-[8px] font-mono tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-400 bg-white/5 border border-white/5"
+                          class="ml-auto text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-400 bg-white/5 border border-white/5"
                         >
                           {{ $t("common.comingSoon") }}
                         </span>
@@ -682,6 +760,9 @@ watch(
                   </div>
                 </div>
               </div>
+              <p class="text-[11px] text-gray-400 px-1 pt-1 leading-relaxed">
+                {{ $t("settings.auth.disclaimer") }}
+              </p>
             </div>
           </TabsContent>
 
@@ -805,7 +886,7 @@ watch(
                       <span
                         v-for="step in CHUNK_STEPS"
                         :key="step"
-                        class="text-[10px] font-mono transition-colors leading-none"
+                        class="text-[10px] transition-colors leading-none"
                         :class="
                           step === chunkDuration ? 'text-white font-semibold' : 'text-gray-400'
                         "
@@ -835,7 +916,7 @@ watch(
                     <div class="flex-1">
                       <div class="flex flex-wrap items-center gap-2">
                         <span class="text-sm font-medium text-white">{{ model.name }}</span>
-                        <span class="text-[10px] text-gray-400 font-mono">{{ model.size }}</span>
+                        <span class="text-[10px] text-gray-400">{{ model.size }}</span>
                         <span
                           v-if="installedModels.includes(model.id)"
                           class="text-[10px] px-1.5 py-0.5 rounded bg-green-500/10 text-green-400 border border-green-500/20 uppercase tracking-wider"
@@ -851,7 +932,7 @@ watch(
                     <div class="shrink-0 flex items-center gap-2">
                       <template v-if="downloadingModel === model.id">
                         <div class="w-30 space-y-1.5">
-                          <div class="flex justify-between text-[9px] text-gray-400 font-mono">
+                          <div class="flex justify-between text-[9px] text-gray-400">
                             <span
                               >{{ (downloadProgress.downloaded / 1024 / 1024).toFixed(1) }}M</span
                             >
@@ -877,7 +958,7 @@ watch(
                       <template v-else-if="installedModels.includes(model.id)">
                         <span
                           v-if="selectedModel === model.id"
-                          class="flex items-center text-[10px] px-3 rounded-md text-green-400 uppercase tracking-wider font-mono h-9 select-none"
+                          class="flex items-center text-[10px] px-3 rounded-md text-green-400 uppercase tracking-wider h-9 select-none"
                         >
                           <Check class="size-3.5 mr-1" />
                           {{ $t("settings.transcription.modelSelected") }}
@@ -946,7 +1027,7 @@ watch(
               <div class="shrink-0 flex items-center justify-end">
                 <template v-if="isDependenciesInstalled">
                   <div class="flex items-center gap-3">
-                    <span class="text-[10px] text-gray-400 font-mono">
+                    <span class="text-[10px] text-gray-400">
                       {{ (envSize / 1024 / 1024).toFixed(1) }} MB
                     </span>
                     <Button
@@ -973,7 +1054,7 @@ watch(
                   {{ $t("settings.recording.downloadDependencies") }}
                 </Button>
                 <div v-else class="flex flex-col items-end gap-1 w-45">
-                  <div class="flex justify-between w-full text-[9px] text-gray-400 font-mono">
+                  <div class="flex justify-between w-full text-[9px] text-gray-400">
                     <span class="truncate max-w-35">{{ downloadDependenciesStep }}</span>
                     <span>{{ downloadDependenciesProgress }}%</span>
                   </div>
@@ -1143,6 +1224,100 @@ watch(
                       {{ $t("settings.recording.orphanDismiss") }}
                     </Button>
                   </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="sobre" class="space-y-4 mt-0 outline-none">
+            <!-- App Identity Header -->
+            <div class="flex items-center gap-4 px-1 py-1">
+              <img
+                src="/128x128.png"
+                alt="Multistream logo"
+                class="w-14 h-14 rounded-2xl shrink-0 border border-[#2a2d33] bg-[#14161a]"
+              />
+              <div class="min-w-0">
+                <h3 class="text-white text-base font-bold">Multistream</h3>
+                <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">
+                  {{ $t("settings.about.appDescription") }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Details Card -->
+            <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl space-y-3.5 text-xs">
+              <!-- Version & Check Updates -->
+              <div class="flex items-center gap-6">
+                <span class="w-28 text-gray-400 shrink-0">{{ $t("settings.about.version") }}</span>
+                <div class="flex items-center gap-2.5">
+                  <span class="text-gray-300">{{ appVersion }}</span>
+                  <Button
+                    v-if="isRunningInTauri"
+                    variant="outline"
+                    size="sm"
+                    class="h-6 text-[11px] px-2.5 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all"
+                    :disabled="isChecking"
+                    @click="handleCheckUpdates"
+                  >
+                    <RefreshCw class="size-3 mr-1.5" :class="{ 'animate-spin': isChecking }" />
+                    {{
+                      isChecking
+                        ? $t("settings.updates.checking")
+                        : $t("settings.updates.checkButton")
+                    }}
+                  </Button>
+                </div>
+              </div>
+
+              <!-- Build Date -->
+              <div class="flex items-center gap-6">
+                <span class="w-28 text-gray-400 shrink-0">{{
+                  $t("settings.about.buildDate")
+                }}</span>
+                <span class="text-gray-300">{{ formattedBuildDate }}</span>
+              </div>
+
+              <!-- License -->
+              <div class="flex items-center gap-6">
+                <span class="w-28 text-gray-400 shrink-0">{{ $t("settings.about.license") }}</span>
+                <span class="text-gray-300">{{ $t("settings.about.licenseType") }}</span>
+              </div>
+
+              <!-- Links -->
+              <div class="flex items-center gap-6 pt-0.5">
+                <span class="w-28 text-gray-400 shrink-0">{{ $t("settings.about.links") }}</span>
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+                  <button
+                    class="inline-flex items-center gap-1.5 text-gray-300 hover:text-white transition-colors cursor-pointer group"
+                    @click="openExternalLink(APP_LINKS.github.repo)"
+                  >
+                    <Star
+                      class="size-3.5 text-gray-400 group-hover:text-amber-400 transition-colors"
+                    />
+                    <span class="group-hover:underline">{{ $t("settings.about.starGithub") }}</span>
+                    <span class="text-gray-500 text-xs">=</span>
+                    <img
+                      src="/GIGACHAD-1x.gif"
+                      alt="GIGACHAD"
+                      title="GIGACHAD"
+                      class="w-4 h-4 object-contain rounded-xs shrink-0"
+                    />
+                  </button>
+                  <button
+                    class="inline-flex items-center gap-1.5 text-gray-300 hover:text-white hover:underline transition-colors cursor-pointer"
+                    @click="openExternalLink(APP_LINKS.github.issues)"
+                  >
+                    <MessageSquare class="size-3.5 text-gray-400" />
+                    <span>{{ $t("settings.about.feedback") }}</span>
+                  </button>
+                  <button
+                    class="inline-flex items-center gap-1.5 text-gray-300 hover:text-white hover:underline transition-colors cursor-pointer"
+                    @click="openExternalLink(APP_LINKS.website)"
+                  >
+                    <Globe class="size-3.5 text-gray-400" />
+                    <span>{{ $t("settings.about.website") }}</span>
+                  </button>
                 </div>
               </div>
             </div>

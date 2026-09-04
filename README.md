@@ -119,6 +119,12 @@ If you want to compile the app yourself or contribute to the project, follow the
    bun run desktop:tauri:dev
    ```
 
+## Legal Notice
+
+Multistream is an independent open-source project and is not affiliated with, endorsed by, or connected to Twitch, Kick, YouTube, Amazon, or Google. 
+
+All trademarks, logos, and brand names belong to their respective owners.
+
 ## License
 
 Distributed under the GPL-3.0 License. See [`LICENSE`](./LICENSE) for more information.

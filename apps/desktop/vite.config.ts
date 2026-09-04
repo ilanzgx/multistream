@@ -45,6 +45,7 @@ export default defineConfig({
   },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version),
+    "import.meta.env.VITE_APP_BUILD_TIME": JSON.stringify(new Date().toISOString()),
   },
   build: {
     target: ["es2021", "chrome100", "safari13"],

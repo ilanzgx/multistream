@@ -64,7 +64,8 @@
         "readChat": "Lire les messages du chat",
         "sendChat": "Envoyer des messages dans le chat",
         "followedChannels": "Liste des chaînes suivies"
-      }
+      },
+      "disclaimer": "Multistream est un client open source indépendant et n'est ni affilié à, ni approuvé, ni sponsorisé par Twitch, Kick, YouTube ou Amazon."
     },
     "help": {
       "title": "Aide",
@@ -131,14 +132,34 @@
       "data": "Données",
       "connections": "Connexions",
       "resources": "Transcription",
-      "recording": "Enregistrement"
+      "recording": "Enregistrement",
+      "about": "À propos"
+    },
+    "about": {
+      "title": "À propos de Multistream",
+      "description": "Informations et détails sur l'application",
+      "version": "Version",
+      "buildDate": "Date de compilation",
+      "license": "Licence",
+      "licenseType": "Licence GPL-3.0",
+      "appDescription": "Regardez plusieurs flux en direct simultanément avec une confidentialité totale et un chat intégré.",
+      "links": "Liens",
+      "starGithub": "Mettre une étoile sur GitHub",
+      "feedback": "Envoyer des commentaires",
+      "website": "Site officiel"
     },
     "nativePlayer": {
-      "title": "Lecteur Twitch personnalisé (Expérimental)",
+      "title": "Lecteur intégré pour Twitch (Expérimental)",
       "description": "Utilisez le moteur de flux intégré au lieu des lecteurs intégrés. Peut améliorer les performances et la compatibilité.",
       "loadError": "Échec du chargement du flux. Le lecteur personnalisé peut être temporairement indisponible.",
       "videoRefError": "Référence de l'élément vidéo non liée",
       "notSupportedError": "La lecture multimédia n'est pas prise en charge par votre navigateur"
+    },
+    "adblock": {
+      "title": "Bloqueur de publicités intégré",
+      "description": "Bloquer les publicités vidéo et bannières sur les streams Twitch et YouTube",
+      "toastEnabled": "Bloqueur de publicités activé",
+      "toastDisabled": "Bloqueur de publicités désactivé"
     },
     "recording": {
       "tabLabel": "Enregistrement",

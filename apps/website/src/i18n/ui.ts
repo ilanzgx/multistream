@@ -49,6 +49,8 @@ export const ui = {
     "nav.donate": "Buy me a coffee",
     "footer.credits":
       'Multistream is an open-source project developed by Ilan Fonseca aka <a href="https://github.com/ilanzgx" target="_blank" rel="noopener noreferrer" class="hover:text-[#111111] dark:hover:text-white transition-colors underline underline-offset-4 font-medium">ilanzgx</a>.',
+    "footer.disclaimer":
+      "Multistream is an independent open-source project not affiliated with Twitch, Kick, YouTube, or Amazon. All trademarks belong to their respective owners.",
   },
   "pt-br": {
     "meta.title": "Multistream - Assista Várias Streams Localmente",
@@ -96,5 +98,7 @@ export const ui = {
     "nav.donate": "Pagar um café",
     "footer.credits":
       'Multistream é um projeto de código aberto desenvolvido por Ilan Fonseca aka <a href="https://github.com/ilanzgx" target="_blank" rel="noopener noreferrer" class="hover:text-[#111111] dark:hover:text-white transition-colors underline underline-offset-4 font-medium">ilanzgx</a>.',
+    "footer.disclaimer":
+      "Multistream é um projeto de código aberto independente, sem afiliação com Twitch, Kick, YouTube ou Amazon. Todas as marcas registradas pertencem aos seus respectivos donos.",
   },
 } as const;

@@ -64,7 +64,8 @@
         "readChat": "Sohbet mesajlarını oku",
         "sendChat": "Sohbet mesajları gönder",
         "followedChannels": "Takip edilen kanallar listesi"
-      }
+      },
+      "disclaimer": "Multistream bağımsız bir açık kaynaklı istemcidir ve Twitch, Kick, YouTube veya Amazon ile bağlantılı değildir, bunlar tarafından onaylanmamış veya desteklenmemiştir."
     },
     "help": {
       "title": "Yardım",
@@ -131,14 +132,34 @@
       "data": "Veri",
       "connections": "Bağlantılar",
       "resources": "Deşifre",
-      "recording": "Kayıt"
+      "recording": "Kayıt",
+      "about": "Hakkında"
+    },
+    "about": {
+      "title": "Multistream Hakkında",
+      "description": "Uygulama hakkında bilgiler ve detaylar",
+      "version": "Sürüm",
+      "buildDate": "Derleme Tarihi",
+      "license": "Lisans",
+      "licenseType": "GPL-3.0 Lisansı",
+      "appDescription": "Gizlilik odaklı tasarım ve entegre sohbet ile birden fazla canlı yayını aynı anda izleyin.",
+      "links": "Bağlantılar",
+      "starGithub": "GitHub'da Yıldız Ver",
+      "feedback": "Geri Bildirim Gönder",
+      "website": "Resmi Web Sitesi"
     },
     "nativePlayer": {
-      "title": "Özel Twitch Oynatıcısı (Deneysel)",
+      "title": "Twitch İçin Dahili Oynatıcı (Deneysel)",
       "description": "Gömülü oynatıcılar yerine yerleşik yayın motorunu kullanın. Performansı ve uyumluluğu artırabilir.",
       "loadError": "Yayın yüklenemedi. Özel oynatıcı geçici olarak kullanılamayabilir.",
       "videoRefError": "Video öğesi referansı bağlanmadı",
       "notSupportedError": "Medya oynatma tarayıcınız tarafından desteklenmiyor"
+    },
+    "adblock": {
+      "title": "Dahili Reklam Engelleyici",
+      "description": "Twitch ve YouTube yayınlarındaki video ve banner reklamlarını engelleyin",
+      "toastEnabled": "Reklam engelleyici etkinleştirildi",
+      "toastDisabled": "Reklam engelleyici devre dışı bırakıldı"
     },
     "recording": {
       "tabLabel": "Kayıt",
