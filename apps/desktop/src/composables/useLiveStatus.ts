@@ -615,6 +615,7 @@ const _useLiveStatus = () => {
   const visibility = useDocumentVisibility();
   const statuses = ref<StatusMap>({});
   const previousStatuses = ref<StatusMap>({});
+  const hasCompletedFirstCheck = ref(false);
   const suggestedStreams = ref<SuggestedStream[]>([]);
   const lastSuggestionsFetch = ref<number>(0);
   const isChecking = ref(false);
@@ -694,7 +695,7 @@ const _useLiveStatus = () => {
       // detect offline -> online transitions for favorites
       if (isTauri() && notificationsEnabled.value) {
         const t = i18n.global.t;
-        const isFirstCheck = Object.keys(previousStatuses.value).length === 0;
+        const isFirstCheck = !hasCompletedFirstCheck.value;
         const newLiveChannels: { fav: any; status: any }[] = [];
 
         for (const fav of favorites.value) {
@@ -799,15 +800,29 @@ const _useLiveStatus = () => {
         }
       }
 
-      // Selectively update previousStatuses: only overwrite entries that have fresh data
-      // from this cycle. Entries for channels that weren't re-fetched are left unchanged,
-      // so a partial-failure cycle cannot reset their live→offline state falsely.
+      // Selectively update previousStatuses with fresh data. For offline results,
+      // require the channel to already be offline in statuses.value (last displayed cycle)
+      // before confirming. This prevents a single flaky API read from resetting the
+      // "was live" flag and triggering spurious "went live" notifications on recovery.
+      // New channels (not yet tracked) bypass this check and are written immediately.
       const nextPreviousStatuses = { ...previousStatuses.value };
       for (const key of freshKeys) {
-        if (newStatuses[key] !== undefined) nextPreviousStatuses[key] = newStatuses[key]!;
+        const newStatus = newStatuses[key];
+        if (newStatus === undefined) continue;
+
+        if (newStatus.isLive) {
+          nextPreviousStatuses[key] = newStatus;
+        } else {
+          const isNewChannel = !(key in previousStatuses.value);
+          const confirmedOffline = statuses.value[key]?.isLive === false;
+          if (isNewChannel || confirmedOffline) {
+            nextPreviousStatuses[key] = newStatus;
+          }
+        }
       }
       previousStatuses.value = nextPreviousStatuses;
       statuses.value = newStatuses;
+      hasCompletedFirstCheck.value = true;
     } finally {
       isChecking.value = false;
     }

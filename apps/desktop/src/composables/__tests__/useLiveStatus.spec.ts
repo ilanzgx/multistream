@@ -1301,4 +1301,148 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(results[0]?.channel).toBe("kick_streamer");
     });
   });
+
+  describe("Notification correctness (isFirstCheck)", () => {
+    let fetchSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      mockIsTauri.mockReturnValue(true);
+      mockNotificationsEnabled.value = true;
+      fetchSpy = vi.spyOn(globalThis, "fetch");
+    });
+
+    afterEach(() => {
+      fetchSpy.mockRestore();
+    });
+
+    it("should not re-fire notifications for already-live favorites on subsequent checks (EC-isFirstCheck regression)", async () => {
+      // Arrange — gaules is a favorite and is live
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
+
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              stream: { title: "FURIA vs NaVi", viewersCount: 50000, game: { displayName: "CS2" } },
+              profileImageURL: null,
+            },
+          },
+        }),
+      } as any);
+
+      // Act — first check sets hasCompletedFirstCheck = true
+      const p1 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p1;
+
+      // toast.info fires once for the welcome notification
+      expect(vi.mocked(toast.info)).toHaveBeenCalledTimes(1);
+      vi.mocked(toast.info).mockClear();
+
+      // Act — second check (simulates foreground wake-up or next interval tick)
+      const p2 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p2;
+
+      // Assert — no new notification: gaules was already live, isFirstCheck is now false
+      expect(vi.mocked(toast.info)).not.toHaveBeenCalled();
+      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({ channel: "gaules" })
+      );
+    });
+
+    it("should not re-fire notifications after a foreground wake-up check (visibility watcher)", async () => {
+      // Arrange — complete a first check so hasCompletedFirstCheck = true
+      mockFavorites.value = [{ channel: "alanzoka", platform: "kick" }];
+      mockRecents.value = [{ channel: "alanzoka", platform: "kick" }];
+
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          livestream: {
+            viewer_count: 20000,
+            session_title: "ranked",
+            categories: [{ name: "Valorant" }],
+            thumbnail: null,
+          },
+          user: { profile_pic: null },
+        }),
+      } as any);
+
+      const p1 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p1;
+      vi.mocked(toast.info).mockClear();
+      vi.mocked(invoke as any).mockClear();
+
+      // Act — simulate visibility change (user returns to app)
+      mockVisibility.value = "hidden";
+      mockVisibility.value = "visible";
+      const p2 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p2;
+
+      // Assert — no spurious notifications fired
+      expect(vi.mocked(toast.info)).not.toHaveBeenCalled();
+      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({ channel: "alanzoka" })
+      );
+    });
+
+    it("should not fire spurious notifications when API returns stream:null for a single cycle (flaky read)", async () => {
+      // Arrange — gaules is live
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      mockRecents.value = [{ channel: "gaules", platform: "twitch" }];
+
+      const liveResponse = {
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              stream: { title: "CS2", viewersCount: 80000, game: { displayName: "CS2" } },
+              profileImageURL: null,
+            },
+          },
+        }),
+      } as any;
+      const offlineResponse = {
+        ok: true,
+        json: async () => ({
+          data: { c0: { stream: null, profileImageURL: null } }, // API glitch: stream null
+        }),
+      } as any;
+
+      // Cycle 1: live — first check, welcome toast fires
+      fetchSpy.mockResolvedValueOnce(liveResponse);
+      let p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+      vi.mocked(toast.info).mockClear();
+      vi.mocked(invoke as any).mockClear();
+
+      // Cycle 2: API glitch — stream:null (single bad read)
+      fetchSpy.mockResolvedValueOnce(offlineResponse);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Cycle 3: API recovers — gaules is live again
+      fetchSpy.mockResolvedValueOnce(liveResponse);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Assert — no "went live" notification: previousStatuses debounce prevented
+      // the single bad read from resetting the "was live" flag
+      expect(vi.mocked(toast.info)).not.toHaveBeenCalled();
+      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({ channel: "gaules" })
+      );
+    });
+  });
 });
