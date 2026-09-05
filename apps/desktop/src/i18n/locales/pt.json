@@ -395,52 +395,74 @@
     "finish": "Começar",
     "step1": {
       "title": "Adicionar Streams",
-      "description": "Clique no botão '+' no menu lateral ou pressione a tecla {key} para adicionar uma stream da Twitch, Kick ou YouTube."
+      "description": "Assista a múltiplas transmissões da Twitch, Kick, YouTube e canais personalizados ao mesmo tempo em uma única tela, com chat em tempo real e privacidade total.",
+      "favoriteBadge": "AO VIVO",
+      "customPlatform": "Custom",
+      "pilar1Title": "Grid Multi-Stream",
+      "pilar1Desc": "Assista a transmissões da Twitch, Kick e YouTube lado a lado.",
+      "pilar2Title": "Chat Integrado & Emotes",
+      "pilar2Desc": "Converse ao vivo com suporte completo a emotes da 7TV e BTTV.",
+      "pilar3Title": "100% Local & Privado",
+      "pilar3Desc": "Conexões diretas, transcrição offline e gravação no seu disco.",
+      "quickTip": "Pressione {key} a qualquer momento para adicionar uma stream",
+      "tagPrivate": "100% Privado e Local",
+      "tagLightweight": "Leve e Sem Travamentos",
+      "tagMultiplatform": "Disponível em 10+ Idiomas",
+      "tagLanguages": "Disponível em 10+ Idiomas",
+      "howToAdd": "Para adicionar sua primeira stream, pressione a tecla {key} ou clique no '+' na barra lateral."
     },
     "step2": {
       "title": "Selecionar Chat",
-      "description": "Escolha qual chat de stream fica visível no menu lateral usando a caixa de seleção no topo, ou pressione as teclas {keys} para alternar instantaneamente.",
-      "pressKeys": "Pressione as teclas",
-      "switchImmediately": "para alternar instantaneamente",
+      "description": "Escolha qual chat exibir na barra lateral ou pressione as teclas {keys} para alternar instantaneamente.",
+      "pressKeys": "Pressione",
+      "switchImmediately": "para trocar de chat",
       "chatActive": "Chat Ativo"
     },
     "step3": {
-      "title": "Conectar Contas (Twitch & Kick)",
-      "description": "Faça login com suas contas da Twitch e do Kick para enviar mensagens diretamente no chat e sincronizar suas preferências.",
-      "feature1": "Envio de mensagens direto no chat da Twitch e do Kick",
-      "feature2": "Suporte completo a emotes (BTTV e 7TV)",
-      "feature3": "Integração total com o Chat Unificado"
+      "title": "Conectar Contas",
+      "description": "Conecte suas contas da Twitch e do Kick para interagir no chat ao vivo, sincronizar seus canais seguidos e usar emotes personalizados da 7TV e BTTV.",
+      "feature1": "Envio de mensagens no chat",
+      "feature2": "Suporte completo a emotes 7TV e BTTV",
+      "feature3": "Canais favoritos sincronizados",
+      "badgeAuth": "Conectado",
+      "badgeEmotes": "Emotes 7TV & BTTV",
+      "twitchSub": "Chat ao vivo e canais seguidos",
+      "kickSub": "Chat ao vivo e canais seguidos"
     },
     "step4": {
-      "title": "Sugestões de Stream por Categoria",
-      "description": "Filtre as streams sugeridas por categoria usando os chips no topo. Clique em qualquer chip para carregar mais streams ao vivo da Twitch e do Kick para aquela categoria, em background.",
-      "caption": "Streams das duas plataformas são carregadas automaticamente e ficam em cache enquanto você navega."
+      "title": "Explorar por Categoria",
+      "description": "Filtre transmissões por categoria para descobrir lives na Twitch e no Kick com cache automático.",
+      "caption": "As transmissões carregam em segundo plano e permanecem em cache durante a navegação."
     },
     "step5": {
       "title": "Transcrição ao Vivo",
-      "description": "Assista a streams com legendas em tempo real geradas diretamente no seu computador.",
+      "description": "Gere legendas em tempo real e tradução para o inglês diretamente na sua CPU com Whisper.",
       "captionOriginal": "Original: Bonjour tout le monde.",
-      "captionTranslation": "Tradução: Hello everyone.",
-      "feature1": "Legendas em tempo real",
+      "captionTranslation": "Inglês: Hello everyone.",
+      "feature1": "Legendas em tempo real no player",
       "feature2": "Tradução opcional para o inglês",
-      "feature3": "Roda localmente no seu computador",
-      "note": "Tudo roda localmente no seu computador. A performance depende da sua CPU e do modelo selecionado."
+      "feature3": "Execução 100% offline na CPU",
+      "badgeWhisper": "Whisper CPU",
+      "badgeLocal": "100% Local",
+      "note": "Nenhum dado é enviado para servidores externos. O desempenho varia conforme sua CPU."
     },
     "step6": {
       "title": "Gravação Local",
-      "description": "Grave transmissões ao vivo diretamente da fonte em qualidade máxima com conversão automática para MP4.",
+      "description": "Grave transmissões ao vivo diretamente da fonte em qualidade original com empacotamento MP4.",
       "feature1": "Captura direta da fonte sem perda de qualidade",
-      "feature2": "Conversão automática para MP4",
-      "feature3": "Escolha de pasta de salvamento personalizada",
-      "note": "Os arquivos são salvos diretamente no seu disco e podem ser acessados pelas configurações."
+      "feature2": "Conversão e empacotamento automático para MP4",
+      "feature3": "Pasta de salvamento configurável nas opções",
+      "badgeRec": "REC",
+      "badgeFormat": "MP4 Source",
+      "note": "Os arquivos são salvos diretamente no seu disco local."
     },
     "step7": {
       "title": "Atalhos de Teclado",
-      "description": "Use estes atalhos rápidos para controlar suas streams e chats com eficiência:",
-      "add": "Abrir diálogo de adicionar stream",
-      "screenshot": "Tirar captura de tela da stream focada",
-      "chat": "Alternar para o chat da stream {keys}",
-      "screenshotTitle": "Captura de tela"
+      "description": "Controle suas transmissões e navegação com atalhos rápidos:",
+      "add": "Abrir janela de adicionar stream",
+      "screenshot": "Capturar tela da transmissão focada",
+      "chat": "Alternar para o chat {keys}",
+      "screenshotTitle": "Captura de Tela"
     },
     "goToStep": "Ir para a etapa {step}"
   },

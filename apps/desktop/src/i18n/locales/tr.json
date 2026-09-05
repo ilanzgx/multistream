@@ -389,60 +389,82 @@
   },
   "onboarding": {
     "title": "Multistream'e Hoş Geldiniz",
-    "skip": "Geç",
+    "skip": "Atla",
     "back": "Geri",
     "next": "İleri",
-    "finish": "Başla",
+    "finish": "Başlayın",
     "step1": {
       "title": "Yayın Ekle",
-      "description": "Bir Twitch, Kick veya YouTube yayını eklemek için kenar çubuğundaki '+' düğmesine tıklayın veya {key} tuşuna basın."
+      "description": "Twitch, Kick, YouTube ve özel kanallardan birden fazla canlı yayını tek bir ekranda, gerçek zamanlı sohbet ve tam gizlilikle aynı anda izleyin.",
+      "favoriteBadge": "CANLI",
+      "customPlatform": "Özel",
+      "pilar1Title": "Çoklu Yayın Izgarası",
+      "pilar1Desc": "Twitch, Kick ve YouTube yayınlarını yan yana kesintisiz izleyin.",
+      "pilar2Title": "Entegre Sohbet ve İfadeler",
+      "pilar2Desc": "7TV ve BTTV ifadeleri desteğiyle doğrudan sohbete katılın.",
+      "pilar3Title": "%100 Yerel ve Gizli",
+      "pilar3Desc": "Doğrudan bağlantılar, çevrimdışı transkripsiyon ve yerel kayıt.",
+      "quickTip": "Yayın eklemek için istediğiniz zaman {key} tuşuna basın",
+      "tagPrivate": "%100 Özel ve Yerel",
+      "tagLightweight": "Hızlı ve Hafif",
+      "tagMultiplatform": "10+ Dil Desteği",
+      "tagLanguages": "10+ Dil Desteği",
+      "howToAdd": "İlk yayınınızı eklemek için {key} tuşuna basın veya kenar çubuğundaki '+' simgesine tıklayın."
     },
     "step2": {
       "title": "Sohbet Seç",
-      "description": "Üstteki açılır menüyü kullanarak kenar çubuğunda hangi yayın sohbetinin görüneceğini seçin veya anında geçiş yapmak için {keys} tuşlarına basın.",
-      "pressKeys": "Anında geçiş yapmak için",
-      "switchImmediately": "tuşlarına basın",
-      "chatActive": "Sohbet Aktif"
+      "description": "Kenar çubuğunda gösterilecek sohbeti seçin veya anında geçiş yapmak için {keys} tuşlarına basın.",
+      "pressKeys": "Tuşlara basın",
+      "switchImmediately": "sohbete geçmek için",
+      "chatActive": "Aktif Sohbet"
     },
     "step3": {
-      "title": "Hesapları Bağla (Twitch ve Kick)",
-      "description": "Sohbette doğrudan mesaj göndermek ve yayın tercihlerinizi senkronize etmek için Twitch ve Kick hesaplarınızla giriş yapın.",
-      "feature1": "Doğrudan Twitch ve Kick sohbetinde mesaj gönderin",
-      "feature2": "Üçüncü taraf ifadeleri için tam destek (BTTV ve 7TV)",
-      "feature3": "Birleşik Sohbet ile kusursuz entegrasyon"
+      "title": "Hesapları Bağla",
+      "description": "Canlı sohbette etkileşim kurmak, takip edilen kanalları eşitlemek ve 7TV ile BTTV özel ifadelerini kullanmak için Twitch ve Kick hesaplarınızı bağlayın.",
+      "feature1": "Canlı sohbette mesaj gönderin",
+      "feature2": "7TV ve BTTV ifadeleri için tam destek",
+      "feature3": "Takip edilen kanalları eşitleyin",
+      "badgeAuth": "Bağlandı",
+      "badgeEmotes": "7TV ve BTTV İfadeleri",
+      "twitchSub": "Canlı sohbet ve takip edilenler",
+      "kickSub": "Canlı sohbet ve takip edilenler"
     },
     "step4": {
-      "title": "Kategoriye Göre Yayın Önerileri",
-      "description": "Üstteki çipleri kullanarak önerilen yayınları kategoriye göre filtreleyin. Arka planda o kategori için Twitch ve Kick'ten daha fazla canlı yayın yüklemek için herhangi bir çipe tıklayın.",
-      "caption": "Her iki platformdan gelen yayınlar otomatik olarak yüklenir ve siz gezinirken önbellekte tutulur."
+      "title": "Kategoriye Göre Göz At",
+      "description": "Otomatik önbelleğe alma ile Twitch ve Kick yayınlarını kategorilere göre filtreleyin.",
+      "caption": "Yayınlar arka planda yüklenir ve kategoriler arasında gezinirken önbellekte kalır."
     },
     "step5": {
-      "title": "Canlı Deşifre",
-      "description": "Doğrudan bilgisayarınızda oluşturulan gerçek zamanlı altyazılarla yayınları izleyin.",
+      "title": "Canlı Altyazı ve Çeviri",
+      "description": "Whisper ile doğrudan işlemcinizde gerçek zamanlı altyazılar ve isteğe bağlı İngilizce çeviri oluşturun.",
       "captionOriginal": "Orijinal: Bonjour tout le monde.",
-      "captionTranslation": "Çeviri: Herkese merhaba.",
-      "feature1": "Gerçek zamanlı altyazılar",
+      "captionTranslation": "İngilizce: Hello everyone.",
+      "feature1": "Oynatıcı üzerinde gerçek zamanlı altyazılar",
       "feature2": "İsteğe bağlı İngilizce çeviri",
-      "feature3": "Yerel olarak bilgisayarınızda çalışır",
-      "note": "Her şey bilgisayarınızda yerel olarak çalışır. Performans CPU'nuza ve seçilen modele bağlıdır."
+      "feature3": "İşlemcinizde %100 çevrimdışı çalışır",
+      "badgeWhisper": "Whisper CPU",
+      "badgeLocal": "%100 Yerel",
+      "note": "Hiçbir veri harici sunuculara gönderilmez. Performans işlemcinize bağlıdır."
     },
     "step6": {
       "title": "Yerel Kayıt",
-      "description": "Otomatik MP4 dönüştürme ile canlı yayınları doğrudan kaynaktan orijinal kalitede kaydedin.",
+      "description": "Canlı yayınları doğrudan kaynaktan orijinal kalitede ve MP4 formatında kaydedin.",
       "feature1": "Kalite kaybı olmadan doğrudan yayın yakalama",
-      "feature2": "Otomatik MP4 dönüştürme",
-      "feature3": "Özel kayıt klasörü seçimi",
-      "note": "Kayıtlar doğrudan diskinize kaydedilir ve ayarlardan her zaman erişilebilir."
+      "feature2": "Otomatik MP4 paketleme",
+      "feature3": "Özelleştirilebilir kayıt klasörü",
+      "badgeRec": "REC",
+      "badgeFormat": "MP4 Source",
+      "note": "Kayıtlar doğrudan yerel sürücünüze kaydedilir."
     },
     "step7": {
       "title": "Klavye Kısayolları",
-      "description": "Yayınlarınızı ve sohbetlerinizi verimli bir şekilde kontrol etmek için bu hızlı kısayolları kullanın:",
-      "add": "Yayın ekle iletişim kutusunu aç",
-      "screenshot": "Odaklanmış yayının ekran görüntüsünü al",
-      "chat": "Yayın sohbetine geç {keys}",
+      "description": "Yayınlarınızı ve gezinmeyi hızlı klavye kısayollarıyla kontrol edin:",
+      "add": "Yayın ekleme penceresini aç",
+      "screenshot": "Odaklanılan yayının ekran görüntüsünü al",
+      "chat": "{keys} yayın sohbetine geç",
       "screenshotTitle": "Ekran Görüntüsü"
     },
-    "goToStep": "{step}. adıma git"
+    "goToStep": "Adıma git: {step}"
   },
   "webBanner": {
     "title": "Multistream masaüstü uygulamasında daha iyi çalışır.",

@@ -395,54 +395,76 @@
     "finish": "Loslegen",
     "step1": {
       "title": "Streams hinzufügen",
-      "description": "Klicke auf das '+'-Symbol in der Seitenleiste oder drücke die Taste {key}, um einen Twitch-, Kick- oder YouTube-Stream hinzuzufügen."
+      "description": "Schaue mehrere Live-Streams von Twitch, Kick, YouTube und benutzerdefinierten Kanälen gleichzeitig auf einem Bildschirm, mit Echtzeit-Chat und voller Privatsphäre.",
+      "favoriteBadge": "LIVE",
+      "customPlatform": "Eigener",
+      "pilar1Title": "Multi-Stream-Raster",
+      "pilar1Desc": "Schaue Twitch-, Kick- und YouTube-Streams nahtlos nebeneinander.",
+      "pilar2Title": "Integrierter Chat & Emotes",
+      "pilar2Desc": "Direktes Chatten mit voller Unterstützung für 7TV- und BTTV-Emotes.",
+      "pilar3Title": "100% Lokal & Privat",
+      "pilar3Desc": "Direkte Verbindungen, Offline-Transkription und verlustfreie Aufnahme.",
+      "quickTip": "Drücke jederzeit {key}, um einen Stream hinzuzufügen",
+      "tagPrivate": "100% Privat & Lokal",
+      "tagLightweight": "Schnell & Ressourcenschonend",
+      "tagMultiplatform": "In 10+ Sprachen verfügbar",
+      "tagLanguages": "In 10+ Sprachen verfügbar",
+      "howToAdd": "Um deinen ersten Stream hinzuzufügen, drücke die Taste {key} oder klicke auf '+' in der Seitenleiste."
     },
     "step2": {
       "title": "Chat auswählen",
-      "description": "Wähle über das Dropdown-Menü oben aus, welcher Stream-Chat in der Seitenleiste angezeigt wird, oder drücke die Tasten {keys}, um sofort zu wechseln.",
-      "pressKeys": "Drücke die Tasten",
-      "switchImmediately": "um sofort zu wechseln",
-      "chatActive": "Chat Aktiv"
+      "description": "Wähle den aktiven Chat in der Seitenleiste aus oder drücke die Tasten {keys}, um sofort umzuschalten.",
+      "pressKeys": "Drücke",
+      "switchImmediately": "zum Umschalten",
+      "chatActive": "Aktiver Chat"
     },
     "step3": {
-      "title": "Konten verbinden (Twitch & Kick)",
-      "description": "Melde dich mit deinen Twitch- und Kick-Konten an, um direkt im Chat Nachrichten zu senden und deine Einstellungen zu synchronisieren.",
-      "feature1": "Direktes Senden von Nachrichten im Twitch- und Kick-Chat",
-      "feature2": "Volle Unterstützung für Emotes (BTTV & 7TV)",
-      "feature3": "Nahtlose Integration in den vereinheitlichten Chat"
+      "title": "Konten verbinden",
+      "description": "Verbinde deine Twitch- und Kick-Konten, um live zu chatten, gefolgte Kanäle zu synchronisieren und benutzerdefinierte Emotes von 7TV und BTTV zu nutzen.",
+      "feature1": "Nachrichten im Live-Chat senden",
+      "feature2": "Unterstützung für 7TV- und BTTV-Emotes",
+      "feature3": "Gefolgte Kanäle synchronisiert",
+      "badgeAuth": "Verbunden",
+      "badgeEmotes": "7TV & BTTV Emotes",
+      "twitchSub": "Live-Chat & gefolgte Kanäle",
+      "kickSub": "Live-Chat & gefolgte Kanäle"
     },
     "step4": {
-      "title": "Stream-Vorschläge nach Kategorie",
-      "description": "Filtere vorgeschlagene Streams nach Kategorie mit den Chips oben. Klicke auf einen Chip, um im Hintergrund mehr Live-Streams von Twitch und Kick für diese Kategorie zu laden.",
-      "caption": "Streams beider Plattformen werden automatisch geladen und beim Durchsuchen zwischengespeichert."
+      "title": "Nach Kategorie durchsuchen",
+      "description": "Filtere Streams nach Kategorien und entdecke Live-Übertragungen von Twitch und Kick mit automatischem Caching.",
+      "caption": "Streams laden im Hintergrund und bleiben beim Kategoriewechsel zwischengespeichert."
     },
     "step5": {
       "title": "Live-Transkription",
-      "description": "Schauen Sie Streams mit Echtzeit-Untertiteln, die direkt auf Ihrem Computer generiert werden.",
+      "description": "Erstelle Echtzeit-Untertitel und optionale englische Übersetzungen direkt auf deiner CPU mit Whisper.",
       "captionOriginal": "Original: Bonjour tout le monde.",
-      "captionTranslation": "Übersetzung: Hello everyone.",
-      "feature1": "Echtzeit-Untertitel",
+      "captionTranslation": "Englisch: Hello everyone.",
+      "feature1": "Echtzeit-Untertitel im Player",
       "feature2": "Optionale englische Übersetzung",
-      "feature3": "Läuft lokal auf Ihrem Computer",
-      "note": "Alles läuft lokal auf Ihrem Computer. Die Leistung hängt von Ihrer CPU und dem ausgewählten Modell ab."
+      "feature3": "Läuft 100% offline auf deiner CPU",
+      "badgeWhisper": "Whisper CPU",
+      "badgeLocal": "100% Lokal",
+      "note": "Keine Daten werden an externe Server gesendet. Die Leistung hängt von deiner CPU ab."
     },
     "step6": {
       "title": "Lokale Aufnahme",
-      "description": "Nimm Livestreams direkt von der Quelle in voller Qualität mit automatischer MP4-Konvertierung auf.",
-      "feature1": "Direkte Stream-Erfassung ohne Qualitätsverlust",
+      "description": "Nimm Live-Streams direkt von der Quelle in Originalqualität und als saubere MP4-Datei auf.",
+      "feature1": "Direkte Quellenerfassung ohne Qualitätsverlust",
       "feature2": "Automatische MP4-Konvertierung",
-      "feature3": "Einstellbarer Speicherordner",
-      "note": "Aufnahmen werden direkt auf Ihrer Festplatte gespeichert und sind über die Einstellungen erreichbar."
+      "feature3": "Konfigurierbarer Speicherordner",
+      "badgeRec": "REC",
+      "badgeFormat": "MP4 Source",
+      "note": "Aufnahmen werden direkt auf deinem lokalen Laufwerk gespeichert."
     },
     "step7": {
-      "title": "Tastaturkurzbefehle",
-      "description": "Verwende diese schnellen Kurzbefehle, um deine Streams und Chats effizient zu steuern:",
+      "title": "Tastenkombinationen",
+      "description": "Steuere deine Streams und Navigation mit schnellen Tastatur-Shortcuts:",
       "add": "Stream-Hinzufügen-Dialog öffnen",
       "screenshot": "Screenshot des fokussierten Streams erstellen",
-      "chat": "Zum Stream-Chat {keys} wechseln",
+      "chat": "Zu Stream-Chat {keys} wechseln",
       "screenshotTitle": "Screenshot"
     },
-    "goToStep": "Gehe zu Schritt {step}"
+    "goToStep": "Zu Schritt {step}"
   },
   "webBanner": {
     "title": "Multistream läuft besser als Desktop-App.",

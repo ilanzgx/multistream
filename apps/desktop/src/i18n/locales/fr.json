@@ -394,52 +394,74 @@
     "next": "Suivant",
     "finish": "Commencer",
     "step1": {
-      "title": "Ajouter des flux",
-      "description": "Cliquez sur le bouton '+' dans la barre latérale ou appuyez sur la touche {key} pour ajouter un flux Twitch, Kick ou YouTube."
+      "title": "Ajouter des Streams",
+      "description": "Regardez plusieurs streams en direct depuis Twitch, Kick, YouTube et des chaînes personnalisées sur un seul écran, avec chat en direct et confidentialité totale.",
+      "favoriteBadge": "EN DIRECT",
+      "customPlatform": "Personnalisé",
+      "pilar1Title": "Grille Multi-Stream",
+      "pilar1Desc": "Regardez les flux Twitch, Kick et YouTube côte à côte en toute fluidité.",
+      "pilar2Title": "Chat Intégré & Emotes",
+      "pilar2Desc": "Discutez en direct avec le support complet des emotes 7TV et BTTV.",
+      "pilar3Title": "100% Local & Privé",
+      "pilar3Desc": "Connexions directes, transcription hors-ligne et enregistrement disque.",
+      "quickTip": "Appuyez sur {key} à tout moment pour ajouter un flux",
+      "tagPrivate": "100% Privé & Local",
+      "tagLightweight": "Fluide & Léger",
+      "tagMultiplatform": "Disponible en 10+ langues",
+      "tagLanguages": "Disponible en 10+ langues",
+      "howToAdd": "Pour ajouter votre premier stream, appuyez sur la touche {key} ou cliquez sur '+' dans la barre latérale."
     },
     "step2": {
-      "title": "Sélectionner le chat",
-      "description": "Choisissez quel chat de flux est visible dans la barre latérale en utilisant le menu déroulant en haut, ou appuyez sur les touches {keys} pour changer instantanément.",
-      "pressKeys": "Appuyez sur les touches",
-      "switchImmediately": "pour changer immédiatement",
-      "chatActive": "Chat actif"
+      "title": "Sélectionner le Chat",
+      "description": "Choisissez le chat à afficher dans la barre latérale ou appuyez sur les touches {keys} pour changer instantanément.",
+      "pressKeys": "Appuyez sur",
+      "switchImmediately": "pour changer de chat",
+      "chatActive": "Chat Actif"
     },
     "step3": {
-      "title": "Connecter les comptes (Twitch & Kick)",
-      "description": "Connectez-vous avec vos comptes Twitch et Kick pour envoyer des messages directement dans le chat et synchroniser vos préférences de flux.",
-      "feature1": "Envoyez des messages directement dans le chat Twitch et Kick",
-      "feature2": "Prise en charge complète des émoticônes tierces (BTTV & 7TV)",
-      "feature3": "Intégration transparente avec le chat unifié"
+      "title": "Connecter des Comptes",
+      "description": "Connectez vos comptes Twitch et Kick pour discuter en direct, synchroniser vos chaînes suivies et utiliser des emotes personnalisées de 7TV et BTTV.",
+      "feature1": "Envoi de messages dans le chat",
+      "feature2": "Support des emotes 7TV et BTTV",
+      "feature3": "Chaînes suivies synchronisées",
+      "badgeAuth": "Connecté",
+      "badgeEmotes": "Emotes 7TV & BTTV",
+      "twitchSub": "Chat en direct & chaînes suivies",
+      "kickSub": "Chat en direct & chaînes suivies"
     },
     "step4": {
-      "title": "Suggestions de flux par catégorie",
-      "description": "Filtrez les flux suggérés par catégorie à l'aide des puces en haut. Cliquez sur n'importe quelle puce pour charger instantanément en arrière-plan d'autres flux en direct de Twitch et Kick pour cette catégorie.",
-      "caption": "Les flux des deux plateformes se chargent automatiquement et restent en cache pendant que vous naviguez."
+      "title": "Parcourir par Catégorie",
+      "description": "Filtrez les streams par catégorie sur Twitch et Kick avec mise en cache automatique.",
+      "caption": "Les streams se chargent en arrière-plan et restent en cache pendant la navigation."
     },
     "step5": {
-      "title": "Transcription en direct",
-      "description": "Regardez des flux avec des sous-titres en temps réel générés directement sur votre ordinateur.",
-      "captionOriginal": "Original : Bonjour tout le monde.",
-      "captionTranslation": "Traduction : Hello everyone.",
-      "feature1": "Sous-titres en temps réel",
-      "feature2": "Traduction anglaise facultative",
-      "feature3": "S'exécute localement sur votre ordinateur",
-      "note": "Tout s'exécute localement sur votre ordinateur. Les performances dépendent de votre processeur et du modèle sélectionné."
+      "title": "Transcription en Direct",
+      "description": "Générez des sous-titres en temps réel et une traduction en anglais directement sur votre processeur via Whisper.",
+      "captionOriginal": "Original: Bonjour tout le monde.",
+      "captionTranslation": "Anglais: Hello everyone.",
+      "feature1": "Sous-titres en direct dans le lecteur",
+      "feature2": "Traduction optionnelle vers l'anglais",
+      "feature3": "100% hors-ligne sur votre processeur",
+      "badgeWhisper": "Whisper CPU",
+      "badgeLocal": "100% Local",
+      "note": "Aucune donnée n'est transmise à des serveurs tiers. Les performances dépendent de votre CPU."
     },
     "step6": {
-      "title": "Enregistrement local",
-      "description": "Enregistrez des flux en direct directement depuis la source en qualité originale avec conversion automatique en MP4.",
-      "feature1": "Capture directe de flux sans perte de qualité",
+      "title": "Enregistrement Local",
+      "description": "Enregistrez les flux en direct depuis la source en qualité originale avec empaquetage MP4.",
+      "feature1": "Capture directe sans perte de qualité",
       "feature2": "Conversion automatique en MP4",
-      "feature3": "Sélection de dossier de sauvegarde personnalisé",
-      "note": "Les enregistrements sont sauvegardés directement sur votre disque et accessibles à tout moment depuis les paramètres."
+      "feature3": "Dossier de destination configurable",
+      "badgeRec": "REC",
+      "badgeFormat": "MP4 Source",
+      "note": "Les enregistrements sont stockés directement sur votre disque local."
     },
     "step7": {
-      "title": "Raccourcis clavier",
-      "description": "Utilisez ces raccourcis rapides pour contrôler efficacement vos flux et vos chats :",
-      "add": "Ouvrir la boîte de dialogue d'ajout de flux",
-      "screenshot": "Faire une capture d'écran du flux sélectionné",
-      "chat": "Passer au chat du flux {keys}",
+      "title": "Raccourcis Clavier",
+      "description": "Contrôlez vos streams et votre navigation grâce à des raccourcis rapides :",
+      "add": "Ouvrir la fenêtre d'ajout de stream",
+      "screenshot": "Capturer l'écran du stream actif",
+      "chat": "Basculer vers le chat {keys}",
       "screenshotTitle": "Capture d'écran"
     },
     "goToStep": "Aller à l'étape {step}"

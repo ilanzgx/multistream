@@ -388,57 +388,79 @@
     "actionIgnore": "Abaikan"
   },
   "onboarding": {
-    "title": "Selamat datang di Multistream",
+    "title": "Selamat Datang di Multistream",
     "skip": "Lewati",
     "back": "Kembali",
-    "next": "Selanjutnya",
+    "next": "Lanjut",
     "finish": "Mulai",
     "step1": {
       "title": "Tambah Stream",
-      "description": "Klik tombol '+' di bilah sisi atau tekan tombol {key} untuk menambahkan stream Twitch, Kick, atau YouTube."
+      "description": "Tonton beberapa siaran langsung dari Twitch, Kick, YouTube, dan saluran khusus sekaligus di satu layar, dengan obrolan langsung dan privasi penuh.",
+      "favoriteBadge": "LIVE",
+      "customPlatform": "Kustom",
+      "pilar1Title": "Grid Multi-Stream",
+      "pilar1Desc": "Tonton siaran Twitch, Kick, dan YouTube berdampingan dengan lancar.",
+      "pilar2Title": "Obrolan Terintegrasi & Emotikon",
+      "pilar2Desc": "Obrolan langsung dengan dukungan penuh untuk emotikon 7TV dan BTTV.",
+      "pilar3Title": "100% Lokal & Pribadi",
+      "pilar3Desc": "Koneksi langsung, transkripsi offline, dan perekaman lokal.",
+      "quickTip": "Tekan {key} kapan saja untuk menambahkan stream",
+      "tagPrivate": "100% Privat & Lokal",
+      "tagLightweight": "Ringan & Cepat",
+      "tagMultiplatform": "Tersedia dalam 10+ Bahasa",
+      "tagLanguages": "Tersedia dalam 10+ Bahasa",
+      "howToAdd": "Untuk menambahkan stream pertama Anda, tekan tombol {key} atau klik '+' di bilah sisi."
     },
     "step2": {
       "title": "Pilih Obrolan",
-      "description": "Pilih obrolan stream mana yang terlihat di bilah sisi menggunakan menu tarik-turun di bagian atas, atau tekan tombol {keys} untuk beralih secara instan.",
+      "description": "Pilih obrolan stream yang ingin ditampilkan di bilah sisi, atau tekan tombol {keys} untuk beralih instan.",
       "pressKeys": "Tekan tombol",
-      "switchImmediately": "untuk beralih segera",
+      "switchImmediately": "untuk beralih obrolan",
       "chatActive": "Obrolan Aktif"
     },
     "step3": {
-      "title": "Hubungkan Akun (Twitch & Kick)",
-      "description": "Masuk dengan akun Twitch dan Kick Anda untuk mengirim pesan langsung dalam obrolan dan menyinkronkan preferensi stream Anda.",
-      "feature1": "Kirim pesan langsung dalam obrolan Twitch dan Kick",
-      "feature2": "Dukungan penuh untuk emote pihak ketiga (BTTV & 7TV)",
-      "feature3": "Integrasi mulus dengan Obrolan Terpadu"
+      "title": "Hubungkan Akun",
+      "description": "Hubungkan akun Twitch dan Kick Anda untuk mengobrol secara langsung, menyinkronkan saluran yang diikuti, dan menggunakan emotikon khusus dari 7TV dan BTTV.",
+      "feature1": "Kirim pesan di obrolan langsung",
+      "feature2": "Dukungan penuh untuk emotikon 7TV & BTTV",
+      "feature3": "Sinkronisasi saluran diikuti",
+      "badgeAuth": "Terhubung",
+      "badgeEmotes": "Emotikon 7TV & BTTV",
+      "twitchSub": "Obrolan langsung & saluran diikuti",
+      "kickSub": "Obrolan langsung & saluran diikuti"
     },
     "step4": {
-      "title": "Saran Stream Berdasarkan Kategori",
-      "description": "Saring stream yang disarankan berdasarkan kategori menggunakan chip di bagian atas. Klik chip mana pun untuk memuat lebih banyak stream langsung secara instan dari Twitch dan Kick untuk kategori tersebut, di latar belakang.",
-      "caption": "Stream dari kedua platform dimuat secara otomatis dan tetap di-cache saat Anda menjelajah."
+      "title": "Jelajahi Berdasarkan Kategori",
+      "description": "Filter siaran langsung berdasarkan kategori di Twitch dan Kick dengan caching otomatis.",
+      "caption": "Stream dimuat di latar belakang dan tetap tersimpan dalam cache saat Anda menjelajah."
     },
     "step5": {
       "title": "Transkripsi Langsung",
-      "description": "Tonton stream dengan takarir waktu nyata yang dihasilkan langsung di komputer Anda.",
+      "description": "Buat teks terjemahan waktu nyata dan terjemahan bahasa Inggris langsung di CPU Anda menggunakan Whisper.",
       "captionOriginal": "Asli: Bonjour tout le monde.",
-      "captionTranslation": "Terjemahan: Halo semuanya.",
-      "feature1": "Takarir waktu nyata",
+      "captionTranslation": "Inggris: Hello everyone.",
+      "feature1": "Teks terjemahan waktu nyata di pemutar",
       "feature2": "Terjemahan bahasa Inggris opsional",
-      "feature3": "Berjalan secara lokal di komputer Anda",
-      "note": "Semuanya berjalan secara lokal di komputer Anda. Kinerja tergantung pada CPU Anda dan model yang dipilih."
+      "feature3": "Berjalan 100% offline di CPU Anda",
+      "badgeWhisper": "Whisper CPU",
+      "badgeLocal": "100% Lokal",
+      "note": "Tidak ada data yang dikirim ke server eksternal. Kinerja tergantung pada CPU Anda."
     },
     "step6": {
       "title": "Perekaman Lokal",
-      "description": "Rekam stream langsung langsung dari sumber dalam kualitas asli dengan konversi MP4 otomatis.",
-      "feature1": "Tangkapan stream langsung tanpa kehilangan kualitas",
-      "feature2": "Konversi MP4 otomatis",
-      "feature3": "Pilihan folder penyimpanan kustom",
-      "note": "Rekaman disimpan langsung ke disk Anda dan dapat diakses kapan saja dari pengaturan."
+      "description": "Rekam siaran langsung langsung dari sumber tanpa penurunan kualitas dalam format MP4.",
+      "feature1": "Perekaman langsung dari sumber tanpa hilang kualitas",
+      "feature2": "Pengemasan otomatis ke format MP4",
+      "feature3": "Folder penyimpanan dapat disesuaikan",
+      "badgeRec": "REC",
+      "badgeFormat": "MP4 Source",
+      "note": "Rekaman disimpan langsung ke drive lokal Anda."
     },
     "step7": {
-      "title": "Pintasan Keyboard",
-      "description": "Gunakan pintasan cepat ini untuk mengontrol stream dan obrolan Anda secara efisien:",
+      "title": "Pintasan Papan Ketik",
+      "description": "Kontrol siaran dan navigasi Anda dengan pintasan papan ketik cepat:",
       "add": "Buka dialog tambah stream",
-      "screenshot": "Ambil tangkapan layar dari stream yang difokuskan",
+      "screenshot": "Ambil tangkapan layar stream aktif",
       "chat": "Beralih ke obrolan stream {keys}",
       "screenshotTitle": "Tangkapan Layar"
     },

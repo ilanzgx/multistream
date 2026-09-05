@@ -395,52 +395,74 @@
     "finish": "Comenzar",
     "step1": {
       "title": "Añadir Transmisiones",
-      "description": "Haz clic en el botón '+' en la barra lateral o presiona la tecla {key} para añadir una transmisión de Twitch, Kick o YouTube."
+      "description": "Mira múltiples transmisiones en vivo de Twitch, Kick, YouTube y canales personalizados a la vez en una sola pantalla, con chat en tiempo real y privacidad total.",
+      "favoriteBadge": "EN VIVO",
+      "customPlatform": "Personalizado",
+      "pilar1Title": "Cuadrícula Multi-Stream",
+      "pilar1Desc": "Mira transmisiones de Twitch, Kick y YouTube lado a lado.",
+      "pilar2Title": "Chat Integrado y Emotes",
+      "pilar2Desc": "Chatea en directo con soporte completo para emotes de 7TV y BTTV.",
+      "pilar3Title": "100% Local y Privado",
+      "pilar3Desc": "Conexiones directas, transcripción offline y grabación local.",
+      "quickTip": "Presiona {key} en cualquier momento para añadir una transmisión",
+      "tagPrivate": "100% Privado y Local",
+      "tagLightweight": "Rápido y Ligero",
+      "tagMultiplatform": "Disponible en 10+ Idiomas",
+      "tagLanguages": "Disponible en 10+ Idiomas",
+      "howToAdd": "Para añadir tu primer stream, presiona la tecla {key} o haz clic en '+' en la barra lateral."
     },
     "step2": {
       "title": "Seleccionar Chat",
-      "description": "Elige qué chat de transmisión es visible en la barra lateral usando el menú desplegable en la parte superior, o presiona las teclas {keys} para cambiar al instante.",
-      "pressKeys": "Presione las teclas",
-      "switchImmediately": "para cambiar al instante",
+      "description": "Elige qué chat mostrar en la barra lateral o presiona las teclas {keys} para cambiar al instante.",
+      "pressKeys": "Presiona",
+      "switchImmediately": "para cambiar de chat",
       "chatActive": "Chat Activo"
     },
     "step3": {
-      "title": "Conectar Cuentas (Twitch y Kick)",
-      "description": "Inicia sesión con tus cuentas de Twitch y Kick para enviar mensajes directamente en el chat y sincronizar tus preferencias.",
-      "feature1": "Envío de mensajes directo en el chat de Twitch y Kick",
-      "feature2": "Soporte completo para emoticonos (BTTV y 7TV)",
-      "feature3": "Integración total con el Chat Unificado"
+      "title": "Conectar Cuentas",
+      "description": "Conecta tus cuentas de Twitch y Kick para chatear en vivo, sincronizar tus canales seguidos y usar emotes personalizados de 7TV y BTTV.",
+      "feature1": "Envío de mensajes en el chat",
+      "feature2": "Soporte para emotes de 7TV y BTTV",
+      "feature3": "Canales seguidos sincronizados",
+      "badgeAuth": "Conectado",
+      "badgeEmotes": "Emotes 7TV y BTTV",
+      "twitchSub": "Chat en vivo y canales seguidos",
+      "kickSub": "Chat en vivo y canales seguidos"
     },
     "step4": {
-      "title": "Sugerencias de Stream por Categoría",
-      "description": "Filtra las streams sugeridas por categoría usando los chips en la parte superior. Haz clic en cualquier chip para cargar más streams en vivo de Twitch y Kick para esa categoría, en segundo plano.",
-      "caption": "Las streams de ambas plataformas se cargan automáticamente y quedan en caché mientras navegas."
+      "title": "Explorar por Categoría",
+      "description": "Filtra transmisiones por categoría para descubrir directos de Twitch y Kick con caché automático.",
+      "caption": "Las transmisiones cargan en segundo plano y se mantienen en caché mientras navegas."
     },
     "step5": {
       "title": "Transcripción en Vivo",
-      "description": "Mira transmisiones con subtítulos en tiempo real generados directamente en tu computadora.",
+      "description": "Genera subtítulos en tiempo real y traducción al inglés directamente en tu CPU con Whisper.",
       "captionOriginal": "Original: Bonjour tout le monde.",
-      "captionTranslation": "Traducción: Hello everyone.",
-      "feature1": "Subtítulos en tiempo real",
+      "captionTranslation": "Inglés: Hello everyone.",
+      "feature1": "Subtítulos en tiempo real en el reproductor",
       "feature2": "Traducción opcional al inglés",
-      "feature3": "Se ejecuta localmente en tu computadora",
-      "note": "Todo se ejecuta localmente en tu computadora. El rendimiento depende de tu CPU y del modelo seleccionado."
+      "feature3": "Ejecución 100% local en tu CPU",
+      "badgeWhisper": "Whisper CPU",
+      "badgeLocal": "100% Local",
+      "note": "No se envían datos a servidores externos. El rendimiento depende de tu CPU."
     },
     "step6": {
       "title": "Grabación Local",
-      "description": "Graba transmisiones en vivo directamente de la fuente en máxima calidad con conversión automática a MP4.",
-      "feature1": "Captura directa de la fuente sin pérdida de calidad",
+      "description": "Graba transmisiones en vivo directamente de la fuente en calidad original y formato MP4.",
+      "feature1": "Captura directa sin pérdida de calidad",
       "feature2": "Conversión automática a MP4",
-      "feature3": "Selección de carpeta de guardado personalizada",
-      "note": "Los archivos se guardan directamente en tu disco y son accesibles desde los ajustes."
+      "feature3": "Carpeta de guardado configurable",
+      "badgeRec": "REC",
+      "badgeFormat": "MP4 Source",
+      "note": "Las grabaciones se guardan directamente en tu disco local."
     },
     "step7": {
       "title": "Atajos de Teclado",
-      "description": "Usa estos atajos rápidos para controlar tus streams y chats con eficiencia:",
-      "add": "Abrir diálogo de agregar stream",
-      "screenshot": "Tomar captura de pantalla del stream enfocado",
-      "chat": "Cambiar al chat del stream {keys}",
-      "screenshotTitle": "Captura de pantalla"
+      "description": "Controla tus directos y la navegación con atajos rápidos de teclado:",
+      "add": "Abrir diálogo de añadir stream",
+      "screenshot": "Capturar pantalla del stream activo",
+      "chat": "Cambiar al chat {keys}",
+      "screenshotTitle": "Captura de Pantalla"
     },
     "goToStep": "Ir al paso {step}"
   },

@@ -395,50 +395,72 @@
     "finish": "Get Started",
     "step1": {
       "title": "Add Streams",
-      "description": "Click the '+' button in the sidebar or press the {key} key to add a Twitch, Kick, or YouTube stream."
+      "description": "Watch multiple live streams from Twitch, Kick, YouTube, and custom channels simultaneously on a single screen, with real-time chat and total privacy.",
+      "favoriteBadge": "LIVE",
+      "customPlatform": "Custom",
+      "pilar1Title": "Multi-Stream Grid",
+      "pilar1Desc": "Watch Twitch, Kick, and YouTube streams side-by-side with zero clutter.",
+      "pilar2Title": "Integrated Chat & Emotes",
+      "pilar2Desc": "Chat directly with full support for 7TV and BTTV emotes.",
+      "pilar3Title": "100% Local & Private",
+      "pilar3Desc": "Direct connections, offline transcription, and lossless recording.",
+      "quickTip": "Press {key} anytime to add a stream",
+      "tagPrivate": "100% Private & Local",
+      "tagLightweight": "Fast & Lightweight",
+      "tagMultiplatform": "Available in 10+ Languages",
+      "tagLanguages": "Available in 10+ Languages",
+      "howToAdd": "To add your first stream, press the {key} key or click '+' in the sidebar."
     },
     "step2": {
       "title": "Select Chat",
-      "description": "Choose which stream chat is visible in the sidebar using the dropdown at the top, or press keys {keys} to switch instantly.",
+      "description": "Pick which stream chat to display in the sidebar, or press keys {keys} to switch active chat instantly.",
       "pressKeys": "Press keys",
-      "switchImmediately": "to switch immediately",
-      "chatActive": "Chat Active"
+      "switchImmediately": "to switch chat",
+      "chatActive": "Active Chat"
     },
     "step3": {
-      "title": "Connect Accounts (Twitch & Kick)",
-      "description": "Sign in with your Twitch and Kick accounts to send messages directly in chat and sync your stream preferences.",
-      "feature1": "Send messages directly in Twitch and Kick chat",
-      "feature2": "Full support for third-party emotes (BTTV & 7TV)",
-      "feature3": "Seamless integration with Unified Chat"
+      "title": "Connect Accounts",
+      "description": "Connect your Twitch and Kick accounts to chat live, sync your followed channels, and use custom emotes from 7TV and BTTV.",
+      "feature1": "Send messages in live chat",
+      "feature2": "Support for 7TV & BTTV emotes",
+      "feature3": "Sync followed channels",
+      "badgeAuth": "Connected",
+      "badgeEmotes": "7TV & BTTV Emotes",
+      "twitchSub": "Live chat & followed channels",
+      "kickSub": "Live chat & followed channels"
     },
     "step4": {
-      "title": "Stream Suggestions by Category",
-      "description": "Filter suggested streams by category using the chips at the top. Click any chip to instantly load more live streams from Twitch and Kick for that category, in the background.",
-      "caption": "Streams from both platforms load automatically and stay cached as you browse."
+      "title": "Browse by Category",
+      "description": "Filter streams by category to discover live broadcasts from Twitch and Kick with automatic caching.",
+      "caption": "Streams load in the background and stay cached as you switch categories."
     },
     "step5": {
       "title": "Live Transcription",
-      "description": "Watch streams with real-time captions generated directly on your computer.",
+      "description": "Generate real-time captions and optional English translation directly on your CPU using Whisper.",
       "captionOriginal": "Original: Bonjour tout le monde.",
-      "captionTranslation": "Translation: Hello everyone.",
-      "feature1": "Real-time captions",
+      "captionTranslation": "English: Hello everyone.",
+      "feature1": "Real-time captions on video",
       "feature2": "Optional English translation",
-      "feature3": "Runs locally on your computer",
-      "note": "Everything runs locally on your computer. Performance depends on your CPU and the selected model."
+      "feature3": "Runs 100% offline on your CPU",
+      "badgeWhisper": "Whisper CPU",
+      "badgeLocal": "100% Local",
+      "note": "No data is sent to external servers. Performance depends on your CPU model."
     },
     "step6": {
       "title": "Local Recording",
-      "description": "Record live streams directly from the source in original quality with automatic MP4 conversion.",
-      "feature1": "Direct stream capture without quality loss",
-      "feature2": "Automatic MP4 conversion",
-      "feature3": "Custom save folder selection",
-      "note": "Recordings are saved directly to your disk and accessible anytime from settings."
+      "description": "Record live streams directly from the source stream without quality loss into clean MP4 files.",
+      "feature1": "Direct stream capture in source quality",
+      "feature2": "Automatic MP4 packaging",
+      "feature3": "Custom folder selection in settings",
+      "badgeRec": "REC",
+      "badgeFormat": "MP4 Source",
+      "note": "Recordings are saved directly to your local drive."
     },
     "step7": {
       "title": "Keyboard Shortcuts",
-      "description": "Use these quick shortcuts to control your streams and chats efficiently:",
+      "description": "Control your streams and navigation with fast keyboard shortcuts:",
       "add": "Open add stream dialog",
-      "screenshot": "Take screenshot of focused stream",
+      "screenshot": "Capture screenshot of focused stream",
       "chat": "Switch to stream chat {keys}",
       "screenshotTitle": "Screenshot"
     },
