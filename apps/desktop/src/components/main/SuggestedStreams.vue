@@ -11,10 +11,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { ChevronLeft, ChevronRight } from "@lucide/vue";
+import { ChevronLeft, ChevronRight, RotateCw, Loader2 } from "@lucide/vue";
 
 const { addStream } = useStreams();
-const { suggestedStreams, isLoadingSuggestions, fetchStreamsForCategory } = useLiveStatus();
+const { suggestedStreams, isLoadingSuggestions, fetchStreamsForCategory, refreshSuggestions } =
+  useLiveStatus();
 const { locale } = useI18n();
 
 const PAGE_SIZE = 18;
@@ -130,6 +131,12 @@ const formatViewers = (count?: number) => {
     maximumFractionDigits: 1,
   }).format(count);
 };
+
+const handleManualRefresh = () => {
+  currentPage.value = 1;
+  selectedCategory.value = null;
+  refreshSuggestions();
+};
 </script>
 
 <template>
@@ -141,7 +148,17 @@ const formatViewers = (count?: number) => {
       class="flex items-center gap-2 text-gray-400 text-xs font-medium uppercase tracking-widest select-none"
     >
       <span class="w-8 h-px bg-gray-700" />
-      {{ $t("add.suggestions") }}
+      <span>{{ $t("add.suggestions") }}</span>
+      <button
+        v-if="!isLoadingSuggestions"
+        type="button"
+        class="p-1 -my-1 rounded-md text-gray-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+        :title="$t('empty.refresh')"
+        @click="handleManualRefresh"
+      >
+        <RotateCw class="size-3.5" />
+      </button>
+      <Loader2 v-else class="size-3.5 text-gray-400 animate-spin" />
       <span class="w-8 h-px bg-gray-700" />
     </div>
 

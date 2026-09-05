@@ -19,6 +19,7 @@ import { useLiveStatus, type SuggestedStream } from "@/composables/useLiveStatus
 import { useFavorites } from "@/composables/useFavorites";
 import { useChannelSearch } from "@/composables/useChannelSearch";
 import { PLATFORMS } from "@/config/platforms";
+import { REFRESH_CONFIG } from "@/config/api";
 import { History, Heart, Flame, RotateCw, Loader2 } from "@lucide/vue";
 import { parseStreamUrl } from "@/lib/platformParser";
 
@@ -37,6 +38,7 @@ const {
   getStatus,
   checkAll,
   suggestedStreams,
+  lastSuggestionsFetch,
   isLoadingSuggestions,
   refreshSuggestions,
   fetchStreamsForCategory,
@@ -357,7 +359,10 @@ watch(
   (isOpen) => {
     if (isOpen) {
       checkAll();
-      if (suggestedStreams.value.length === 0) {
+      if (
+        suggestedStreams.value.length === 0 ||
+        Date.now() - lastSuggestionsFetch.value >= REFRESH_CONFIG.suggestionsInterval
+      ) {
         refreshSuggestions();
       }
       selectedCategory.value = null;

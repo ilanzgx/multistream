@@ -611,15 +611,17 @@ const _useLiveStatus = () => {
   const { recents } = useRecents();
   const { favorites } = useFavorites();
   const { notificationsEnabled } = usePreferences();
-  const { addStream } = useStreams();
+  const { addStream, streams = ref([]) } = useStreams();
   const visibility = useDocumentVisibility();
   const statuses = ref<StatusMap>({});
   const previousStatuses = ref<StatusMap>({});
   const suggestedStreams = ref<SuggestedStream[]>([]);
+  const lastSuggestionsFetch = ref<number>(0);
   const isChecking = ref(false);
   const isLoadingSuggestions = ref(false);
   const isLoadingMoreSuggestions = ref(false);
   let intervalId: ReturnType<typeof setInterval> | null = null;
+  let suggestionsIntervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
    * @brief Fetches and updates the live status for all tracked streams.
@@ -842,10 +844,19 @@ const _useLiveStatus = () => {
    * @return void
    */
   const startPolling = () => {
-    if (intervalId) return;
-    if (!hasChannels()) return;
-    checkAll();
-    intervalId = setInterval(checkAll, REFRESH_CONFIG.interval);
+    if (!intervalId && hasChannels()) {
+      checkAll();
+      intervalId = setInterval(checkAll, REFRESH_CONFIG.interval);
+    }
+    if (!suggestionsIntervalId) {
+      suggestionsIntervalId = setInterval(async () => {
+        if (visibility.value === "hidden") return;
+        if (isLoadingSuggestions.value || isLoadingMoreSuggestions.value) return;
+        if (streams.value.length === 0) {
+          await refreshSuggestions();
+        }
+      }, REFRESH_CONFIG.suggestionsInterval);
+    }
   };
 
   /**
@@ -860,6 +871,10 @@ const _useLiveStatus = () => {
     if (intervalId) {
       clearInterval(intervalId);
       intervalId = null;
+    }
+    if (suggestionsIntervalId) {
+      clearInterval(suggestionsIntervalId);
+      suggestionsIntervalId = null;
     }
   };
 
@@ -878,10 +893,15 @@ const _useLiveStatus = () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         if (hasChannels()) {
-          if (!intervalId) startPolling();
-          else checkAll();
-        } else {
-          stopPolling();
+          if (!intervalId) {
+            checkAll();
+            intervalId = setInterval(checkAll, REFRESH_CONFIG.interval);
+          } else {
+            checkAll();
+          }
+        } else if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
         }
       }, 1000);
     }
@@ -890,7 +910,15 @@ const _useLiveStatus = () => {
   // Foreground wake-up: fire an immediate check when the tab becomes visible
   // so statuses are never stale by more than the interval after returning.
   watch(visibility, (newVisibility) => {
-    if (newVisibility === "visible") checkAll();
+    if (newVisibility === "visible") {
+      checkAll();
+      if (
+        streams.value.length === 0 &&
+        Date.now() - lastSuggestionsFetch.value >= REFRESH_CONFIG.suggestionsInterval
+      ) {
+        refreshSuggestions();
+      }
+    }
   });
 
   /**
@@ -909,6 +937,7 @@ const _useLiveStatus = () => {
   const refreshSuggestions = async () => {
     if (isLoadingSuggestions.value || isLoadingMoreSuggestions.value) return;
     isLoadingSuggestions.value = true;
+    lastSuggestionsFetch.value = Date.now();
 
     const locale = localStorage.getItem("locale") ?? DEFAULT_LOCALE;
     const twitchLanguage =
@@ -1044,6 +1073,7 @@ const _useLiveStatus = () => {
   return {
     statuses,
     suggestedStreams,
+    lastSuggestionsFetch,
     isChecking,
     isLoadingSuggestions,
     isLoadingMoreSuggestions,

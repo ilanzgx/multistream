@@ -10,6 +10,7 @@ const mockFavorites = ref<any[]>([]);
 const mockNotificationsEnabled = ref(false);
 const mockVisibility = ref<"visible" | "hidden">("visible");
 const mockAddStream = vi.fn();
+const mockStreams = ref<any[]>([]);
 const mockIsTauri = vi.fn(() => false);
 
 vi.mock("../useRecents", () => ({
@@ -33,6 +34,7 @@ vi.mock("../usePreferences", () => ({
 vi.mock("../useStreams", () => ({
   useStreams: () => ({
     addStream: mockAddStream,
+    streams: mockStreams,
   }),
 }));
 
@@ -89,6 +91,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
     vi.useFakeTimers();
     mockRecents.value = [];
     mockFavorites.value = [];
+    mockStreams.value = [];
     mockNotificationsEnabled.value = false;
     mockVisibility.value = "visible";
     mockIsTauri.mockReturnValue(false);
@@ -225,6 +228,46 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
       // Assert
       expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should start suggestions polling interval and refresh periodically when streams are empty", async () => {
+      // Arrange
+      mockStreams.value = [];
+      expect(sut.lastSuggestionsFetch.value).toBe(0);
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: { user: null, users: [], streams: { edges: [] } },
+        }),
+      } as Response);
+
+      // Act
+      sut.startPolling();
+      expect(sut.lastSuggestionsFetch.value).toBe(0);
+
+      // Advance by 5 minutes (300,000ms)
+      await vi.advanceTimersByTimeAsync(300000);
+
+      // Assert
+      expect(sut.lastSuggestionsFetch.value).toBeGreaterThan(0);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should not auto-refresh suggestions when active streams are open", async () => {
+      // Arrange
+      mockStreams.value = [{ channel: "gaules", platform: "twitch" }];
+      expect(sut.lastSuggestionsFetch.value).toBe(0);
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+      // Act
+      sut.startPolling();
+      await vi.advanceTimersByTimeAsync(300000);
+
+      // Assert
+      expect(sut.lastSuggestionsFetch.value).toBe(0);
 
       fetchSpy.mockRestore();
     });
@@ -797,6 +840,55 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
       fetchSpy.mockRestore();
     });
+
+    it("should re-fetch suggestions when visibility becomes visible and stale threshold is met", async () => {
+      // Arrange
+      mockVisibility.value = "hidden";
+      mockStreams.value = [];
+      await vi.advanceTimersByTimeAsync(50);
+
+      const baseTime = 1000000;
+      vi.setSystemTime(baseTime);
+      sut.lastSuggestionsFetch.value = baseTime - 350000;
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: { user: null, users: [], streams: { edges: [] } },
+        }),
+      } as Response);
+
+      // Act
+      mockVisibility.value = "visible";
+      await vi.advanceTimersByTimeAsync(50);
+
+      // Assert
+      expect(sut.lastSuggestionsFetch.value).toBe(baseTime);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should not re-fetch suggestions when visibility becomes visible if not yet stale", async () => {
+      // Arrange
+      mockVisibility.value = "hidden";
+      mockStreams.value = [];
+      await vi.advanceTimersByTimeAsync(50);
+
+      const baseTime = 1000000;
+      vi.setSystemTime(baseTime);
+      sut.lastSuggestionsFetch.value = baseTime - 10000;
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+      // Act
+      mockVisibility.value = "visible";
+      await vi.advanceTimersByTimeAsync(50);
+
+      // Assert
+      expect(sut.lastSuggestionsFetch.value).toBe(baseTime - 10000);
+
+      fetchSpy.mockRestore();
+    });
   });
 
   describe("refreshSuggestions", () => {
@@ -808,6 +900,28 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
     afterEach(() => {
       fetchSpy.mockRestore();
+    });
+
+    it("should update lastSuggestionsFetch timestamp when refreshSuggestions is executed", async () => {
+      // Arrange
+      expect(sut.lastSuggestionsFetch.value).toBe(0);
+      const before = Date.now();
+      fetchSpy.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: {
+            user: null,
+            users: [],
+            streams: { edges: [] },
+          },
+        }),
+      } as Response);
+
+      // Act
+      await sut.refreshSuggestions();
+
+      // Assert
+      expect(sut.lastSuggestionsFetch.value).toBeGreaterThanOrEqual(before);
     });
 
     it("should early return if already loading suggestions", async () => {
