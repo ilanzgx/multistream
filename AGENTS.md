@@ -58,6 +58,10 @@ This repository contains custom, specialized skills for AI Agents located in the
 | **Tests (UI)**          | `bun run desktop:test:e2e:ui`        |
 | **Type Check**          | `bun run desktop:typecheck`          |
 | **Linting**             | `bun run lint`                       |
+| **i18n Check**          | `bun run i18n:check`                 |
+| **i18n Sort**           | `bun run i18n:sort`                  |
+| **i18n Test**           | `bun run i18n:test`                  |
+| **i18n CLI**            | `bun run i18n <get|set|del|batch>`   |
 
 ## Architecture & Conventions
 
@@ -164,9 +168,17 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
   - **Garbage Collection (GC):** The "dead" iframes are kept alive in the background until the _last_ active stream of that same platform is closed. When no active streams remain for a platform (e.g., all Twitch streams are closed), the GC safely removes all graveyard iframes of that platform from the DOM at once.
   - **Custom Streams Bypass:** Streams with `platform === 'custom'` bypass this graveyard logic entirely and are removed from the DOM immediately, as they don't share the same risk of platform-wide IPC crash cascades.
 
-- **Internationalization (i18n):**
-  - **Always translate UI text:** Every new user-facing text string must be localized. Always remember to add the translations to all 10 supported languages in `apps/desktop/src/i18n/locales/` (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`, `fr.json`, `tr.json`, `hi.json`, `id.json`).
-  - **Pre-Flight Checklist:** You MUST pay extra attention and double-check your work to ensure strict parity across ALL 10 files before considering any UI implementation complete. Do not rely solely on Vue `$t` fallbacks.
+- **Internationalization (i18n) & Automation (`scripts/i18n.ts`):**
+  - **Always translate UI text:** Every new user-facing text string must be localized across all 10 supported languages in `apps/desktop/src/i18n/locales/` (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`, `fr.json`, `tr.json`, `hi.json`, `id.json`).
+  - **NEVER edit 10 JSON files manually — ALWAYS use `scripts/i18n.ts`:**
+    Never open, edit, or search through 10 individual JSON files by hand. Use the automated CLI tool `bun run i18n` or programmatic utilities in `scripts/i18n.ts`:
+    - **Check parity / missing keys:** `bun run i18n:check` (validates all 10 languages against `en.json`).
+    - **Inspect a key across all 10 languages:** `bun run i18n get <key.path>` (e.g., `bun run i18n get onboarding.step1.title`).
+    - **Add or update a key:** `bun run i18n set <key.path> --en "Text" --pt "Texto" [--all "Fallback"]`.
+    - **Delete a key across all languages:** `bun run i18n delete <key.path>` (automatically cleans and prunes empty parent groups).
+    - **Batch update from JSON:** `bun run i18n batch <path/to/batch.json>`.
+    - **Format and sort alphabetically:** `bun run i18n:sort`.
+  - **Pre-Flight Checklist:** Always run `bun run i18n:check` before considering any UI implementation complete to guarantee 100% key parity across all 10 files. Do not rely solely on Vue `$t` fallbacks.
 
 - **UI Components (shadcn-vue):**
   - ALWAYS use shadcn-vue components whenever possible. However, carefully evaluate the trade-off between the component's size/performance and simpler native or lightweight alternatives, choosing what is best for the specific context.

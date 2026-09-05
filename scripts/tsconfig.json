@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["@types/bun"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["../apps/desktop/src/*"]
+    }
+  },
+  "include": ["./i18n.ts", "./sync-version.ts"]
+}
