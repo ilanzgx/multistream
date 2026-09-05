@@ -19,7 +19,7 @@ const { addFavorite, removeFavorite, favorites } = useFavorites();
 const { toggleFocus, isFocused, clearFocus, focusedStreamId } = useFocusedStream();
 const { captureStream, isCapturing } = useScreenshot();
 const { t } = useI18n();
-const { recordingQuality, nativePlayerEnabled } = usePreferences();
+const { recordingQuality, nativePlayerEnabled, adblockEnabled } = usePreferences();
 const { startRecording, stopRecording, isRecording, getState, isDependenciesInstalled } =
   useRecording();
 
@@ -177,20 +177,46 @@ const checkMedia = () => {
   return false;
 };
 
+let reloadFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+let reloadHandshakeTimer: ReturnType<typeof setTimeout> | null = null;
+let reloadCheckTimer: ReturnType<typeof setTimeout> | null = null;
+
+const triggerReloadTransition = () => {
+  if (reloadFallbackTimer) clearTimeout(reloadFallbackTimer);
+  if (reloadHandshakeTimer) clearTimeout(reloadHandshakeTimer);
+  if (reloadCheckTimer) clearTimeout(reloadCheckTimer);
+
+  isLoading.value = true;
+  connectionStatus.value = "RESOLVING_IFRAME";
+
+  reloadHandshakeTimer = setTimeout(() => {
+    if (isLoading.value) {
+      connectionStatus.value = "ESTABLISHING_HANDSHAKE";
+    }
+  }, 800);
+
+  nextTick(() => {
+    if (!checkMedia()) {
+      reloadCheckTimer = setTimeout(checkMedia, 500);
+    }
+  });
+
+  reloadFallbackTimer = setTimeout(() => {
+    if (isLoading.value) {
+      isLoading.value = false;
+    }
+  }, 4000);
+};
+
 watch(nativePlayerEnabled, () => {
   if (props.platform === "twitch") {
-    isLoading.value = true;
-    connectionStatus.value = "RESOLVING_IFRAME";
-    nextTick(() => {
-      if (!checkMedia()) {
-        setTimeout(checkMedia, 500);
-      }
-    });
-    setTimeout(() => {
-      if (isLoading.value) {
-        isLoading.value = false;
-      }
-    }, 4000);
+    triggerReloadTransition();
+  }
+});
+
+watch(adblockEnabled, () => {
+  if ((props.platform === "twitch" && !nativePlayerEnabled.value) || props.platform === "youtube") {
+    triggerReloadTransition();
   }
 });
 
@@ -216,6 +242,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (reloadFallbackTimer) clearTimeout(reloadFallbackTimer);
+  if (reloadHandshakeTimer) clearTimeout(reloadHandshakeTimer);
+  if (reloadCheckTimer) clearTimeout(reloadCheckTimer);
   window.removeEventListener("multistream-screenshot", onScreenshotEvent);
 });
 
