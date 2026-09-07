@@ -3,6 +3,15 @@
 
   <p align="center">Twitch, Kick, and YouTube. Side by side. No browser required.</p>
 
+  <p align="center">
+    <a href="https://github.com/ilanzgx/multistream/releases"><img src="https://img.shields.io/github/v/release/ilanzgx/multistream?style=flat&color=3b82f6" alt="Latest Release" /></a>
+    <a href="https://github.com/ilanzgx/multistream/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ilanzgx/multistream/ci.yml?branch=main&label=CI" alt="CI Status" /></a>
+    <a href="https://github.com/ilanzgx/multistream/releases"><img src="https://img.shields.io/github/downloads/ilanzgx/multistream/total?color=success" alt="Downloads" /></a>
+    <a href="https://github.com/ilanzgx/multistream/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-3b82f6" alt="License: GPL-3.0" /></a>
+    <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/rust-1.77%2B-3b82f6?logo=rust&logoColor=white" alt="rust 1.77+" /></a>
+    <a href="https://bun.sh/"><img src="https://img.shields.io/badge/bun-1.2%2B-3b82f6?logo=bun&logoColor=white" alt="bun 1.2+" /></a>
+  </p>
+
   <p align="center"><strong>Available for Windows, Linux and macOS</strong></p>
 
   <p align="center">
@@ -27,13 +36,13 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 
 ## Why Multistream?
 
-| Feature | Multistream | Browser tabs / Web tools |
-| :--- | :--- | :--- |
-| **Memory usage** | Low (Tauri + Rust) | High (separate Chromium processes per tab) |
-| **Chat** | Unified Twitch & Kick feed | Split across separate tabs |
-| **Privacy** | 100% local, zero tracking | Third-party scripts and telemetry |
-| **Stream recording** | Direct recording to MP4 via Streamlink | Requires external tools or extensions |
-| **Live transcription** | Offline Whisper.cpp on CPU | Not supported natively |
+| Feature                | Multistream                            | Browser tabs / Web tools                   |
+| :--------------------- | :------------------------------------- | :----------------------------------------- |
+| **Memory usage**       | Low (Tauri + Rust)                     | High (separate Chromium processes per tab) |
+| **Chat**               | Unified Twitch & Kick feed             | Split across separate tabs                 |
+| **Privacy**            | 100% local, zero tracking              | Third-party scripts and telemetry          |
+| **Stream recording**   | Direct recording to MP4 via Streamlink | Requires external tools or extensions      |
+| **Live transcription** | Offline Whisper.cpp on CPU             | Not supported natively                     |
 
 ## Features
 
@@ -46,15 +55,27 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 - **Cross-platform**: Works on Windows, macOS, and Linux.
 - **Local AI transcription**: _(Windows only)_ Real-time transcription powered by [Whisper.cpp](https://github.com/ggerganov/whisper.cpp), running fully offline on your CPU. Useful for streams in languages you don't speak. No API keys, no costs, no audio ever leaves your machine.
 
+## Security and authentication
+
+Logging into Twitch or Kick is optional. You can watch any stream without an account. If you log in to use chat, here is how authentication works:
+
+- **Official OAuth:** You authenticate directly on `id.twitch.tv` and `kick.com`. The app never sees or handles your password.
+- **Direct connections:** Your machine connects straight to Twitch IRC and Kick Pusher servers. There are no middleman proxies, servers, or analytics tracking your traffic.
+- **Local storage:** Session tokens stay on your machine in standard app directories:
+  - Windows: `%APPDATA%\multistream\`
+  - macOS: `~/Library/Application Support/multistream/`
+  - Linux: `~/.config/multistream/`
+- **Open source:** The network calls and token handling live in [`apps/desktop/src-tauri/`](./apps/desktop/src-tauri/) for anyone to inspect. For security disclosures, see [`SECURITY.md`](./SECURITY.md).
+
 ## Downloads
 
-| Platform | Download |
-| :--- | :--- |
-| **Windows (x64)** | [Installer (.exe)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-windows-x64-setup.exe) · [MSI (.msi)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-windows-x64.msi) |
-| **macOS (Apple Silicon)** | [DMG (.dmg)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-macos-arm64.dmg) |
-| **macOS (Intel)** | [DMG (.dmg)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-macos-x64.dmg) |
-| **macOS (Homebrew)** | `brew install --cask ilanzgx/multistream/multistream` |
-| **Linux (x64)** | [AppImage (.AppImage)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.AppImage) · [Debian (.deb)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.deb) |
+| Platform                  | Download                                                                                                                                                                                                                            |
+| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Windows (x64)**         | [Installer (.exe)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-windows-x64-setup.exe) · [MSI (.msi)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-windows-x64.msi)   |
+| **macOS (Apple Silicon)** | [DMG (.dmg)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-macos-arm64.dmg)                                                                                                                           |
+| **macOS (Intel)**         | [DMG (.dmg)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-macos-x64.dmg)                                                                                                                             |
+| **macOS (Homebrew)**      | `brew install --cask ilanzgx/multistream/multistream`                                                                                                                                                                               |
+| **Linux (x64)**           | [AppImage (.AppImage)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.AppImage) · [Debian (.deb)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.deb) |
 
 You can also check previous versions and signatures on the [Releases page](https://github.com/ilanzgx/multistream/releases).
 
@@ -121,7 +142,7 @@ If you want to compile the app yourself or contribute to the project, follow the
 
 ## Legal Notice
 
-Multistream is an independent open-source project and is not affiliated with, endorsed by, or connected to Twitch, Kick, YouTube, Amazon, or Google. 
+Multistream is an independent open-source project and is not affiliated with, endorsed by, or connected to Twitch, Kick, YouTube, Amazon, or Google.
 
 All trademarks, logos, and brand names belong to their respective owners.
 
