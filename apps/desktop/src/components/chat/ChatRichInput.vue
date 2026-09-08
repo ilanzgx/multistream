@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import EmotePicker from "./EmotePicker.vue";
 import type { PickerEmote } from "@/composables/useRecentEmotes";
 import { type EmoteData } from "@/composables/useEmotes";
+import { calculateEmoteInsertion, generateHtmlFromText } from "@/lib/chatInput";
 
 const props = defineProps<{
   modelValue: string;
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 
 const editorRef = ref<HTMLElement | null>(null);
 const selectionOffsets = ref({ start: 0, end: 0 });
+const hasUserInteracted = ref(false);
 
 function extractPlainText(node: Node): string {
   let text = "";
@@ -37,7 +39,7 @@ function extractPlainText(node: Node): string {
       }
     }
   }
-  return text.replace(/\n/g, ""); // Twitch chat doesn't support multiline, and stripping newlines fixes the trailing <br> issue
+  return text.replace(/\r?\n+/g, " ");
 }
 
 function getSelectionOffsetsWithin(element: HTMLElement) {
@@ -46,6 +48,10 @@ function getSelectionOffsetsWithin(element: HTMLElement) {
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0);
+
+    if (!element.contains(range.startContainer) || !element.contains(range.endContainer)) {
+      return { start, end };
+    }
 
     const preStartRange = range.cloneRange();
     preStartRange.selectNodeContents(element);
@@ -129,24 +135,8 @@ function setCaretPosition(element: HTMLElement, offset: number) {
   }
 }
 
-function generateHtmlFromText(text: string): string {
-  const words = text.split(/(\s+)/);
-  let html = "";
-  for (const word of words) {
-    if (word.trim() && props.emotes.has(word)) {
-      const url = props.emotes.get(word)?.url;
-      if (url) {
-        html += `<img src="${url}" data-emote-name="${word}" alt="${word}" class="inline-block h-[1.5em] align-middle mx-[2px]" contenteditable="false">`;
-      }
-    } else {
-      html += word
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/\n/g, "<br>");
-    }
-  }
-  return html;
+function toHtml(text: string): string {
+  return generateHtmlFromText(text, props.emotes);
 }
 
 function onInput() {
@@ -154,12 +144,16 @@ function onInput() {
   const plainText = extractPlainText(editorRef.value);
   emit("update:modelValue", plainText);
 
-  const expectedHtml = generateHtmlFromText(plainText);
+  const expectedHtml = toHtml(plainText);
   if (editorRef.value.innerHTML !== expectedHtml) {
     const offsets = getSelectionOffsetsWithin(editorRef.value);
     editorRef.value.innerHTML = expectedHtml;
     setCaretPosition(editorRef.value, offsets.end);
+    selectionOffsets.value = offsets;
+  } else {
+    selectionOffsets.value = getSelectionOffsetsWithin(editorRef.value);
   }
+  hasUserInteracted.value = true;
 }
 
 function onKeyDown(e: KeyboardEvent) {
@@ -219,8 +213,12 @@ function onCut(e: ClipboardEvent) {
 watch(
   () => props.modelValue,
   (newVal) => {
+    if (!newVal) {
+      selectionOffsets.value = { start: 0, end: 0 };
+      hasUserInteracted.value = false;
+    }
     if (editorRef.value && extractPlainText(editorRef.value) !== newVal) {
-      editorRef.value.innerHTML = generateHtmlFromText(newVal || "");
+      editorRef.value.innerHTML = toHtml(newVal || "");
     }
   }
 );
@@ -228,71 +226,61 @@ watch(
 function handleSelectionChange() {
   if (!editorRef.value) return;
   const sel = window.getSelection();
-  const images = editorRef.value.querySelectorAll("img[data-emote-name]");
+  if (!sel || sel.rangeCount === 0) return;
 
-  if (!sel || sel.rangeCount === 0 || sel.isCollapsed) {
-    images.forEach((img) => img.classList.remove("bg-blue-500/40"));
+  const isInside =
+    editorRef.value.contains(sel.anchorNode) && editorRef.value.contains(sel.focusNode);
+
+  if (!isInside) {
+    const highlighted = editorRef.value.querySelectorAll("img.bg-blue-500\\/40");
+    highlighted.forEach((img) => img.classList.remove("bg-blue-500/40"));
     return;
   }
 
-  images.forEach((img) => {
-    if (sel.containsNode(img, true)) {
-      img.classList.add("bg-blue-500/40");
-    } else {
-      img.classList.remove("bg-blue-500/40");
-    }
-  });
-
-  // Track caret offset when editor is focused
-  if (editorRef.value && editorRef.value.contains(sel.anchorNode)) {
-    selectionOffsets.value = getSelectionOffsetsWithin(editorRef.value);
+  const images = editorRef.value.querySelectorAll("img[data-emote-name]");
+  if (sel.isCollapsed) {
+    images.forEach((img) => img.classList.remove("bg-blue-500/40"));
+  } else {
+    images.forEach((img) => {
+      if (sel.containsNode(img, true)) {
+        img.classList.add("bg-blue-500/40");
+      } else {
+        img.classList.remove("bg-blue-500/40");
+      }
+    });
   }
+
+  selectionOffsets.value = getSelectionOffsetsWithin(editorRef.value);
+  hasUserInteracted.value = true;
 }
 
 function handleEmoteSelect(emote: PickerEmote) {
   const currentText = props.modelValue || "";
-
-  // Need spaces around the emote unless it's at start/end
-  let insertText = emote.name;
-
-  // Add space before if needed
-  if (selectionOffsets.value.start > 0 && currentText[selectionOffsets.value.start - 1] !== " ") {
-    insertText = " " + insertText;
-  }
-
-  // Add space after if needed
-  if (
-    selectionOffsets.value.end < currentText.length &&
-    currentText[selectionOffsets.value.end] !== " "
-  ) {
-    insertText = insertText + " ";
-  } else if (selectionOffsets.value.end === currentText.length) {
-    insertText = insertText + " "; // always add a space at the end to make it easier to continue typing
-  }
-
-  const newText =
-    currentText.slice(0, selectionOffsets.value.start) +
-    insertText +
-    currentText.slice(selectionOffsets.value.end);
+  const { newText, newOffset } = calculateEmoteInsertion(
+    currentText,
+    selectionOffsets.value,
+    emote.name,
+    hasUserInteracted.value
+  );
 
   emit("update:modelValue", newText);
 
   if (editorRef.value) {
-    editorRef.value.innerHTML = generateHtmlFromText(newText);
-    const newOffset = selectionOffsets.value.start + insertText.length;
+    editorRef.value.innerHTML = toHtml(newText);
     selectionOffsets.value = { start: newOffset, end: newOffset };
+    hasUserInteracted.value = true;
 
-    // Focus back and set caret
     setTimeout(() => {
-      editorRef.value?.focus();
-      setCaretPosition(editorRef.value!, newOffset);
+      if (!editorRef.value) return;
+      editorRef.value.focus();
+      setCaretPosition(editorRef.value, newOffset);
     }, 0);
   }
 }
 
 onMounted(() => {
   if (props.modelValue && editorRef.value) {
-    editorRef.value.innerHTML = generateHtmlFromText(props.modelValue);
+    editorRef.value.innerHTML = toHtml(props.modelValue);
   }
   document.addEventListener("selectionchange", handleSelectionChange);
 });
@@ -310,7 +298,6 @@ export default {
 
 <template>
   <div class="relative flex items-center w-full min-w-0">
-    <!-- Placeholder -->
     <div
       v-if="!modelValue && placeholder"
       class="absolute left-[13px] top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none select-none"
@@ -318,7 +305,6 @@ export default {
       {{ placeholder }}
     </div>
 
-    <!-- Editor -->
     <div
       ref="editorRef"
       contenteditable="true"
@@ -328,6 +314,8 @@ export default {
       aria-multiline="true"
       @input="onInput"
       @keydown="onKeyDown"
+      @keyup="handleSelectionChange"
+      @pointerup="handleSelectionChange"
       @paste="onPaste"
       @copy="onCopy"
       @cut="onCut"
@@ -338,13 +326,3 @@ export default {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Remove focus outline to rely on custom rings */
-div[contenteditable]:empty:before {
-  content: attr(placeholder);
-  color: #6b7280;
-  pointer-events: none;
-  display: block; /* For Firefox */
-}
-</style>

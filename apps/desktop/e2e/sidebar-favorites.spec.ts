@@ -20,18 +20,19 @@ test.describe("Favorites & Recents E2E Test", () => {
   test("favorites appear in AddDialog and can be quick-added to grid", async ({ page }) => {
     // Act: open AddDialog
     await page.getByTestId("add-stream-btn").click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
 
-    // Assert: favorites section is visible with "shroud"
-    await expect(page.getByText("Favorites")).toBeVisible();
-    const favoriteChip = page.getByText("shroud");
+    // Assert: favorites section is visible with "shroud" inside dialog
+    await expect(dialog.getByText("Favorites")).toBeVisible();
+    const favoriteChip = dialog.getByTestId("stream-chip-shroud");
     await expect(favoriteChip).toBeVisible();
 
     // Act: click favorite chip to quick-add
     await favoriteChip.click();
 
     // Assert: dialog closes and stream appears in grid
-    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(dialog).not.toBeVisible();
     await expect(page.getByTestId("stream-item-shroud")).toBeVisible();
   });
 });
