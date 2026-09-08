@@ -50,11 +50,9 @@ export function generateHtmlFromText(text: string, emotes: Map<string, { url: st
   const words = text.split(/(\s+)/);
   let html = "";
   for (const word of words) {
-    if (word.trim() && emotes.has(word)) {
-      const url = emotes.get(word)?.url;
-      if (url) {
-        html += `<img src="${escapeAttr(url)}" data-emote-name="${escapeAttr(word)}" alt="${escapeAttr(word)}" class="inline-block h-[1.5em] align-middle mx-[2px]" contenteditable="false">`;
-      }
+    const url = word.trim() ? emotes.get(word)?.url : undefined;
+    if (url) {
+      html += `<img src="${escapeAttr(url)}" data-emote-name="${escapeAttr(word)}" alt="${escapeAttr(word)}" class="inline-block h-[1.5em] align-middle mx-[2px]" contenteditable="false">`;
     } else {
       html += escapeAttr(word).replace(/\n/g, "<br>");
     }

@@ -231,5 +231,17 @@ describe("chatInput utility unit tests", () => {
       // Assert
       expect(html).toBe("line1<br>line2");
     });
+
+    it("should fall back to plain text if emote is in map but has empty url", () => {
+      // Arrange
+      const emotes = new Map([["BrokenEmote", { url: "" }]]);
+      const text = "hello BrokenEmote world";
+
+      // Act
+      const html = generateHtmlFromText(text, emotes);
+
+      // Assert
+      expect(html).toBe("hello BrokenEmote world");
+    });
   });
 });

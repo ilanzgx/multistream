@@ -39,7 +39,7 @@ function extractPlainText(node: Node): string {
       }
     }
   }
-  return text.replace(/\r?\n+/g, " ").trim();
+  return text.replace(/\r?\n+/g, " ");
 }
 
 function getSelectionOffsetsWithin(element: HTMLElement) {
@@ -229,7 +229,7 @@ function handleSelectionChange() {
   if (!sel || sel.rangeCount === 0) return;
 
   const isInside =
-    editorRef.value.contains(sel.anchorNode) || editorRef.value.contains(sel.focusNode);
+    editorRef.value.contains(sel.anchorNode) && editorRef.value.contains(sel.focusNode);
 
   if (!isInside) {
     const highlighted = editorRef.value.querySelectorAll("img.bg-blue-500\\/40");
