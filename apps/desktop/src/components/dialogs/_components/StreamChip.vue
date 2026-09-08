@@ -40,6 +40,7 @@ const formatViewers = (count?: number): string => {
   >
     <button
       type="button"
+      :data-testid="`stream-chip-${props.channel}`"
       class="flex items-center gap-1.5 px-2.5 py-1.5 w-full min-w-0 cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded-md"
       :title="
         status?.isLive
