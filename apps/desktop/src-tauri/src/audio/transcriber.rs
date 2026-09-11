@@ -69,6 +69,20 @@ impl Drop for TempFileGuard {
     }
 }
 
+struct DownloadGuard {
+    temp_path: PathBuf,
+    success: bool,
+}
+
+impl Drop for DownloadGuard {
+    fn drop(&mut self) {
+        DOWNLOAD_IN_PROGRESS.store(false, Ordering::Relaxed);
+        if !self.success {
+            let _ = fs::remove_file(&self.temp_path);
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -181,6 +195,10 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
     // Reset cancellation flag before starting
     CANCEL_DOWNLOAD.store(false, Ordering::Relaxed);
     DOWNLOAD_IN_PROGRESS.store(true, Ordering::Relaxed);
+    let mut guard = DownloadGuard {
+        temp_path: temp_path.clone(),
+        success: false,
+    };
 
     use std::io::Write;
     let mut file = std::fs::File::create(&temp_path)
@@ -196,8 +214,6 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
     while let Some(chunk_result) = stream.next().await {
         if CANCEL_DOWNLOAD.load(Ordering::Relaxed) {
             drop(file);
-            let _ = fs::remove_file(&temp_path);
-            DOWNLOAD_IN_PROGRESS.store(false, Ordering::Relaxed);
             return Err("Download cancelled by user".to_string());
         }
 
@@ -228,10 +244,9 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
     // Explicit drop ensures the file handle is flushed and closed on Windows
     // before `rename`, which would otherwise fail with a sharing violation (ERROR_SHARING_VIOLATION).
     drop(file);
-    let rename_result = fs::rename(&temp_path, &dest_path)
-        .map_err(|e| format!("failed to finalize model file: {e}"));
-    DOWNLOAD_IN_PROGRESS.store(false, Ordering::Relaxed);
-    rename_result?;
+    fs::rename(&temp_path, &dest_path)
+        .map_err(|e| format!("failed to finalize model file: {e}"))?;
+    guard.success = true;
 
     Ok(())
 }

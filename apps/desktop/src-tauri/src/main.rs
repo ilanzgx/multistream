@@ -2,9 +2,10 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    std::panic::set_hook(Box::new(|panic_info| {
-        log::error!("CRITICAL UNHANDLED PANIC: {panic_info}");
-        eprintln!("Unhandled panic: {panic_info}");
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        log::error!("PANIC: {panic_info}");
+        default_hook(panic_info);
     }));
 
     #[cfg(target_os = "linux")]
