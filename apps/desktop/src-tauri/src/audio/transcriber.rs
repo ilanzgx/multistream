@@ -69,6 +69,20 @@ impl Drop for TempFileGuard {
     }
 }
 
+struct DownloadGuard {
+    temp_path: PathBuf,
+    success: bool,
+}
+
+impl Drop for DownloadGuard {
+    fn drop(&mut self) {
+        DOWNLOAD_IN_PROGRESS.store(false, Ordering::Relaxed);
+        if !self.success {
+            let _ = fs::remove_file(&self.temp_path);
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -121,6 +135,7 @@ fn timestamp_ms() -> u64 {
 pub const TRANSCRIPTION_SUPPORTED: bool = cfg!(target_os = "windows");
 
 static CANCEL_DOWNLOAD: AtomicBool = AtomicBool::new(false);
+static DOWNLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 
 #[tauri::command]
 pub fn cancel_whisper_download() {
@@ -168,15 +183,29 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
 
     let total = response.content_length().unwrap_or(0);
     let dest_path = model_path(&app, &model_name)?;
+    // Append `.tmp` to the full filename (e.g. `ggml-base.bin` → `ggml-base.bin.tmp`)
+    // so that a partial download is never mistaken for a complete model on disk.
+    // Stale `.tmp` files left by crashed sessions are cleaned up in `get_transcription_status`.
+    let temp_name = format!(
+        "{}.tmp",
+        dest_path.file_name().unwrap_or_default().to_string_lossy()
+    );
+    let temp_path = dest_path.with_file_name(temp_name);
 
     // Reset cancellation flag before starting
     CANCEL_DOWNLOAD.store(false, Ordering::Relaxed);
+    DOWNLOAD_IN_PROGRESS.store(true, Ordering::Relaxed);
+    let mut guard = DownloadGuard {
+        temp_path: temp_path.clone(),
+        success: false,
+    };
 
     use std::io::Write;
-    let mut file = std::fs::File::create(&dest_path)
-        .map_err(|e| format!("failed to create model file: {e}"))?;
+    let mut file = std::fs::File::create(&temp_path)
+        .map_err(|e| format!("failed to create temp model file: {e}"))?;
 
-    // Stream response body directly to disk, emitting progress events on each chunk.
+    // Stream response body to a .tmp file. Only renamed to .bin on full success,
+    // preventing corrupted models from appearing installed after interrupted downloads.
     let mut downloaded: u64 = 0;
     let mut stream = response.bytes_stream();
     let mut last_emit = std::time::Instant::now();
@@ -184,9 +213,7 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
 
     while let Some(chunk_result) = stream.next().await {
         if CANCEL_DOWNLOAD.load(Ordering::Relaxed) {
-            // User cancelled the download
             drop(file);
-            let _ = fs::remove_file(&dest_path);
             return Err("Download cancelled by user".to_string());
         }
 
@@ -213,6 +240,13 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
             );
         }
     }
+
+    // Explicit drop ensures the file handle is flushed and closed on Windows
+    // before `rename`, which would otherwise fail with a sharing violation (ERROR_SHARING_VIOLATION).
+    drop(file);
+    fs::rename(&temp_path, &dest_path)
+        .map_err(|e| format!("failed to finalize model file: {e}"))?;
+    guard.success = true;
 
     Ok(())
 }
@@ -250,6 +284,12 @@ pub fn get_transcription_status(
         .filter_map(|entry| entry.ok())
         .filter_map(|entry| {
             let name = entry.file_name().to_string_lossy().to_string();
+            if name.starts_with("ggml-") && name.ends_with(".bin.tmp") {
+                if !DOWNLOAD_IN_PROGRESS.load(Ordering::Relaxed) {
+                    let _ = fs::remove_file(entry.path());
+                }
+                return None;
+            }
             if name.starts_with("ggml-") && name.ends_with(".bin") {
                 // Extract the model name from `ggml-<name>.bin`
                 let stripped = name
