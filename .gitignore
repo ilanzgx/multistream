@@ -37,3 +37,6 @@ worktrees/
 # Bundle Analyzer
 .vite-bundle-analyzer/
 stats.html
+
+# AI Memory
+.ai-memory.toml

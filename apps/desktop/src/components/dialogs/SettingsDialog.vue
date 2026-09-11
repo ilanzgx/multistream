@@ -429,19 +429,10 @@ watch(
       </DialogHeader>
 
       <Tabs default-value="geral" class="flex flex-col flex-1 overflow-hidden mt-2">
-        <TabsList
-          :class="[
-            'grid w-full bg-[#1e2127]',
-            isRunningInTauri && isSupported && isRecordingSupported
-              ? 'grid-cols-6'
-              : (isRunningInTauri && isSupported) || (isRunningInTauri && isRecordingSupported)
-                ? 'grid-cols-5'
-                : 'grid-cols-4',
-          ]"
-        >
+        <TabsList class="w-full flex items-center justify-between bg-[#1e2127] p-1 px-1.5">
           <TabsTrigger
             value="geral"
-            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
+            class="flex-none flex items-center justify-center gap-1.5 text-xs px-4 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
             <Settings class="size-4 shrink-0" />
             <span class="truncate">{{ $t("settings.tabs.general") }}</span>
@@ -449,14 +440,14 @@ watch(
 
           <TabsTrigger
             value="dados"
-            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
+            class="flex-none flex items-center justify-center gap-1.5 text-xs px-4 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
             <Database class="size-4 shrink-0" />
             <span class="truncate">{{ $t("settings.tabs.data") }}</span>
           </TabsTrigger>
           <TabsTrigger
             value="conexoes"
-            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
+            class="flex-none flex items-center justify-center gap-1.5 text-xs px-4 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
             <Link class="size-4 shrink-0" />
             <span class="truncate">{{ $t("settings.tabs.connections") }}</span>
@@ -464,7 +455,7 @@ watch(
           <TabsTrigger
             v-if="isRunningInTauri && isSupported"
             value="recursos"
-            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
+            class="flex-none flex items-center justify-center gap-1.5 text-xs px-4 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
             <Captions class="size-4 shrink-0" />
             <span class="truncate">{{ $t("settings.tabs.resources") }}</span>
@@ -472,14 +463,14 @@ watch(
           <TabsTrigger
             v-if="isRunningInTauri && isRecordingSupported"
             value="gravacao"
-            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
+            class="flex-none flex items-center justify-center gap-1.5 text-xs px-4 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
             <Video class="size-4 shrink-0" />
             <span class="truncate">{{ $t("settings.recording.tabLabel") }}</span>
           </TabsTrigger>
           <TabsTrigger
             value="sobre"
-            class="flex items-center justify-center gap-1.5 text-xs min-w-0 px-2 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
+            class="flex-none flex items-center justify-center gap-1.5 text-xs px-4 py-1.5 text-gray-400 hover:text-white dark:text-gray-400 dark:hover:text-white data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white dark:data-[state=active]:text-white transition-all duration-150"
           >
             <Info class="size-4 shrink-0" />
             <span class="truncate">{{ $t("settings.tabs.about") }}</span>
