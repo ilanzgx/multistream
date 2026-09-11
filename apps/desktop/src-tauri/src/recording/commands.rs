@@ -539,43 +539,55 @@ async fn run_ffmpeg_remux(
     let ffmpeg_exe =
         crate::recording::installer::get_ffmpeg_exe(app).map_err(RecordingError::SpawnFailed)?;
     let args = ffmpeg_remux_args(ts_path, mp4_path);
-    let (mut rx, _child) = app
+    let (mut rx, child) = app
         .shell()
         .command(ffmpeg_exe.to_string_lossy().to_string())
         .args(&args)
         .spawn()
         .map_err(|e| RecordingError::SpawnFailed(e.to_string()))?;
 
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Stdout(line) => {
-                let text = String::from_utf8_lossy(&line);
-                for l in text.lines() {
-                    if let Some(rest) = l.strip_prefix("total_size=") {
-                        if let Ok(bytes) = rest.parse::<u64>() {
-                            let _ = app.emit(
-                                "recording:remux-progress",
-                                RemuxProgressPayload {
-                                    stream_id: stream_id.to_string(),
-                                    bytes,
-                                    total_bytes: ts_size,
-                                },
-                            );
+    let remux_timeout = Duration::from_secs(30 * 60);
+    let deadline = tokio::time::Instant::now() + remux_timeout;
+
+    loop {
+        match tokio::time::timeout_at(deadline, rx.recv()).await {
+            Err(_) => {
+                let _ = child.kill();
+                return Err(RecordingError::SpawnFailed(
+                    "ffmpeg remux timed out after 30 minutes".into(),
+                ));
+            }
+            Ok(None) => break,
+            Ok(Some(event)) => match event {
+                CommandEvent::Stdout(line) => {
+                    let text = String::from_utf8_lossy(&line);
+                    for l in text.lines() {
+                        if let Some(rest) = l.strip_prefix("total_size=") {
+                            if let Ok(bytes) = rest.parse::<u64>() {
+                                let _ = app.emit(
+                                    "recording:remux-progress",
+                                    RemuxProgressPayload {
+                                        stream_id: stream_id.to_string(),
+                                        bytes,
+                                        total_bytes: ts_size,
+                                    },
+                                );
+                            }
                         }
                     }
                 }
-            }
-            CommandEvent::Terminated(payload) => {
-                return if payload.code == Some(0) {
-                    Ok(())
-                } else {
-                    Err(RecordingError::SpawnFailed(format!(
-                        "ffmpeg exited with code {:?}",
-                        payload.code
-                    )))
-                };
-            }
-            _ => {}
+                CommandEvent::Terminated(payload) => {
+                    return if payload.code == Some(0) {
+                        Ok(())
+                    } else {
+                        Err(RecordingError::SpawnFailed(format!(
+                            "ffmpeg exited with code {:?}",
+                            payload.code
+                        )))
+                    };
+                }
+                _ => {}
+            },
         }
     }
 
