@@ -54,6 +54,7 @@ const STREAM_FILTER_SCRIPT: &str = include_str!("core/stream_filter.js");
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static SPLASH_DISMISSED: AtomicBool = AtomicBool::new(false);
+static SHUTDOWN_INITIATED: AtomicBool = AtomicBool::new(false);
 
 #[tauri::command]
 async fn splashscreen_ready(app: tauri::AppHandle) -> Result<(), String> {
@@ -379,11 +380,13 @@ pub fn run() {
                             );
                             let _ = webview.hide();
                         }
-                        let app_clone = app.clone();
-                        tauri::async_runtime::spawn(async move {
-                            recording::commands::shutdown_all_recordings(&app_clone).await;
-                            app_clone.exit(0);
-                        });
+                        if !SHUTDOWN_INITIATED.swap(true, Ordering::SeqCst) {
+                            let app_clone = app.clone();
+                            tauri::async_runtime::spawn(async move {
+                                recording::commands::shutdown_all_recordings(&app_clone).await;
+                                app_clone.exit(0);
+                            });
+                        }
                     }
                     _ => {}
                 })
@@ -416,11 +419,13 @@ pub fn run() {
                     let _ = webview.hide();
                 }
 
-                let app = window.app_handle().clone();
-                tauri::async_runtime::spawn(async move {
-                    recording::commands::shutdown_all_recordings(&app).await;
-                    app.exit(0);
-                });
+                if !SHUTDOWN_INITIATED.swap(true, Ordering::SeqCst) {
+                    let app = window.app_handle().clone();
+                    tauri::async_runtime::spawn(async move {
+                        recording::commands::shutdown_all_recordings(&app).await;
+                        app.exit(0);
+                    });
+                }
             }
         })
         .run(tauri::generate_context!())
