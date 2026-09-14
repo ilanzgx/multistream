@@ -54,6 +54,7 @@ const STREAM_FILTER_SCRIPT: &str = include_str!("core/stream_filter.js");
 use std::sync::atomic::{AtomicBool, Ordering};
 
 static SPLASH_DISMISSED: AtomicBool = AtomicBool::new(false);
+static SHUTDOWN_INITIATED: AtomicBool = AtomicBool::new(false);
 
 #[tauri::command]
 async fn splashscreen_ready(app: tauri::AppHandle) -> Result<(), String> {
@@ -372,11 +373,20 @@ pub fn run() {
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => show_main_window(app),
                     "quit" => {
-                        let app_clone = app.clone();
-                        tauri::async_runtime::block_on(async move {
-                            recording::commands::shutdown_all_recordings(&app_clone).await;
-                        });
-                        app.exit(0);
+                        if let Some(webview) = app.get_webview_window("main") {
+                            let _ = webview.eval(
+                                "document.querySelectorAll('video, audio').forEach(el => { el.muted = true; el.pause(); });\
+                                 document.querySelectorAll('iframe').forEach(function(f) { try { f.contentWindow.postMessage({type:'MULTISTREAM_GRAVEYARD_SUSPEND'}, '*'); } catch(e) {} });",
+                            );
+                            let _ = webview.hide();
+                        }
+                        if !SHUTDOWN_INITIATED.swap(true, Ordering::SeqCst) {
+                            let app_clone = app.clone();
+                            tauri::async_runtime::spawn(async move {
+                                recording::commands::shutdown_all_recordings(&app_clone).await;
+                                app_clone.exit(0);
+                            });
+                        }
                     }
                     _ => {}
                 })
@@ -395,11 +405,25 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
-                if window.app_handle().webview_windows().is_empty() {
+            if window.label() != "main" {
+                return;
+            }
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+
+                if let Some(webview) = window.app_handle().get_webview_window(window.label()) {
+                    let _ = webview.eval(
+                        "document.querySelectorAll('video, audio').forEach(el => { el.muted = true; el.pause(); });\
+                         document.querySelectorAll('iframe').forEach(function(f) { try { f.contentWindow.postMessage({type:'MULTISTREAM_GRAVEYARD_SUSPEND'}, '*'); } catch(e) {} });",
+                    );
+                    let _ = webview.hide();
+                }
+
+                if !SHUTDOWN_INITIATED.swap(true, Ordering::SeqCst) {
                     let app = window.app_handle().clone();
-                    tauri::async_runtime::block_on(async move {
+                    tauri::async_runtime::spawn(async move {
                         recording::commands::shutdown_all_recordings(&app).await;
+                        app.exit(0);
                     });
                 }
             }

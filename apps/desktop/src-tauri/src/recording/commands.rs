@@ -274,7 +274,15 @@ pub async fn scan_orphans(
     state: State<'_, RecordingManager>,
     output_dir: Option<String>,
 ) -> Result<Vec<OrphanRecording>, RecordingError> {
-    let orphans = super::orphan::scan_orphans(output_dir);
+    let mut orphans = super::orphan::scan_orphans(output_dir);
+
+    let active_paths: std::collections::HashSet<std::path::PathBuf> = {
+        let entries = state.entries.lock().await;
+        entries.values().map(|e| e.temp_path.clone()).collect()
+    };
+
+    orphans.retain(|orphan| !active_paths.contains(&orphan.full_path));
+
     {
         let mut guard = state.orphans.lock().await;
         *guard = orphans.clone();
@@ -392,9 +400,11 @@ pub fn is_recording_supported_cmd() -> bool {
 
 pub async fn shutdown_all_recordings(app: &AppHandle) {
     let state = app.state::<RecordingManager>();
-    let stream_ids: Vec<String> = {
+
+    let (all_active_ids, kill_ids): (Vec<String>, Vec<String>) = {
         let mut entries = state.entries.lock().await;
-        entries
+        let all_active_ids: Vec<String> = entries.keys().cloned().collect();
+        let kill_ids: Vec<String> = entries
             .values_mut()
             .filter(|e| {
                 matches!(
@@ -407,11 +417,12 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
                 e.status = RecordingStatus::Stopping;
                 e.stream_id.clone()
             })
-            .collect()
+            .collect();
+        (all_active_ids, kill_ids)
     };
 
     let mut kill_futs = Vec::new();
-    for sid in &stream_ids {
+    for sid in &kill_ids {
         let entries = state.entries.lock().await;
         if let Some(entry) = entries.get(sid) {
             let pid = entry.streamlink_pid;
@@ -438,20 +449,13 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
     }
     futures_util::future::join_all(kill_futs).await;
 
-    // Wait for the background tasks to finish remuxing and remove the entries
     let start_time = std::time::Instant::now();
     loop {
         if start_time.elapsed() > Duration::from_secs(30) {
             break;
         }
         let entries = state.entries.lock().await;
-        let mut all_done = true;
-        for sid in &stream_ids {
-            if entries.contains_key(sid) {
-                all_done = false;
-                break;
-            }
-        }
+        let all_done = all_active_ids.iter().all(|sid| !entries.contains_key(sid));
         if all_done {
             break;
         }
