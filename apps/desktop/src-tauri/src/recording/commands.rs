@@ -274,7 +274,15 @@ pub async fn scan_orphans(
     state: State<'_, RecordingManager>,
     output_dir: Option<String>,
 ) -> Result<Vec<OrphanRecording>, RecordingError> {
-    let orphans = super::orphan::scan_orphans(output_dir);
+    let mut orphans = super::orphan::scan_orphans(output_dir);
+
+    let active_paths: std::collections::HashSet<std::path::PathBuf> = {
+        let entries = state.entries.lock().await;
+        entries.values().map(|e| e.temp_path.clone()).collect()
+    };
+
+    orphans.retain(|orphan| !active_paths.contains(&orphan.full_path));
+
     {
         let mut guard = state.orphans.lock().await;
         *guard = orphans.clone();

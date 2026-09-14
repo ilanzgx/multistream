@@ -372,11 +372,18 @@ pub fn run() {
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "show" => show_main_window(app),
                     "quit" => {
+                        if let Some(webview) = app.get_webview_window("main") {
+                            let _ = webview.eval(
+                                "document.querySelectorAll('video, audio').forEach(el => { el.muted = true; el.pause(); });\
+                                 document.querySelectorAll('iframe').forEach(function(f) { try { f.contentWindow.postMessage({type:'MULTISTREAM_GRAVEYARD_SUSPEND'}, '*'); } catch(e) {} });",
+                            );
+                            let _ = webview.hide();
+                        }
                         let app_clone = app.clone();
-                        tauri::async_runtime::block_on(async move {
+                        tauri::async_runtime::spawn(async move {
                             recording::commands::shutdown_all_recordings(&app_clone).await;
+                            app_clone.exit(0);
                         });
-                        app.exit(0);
                     }
                     _ => {}
                 })
@@ -395,13 +402,25 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
-                if window.app_handle().webview_windows().is_empty() {
-                    let app = window.app_handle().clone();
-                    tauri::async_runtime::block_on(async move {
-                        recording::commands::shutdown_all_recordings(&app).await;
-                    });
+            if window.label() != "main" {
+                return;
+            }
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+
+                if let Some(webview) = window.app_handle().get_webview_window(window.label()) {
+                    let _ = webview.eval(
+                        "document.querySelectorAll('video, audio').forEach(el => { el.muted = true; el.pause(); });\
+                         document.querySelectorAll('iframe').forEach(function(f) { try { f.contentWindow.postMessage({type:'MULTISTREAM_GRAVEYARD_SUSPEND'}, '*'); } catch(e) {} });",
+                    );
+                    let _ = webview.hide();
                 }
+
+                let app = window.app_handle().clone();
+                tauri::async_runtime::spawn(async move {
+                    recording::commands::shutdown_all_recordings(&app).await;
+                    app.exit(0);
+                });
             }
         })
         .run(tauri::generate_context!())
