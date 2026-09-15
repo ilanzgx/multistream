@@ -2749,6 +2749,7 @@ dependencies = [
  "log",
  "notify-rust",
  "rand 0.8.5",
+ "regex",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
