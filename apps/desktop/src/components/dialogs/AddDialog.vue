@@ -611,10 +611,18 @@ watch(
                   <StreamChip
                     v-for="recent in recents"
                     :key="`${recent.platform}:${recent.channel}`"
-                    :channel="recent.channel"
+                    :channel="recent.handle || recent.channel"
+                    :display-name="recent.displayName"
                     :platform="recent.platform"
                     class="w-full"
-                    @click="handleQuickAdd(recent.channel, recent.platform, recent.iframeUrl)"
+                    @click="
+                      handleQuickAdd(
+                        recent.handle || recent.channel,
+                        recent.platform,
+                        recent.iframeUrl,
+                        recent.displayName
+                      )
+                    "
                     @remove="removeRecent(recent.channel, recent.platform)"
                   />
                 </div>
@@ -644,9 +652,17 @@ watch(
                     v-for="favorite in sortedFavorites"
                     :key="`${favorite.platform}:${favorite.channel}`"
                     :channel="favorite.channel"
+                    :display-name="favorite.displayName"
                     :platform="favorite.platform"
                     class="w-full"
-                    @click="handleQuickAdd(favorite.channel, favorite.platform)"
+                    @click="
+                      handleQuickAdd(
+                        favorite.channel,
+                        favorite.platform,
+                        undefined,
+                        favorite.displayName
+                      )
+                    "
                     @remove="removeFavorite(favorite.channel, favorite.platform)"
                   />
                 </div>

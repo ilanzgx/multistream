@@ -4,6 +4,8 @@ import type { Platform } from "./useStreams";
 export interface RecentChannel {
   channel: string;
   platform: Platform;
+  displayName?: string;
+  handle?: string;
   iframeUrl?: string;
   addedAt: number;
 }
@@ -13,30 +15,35 @@ const MAX_RECENTS = 8;
 const _useRecents = () => {
   const recents = useStorage<RecentChannel[]>("recents", []);
 
-  /**
-   * @brief Add a recent channel
-   *
-   * Adds a recent channel to the list of recents, removing any existing
-   * entries for the same channel and platform. The new entry is added to the
-   * top of the list, and the list is truncated to the maximum number of
-   * recents.
-   *
-   * @param channel The channel name
-   * @param platform The platform
-   * @param iframeUrl The iframe URL (optional)
-   * @return void
-   */
-  const addRecent = (channel: string, platform: Platform, iframeUrl?: string) => {
-    // remove if already exists
+  const addRecent = (
+    channel: string,
+    platform: Platform,
+    iframeUrl?: string,
+    displayName?: string,
+    handle?: string
+  ) => {
+    const cleanHandle = handle ? handle.replace(/^@+/, "").trim() : undefined;
+    const cleanDisplayName = displayName ? displayName.replace(/^@+/, "").trim() : undefined;
+    const cleanChannel =
+      platform === "youtube" && cleanHandle ? cleanHandle : channel.replace(/^@+/, "").trim();
+
     recents.value = recents.value.filter(
-      (r) => !(r.channel.toLowerCase() === channel.toLowerCase() && r.platform === platform)
+      (r) =>
+        !(
+          (r.channel.toLowerCase() === cleanChannel.toLowerCase() ||
+            (cleanHandle && r.handle?.toLowerCase() === cleanHandle.toLowerCase()) ||
+            (cleanHandle && r.channel.toLowerCase() === cleanHandle.toLowerCase()) ||
+            (r.handle && r.handle.toLowerCase() === cleanChannel.toLowerCase())) &&
+          r.platform === platform
+        )
     );
 
-    // add to top
     recents.value = [
       {
-        channel,
+        channel: cleanChannel,
         platform,
+        ...(cleanDisplayName && { displayName: cleanDisplayName }),
+        ...(cleanHandle && { handle: cleanHandle }),
         ...(iframeUrl && { iframeUrl }),
         addedAt: Date.now(),
       },
@@ -44,18 +51,16 @@ const _useRecents = () => {
     ].slice(0, MAX_RECENTS);
   };
 
-  /**
-   * @brief Remove a recent channel
-   *
-   * Removes a recent channel from the list of recents.
-   *
-   * @param channel The channel name
-   * @param platform The platform
-   * @return void
-   */
   const removeRecent = (channel: string, platform: Platform) => {
+    const clean = channel.replace(/^@+/, "").toLowerCase();
     recents.value = recents.value.filter(
-      (r) => !(r.channel.toLowerCase() === channel.toLowerCase() && r.platform === platform)
+      (r) =>
+        !(
+          (r.channel.toLowerCase() === clean ||
+            (r.handle && r.handle.toLowerCase() === clean) ||
+            (r.displayName && r.displayName.toLowerCase() === clean)) &&
+          r.platform === platform
+        )
     );
   };
 

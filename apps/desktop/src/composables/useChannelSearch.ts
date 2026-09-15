@@ -24,12 +24,13 @@ function getLocalChannelMatches(
   query: string,
   platform: Platform,
   favorites: { channel: string; platform: Platform; displayName?: string }[],
-  recents: { channel: string; platform: Platform }[],
+  recents: { channel: string; platform: Platform; displayName?: string; handle?: string }[],
   suggestedStreams: {
     channel: string;
     platform: Platform;
     category?: string;
     displayName?: string;
+    handle?: string;
   }[],
   getStatus?: (channel: string, platform: Platform) => any
 ): ChannelSearchResult[] {
@@ -39,23 +40,33 @@ function getLocalChannelMatches(
   const results: ChannelSearchResult[] = [];
   const seen = new Set<string>();
 
-  const checkAndAdd = (channel: string, displayName?: string, defaultCategory?: string) => {
+  const checkAndAdd = (
+    channel: string,
+    displayName?: string,
+    defaultCategory?: string,
+    handle?: string
+  ) => {
     const cleanChannel = channel.replace(/^@+/, "").trim();
     const cleanDisplay = (displayName || "").replace(/^@+/, "").trim();
+    const cleanHandle = handle ? handle.replace(/^@+/, "").trim() : undefined;
     const key = cleanChannel.toLowerCase();
 
     if (!key || seen.has(key)) return;
 
     const matches =
-      key.includes(cleanQuery) || (cleanDisplay && cleanDisplay.toLowerCase().includes(cleanQuery));
+      key.includes(cleanQuery) ||
+      (cleanDisplay && cleanDisplay.toLowerCase().includes(cleanQuery)) ||
+      (cleanHandle && cleanHandle.toLowerCase().includes(cleanQuery));
 
     if (matches) {
       seen.add(key);
       const status = getStatus ? getStatus(cleanChannel, platform) : null;
-      const hasDistinctDisplayName = cleanDisplay && cleanDisplay.toLowerCase() !== key;
+      const resolvedHandle =
+        cleanHandle ||
+        (cleanDisplay && cleanDisplay.toLowerCase() !== key ? cleanChannel : undefined);
       results.push({
         channel: cleanDisplay || cleanChannel,
-        handle: hasDistinctDisplayName ? cleanChannel : undefined,
+        handle: resolvedHandle,
         platform,
         isLive: status?.isLive ?? false,
         category: status?.category || defaultCategory,
@@ -71,13 +82,13 @@ function getLocalChannelMatches(
 
   for (const rec of recents) {
     if (rec.platform === platform) {
-      checkAndAdd(rec.channel);
+      checkAndAdd(rec.channel, rec.displayName, undefined, rec.handle);
     }
   }
 
   for (const sug of suggestedStreams) {
     if (sug.platform === platform) {
-      checkAndAdd(sug.channel, sug.displayName, sug.category);
+      checkAndAdd(sug.channel, sug.displayName, sug.category, sug.handle);
     }
   }
 

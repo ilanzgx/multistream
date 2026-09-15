@@ -173,8 +173,7 @@ const _useStreams = () => {
     now.value = Date.now();
 
     toast.success(`${displayName || channel} ${t("toasts.add.added")}`);
-
-    addRecent(displayName || channel, platform, iframeUrl);
+    addRecent(channel, platform, iframeUrl, displayName, cleanHandle);
   };
 
   /**

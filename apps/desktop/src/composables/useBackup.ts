@@ -272,8 +272,10 @@ const _useBackup = () => {
     // 3. Additive Merge for Recents
     // First, convert currently watching streams into Recent format to inject at the top
     const currentStreamsAsRecents: RecentChannel[] = streams.value.map((s) => ({
-      channel: s.channel,
+      channel: s.platform === "youtube" && s.handle ? s.handle : s.channel,
       platform: s.platform,
+      displayName: s.displayName,
+      handle: s.handle,
       iframeUrl: s.iframeUrl,
       addedAt: Date.now(),
     }));

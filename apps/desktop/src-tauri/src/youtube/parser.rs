@@ -626,7 +626,7 @@ mod tests {
         let res = &results[0];
         assert_eq!(res.channel, "batzera1");
         assert_eq!(res.display_name.as_deref(), Some("Batzera"));
-        assert_eq!(res.is_live, true);
+        assert!(res.is_live);
         assert_eq!(res.category.as_deref(), Some("150 mil inscritos"));
         assert_eq!(
             res.avatar_url.as_deref(),

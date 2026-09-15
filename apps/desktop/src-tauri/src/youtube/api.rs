@@ -497,7 +497,7 @@ pub async fn resolve_channel_live_status(
                     }
                 }
             }
-            if is_live == false {
+            if !is_live {
                 let is_live_stream = microformat
                     .get("isLiveStream")
                     .and_then(|l| l.as_bool())
@@ -524,7 +524,7 @@ pub async fn resolve_channel_live_status(
                     title = Some(t.to_string());
                 }
             }
-            if is_live == false {
+            if !is_live {
                 let vd_is_live = vd.get("isLive").and_then(|l| l.as_bool()).unwrap_or(false);
                 let vd_is_live_content = vd
                     .get("isLiveContent")
