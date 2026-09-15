@@ -56,9 +56,7 @@ const _useRecents = () => {
     recents.value = recents.value.filter(
       (r) =>
         !(
-          (r.channel.toLowerCase() === clean ||
-            (r.handle && r.handle.toLowerCase() === clean) ||
-            (r.displayName && r.displayName.toLowerCase() === clean)) &&
+          (r.channel.toLowerCase() === clean || (r.handle && r.handle.toLowerCase() === clean)) &&
           r.platform === platform
         )
     );

@@ -357,7 +357,6 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
   }
 
   if (isFavorite.value) {
-    // Remove all variants (handle, videoId, displayName)
     removeFavorite(channelToSave, platform);
     if (props.channel && props.channel !== channelToSave) {
       removeFavorite(props.channel, platform);
@@ -367,6 +366,12 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
     }
     if (liveStatus.value?.handle && liveStatus.value.handle !== channelToSave) {
       removeFavorite(liveStatus.value.handle, platform);
+    }
+    if (liveStatus.value?.videoId && liveStatus.value.videoId !== channelToSave) {
+      removeFavorite(liveStatus.value.videoId, platform);
+    }
+    if (liveStatus.value?.displayName && liveStatus.value.displayName !== channelToSave) {
+      removeFavorite(liveStatus.value.displayName, platform);
     }
     toast.success(`${channelToSave} ${t("toasts.favorite.removed")}`);
   } else {

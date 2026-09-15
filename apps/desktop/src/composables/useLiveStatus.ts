@@ -798,10 +798,17 @@ const _useLiveStatus = () => {
                 duration: 10000,
                 action: {
                   label: t("notifications.actionWatch"),
-                  onClick: () =>
-                    fav.displayName
-                      ? addStream(targetChannel, fav.platform, undefined, fav.displayName)
-                      : addStream(targetChannel, fav.platform),
+                  onClick: () => {
+                    const handle =
+                      fav.platform === "youtube" ? fav.channel.replace(/^@/, "") : undefined;
+                    if (handle) {
+                      addStream(targetChannel, fav.platform, undefined, fav.displayName, handle);
+                    } else if (fav.displayName) {
+                      addStream(targetChannel, fav.platform, undefined, fav.displayName);
+                    } else {
+                      addStream(targetChannel, fav.platform);
+                    }
+                  },
                 },
               });
             } else {
@@ -849,16 +856,13 @@ const _useLiveStatus = () => {
                 });
               }
 
-              const notificationChannel =
-                fav.platform === "youtube" && status?.videoId ? status.videoId : fav.channel;
-
               invoke("send_notification", {
                 title,
                 body,
                 avatarUrl: status?.avatarUrl || null,
                 watchText: t("notifications.actionWatch"),
                 ignoreText: t("notifications.actionIgnore"),
-                channel: notificationChannel,
+                channel: fav.channel,
                 platform: fav.platform,
               }).catch(() => {});
             }
@@ -911,13 +915,14 @@ const _useLiveStatus = () => {
 
     if (platform === "youtube") {
       const channelLower = channel.toLowerCase();
-      const match = Object.values(statuses.value).find(
-        (s) =>
-          (s.handle && s.handle.toLowerCase() === channelLower) ||
-          (s.videoId && s.videoId.toLowerCase() === channelLower) ||
-          (s.displayName && s.displayName.toLowerCase() === channelLower)
+      const match = Object.entries(statuses.value).find(
+        ([k, s]) =>
+          k.startsWith("youtube:") &&
+          ((s.handle && s.handle.toLowerCase() === channelLower) ||
+            (s.videoId && s.videoId.toLowerCase() === channelLower) ||
+            (s.displayName && s.displayName.toLowerCase() === channelLower))
       );
-      if (match) return match;
+      if (match) return match[1];
     }
 
     return null;

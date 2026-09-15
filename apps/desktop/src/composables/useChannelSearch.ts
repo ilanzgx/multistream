@@ -218,6 +218,7 @@ const _useChannelSearch = () => {
     let currentRequestId = 0;
 
     const clear = () => {
+      currentRequestId++;
       results.value = [];
       isLoading.value = false;
       if (debounceTimer) {
@@ -249,10 +250,9 @@ const _useChannelSearch = () => {
       }
 
       isLoading.value = true;
+      const requestId = ++currentRequestId;
 
       debounceTimer = setTimeout(async () => {
-        const requestId = ++currentRequestId;
-
         let found: ChannelSearchResult[] = [];
 
         if (currentPlatform === "youtube") {

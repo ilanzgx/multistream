@@ -96,12 +96,14 @@ const _useFollowedChannels = () => {
         let status = statuses.value[key];
         if (!status) {
           const channelLower = f.channel.toLowerCase();
-          status = Object.values(statuses.value).find(
-            (s) =>
-              (s.handle && s.handle.toLowerCase() === channelLower) ||
-              (s.videoId && s.videoId.toLowerCase() === channelLower) ||
-              (s.displayName && s.displayName.toLowerCase() === channelLower)
+          const match = Object.entries(statuses.value).find(
+            ([k, s]) =>
+              k.startsWith("youtube:") &&
+              ((s.handle && s.handle.toLowerCase() === channelLower) ||
+                (s.videoId && s.videoId.toLowerCase() === channelLower) ||
+                (s.displayName && s.displayName.toLowerCase() === channelLower))
           );
+          status = match ? match[1] : undefined;
         }
         const rawName =
           (status?.displayName && !status.displayName.startsWith("@")

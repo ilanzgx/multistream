@@ -139,4 +139,16 @@ describe("useRecents composable unit tests", () => {
     // Assert
     expect(recents.value.length).toBe(0);
   });
+
+  it("should not remove recent by displayName alone", () => {
+    // Arrange
+    const { addRecent, removeRecent, recents } = sut;
+    addRecent("5pzeFSTt18c", "youtube", undefined, "BatzeraNick", "batzera1");
+
+    // Act
+    removeRecent("BatzeraNick", "youtube");
+
+    // Assert
+    expect(recents.value.length).toBe(1);
+  });
 });

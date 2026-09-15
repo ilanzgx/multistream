@@ -186,8 +186,21 @@ onMounted(async () => {
     try {
       unlistenWatch = await listen<{ channel: string; platform: Platform }>(
         "notification-watch",
-        (event) => {
+        async (event) => {
           const { channel, platform } = event.payload;
+          if (platform === "youtube") {
+            const resolved = await resolveStream({ channel, platform });
+            if (resolved) {
+              addStream(
+                resolved.channel,
+                resolved.platform,
+                resolved.iframeUrl,
+                resolved.displayName,
+                resolved.handle
+              );
+              return;
+            }
+          }
           addStream(channel, platform);
         }
       );

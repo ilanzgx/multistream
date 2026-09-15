@@ -27,7 +27,7 @@ describe("parseUrlOptions util unit tests", () => {
     expect(result?.[1]).toEqual({ channel: "alanzoka", platform: "kick" });
   });
 
-  it("should parse and sanitize YouTube streams with leading @ in 'streams' param", () => {
+  it("should parse YouTube streams preserving raw handle in 'streams' param", () => {
     // Arrange
     const param = "youtube:@batzera1,youtube:alanzoka,twitch:@gaules";
 
@@ -37,9 +37,9 @@ describe("parseUrlOptions util unit tests", () => {
     // Assert
     expect(result).not.toBeNull();
     expect(result?.length).toBe(3);
-    expect(result?.[0]).toEqual({ channel: "batzera1", platform: "youtube" });
+    expect(result?.[0]).toEqual({ channel: "@batzera1", platform: "youtube" });
     expect(result?.[1]).toEqual({ channel: "alanzoka", platform: "youtube" });
-    expect(result?.[2]).toEqual({ channel: "gaules", platform: "twitch" });
+    expect(result?.[2]).toEqual({ channel: "@gaules", platform: "twitch" });
   });
 
   it("should parse custom streams encoded in base64 'c' param", () => {

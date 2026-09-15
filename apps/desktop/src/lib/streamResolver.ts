@@ -11,12 +11,13 @@ export interface ResolvedStream {
 }
 
 export async function resolveStream(s: ParsedStream): Promise<ResolvedStream | null> {
+  const isExplicitHandle = s.channel.startsWith("@");
   const cleanChannel = s.channel.replace(/^@+/, "").trim();
   if (!cleanChannel) return null;
 
   if (s.platform === "youtube") {
-    const isVideoId = /^[a-zA-Z0-9_-]{11}$/.test(cleanChannel);
-    if ((s.channel.startsWith("@") || !isVideoId) && isTauri()) {
+    const isVideoId = !isExplicitHandle && /^[a-zA-Z0-9_-]{11}$/.test(cleanChannel);
+    if ((isExplicitHandle || !isVideoId) && isTauri()) {
       try {
         const liveId = await invoke<string | null>("youtube_resolve_live_id", {
           channelOrHandle: cleanChannel,

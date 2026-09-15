@@ -38,6 +38,9 @@ const isValidChannelShape = (item: any): boolean => {
   if (typeof item.channel !== "string") return false;
   if (!VALID_PLATFORMS.has(item.platform)) return false;
   if (item.iframeUrl !== undefined && typeof item.iframeUrl !== "string") return false;
+  if (item.displayName !== undefined && typeof item.displayName !== "string") return false;
+  if (item.handle !== undefined && typeof item.handle !== "string") return false;
+  if (item.lastVideoId !== undefined && typeof item.lastVideoId !== "string") return false;
   return true;
 };
 

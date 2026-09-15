@@ -127,6 +127,25 @@ describe("streamResolver", () => {
     expect(result).toBeNull();
   });
 
+  it("should resolve explicit 11-character @ handles via invoke instead of treating as video ID", async () => {
+    // Arrange
+    vi.mocked(invoke).mockResolvedValueOnce("realVideoId1");
+
+    // Act
+    const result = await resolveStream({ channel: "@abcdefghijk", platform: "youtube" });
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("youtube_resolve_live_id", {
+      channelOrHandle: "abcdefghijk",
+    });
+    expect(result).toEqual({
+      channel: "realVideoId1",
+      platform: "youtube",
+      displayName: "abcdefghijk",
+      handle: "abcdefghijk",
+    });
+  });
+
   it("should fallback to raw channel when not in Tauri environment", async () => {
     // Arrange
     vi.mocked(isTauri).mockReturnValue(false);

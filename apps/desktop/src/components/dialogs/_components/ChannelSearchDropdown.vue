@@ -45,7 +45,7 @@ const emit = defineEmits<{
       <template v-else>
         <div
           v-for="(result, index) in results"
-          :key="`${result.platform}:${result.channel}`"
+          :key="`${result.platform}:${result.handle || result.channel}`"
           role="option"
           tabindex="-1"
           :aria-selected="index === activeIndex"

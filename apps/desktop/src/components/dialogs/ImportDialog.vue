@@ -48,20 +48,29 @@ const handleImport = async () => {
       return;
     }
 
-    clearStreams();
+    const resolvedList = [];
     for (const s of parsedStreams) {
       const resolved = await resolveStream(s);
       if (resolved) {
-        addStream(
-          resolved.channel,
-          resolved.platform,
-          resolved.iframeUrl,
-          resolved.displayName,
-          resolved.handle
-        );
+        resolvedList.push(resolved);
       } else if (s.platform === "youtube") {
         toast.error(t("toasts.youtube.offline"));
       }
+    }
+
+    if (resolvedList.length === 0) {
+      return;
+    }
+
+    clearStreams();
+    for (const resolved of resolvedList) {
+      addStream(
+        resolved.channel,
+        resolved.platform,
+        resolved.iframeUrl,
+        resolved.displayName,
+        resolved.handle
+      );
     }
 
     toast.success(t("import.success"));
