@@ -31,7 +31,11 @@ vi.mock("../useKickAuth", () => ({
   useKickAuth: () => mockKickAuth,
 }));
 
-const mockLiveStatus = { statuses: ref({}), isChecking: ref(false) };
+const mockLiveStatus = {
+  statuses: ref({}),
+  isChecking: ref(false),
+  checkAll: vi.fn().mockResolvedValue(undefined),
+};
 vi.mock("../useLiveStatus", () => ({
   useLiveStatus: () => mockLiveStatus,
 }));
@@ -50,6 +54,7 @@ describe("useFollowedChannels", () => {
     mockKickAuth.authenticated.value = false;
     mockLiveStatus.statuses.value = {};
     mockLiveStatus.isChecking.value = false;
+    mockLiveStatus.checkAll = vi.fn().mockResolvedValue(undefined);
     mockFavorites.favorites.value = [];
     vi.useFakeTimers();
   });
@@ -131,6 +136,114 @@ describe("useFollowedChannels", () => {
       thumbnailUrl: "http://thumb.com/kick",
       isFavorite: true,
     });
+  });
+
+  it("should populate youtube channels from favorites and statuses", () => {
+    // Arrange
+    mockFavorites.favorites.value = [
+      { channel: "@casimiro", platform: "youtube", displayName: "Casimito", addedAt: 0 },
+    ];
+    mockLiveStatus.statuses.value = {
+      "youtube:@casimiro": {
+        isLive: true,
+        videoId: "dQw4w9WgXcQ",
+        viewerCount: 25000,
+        title: "CazeTV Live",
+        category: "Sports",
+        avatarUrl: "http://avatar.com/yt",
+      } as any,
+    };
+
+    // Act
+    const { channels } = useFollowedChannels();
+
+    // Assert
+    expect(channels.value).toHaveLength(1);
+    expect(channels.value[0]).toEqual({
+      id: "dQw4w9WgXcQ",
+      platform: "youtube",
+      displayName: "Casimito",
+      avatarUrl: "http://avatar.com/yt",
+      isLive: true,
+      viewerCount: 25000,
+      title: "CazeTV Live",
+      game: "Sports",
+      thumbnailUrl: undefined,
+      isFavorite: true,
+      videoId: "dQw4w9WgXcQ",
+    });
+  });
+
+  it("should populate youtube channels when favorite was saved as videoId", () => {
+    // Arrange
+    mockFavorites.favorites.value = [{ channel: "dQw4w9WgXcQ", platform: "youtube", addedAt: 0 }];
+    mockLiveStatus.statuses.value = {
+      "youtube:dqw4w9wgxcq": {
+        isLive: true,
+        videoId: "dQw4w9WgXcQ",
+        handle: "@CazeTV",
+        displayName: "CazéTV",
+        viewerCount: 30000,
+        title: "Live Match",
+        category: "Football",
+        avatarUrl: "http://avatar.com/yt2",
+      } as any,
+    };
+
+    // Act
+    const { channels } = useFollowedChannels();
+
+    // Assert
+    expect(channels.value).toHaveLength(1);
+    expect(channels.value[0]).toEqual({
+      id: "dQw4w9WgXcQ",
+      platform: "youtube",
+      displayName: "CazéTV",
+      avatarUrl: "http://avatar.com/yt2",
+      isLive: true,
+      viewerCount: 30000,
+      title: "Live Match",
+      game: "Football",
+      thumbnailUrl: undefined,
+      isFavorite: true,
+      videoId: "dQw4w9WgXcQ",
+    });
+  });
+
+  it("should strip leading @ from displayName when favorite was saved as @handle manually", () => {
+    // Arrange
+    mockFavorites.favorites.value = [
+      { channel: "@batzera1", platform: "youtube", displayName: "@batzera1", addedAt: 0 },
+    ];
+    mockLiveStatus.statuses.value = {
+      "youtube:@batzera1": {
+        isLive: true,
+        videoId: "xyz987",
+        handle: "@batzera1",
+        viewerCount: 500,
+        title: "Gameplay Live",
+        category: "Gaming",
+        avatarUrl: "http://avatar.com/batzera",
+      } as any,
+    };
+
+    // Act
+    const { channels } = useFollowedChannels();
+
+    // Assert
+    expect(channels.value).toHaveLength(1);
+    expect(channels.value[0]?.displayName).toBe("batzera1");
+  });
+
+  it("should call checkAll when refresh is invoked", async () => {
+    // Arrange
+    const { refresh } = useFollowedChannels();
+
+    // Act
+    await refresh();
+
+    // Assert
+    expect(mockLiveStatus.checkAll).toHaveBeenCalled();
   });
 
   it("should combine and sort channels correctly", async () => {

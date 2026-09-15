@@ -765,9 +765,41 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
       // Assert
       expect(toast.info).not.toHaveBeenCalled();
-      expect(invoke).not.toHaveBeenCalled();
+      expect(invoke).not.toHaveBeenCalledWith("send_notification", expect.anything());
 
       fetchSpy.mockRestore();
+    });
+
+    it("should query youtube_check_channels_status and update statuses", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "@casimiro", platform: "youtube" }];
+      vi.mocked(invoke).mockResolvedValueOnce([
+        {
+          channel: "@casimiro",
+          isLive: true,
+          videoId: "dQw4w9WgXcQ",
+          viewerCount: 15000,
+          title: "Transmissao ao vivo",
+          avatarUrl: "http://avatar.com/caze",
+        },
+      ]);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(invoke).toHaveBeenCalledWith("youtube_check_channels_status", {
+        channels: ["@casimiro"],
+      });
+      const status = sut.getStatus("@casimiro", "youtube");
+      expect(status).toEqual({
+        isLive: true,
+        videoId: "dQw4w9WgXcQ",
+        viewerCount: 15000,
+        title: "Transmissao ao vivo",
+        avatarUrl: "http://avatar.com/caze",
+        thumbnailUrl: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+      });
     });
   });
 
