@@ -40,7 +40,13 @@ const toggleSidebar = () => {
 
 const onAddClick = (channel: FollowedChannel) => {
   if (channel.platform === "youtube") {
-    addStream(channel.videoId || channel.id, channel.platform, undefined, channel.displayName);
+    addStream(
+      channel.videoId || channel.id,
+      channel.platform,
+      undefined,
+      channel.displayName,
+      channel.handle || channel.id.replace(/^@+/, "")
+    );
   } else {
     addStream(channel.id, channel.platform);
   }

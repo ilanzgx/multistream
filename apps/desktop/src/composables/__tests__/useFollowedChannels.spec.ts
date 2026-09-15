@@ -163,6 +163,7 @@ describe("useFollowedChannels", () => {
       id: "dQw4w9WgXcQ",
       platform: "youtube",
       displayName: "Casimito",
+      handle: "casimiro",
       avatarUrl: "http://avatar.com/yt",
       isLive: true,
       viewerCount: 25000,
@@ -199,6 +200,7 @@ describe("useFollowedChannels", () => {
       id: "dQw4w9WgXcQ",
       platform: "youtube",
       displayName: "CazéTV",
+      handle: "CazeTV",
       avatarUrl: "http://avatar.com/yt2",
       isLive: true,
       viewerCount: 30000,
@@ -421,5 +423,30 @@ describe("useFollowedChannels", () => {
     expect(isInitialLoading.value).toBe(false);
     expect(channels.value).toHaveLength(1);
     expect(channels.value[0]?.displayName).toBe("streamer_kick");
+  });
+
+  it("should not trigger isInitialLoading when adding an additional favorite channel after initial load has finished", async () => {
+    // Arrange
+    mockTwitchAuth.authenticated.value = false;
+    mockFavorites.favorites.value = [{ channel: "initial_ch", platform: "kick", addedAt: 0 }];
+    mockLiveStatus.statuses.value = {
+      "kick:initial_ch": { isLive: true, viewerCount: 100 } as any,
+    };
+    mockLiveStatus.isChecking.value = false;
+
+    const { isInitialLoading, refresh } = useFollowedChannels();
+    await refresh();
+    expect(isInitialLoading.value).toBe(false);
+
+    // Act - User favorites an additional stream at runtime
+    mockFavorites.favorites.value = [
+      ...mockFavorites.favorites.value,
+      { channel: "new_yt_stream", platform: "youtube", addedAt: Date.now() },
+    ];
+    mockLiveStatus.isChecking.value = true;
+    await nextTick();
+
+    // Assert - isInitialLoading must remain false (no skeleton flash)
+    expect(isInitialLoading.value).toBe(false);
   });
 });

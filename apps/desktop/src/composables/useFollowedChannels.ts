@@ -22,6 +22,7 @@ export interface FollowedChannel {
   isFavorite?: boolean;
   isFollowed?: boolean;
   videoId?: string;
+  handle?: string;
 }
 
 const _useFollowedChannels = () => {
@@ -32,6 +33,13 @@ const _useFollowedChannels = () => {
   const isFetchingTwitch = ref(false);
   const platformFilter = ref<"all" | "twitch" | "kick" | "youtube">("all");
   const hasLoadedTwitchOnce = ref(false);
+  const hasLoadedFavoritesOnce = ref(false);
+
+  watch(isChecking, (val) => {
+    if (!val) {
+      hasLoadedFavoritesOnce.value = true;
+    }
+  });
 
   const hasUncheckedFavorites = computed(() => {
     if (favorites.value.length === 0) return false;
@@ -46,7 +54,11 @@ const _useFollowedChannels = () => {
     if (twitchAuthenticated.value && !hasLoadedTwitchOnce.value && isFetchingTwitch.value) {
       return true;
     }
-    if (hasUncheckedFavorites.value && (isChecking?.value ?? false)) {
+    if (
+      !hasLoadedFavoritesOnce.value &&
+      hasUncheckedFavorites.value &&
+      (isChecking?.value ?? false)
+    ) {
       return true;
     }
     return false;
@@ -102,11 +114,18 @@ const _useFollowedChannels = () => {
           f.channel;
 
         const displayName = rawName.replace(/^@/, "");
+        const rawHandle =
+          status?.handle ||
+          (f.channel.startsWith("@") ? f.channel : undefined) ||
+          (status?.displayName?.startsWith("@") ? status.displayName : undefined) ||
+          f.channel;
+        const handle = rawHandle.replace(/^@+/, "");
 
         return {
           id: status?.videoId || f.channel,
           platform: "youtube" as const,
           displayName,
+          handle,
           avatarUrl: status?.avatarUrl ?? "",
           isLive: status?.isLive ?? false,
           viewerCount: status?.viewerCount ?? 0,
@@ -204,6 +223,7 @@ const _useFollowedChannels = () => {
     } finally {
       isFetchingTwitch.value = false;
       hasLoadedTwitchOnce.value = true;
+      hasLoadedFavoritesOnce.value = true;
     }
   };
 
