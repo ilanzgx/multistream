@@ -269,6 +269,7 @@ const getStreamClass = (streamId: string) => {
         v-else-if="stream.platform === 'youtube'"
         :channel="stream.channel"
         :channelid="stream.id"
+        :display-name="stream.displayName"
       />
       <CustomStream
         v-else-if="stream.platform === 'custom'"

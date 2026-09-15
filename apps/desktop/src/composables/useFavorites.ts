@@ -4,6 +4,8 @@ import { createSharedComposable, useStorage } from "@vueuse/core";
 export interface FavoriteChannel {
   channel: string;
   platform: Platform;
+  lastVideoId?: string;
+  displayName?: string;
   iframeUrl?: string;
   addedAt: number;
 }
@@ -22,7 +24,12 @@ const _useFavorites = () => {
    * @param iframeUrl The iframe URL (optional)
    * @return void
    */
-  const addFavorite = (channel: string, platform: Platform, iframeUrl?: string) => {
+  const addFavorite = (
+    channel: string,
+    platform: Platform,
+    iframeUrl?: string,
+    displayName?: string
+  ) => {
     const alreadyExists = favorites.value.some(
       (f) => f.channel.toLowerCase() === channel.toLowerCase() && f.platform === platform
     );
@@ -33,6 +40,7 @@ const _useFavorites = () => {
         channel,
         platform,
         ...(iframeUrl && { iframeUrl }),
+        ...(displayName && { displayName }),
         addedAt: Date.now(),
       },
       ...favorites.value,
