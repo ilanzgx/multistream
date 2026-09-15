@@ -27,7 +27,10 @@ use kick::commands::{
 use kick::state::KickState;
 
 mod youtube;
-use youtube::commands::youtube_get_suggested_streams;
+use youtube::commands::{
+    youtube_check_channels_status, youtube_get_suggested_streams, youtube_resolve_live_id,
+    youtube_search_channels,
+};
 
 mod recording;
 use recording::commands::{
@@ -168,6 +171,9 @@ pub fn run() {
             splashscreen_ready,
             close_splashscreen,
             youtube_get_suggested_streams,
+            youtube_resolve_live_id,
+            youtube_check_channels_status,
+            youtube_search_channels,
         ])
         .setup(move |app| {
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
