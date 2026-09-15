@@ -345,7 +345,7 @@ fn find_channel_info(node: &Value) -> (Option<String>, Option<String>) {
 pub async fn resolve_channel_live_status(
     client: &reqwest::Client,
     channel_or_handle: &str,
-) -> YouTubeChannelStatus {
+) -> Option<YouTubeChannelStatus> {
     let trimmed = channel_or_handle.trim();
     let is_video_id = !trimmed.starts_with('@')
         && trimmed.len() == 11
@@ -378,19 +378,14 @@ pub async fn resolve_channel_live_status(
         .await;
 
     let res = match resp {
-        Ok(r) => r,
-        Err(_) => {
-            return YouTubeChannelStatus {
-                channel: channel_or_handle.to_string(),
-                is_live: false,
-                video_id: None,
-                handle: None,
-                display_name: None,
-                viewer_count: None,
-                title: None,
-                avatar_url: None,
-            };
+        Ok(r) => {
+            if r.status().is_server_error() || r.status() == reqwest::StatusCode::TOO_MANY_REQUESTS
+            {
+                return None;
+            }
+            r
         }
+        Err(_) => return None,
     };
 
     let final_url = res.url().clone();
@@ -406,18 +401,7 @@ pub async fn resolve_channel_live_status(
 
     let html = match res.text().await {
         Ok(t) => t,
-        Err(_) => {
-            return YouTubeChannelStatus {
-                channel: channel_or_handle.to_string(),
-                is_live: video_id_from_url.is_some(),
-                video_id: video_id_from_url,
-                handle: None,
-                display_name: None,
-                viewer_count: None,
-                title: None,
-                avatar_url: None,
-            };
-        }
+        Err(_) => return None,
     };
 
     let canonical_id = extract_canonical_video_id(&html);
@@ -636,7 +620,7 @@ pub async fn resolve_channel_live_status(
         viewer_count = None;
     }
 
-    YouTubeChannelStatus {
+    Some(YouTubeChannelStatus {
         channel: channel_or_handle.to_string(),
         is_live,
         video_id,
@@ -645,7 +629,7 @@ pub async fn resolve_channel_live_status(
         viewer_count,
         title,
         avatar_url,
-    }
+    })
 }
 
 pub async fn check_channels_status_batch(
@@ -670,18 +654,7 @@ pub async fn check_channels_status_batch(
         tasks.push(tokio::spawn(async move {
             let permit = match sem.acquire().await {
                 Ok(p) => p,
-                Err(_) => {
-                    return YouTubeChannelStatus {
-                        channel: ch,
-                        is_live: false,
-                        video_id: None,
-                        handle: None,
-                        display_name: None,
-                        viewer_count: None,
-                        title: None,
-                        avatar_url: None,
-                    };
-                }
+                Err(_) => return None,
             };
             let status = resolve_channel_live_status(&client_clone, &ch).await;
             drop(permit);
@@ -691,7 +664,7 @@ pub async fn check_channels_status_batch(
 
     let mut results = Vec::with_capacity(tasks.len());
     for task in tasks {
-        if let Ok(status) = task.await {
+        if let Ok(Some(status)) = task.await {
             results.push(status);
         }
     }

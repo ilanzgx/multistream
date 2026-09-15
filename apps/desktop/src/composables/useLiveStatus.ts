@@ -304,7 +304,8 @@ async function checkYouTubeStreams(channels: string[]): Promise<StatusMap | null
   try {
     const rawStatuses = await invoke<any[]>("youtube_check_channels_status", { channels });
 
-    if (!Array.isArray(rawStatuses)) return result;
+    if (!Array.isArray(rawStatuses)) return null;
+    if (channels.length > 0 && rawStatuses.length === 0) return null;
 
     for (const item of rawStatuses) {
       if (!item || !item.channel) continue;

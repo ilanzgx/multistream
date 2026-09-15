@@ -22,8 +22,12 @@ pub async fn youtube_resolve_live_id(channel_or_handle: String) -> Result<Option
         .map_err(|e| e.to_string())?;
 
     let status = resolve_channel_live_status(&client, &channel_or_handle).await;
-    if status.is_live && status.video_id.is_some() {
-        Ok(status.video_id)
+    if let Some(status) = status {
+        if status.is_live && status.video_id.is_some() {
+            Ok(status.video_id)
+        } else {
+            Ok(None)
+        }
     } else {
         Ok(None)
     }
