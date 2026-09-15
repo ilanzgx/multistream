@@ -26,7 +26,8 @@
     "platformCustom": "Benutzerdefiniert",
     "suggestedLabel": "Vorgeschlagene Streams",
     "suggestedDescription": "Beliebte Livestreams im Moment",
-    "noSuggestions": "Keine Streams gefunden"
+    "noSuggestions": "Keine Streams gefunden",
+    "resolvingLive": "YouTube-Livestatus wird überprüft..."
   },
   "settings": {
     "tooltip": "Einstellungen",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Fehlende Medien-Codecs erkannt. Bitte installieren Sie Ihre System-Codecs (z. B. ubuntu-restricted-extras oder gstreamer-plugins), um Streams anzusehen."
+    },
+    "youtube": {
+      "offline": "Der Kanal ist offline oder überträgt derzeit nicht live."
     }
   },
   "skeleton": {

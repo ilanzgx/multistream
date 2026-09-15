@@ -26,7 +26,8 @@
     "platformCustom": "Özel",
     "suggestedLabel": "Önerilen Yayınlar",
     "suggestedDescription": "Şu anda popüler canlı yayınlar",
-    "noSuggestions": "Yayın bulunamadı"
+    "noSuggestions": "Yayın bulunamadı",
+    "resolvingLive": "YouTube canlı yayın durumu kontrol ediliyor..."
   },
   "settings": {
     "tooltip": "Ayarlar",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Eksik medya kodlayıcıları tespit edildi. Yayınları izlemek için lütfen sistem kodlayıcılarınızı (örneğin ubuntu-restricted-extras veya gstreamer-plugins) yükleyin."
+    },
+    "youtube": {
+      "offline": "Kanal çevrimdışı veya şu anda yayın yapmıyor."
     }
   },
   "skeleton": {

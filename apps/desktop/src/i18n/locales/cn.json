@@ -26,7 +26,8 @@
     "platformCustom": "自定义",
     "suggestedLabel": "推荐直播",
     "suggestedDescription": "当前热门直播",
-    "noSuggestions": "未找到直播"
+    "noSuggestions": "未找到直播",
+    "resolvingLive": "正在检查 YouTube 直播状态..."
   },
   "settings": {
     "tooltip": "设置",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "检测到缺失媒体编解码器。请安装您的系统编解码器（例如 ubuntu-restricted-extras 或 gstreamer-plugins）以观看直播。"
+    },
+    "youtube": {
+      "offline": "该频道目前处于离线状态或未在直播。"
     }
   },
   "skeleton": {

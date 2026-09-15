@@ -26,7 +26,8 @@
     "platformCustom": "Kustom",
     "suggestedLabel": "Stream yang Disarankan",
     "suggestedDescription": "Siaran langsung populer saat ini",
-    "noSuggestions": "Tidak ada stream ditemukan"
+    "noSuggestions": "Tidak ada stream ditemukan",
+    "resolvingLive": "Memeriksa status siaran langsung YouTube..."
   },
   "settings": {
     "tooltip": "Pengaturan",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Codec media yang hilang terdeteksi. Silakan instal codec sistem Anda (mis., ubuntu-restricted-extras atau gstreamer-plugins) untuk menonton stream."
+    },
+    "youtube": {
+      "offline": "Saluran sedang offline atau tidak sedang melakukan siaran langsung saat ini."
     }
   },
   "skeleton": {

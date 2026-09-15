@@ -26,7 +26,8 @@
     "platformCustom": "Personalizado",
     "suggestedLabel": "Transmisiones Sugeridas",
     "suggestedDescription": "Transmisiones en vivo populares ahora",
-    "noSuggestions": "No se encontraron transmisiones"
+    "noSuggestions": "No se encontraron transmisiones",
+    "resolvingLive": "Comprobando estado de la transmisión en YouTube..."
   },
   "settings": {
     "tooltip": "Configuraciones",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Falta de códecs multimedia detectada. Instale los códecs de su sistema (ej: ubuntu-restricted-extras o gstreamer-plugins) para ver transmisiones."
+    },
+    "youtube": {
+      "offline": "El canal está desconectado o no está transmitiendo en este momento."
     }
   },
   "skeleton": {
