@@ -4,7 +4,12 @@ import BaseStream from "./BaseStream.vue";
 import { PLATFORMS } from "@/config/platforms";
 import { usePreferences } from "@/composables/usePreferences";
 
-const props = defineProps<{ channel: string; channelid: string; displayName?: string }>();
+const props = defineProps<{
+  channel: string;
+  channelid: string;
+  displayName?: string;
+  handle?: string;
+}>();
 
 const { adblockEnabled } = usePreferences();
 
@@ -20,6 +25,7 @@ const embedUrl = computed(() => {
     :channel="channel"
     platform="youtube"
     :display-name="displayName"
+    :handle="handle"
   >
     <iframe
       :key="`${channel}-${adblockEnabled}`"

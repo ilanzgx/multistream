@@ -49,7 +49,12 @@ const shareLink = computed(() => {
   // regular streams (kick, twitch, youtube)
   const regularStreams = streams.value.filter((s) => s.platform !== "custom");
   if (regularStreams.length) {
-    const streamsParam = regularStreams.map((s) => `${s.platform}:${s.channel}`).join(",");
+    const streamsParam = regularStreams
+      .map((s) => {
+        const identifier = (s.handle || s.displayName || s.channel).replace(/^@+/, "");
+        return `${s.platform}:${identifier}`;
+      })
+      .join(",");
     params.push(`streams=${streamsParam}`);
   }
 

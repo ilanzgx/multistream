@@ -18,6 +18,7 @@ export interface Stream {
   platform: Platform;
   iframeUrl?: string;
   displayName?: string;
+  handle?: string;
 }
 
 const _useStreams = () => {
@@ -135,7 +136,8 @@ const _useStreams = () => {
     channel: string,
     platform: Platform,
     iframeUrl?: string,
-    displayName?: string
+    displayName?: string,
+    handle?: string
   ) => {
     if (
       streams.value.some(
@@ -153,6 +155,8 @@ const _useStreams = () => {
 
     checkVideoCodecs();
 
+    const cleanHandle = handle ? handle.replace(/^@+/, "").trim() : undefined;
+
     const newId = crypto.randomUUID();
     streams.value = [
       ...streams.value,
@@ -162,6 +166,7 @@ const _useStreams = () => {
         platform,
         ...(iframeUrl && { iframeUrl }),
         ...(displayName && { displayName }),
+        ...(cleanHandle && { handle: cleanHandle }),
       },
     ];
 

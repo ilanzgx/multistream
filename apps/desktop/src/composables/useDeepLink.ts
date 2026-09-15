@@ -3,6 +3,7 @@ import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
 import { invoke } from "@tauri-apps/api/core";
 import { useStreams } from "./useStreams";
 import { parseUrlOptions } from "../lib/parseUrlOptions";
+import { resolveStream } from "../lib/streamResolver";
 import { toast } from "@/composables/useToast";
 import { i18n } from "../i18n";
 
@@ -21,7 +22,20 @@ export function useDeepLink() {
           const parsedStreams = parseUrlOptions(url.search);
           if (parsedStreams && parsedStreams.length > 0) {
             clearStreams();
-            parsedStreams.forEach((s) => addStream(s.channel, s.platform, s.iframeUrl));
+            for (const s of parsedStreams) {
+              const resolved = await resolveStream(s);
+              if (resolved) {
+                addStream(
+                  resolved.channel,
+                  resolved.platform,
+                  resolved.iframeUrl,
+                  resolved.displayName,
+                  resolved.handle
+                );
+              } else if (s.platform === "youtube") {
+                toast.error(i18n.global.t("toasts.youtube.offline"));
+              }
+            }
             toast.success(i18n.global.t("import.deepLinkSuccess"));
           }
         }

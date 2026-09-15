@@ -4,10 +4,20 @@ import { useStreams } from "../useStreams";
 import { toast } from "@/composables/useToast";
 import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
 import { onMounted, onUnmounted } from "vue";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 
-vi.mock("vue", () => ({
-  onMounted: vi.fn((fn) => fn()),
-  onUnmounted: vi.fn(),
+vi.mock("vue", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("vue")>();
+  return {
+    ...actual,
+    onMounted: vi.fn((fn) => fn()),
+    onUnmounted: vi.fn(),
+  };
+});
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(),
+  isTauri: vi.fn(() => false),
 }));
 
 vi.mock("@tauri-apps/plugin-deep-link", () => ({
@@ -22,6 +32,7 @@ vi.mock("../useStreams", () => ({
 vi.mock("@/composables/useToast", () => ({
   toast: {
     success: vi.fn(),
+    error: vi.fn(),
   },
 }));
 
@@ -71,7 +82,7 @@ describe("useDeepLink", () => {
     await urlHandler(["multistream://share?streams=twitch:s0mcs"]);
 
     expect(mockClearStreams).toHaveBeenCalled();
-    expect(mockAddStream).toHaveBeenCalledWith("s0mcs", "twitch", undefined);
+    expect(mockAddStream).toHaveBeenCalledWith("s0mcs", "twitch", undefined, undefined, undefined);
     expect(toast.success).toHaveBeenCalledWith("import.deepLinkSuccess");
   });
 
@@ -84,7 +95,13 @@ describe("useDeepLink", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(mockClearStreams).toHaveBeenCalled();
-    expect(mockAddStream).toHaveBeenCalledWith("qGYemvUYAac", "youtube", undefined);
+    expect(mockAddStream).toHaveBeenCalledWith(
+      "qGYemvUYAac",
+      "youtube",
+      undefined,
+      undefined,
+      undefined
+    );
     expect(toast.success).toHaveBeenCalledWith("import.deepLinkSuccess");
   });
 
@@ -136,5 +153,57 @@ describe("useDeepLink", () => {
 
     // The cleanup function should have been called immediately upon resolution
     expect(mockUnlisten).toHaveBeenCalled();
+  });
+
+  it("resolves YouTube handles via Tauri IPC when deep link contains handles", async () => {
+    // Arrange
+    vi.mocked(isTauri).mockReturnValue(true);
+    vi.mocked(invoke).mockResolvedValueOnce("5pzeFSTt18c");
+    let urlHandler: (urls: string[]) => void = () => {};
+    vi.mocked(onOpenUrl).mockImplementation(async (handler) => {
+      urlHandler = handler;
+      return mockUnlisten;
+    });
+
+    useDeepLink();
+
+    // Act
+    await urlHandler(["multistream://share?streams=youtube:@batzera1"]);
+
+    // Assert
+    expect(mockClearStreams).toHaveBeenCalled();
+    expect(invoke).toHaveBeenCalledWith("youtube_resolve_live_id", {
+      channelOrHandle: "batzera1",
+    });
+    expect(mockAddStream).toHaveBeenCalledWith(
+      "5pzeFSTt18c",
+      "youtube",
+      undefined,
+      "batzera1",
+      "batzera1"
+    );
+    expect(toast.success).toHaveBeenCalledWith("import.deepLinkSuccess");
+  });
+
+  it("shows offline toast when YouTube handle resolution returns null in deep link", async () => {
+    // Arrange
+    vi.mocked(isTauri).mockReturnValue(true);
+    vi.mocked(invoke).mockResolvedValueOnce(null);
+    let urlHandler: (urls: string[]) => void = () => {};
+    vi.mocked(onOpenUrl).mockImplementation(async (handler) => {
+      urlHandler = handler;
+      return mockUnlisten;
+    });
+
+    useDeepLink();
+
+    // Act
+    await urlHandler(["multistream://share?streams=youtube:batzera1"]);
+
+    // Assert
+    expect(mockClearStreams).toHaveBeenCalled();
+    expect(mockAddStream).not.toHaveBeenCalled();
+    expect(toast.error).toHaveBeenCalledWith("toasts.youtube.offline");
+    expect(toast.success).toHaveBeenCalledWith("import.deepLinkSuccess");
   });
 });

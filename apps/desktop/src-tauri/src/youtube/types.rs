@@ -6,6 +6,8 @@ pub struct YouTubeSuggestedStream {
     pub channel: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub handle: Option<String>,
     pub platform: String,
     pub title: String,
     pub category: String,

@@ -35,6 +35,7 @@ export interface SuggestedStream {
   viewerCount: number;
   thumbnail?: string;
   displayName?: string;
+  handle?: string;
 }
 
 type StatusMap = Record<string, LiveStatus>;

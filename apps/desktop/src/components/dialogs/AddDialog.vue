@@ -325,7 +325,8 @@ const handleAddStream = async () => {
         });
 
         if (liveId) {
-          addStream(liveId, "youtube", undefined, channel.replace(/^@/, ""));
+          const cleanChannel = channel.replace(/^@/, "");
+          addStream(liveId, "youtube", undefined, cleanChannel, cleanChannel);
           channelName.value = "";
           selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
           emit("update:open", false);
@@ -396,6 +397,7 @@ const handleQuickAdd = async (
   displayName?: string
 ) => {
   const cleanDisplayName = (displayName || channel).replace(/^@/, "");
+  const cleanHandle = channel.replace(/^@/, "");
   if (platform === "youtube") {
     const isVideoId = /^[a-zA-Z0-9_-]{11}$/.test(channel);
     if (channel.startsWith("@") || !isVideoId) {
@@ -405,7 +407,7 @@ const handleQuickAdd = async (
         });
 
         if (liveId) {
-          addStream(liveId, "youtube", undefined, cleanDisplayName);
+          addStream(liveId, "youtube", undefined, cleanDisplayName, cleanHandle);
           emit("update:open", false);
         } else {
           toast.error(t("toasts.youtube.offline"));
@@ -417,7 +419,7 @@ const handleQuickAdd = async (
     }
   }
 
-  addStream(channel, platform, iframeUrl, cleanDisplayName);
+  addStream(channel, platform, iframeUrl, cleanDisplayName, cleanHandle);
   emit("update:open", false);
 };
 

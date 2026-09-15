@@ -64,6 +64,7 @@ const props = defineProps<{
   channel: string;
   platform: "twitch" | "kick" | "youtube" | "custom";
   displayName?: string;
+  handle?: string;
 }>();
 
 const platformConfig = computed(() => {
@@ -77,6 +78,7 @@ const liveStatus = computed(() => getStatus(props.displayName || props.channel, 
 const resolvedChannelKey = computed(() => {
   if (props.platform === "youtube") {
     return (
+      props.handle ||
       liveStatus.value?.handle ||
       (props.channel.startsWith("@") ? props.channel : undefined) ||
       liveStatus.value?.displayName ||

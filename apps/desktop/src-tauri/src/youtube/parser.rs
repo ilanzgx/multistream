@@ -203,9 +203,35 @@ fn parse_single_video_renderer(renderer: &Value) -> Option<YouTubeSuggestedStrea
     let title =
         get_text_from_node(renderer.get("title")).unwrap_or_else(|| "YouTube Live".to_string());
 
-    let channel_name = get_text_from_node(renderer.get("ownerText"))
-        .or_else(|| get_text_from_node(renderer.get("shortBylineText")))
-        .unwrap_or_else(|| "YouTube".to_string());
+    let channel_node = renderer
+        .get("ownerText")
+        .or_else(|| renderer.get("shortBylineText"));
+    let channel_name = get_text_from_node(channel_node).unwrap_or_else(|| "YouTube".to_string());
+
+    let handle = channel_node
+        .and_then(|node| node.get("runs"))
+        .and_then(|r| r.as_array())
+        .and_then(|arr| arr.first())
+        .and_then(|run| run.get("navigationEndpoint"))
+        .and_then(|nav| {
+            nav.get("browseEndpoint")
+                .and_then(|be| be.get("canonicalBaseUrl"))
+                .and_then(|u| u.as_str())
+                .or_else(|| {
+                    nav.get("commandMetadata")
+                        .and_then(|cm| cm.get("webCommandMetadata"))
+                        .and_then(|wcm| wcm.get("url"))
+                        .and_then(|u| u.as_str())
+                })
+        })
+        .and_then(|url| {
+            let trimmed = url.trim_start_matches('/');
+            if trimmed.starts_with('@') {
+                Some(trimmed.trim_start_matches('@').to_string())
+            } else {
+                None
+            }
+        });
 
     let viewer_count = get_text_from_node(renderer.get("viewCountText"))
         .map(|t| parse_viewer_count(&t))
@@ -223,6 +249,7 @@ fn parse_single_video_renderer(renderer: &Value) -> Option<YouTubeSuggestedStrea
     Some(YouTubeSuggestedStream {
         channel: video_id.to_string(),
         display_name: Some(channel_name),
+        handle,
         platform: "youtube".to_string(),
         title,
         category: "Live".to_string(),
