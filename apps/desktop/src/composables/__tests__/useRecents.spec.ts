@@ -151,4 +151,33 @@ describe("useRecents composable unit tests", () => {
     // Assert
     expect(recents.value.length).toBe(1);
   });
+
+  it("should allow different custom streams with the same name if iframeUrls differ", () => {
+    // Arrange
+    const { addRecent, recents } = sut;
+
+    // Act
+    addRecent("Custom Stream", "custom", "https://site1.com/embed");
+    addRecent("Custom Stream", "custom", "https://site2.com/embed");
+
+    // Assert
+    expect(recents.value.length).toBe(2);
+    expect(recents.value[0]?.iframeUrl).toBe("https://site2.com/embed");
+    expect(recents.value[1]?.iframeUrl).toBe("https://site1.com/embed");
+  });
+
+  it("should remove custom recent channel specifically by iframeUrl", () => {
+    // Arrange
+    const { addRecent, removeRecent, recents } = sut;
+    addRecent("Custom Stream", "custom", "https://site1.com/embed");
+    addRecent("Custom Stream", "custom", "https://site2.com/embed");
+    expect(recents.value.length).toBe(2);
+
+    // Act
+    removeRecent("Custom Stream", "custom", "https://site1.com/embed");
+
+    // Assert
+    expect(recents.value.length).toBe(1);
+    expect(recents.value[0]?.iframeUrl).toBe("https://site2.com/embed");
+  });
 });

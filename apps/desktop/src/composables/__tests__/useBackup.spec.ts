@@ -217,6 +217,133 @@ describe("useBackup composable unit tests", () => {
         ...validBackup.watchHistory,
       });
     });
+
+    it("should preserve custom streams with different iframeUrls during import deduplication", () => {
+      // Arrange
+      const { importConfig, favorites, recents } = backupComposable;
+      favorites.value = [
+        {
+          channel: "Custom Stream",
+          platform: "custom",
+          iframeUrl: "https://site1.com",
+          addedAt: 1000,
+        },
+      ];
+      recents.value = [
+        {
+          channel: "Custom Stream",
+          platform: "custom",
+          iframeUrl: "https://site1.com",
+          addedAt: 1000,
+        },
+      ];
+
+      const backupWithCustom: BackupData = {
+        version: 1,
+        app: "multistream",
+        exportedAt: 1234567890,
+        streams: [],
+        favorites: [
+          {
+            channel: "Custom Stream",
+            platform: "custom",
+            iframeUrl: "https://site2.com",
+            addedAt: 2000,
+          },
+          {
+            channel: "Custom Stream",
+            platform: "custom",
+            iframeUrl: "https://site1.com",
+            addedAt: 2000,
+          },
+        ],
+        recents: [
+          {
+            channel: "Custom Stream",
+            platform: "custom",
+            iframeUrl: "https://site2.com",
+            addedAt: 2000,
+          },
+        ],
+        preferences: {
+          selectedChat: "none",
+          sidebarOpen: false,
+          notificationsEnabled: false,
+        },
+      };
+
+      // Act
+      importConfig(backupWithCustom);
+
+      // Assert
+      expect(favorites.value.length).toBe(2);
+      expect(favorites.value.map((f) => f.iframeUrl)).toEqual([
+        "https://site1.com",
+        "https://site2.com",
+      ]);
+      expect(recents.value.filter((r) => r.platform === "custom").length).toBe(2);
+    });
+
+    it("should import legacy backup without iframeUrls seamlessly", () => {
+      // Arrange
+      const { importConfig, favorites, recents } = backupComposable;
+      const legacyBackup: BackupData = {
+        version: 1,
+        app: "multistream",
+        exportedAt: 1234567890,
+        streams: [],
+        favorites: [{ channel: "Legacy Stream", platform: "custom", addedAt: 1000 }],
+        recents: [{ channel: "Legacy Recent", platform: "custom", addedAt: 1000 }],
+        preferences: {
+          selectedChat: "none",
+          sidebarOpen: false,
+          notificationsEnabled: false,
+        },
+      };
+
+      // Act
+      importConfig(legacyBackup);
+
+      // Assert
+      expect(favorites.value.length).toBe(1);
+      expect(favorites.value[0]?.channel).toBe("Legacy Stream");
+      expect(favorites.value[0]?.iframeUrl).toBeUndefined();
+      expect(recents.value.filter((r) => r.platform === "custom").length).toBe(1);
+    });
+
+    it("should upgrade legacy favorite without iframeUrl when merged with backup containing iframeUrl", () => {
+      // Arrange
+      const { importConfig, favorites } = backupComposable;
+      favorites.value = [{ channel: "Custom Stream", platform: "custom", addedAt: 1000 }];
+
+      const modernBackup: BackupData = {
+        version: 1,
+        app: "multistream",
+        exportedAt: 1234567890,
+        streams: [],
+        favorites: [
+          {
+            channel: "Custom Stream",
+            platform: "custom",
+            iframeUrl: "https://site.com",
+            addedAt: 2000,
+          },
+        ],
+        recents: [],
+        preferences: {
+          selectedChat: "none",
+          sidebarOpen: false,
+          notificationsEnabled: false,
+        },
+      };
+
+      // Act
+      importConfig(modernBackup);
+
+      // Assert
+      expect(favorites.value.length).toBe(1);
+      expect(favorites.value[0]?.iframeUrl).toBe("https://site.com");
+    });
   });
 
   describe("exportConfig", () => {

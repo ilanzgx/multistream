@@ -10,6 +10,7 @@ const props = defineProps<{
   channel: string;
   platform: Platform;
   displayName?: string;
+  iframeUrl?: string;
 }>();
 
 const emit = defineEmits<{
@@ -18,7 +19,7 @@ const emit = defineEmits<{
 }>();
 
 const { getStatus } = useLiveStatus();
-const { locale } = useI18n();
+const { t, locale } = useI18n();
 const status = computed(() => getStatus(props.displayName || props.channel, props.platform));
 
 const formatViewers = (count?: number): string => {
@@ -28,6 +29,19 @@ const formatViewers = (count?: number): string => {
     maximumFractionDigits: 1,
   }).format(count);
 };
+
+const chipTitle = computed(() => {
+  if (status.value?.isLive) {
+    const viewers =
+      status.value.viewerCount !== undefined ? formatViewers(status.value.viewerCount) : "?";
+    const category = status.value.category ? ` • ${status.value.category}` : "";
+    return `🔴 ${t("nativePlayer.live")} — ${t("stream.viewers", { count: viewers })}${category}`;
+  }
+  if (props.platform === "custom") {
+    return props.iframeUrl || props.displayName || props.channel;
+  }
+  return undefined;
+});
 </script>
 
 <template>
@@ -43,11 +57,7 @@ const formatViewers = (count?: number): string => {
       type="button"
       :data-testid="`stream-chip-${props.channel}`"
       class="flex items-center gap-1.5 px-2.5 py-1.5 w-full min-w-0 cursor-pointer text-left focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40 rounded-md"
-      :title="
-        status?.isLive
-          ? `🔴 ${$t('nativePlayer.live')} — ${$t('stream.viewers', { count: status?.viewerCount !== undefined ? formatViewers(status.viewerCount) : '?' })}${status?.category ? ` • ${status?.category}` : ''}`
-          : undefined
-      "
+      :title="chipTitle"
       @click="emit('click')"
     >
       <component

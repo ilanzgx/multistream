@@ -28,7 +28,12 @@ const safeUrl = computed(() => {
 </script>
 
 <template>
-  <BaseStream :channelid="channelid" :channel="channel" platform="custom">
+  <BaseStream
+    :channelid="channelid"
+    :channel="channel"
+    platform="custom"
+    :iframe-url="safeUrl || props.iframeUrl"
+  >
     <iframe
       :title="`Custom Stream: ${channel}`"
       :src="safeUrl"

@@ -10,6 +10,19 @@ export interface FavoriteChannel {
   addedAt: number;
 }
 
+const isMatchingFavorite = (
+  favorite: FavoriteChannel,
+  channel: string,
+  platform: Platform,
+  iframeUrl?: string
+): boolean => {
+  if (favorite.platform !== platform) return false;
+  if (platform === "custom" && (iframeUrl || favorite.iframeUrl)) {
+    return favorite.iframeUrl?.toLowerCase() === (iframeUrl || "").toLowerCase();
+  }
+  return favorite.channel.toLowerCase() === channel.toLowerCase();
+};
+
 const _useFavorites = () => {
   const favorites = useStorage<FavoriteChannel[]>("favorites", []);
 
@@ -30,20 +43,31 @@ const _useFavorites = () => {
     iframeUrl?: string,
     displayName?: string
   ) => {
-    const alreadyExists = favorites.value.some(
-      (f) => f.channel.toLowerCase() === channel.toLowerCase() && f.platform === platform
-    );
-    if (alreadyExists) return;
+    if (favorites.value.some((f) => isMatchingFavorite(f, channel, platform, iframeUrl))) {
+      return;
+    }
+
+    const remainingFavorites = favorites.value.filter((f) => {
+      if (
+        f.platform === platform &&
+        f.channel.toLowerCase() === channel.toLowerCase() &&
+        !f.iframeUrl &&
+        iframeUrl
+      ) {
+        return false;
+      }
+      return true;
+    });
 
     favorites.value = [
       {
         channel,
         platform,
-        ...(iframeUrl && { iframeUrl }),
-        ...(displayName && { displayName }),
         addedAt: Date.now(),
+        displayName,
+        iframeUrl,
       },
-      ...favorites.value,
+      ...remainingFavorites,
     ];
   };
 
@@ -52,11 +76,12 @@ const _useFavorites = () => {
    *
    * @param channel The channel name
    * @param platform The platform
+   * @param iframeUrl The iframe URL (optional)
    * @return void
    */
-  const removeFavorite = (channel: string, platform: Platform) => {
+  const removeFavorite = (channel: string, platform: Platform, iframeUrl?: string) => {
     favorites.value = favorites.value.filter(
-      (f) => !(f.channel.toLowerCase() === channel.toLowerCase() && f.platform === platform)
+      (f) => !isMatchingFavorite(f, channel, platform, iframeUrl)
     );
   };
 

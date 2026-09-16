@@ -4,7 +4,7 @@ import { useFavorites } from "./useFavorites";
 import { useRecents } from "./useRecents";
 import { usePreferences } from "./usePreferences";
 import { useI18n } from "vue-i18n";
-import type { Stream } from "./useStreams";
+import type { Stream, Platform } from "./useStreams";
 import type { FavoriteChannel } from "./useFavorites";
 import type { RecentChannel } from "./useRecents";
 
@@ -113,6 +113,17 @@ const deduplicateBy = <T>(items: T[], keyFn: (item: T) => string): T[] => {
     if (!map.has(key)) map.set(key, item);
   }
   return Array.from(map.values());
+};
+
+const getStreamStorageKey = (item: {
+  platform: Platform;
+  channel: string;
+  iframeUrl?: string;
+}): string => {
+  if (item.platform === "custom" && item.iframeUrl) {
+    return `custom:${item.iframeUrl.toLowerCase()}`;
+  }
+  return `${item.platform}:${item.channel.toLowerCase()}`;
 };
 
 const _useBackup = () => {
@@ -267,9 +278,18 @@ const _useBackup = () => {
     // 1. Grid (streams.value) is KEPT INTACT. We do not apply data.streams to the grid.
 
     // 2. Additive Merge for Favorites
-    favorites.value = deduplicateBy(
+    const mergedFavorites = deduplicateBy(
       [...favorites.value, ...data.favorites],
-      (f) => `${f.platform}:${f.channel.toLowerCase()}`
+      getStreamStorageKey
+    );
+    const favCustomWithUrls = new Set(
+      mergedFavorites
+        .filter((f) => f.platform === "custom" && f.iframeUrl)
+        .map((f) => f.channel.toLowerCase())
+    );
+    favorites.value = mergedFavorites.filter(
+      (f) =>
+        !(f.platform === "custom" && !f.iframeUrl && favCustomWithUrls.has(f.channel.toLowerCase()))
     );
 
     // 3. Additive Merge for Recents
@@ -283,9 +303,22 @@ const _useBackup = () => {
       addedAt: Date.now(),
     }));
 
-    recents.value = deduplicateBy(
+    const mergedRecents = deduplicateBy(
       [...currentStreamsAsRecents, ...data.recents, ...recents.value],
-      (r) => `${r.platform}:${r.channel.toLowerCase()}`
+      getStreamStorageKey
+    );
+    const recentsCustomWithUrls = new Set(
+      mergedRecents
+        .filter((r) => r.platform === "custom" && r.iframeUrl)
+        .map((r) => r.channel.toLowerCase())
+    );
+    recents.value = mergedRecents.filter(
+      (r) =>
+        !(
+          r.platform === "custom" &&
+          !r.iframeUrl &&
+          recentsCustomWithUrls.has(r.channel.toLowerCase())
+        )
     );
 
     // 4. Apply Preferences (Overwrite current with backup)

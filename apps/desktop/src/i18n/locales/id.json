@@ -241,7 +241,8 @@
       "record": "Rekam streaming",
       "stopRecord": "Hentikan rekaman",
       "focus": "Fokuskan streaming",
-      "unfocus": "Batal fokuskan"
+      "unfocus": "Batal fokuskan",
+      "copyUrl": "Salin URL siaran"
     }
   },
   "empty": {

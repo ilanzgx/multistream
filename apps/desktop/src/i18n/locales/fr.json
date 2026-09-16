@@ -241,7 +241,8 @@
       "record": "Enregistrer le stream",
       "stopRecord": "Arrêter l'enregistrement",
       "focus": "Centrer le stream",
-      "unfocus": "Quitter le centrage"
+      "unfocus": "Quitter le centrage",
+      "copyUrl": "Copier l'URL du stream"
     }
   },
   "empty": {

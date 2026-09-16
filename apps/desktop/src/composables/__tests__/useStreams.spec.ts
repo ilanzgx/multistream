@@ -119,6 +119,33 @@ describe("useStreams composable unit tests", () => {
     expect(streams.value.length).toBe(2);
   });
 
+  it("should allow different custom streams with the same name if iframeUrls differ", () => {
+    // Arrange
+    const { addStream, streams } = sut;
+
+    // Act
+    addStream("Custom Stream", "custom", "https://site1.com/embed");
+    addStream("Custom Stream", "custom", "https://site2.com/embed");
+
+    // Assert
+    expect(streams.value.length).toBe(2);
+    expect(streams.value[0]?.iframeUrl).toBe("https://site1.com/embed");
+    expect(streams.value[1]?.iframeUrl).toBe("https://site2.com/embed");
+  });
+
+  it("should prevent duplicate custom streams with the same iframeUrl", () => {
+    // Arrange
+    const { addStream, streams } = sut;
+
+    // Act
+    addStream("Stream 1", "custom", "https://site.com/embed");
+    addStream("Stream 2", "custom", "https://site.com/embed");
+
+    // Assert
+    expect(streams.value.length).toBe(1);
+    expect(toast.warning).toHaveBeenCalledWith("toasts.add.alreadyAdded");
+  });
+
   it("should remove a stream by ID and show displayName in toast", () => {
     // Arrange
     const { addStream, removeStream, streams } = sut;

@@ -241,7 +241,8 @@
       "record": "录制直播",
       "stopRecord": "停止录制",
       "focus": "聚焦直播",
-      "unfocus": "取消聚焦"
+      "unfocus": "取消聚焦",
+      "copyUrl": "复制直播URL"
     }
   },
   "empty": {

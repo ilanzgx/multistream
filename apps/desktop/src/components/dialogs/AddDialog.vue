@@ -16,7 +16,7 @@ import ChannelSearchDropdown from "./_components/ChannelSearchDropdown.vue";
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useRecents } from "@/composables/useRecents";
 import { useLiveStatus, type SuggestedStream } from "@/composables/useLiveStatus";
-import { useFavorites } from "@/composables/useFavorites";
+import { useFavorites, type FavoriteChannel } from "@/composables/useFavorites";
 import { useChannelSearch } from "@/composables/useChannelSearch";
 import { PLATFORMS } from "@/config/platforms";
 import { REFRESH_CONFIG } from "@/config/api";
@@ -45,32 +45,31 @@ const {
   refreshSuggestions,
   fetchStreamsForCategory,
 } = useLiveStatus();
-const { favorites, removeFavorite } = useFavorites();
+const { favorites, addFavorite, removeFavorite } = useFavorites();
 const { t, locale } = useI18n();
 
 const sortedFavorites = computed(() => {
+  const getFavoriteMeta = (fav: FavoriteChannel) => {
+    const name = fav.displayName || fav.channel;
+    const status = getStatus(name, fav.platform);
+    const tier = status?.isLive ? 1 : fav.platform === "custom" ? 2 : 3;
+    const viewers = status?.viewerCount ?? 0;
+    return { name, tier, viewers };
+  };
+
   return [...favorites.value].toSorted((a, b) => {
-    const statusA = getStatus(a.channel, a.platform);
-    const statusB = getStatus(b.channel, b.platform);
+    const metaA = getFavoriteMeta(a);
+    const metaB = getFavoriteMeta(b);
 
-    const aLive = statusA?.isLive;
-    const bLive = statusB?.isLive;
-
-    // sort by live status
-    if (aLive && !bLive) return -1;
-    if (!aLive && bLive) return 1;
-
-    // sort by viewers count
-    if (aLive && bLive) {
-      const viewersA = statusA?.viewerCount ?? 0;
-      const viewersB = statusB?.viewerCount ?? 0;
-      if (viewersA !== viewersB) {
-        return viewersB - viewersA;
-      }
+    if (metaA.tier !== metaB.tier) {
+      return metaA.tier - metaB.tier;
     }
 
-    // fallback to alphabetical sort
-    return a.channel.localeCompare(b.channel);
+    if (metaA.tier === 1 && metaA.viewers !== metaB.viewers) {
+      return metaB.viewers - metaA.viewers;
+    }
+
+    return metaA.name.localeCompare(metaB.name);
   });
 });
 
@@ -264,6 +263,11 @@ const handleIframeBlur = () => {
 
 const isResolvingLive = ref(false);
 
+const createCustomStreamName = (name?: string): string => {
+  const trimmed = name?.trim();
+  return trimmed || `custom-${crypto.randomUUID().slice(0, 4)}`;
+};
+
 const handleAddStream = async () => {
   if (!canSubmit.value || isResolvingLive.value) return;
 
@@ -273,13 +277,25 @@ const handleAddStream = async () => {
 
   if (isCustom.value) {
     let url = iframeUrl.value.trim();
-    const name = channelName.value.trim() || t("add.customStreamDefault");
+    const name = createCustomStreamName(channelName.value);
 
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       url = `https://${url}`;
     }
 
     addStream(name, "custom", url);
+
+    const legacyFav = favorites.value.find(
+      (f) =>
+        f.platform === "custom" &&
+        !f.iframeUrl &&
+        (f.channel.toLowerCase() === name.toLowerCase() ||
+          (channelName.value && f.channel.toLowerCase() === channelName.value.trim().toLowerCase()))
+    );
+    if (legacyFav) {
+      addFavorite(legacyFav.channel, "custom", url, legacyFav.displayName);
+    }
+
     channelName.value = "";
     iframeUrl.value = "";
     selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
@@ -293,8 +309,8 @@ const handleAddStream = async () => {
   if (parsedResult) {
     selectedPlatform.value = parsedResult.platform;
     if (parsedResult.platform === "custom") {
-      let url = parsedResult.iframeUrl || "";
-      const name = t("add.customStreamDefault");
+      const url = parsedResult.iframeUrl || "";
+      const name = createCustomStreamName();
       addStream(name, "custom", url);
       channelName.value = "";
       iframeUrl.value = "";
@@ -393,7 +409,7 @@ const canSubmit = computed(() => {
 const handleQuickAdd = async (
   channel: string,
   platform: Platform,
-  iframeUrl?: string,
+  url?: string,
   displayName?: string
 ) => {
   const cleanDisplayName = (displayName || channel).replace(/^@/, "");
@@ -419,7 +435,13 @@ const handleQuickAdd = async (
     }
   }
 
-  addStream(channel, platform, iframeUrl, cleanDisplayName, cleanHandle);
+  if (platform === "custom" && !url) {
+    selectedPlatform.value = "custom";
+    channelName.value = cleanDisplayName;
+    return;
+  }
+
+  addStream(channel, platform, url, cleanDisplayName, cleanHandle);
   emit("update:open", false);
 };
 
@@ -610,10 +632,11 @@ watch(
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1.5">
                   <StreamChip
                     v-for="recent in recents"
-                    :key="`${recent.platform}:${recent.channel}`"
+                    :key="`${recent.platform}:${recent.channel}:${recent.iframeUrl || ''}`"
                     :channel="recent.handle || recent.channel"
                     :display-name="recent.displayName"
                     :platform="recent.platform"
+                    :iframe-url="recent.iframeUrl"
                     class="w-full"
                     @click="
                       handleQuickAdd(
@@ -623,7 +646,7 @@ watch(
                         recent.displayName
                       )
                     "
-                    @remove="removeRecent(recent.channel, recent.platform)"
+                    @remove="removeRecent(recent.channel, recent.platform, recent.iframeUrl)"
                   />
                 </div>
               </div>
@@ -650,20 +673,23 @@ watch(
                 >
                   <StreamChip
                     v-for="favorite in sortedFavorites"
-                    :key="`${favorite.platform}:${favorite.channel}`"
+                    :key="`${favorite.platform}:${favorite.channel}:${favorite.iframeUrl || ''}`"
                     :channel="favorite.channel"
                     :display-name="favorite.displayName"
                     :platform="favorite.platform"
+                    :iframe-url="favorite.iframeUrl"
                     class="w-full"
                     @click="
                       handleQuickAdd(
                         favorite.channel,
                         favorite.platform,
-                        undefined,
+                        favorite.iframeUrl,
                         favorite.displayName
                       )
                     "
-                    @remove="removeFavorite(favorite.channel, favorite.platform)"
+                    @remove="
+                      removeFavorite(favorite.channel, favorite.platform, favorite.iframeUrl)
+                    "
                   />
                 </div>
               </div>

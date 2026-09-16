@@ -241,7 +241,8 @@
       "record": "Yayını kaydet",
       "stopRecord": "Kaydı durdur",
       "focus": "Yayına odaklan",
-      "unfocus": "Odaklanmayı kaldır"
+      "unfocus": "Odaklanmayı kaldır",
+      "copyUrl": "Yayın URL'sini kopyala"
     }
   },
   "empty": {

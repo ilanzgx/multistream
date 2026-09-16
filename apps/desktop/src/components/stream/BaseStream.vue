@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
-import { X, Heart, Maximize2, Camera, Circle, CircleStop, Clock } from "@lucide/vue";
+import { X, Heart, Maximize2, Camera, Circle, CircleStop, Clock, Link } from "@lucide/vue";
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
@@ -65,6 +65,7 @@ const props = defineProps<{
   platform: "twitch" | "kick" | "youtube" | "custom";
   displayName?: string;
   handle?: string;
+  iframeUrl?: string;
 }>();
 
 const platformConfig = computed(() => {
@@ -99,6 +100,12 @@ const isFavorite = computed(() => {
 
   return favorites.value.some((f) => {
     if (f.platform !== props.platform) return false;
+    if (props.platform === "custom") {
+      if (props.iframeUrl || f.iframeUrl) {
+        return f.iframeUrl?.toLowerCase() === (props.iframeUrl || "").toLowerCase();
+      }
+      return f.channel.toLowerCase() === rawChannel;
+    }
     const fav = f.channel.toLowerCase();
     return (
       fav === channelToMatch ||
@@ -357,12 +364,12 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
   }
 
   if (isFavorite.value) {
-    removeFavorite(channelToSave, platform);
+    removeFavorite(channelToSave, platform, props.iframeUrl);
     if (props.channel && props.channel !== channelToSave) {
-      removeFavorite(props.channel, platform);
+      removeFavorite(props.channel, platform, props.iframeUrl);
     }
     if (props.displayName && props.displayName !== channelToSave) {
-      removeFavorite(props.displayName, platform);
+      removeFavorite(props.displayName, platform, props.iframeUrl);
     }
     if (liveStatus.value?.handle && liveStatus.value.handle !== channelToSave) {
       removeFavorite(liveStatus.value.handle, platform);
@@ -378,7 +385,7 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
     if (platform === "youtube" && displayNameToSave) {
       displayNameToSave = displayNameToSave.replace(/^@/, "");
     }
-    addFavorite(channelToSave, platform, undefined, displayNameToSave);
+    addFavorite(channelToSave, platform, props.iframeUrl, displayNameToSave);
     checkAll();
     toast.success(`${channelToSave} ${t("toasts.favorite.added")}`);
   }
@@ -395,6 +402,16 @@ const handleFocusStream = (channelId: string) => {
 const handleScreenshot = () => {
   if (containerRef.value) {
     captureStream(containerRef.value, props.channel, props.platform);
+  }
+};
+
+const handleCopyUrl = async () => {
+  if (!props.iframeUrl) return;
+  try {
+    await navigator.clipboard.writeText(props.iframeUrl);
+    toast.success(t("share.toast"));
+  } catch (err) {
+    console.error("Failed to copy URL:", err);
   }
 };
 </script>
@@ -605,6 +622,18 @@ const handleScreenshot = () => {
         @click="handleScreenshot"
       >
         <Camera :class="isMiniaturized ? 'size-3' : 'size-4'" />
+      </button>
+      <!-- copy stream url button (for custom streams with iframeUrl) -->
+      <button
+        v-if="props.platform === 'custom' && props.iframeUrl"
+        :aria-label="$t('stream.actions.copyUrl')"
+        :class="[
+          'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-emerald-500/80 hover:text-white hover:border-emerald-400/50 transition-all duration-200 hover:scale-110 cursor-pointer',
+          isMiniaturized ? 'size-5' : 'size-8',
+        ]"
+        @click="handleCopyUrl"
+      >
+        <Link :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <!-- record button -->
       <template v-if="isDependenciesInstalled && props.platform !== 'custom'">

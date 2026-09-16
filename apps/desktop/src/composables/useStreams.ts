@@ -21,6 +21,19 @@ export interface Stream {
   handle?: string;
 }
 
+const isMatchingStream = (
+  stream: Stream,
+  channel: string,
+  platform: Platform,
+  iframeUrl?: string
+): boolean => {
+  if (stream.platform !== platform) return false;
+  if (platform === "custom" && (iframeUrl || stream.iframeUrl)) {
+    return stream.iframeUrl?.toLowerCase() === (iframeUrl || "").toLowerCase();
+  }
+  return stream.channel.toLowerCase() === channel.toLowerCase();
+};
+
 const _useStreams = () => {
   const { t } = useI18n();
   const streams = useStorage<Stream[]>("streams", []);
@@ -139,11 +152,7 @@ const _useStreams = () => {
     displayName?: string,
     handle?: string
   ) => {
-    if (
-      streams.value.some(
-        (s) => s.channel.toLowerCase() === channel.toLowerCase() && s.platform === platform
-      )
-    ) {
+    if (streams.value.some((s) => isMatchingStream(s, channel, platform, iframeUrl))) {
       toast.warning(t("toasts.add.alreadyAdded"));
       return;
     }

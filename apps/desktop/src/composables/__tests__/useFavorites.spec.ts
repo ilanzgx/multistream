@@ -112,6 +112,48 @@ describe("useFavorites composable unit tests", () => {
     expect(favorites.value[0]?.channel).toBe("robb");
   });
 
+  it("should allow different custom streams with the same name if iframeUrls differ", () => {
+    // Arrange
+    const { addFavorite, favorites } = sut;
+
+    // Act
+    addFavorite("Custom Stream", "custom", "https://site1.com/embed");
+    addFavorite("Custom Stream", "custom", "https://site2.com/embed");
+
+    // Assert
+    expect(favorites.value.length).toBe(2);
+    expect(favorites.value[0]?.iframeUrl).toBe("https://site2.com/embed");
+    expect(favorites.value[1]?.iframeUrl).toBe("https://site1.com/embed");
+  });
+
+  it("should prevent duplicate custom streams with the same iframeUrl", () => {
+    // Arrange
+    const { addFavorite, favorites } = sut;
+
+    // Act
+    addFavorite("Stream 1", "custom", "https://site.com/embed");
+    addFavorite("Stream 2", "custom", "https://site.com/embed");
+
+    // Assert
+    expect(favorites.value.length).toBe(1);
+    expect(favorites.value[0]?.channel).toBe("Stream 1");
+  });
+
+  it("should remove custom stream properly using iframeUrl", () => {
+    // Arrange
+    const { addFavorite, removeFavorite, favorites } = sut;
+    addFavorite("Custom Stream", "custom", "https://site1.com/embed");
+    addFavorite("Custom Stream", "custom", "https://site2.com/embed");
+    expect(favorites.value.length).toBe(2);
+
+    // Act
+    removeFavorite("Custom Stream", "custom", "https://site1.com/embed");
+
+    // Assert
+    expect(favorites.value.length).toBe(1);
+    expect(favorites.value[0]?.iframeUrl).toBe("https://site2.com/embed");
+  });
+
   it("should clear all favorites", () => {
     // Arrange
     const { addFavorite, clearFavorites, favorites } = sut;

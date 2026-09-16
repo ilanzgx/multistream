@@ -241,7 +241,8 @@
       "record": "Gravar stream",
       "stopRecord": "Parar gravação",
       "focus": "Focar stream",
-      "unfocus": "Desfocar stream"
+      "unfocus": "Desfocar stream",
+      "copyUrl": "Copiar URL da transmissão"
     }
   },
   "empty": {

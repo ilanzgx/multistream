@@ -12,6 +12,30 @@ export interface RecentChannel {
 
 const MAX_RECENTS = 8;
 
+const isMatchingRecent = (
+  recent: RecentChannel,
+  targetChannel: string,
+  platform: Platform,
+  iframeUrl?: string,
+  handle?: string
+): boolean => {
+  if (recent.platform !== platform) return false;
+  if (platform === "custom" && (iframeUrl || recent.iframeUrl)) {
+    return recent.iframeUrl?.toLowerCase() === (iframeUrl || "").toLowerCase();
+  }
+  const cleanTarget = targetChannel.toLowerCase();
+  const cleanHandle = handle?.toLowerCase();
+  const recentChannel = recent.channel.toLowerCase();
+  const recentHandle = recent.handle?.toLowerCase();
+
+  return (
+    recentChannel === cleanTarget ||
+    (cleanHandle !== undefined && recentHandle === cleanHandle) ||
+    (cleanHandle !== undefined && recentChannel === cleanHandle) ||
+    (recentHandle !== undefined && recentHandle === cleanTarget)
+  );
+};
+
 const _useRecents = () => {
   const recents = useStorage<RecentChannel[]>("recents", []);
 
@@ -28,14 +52,7 @@ const _useRecents = () => {
       platform === "youtube" && cleanHandle ? cleanHandle : channel.replace(/^@+/, "").trim();
 
     recents.value = recents.value.filter(
-      (r) =>
-        !(
-          (r.channel.toLowerCase() === cleanChannel.toLowerCase() ||
-            (cleanHandle && r.handle?.toLowerCase() === cleanHandle.toLowerCase()) ||
-            (cleanHandle && r.channel.toLowerCase() === cleanHandle.toLowerCase()) ||
-            (r.handle && r.handle.toLowerCase() === cleanChannel.toLowerCase())) &&
-          r.platform === platform
-        )
+      (r) => !isMatchingRecent(r, cleanChannel, platform, iframeUrl, cleanHandle)
     );
 
     recents.value = [
@@ -51,15 +68,9 @@ const _useRecents = () => {
     ].slice(0, MAX_RECENTS);
   };
 
-  const removeRecent = (channel: string, platform: Platform) => {
-    const clean = channel.replace(/^@+/, "").toLowerCase();
-    recents.value = recents.value.filter(
-      (r) =>
-        !(
-          (r.channel.toLowerCase() === clean || (r.handle && r.handle.toLowerCase() === clean)) &&
-          r.platform === platform
-        )
-    );
+  const removeRecent = (channel: string, platform: Platform, iframeUrl?: string) => {
+    const clean = channel.replace(/^@+/, "").trim();
+    recents.value = recents.value.filter((r) => !isMatchingRecent(r, clean, platform, iframeUrl));
   };
 
   /**

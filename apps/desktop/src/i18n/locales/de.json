@@ -241,7 +241,8 @@
       "record": "Stream aufnehmen",
       "stopRecord": "Aufnahme stoppen",
       "focus": "Stream fokussieren",
-      "unfocus": "Fokus aufheben"
+      "unfocus": "Fokus aufheben",
+      "copyUrl": "Stream-URL kopieren"
     }
   },
   "empty": {
