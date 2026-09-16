@@ -342,6 +342,13 @@ fn find_channel_info(node: &Value) -> (Option<String>, Option<String>) {
     (display_name, handle)
 }
 
+pub fn is_interstitial_or_challenge_page(html: &str) -> bool {
+    html.contains("consent.youtube.com")
+        || html.contains("action=\"https://consent.youtube.com")
+        || html.contains("class=\"g-recaptcha\"")
+        || html.contains("Our systems have detected unusual traffic")
+}
+
 pub async fn resolve_channel_live_status(
     client: &reqwest::Client,
     channel_or_handle: &str,
@@ -366,26 +373,36 @@ pub async fn resolve_channel_live_status(
         format!("https://www.youtube.com/@{}/live", clean)
     };
 
-    let resp = client
-        .get(&url)
-        .header("User-Agent", USER_AGENT)
-        .header("Accept-Language", "en-US,en;q=0.9")
-        .header(
-            "Accept",
-            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        )
-        .send()
-        .await;
+    let mut retries = 1;
+    let res = loop {
+        let resp = client
+            .get(&url)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header(
+                "Cookie",
+                "CONSENT=PENDING+999; SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg",
+            )
+            .header(
+                "Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            )
+            .send()
+            .await;
 
-    let res = match resp {
-        Ok(r) => {
-            if r.status().is_server_error() || r.status() == reqwest::StatusCode::TOO_MANY_REQUESTS
-            {
-                return None;
+        match resp {
+            Ok(r) if r.status().is_success() => break Some(r),
+            _ if retries > 0 => {
+                retries -= 1;
+                tokio::time::sleep(Duration::from_millis(500)).await;
             }
-            r
+            _ => break None,
         }
-        Err(_) => return None,
+    };
+
+    let res = match res {
+        Some(r) => r,
+        None => return None,
     };
 
     let final_url = res.url().clone();
@@ -403,6 +420,10 @@ pub async fn resolve_channel_live_status(
         Ok(t) => t,
         Err(_) => return None,
     };
+
+    if is_interstitial_or_challenge_page(&html) {
+        return None;
+    }
 
     let canonical_id = extract_canonical_video_id(&html);
     let mut video_id = video_id_from_url.or(canonical_id);
@@ -1072,5 +1093,19 @@ mod tests {
 
         // Assert
         assert_eq!(count, Some(14200));
+    }
+
+    #[test]
+    fn should_detect_consent_or_challenge_pages() {
+        // Arrange
+        let consent_html =
+            r#"<html><body><form action="https://consent.youtube.com/save"></form></body></html>"#;
+        let captcha_html = r#"<html><body><div class="g-recaptcha"></div></body></html>"#;
+        let normal_html = r#"<html><head><link rel="canonical" href="https://www.youtube.com/watch?v=12345"></head></html>"#;
+
+        // Act & Assert
+        assert!(is_interstitial_or_challenge_page(consent_html));
+        assert!(is_interstitial_or_challenge_page(captcha_html));
+        assert!(!is_interstitial_or_challenge_page(normal_html));
     }
 }

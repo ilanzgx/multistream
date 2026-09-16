@@ -323,12 +323,21 @@ async function checkYouTubeStreams(channels: string[]): Promise<StatusMap | null
         avatarUrl: item.avatarUrl ?? item.avatar_url,
         thumbnailUrl: vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : undefined,
       };
-      result[`youtube:${item.channel.toLowerCase()}`] = statusObj;
+      const rawChannel = item.channel.toLowerCase();
+      const cleanChannel = rawChannel.replace(/^@+/, "");
+      result[`youtube:${rawChannel}`] = statusObj;
+      result[`youtube:${cleanChannel}`] = statusObj;
+      result[`youtube:@${cleanChannel}`] = statusObj;
+
+      if (handle) {
+        const rawHandle = handle.toLowerCase();
+        const cleanHandle = rawHandle.replace(/^@+/, "");
+        result[`youtube:${rawHandle}`] = statusObj;
+        result[`youtube:${cleanHandle}`] = statusObj;
+        result[`youtube:@${cleanHandle}`] = statusObj;
+      }
       if (vid) {
         result[`youtube:${vid.toLowerCase()}`] = statusObj;
-      }
-      if (handle) {
-        result[`youtube:${handle.toLowerCase()}`] = statusObj;
       }
       if (displayName) {
         result[`youtube:${displayName.toLowerCase()}`] = statusObj;
@@ -662,6 +671,7 @@ const _useLiveStatus = () => {
   const statuses = ref<StatusMap>({});
   const previousStatuses = ref<StatusMap>({});
   const hasCompletedFirstCheck = ref(false);
+  const offlineCounters = new Map<string, number>();
   const suggestedStreams = ref<SuggestedStream[]>([]);
   const lastSuggestionsFetch = ref<number>(0);
   const isChecking = ref(false);
@@ -884,12 +894,19 @@ const _useLiveStatus = () => {
         if (newStatus === undefined) continue;
 
         if (newStatus.isLive) {
+          offlineCounters.delete(key);
           nextPreviousStatuses[key] = newStatus;
         } else {
           const isNewChannel = !(key in previousStatuses.value);
-          const confirmedOffline = statuses.value[key]?.isLive === false;
-          if (isNewChannel || confirmedOffline) {
+          if (isNewChannel) {
             nextPreviousStatuses[key] = newStatus;
+          } else {
+            const count = (offlineCounters.get(key) || 0) + 1;
+            offlineCounters.set(key, count);
+            if (count >= 2) {
+              nextPreviousStatuses[key] = newStatus;
+              offlineCounters.delete(key);
+            }
           }
         }
       }
@@ -1177,6 +1194,13 @@ const _useLiveStatus = () => {
     return interleave(twitchStreams, kickStreams);
   };
 
+  const __test_resetState = () => {
+    statuses.value = {};
+    previousStatuses.value = {};
+    hasCompletedFirstCheck.value = false;
+    offlineCounters.clear();
+  };
+
   return {
     statuses,
     suggestedStreams,
@@ -1190,6 +1214,7 @@ const _useLiveStatus = () => {
     checkAll,
     refreshSuggestions,
     fetchStreamsForCategory,
+    __test_resetState,
   };
 };
 

@@ -1,7 +1,8 @@
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, computed, defineAsyncComponent, watch } from "vue";
 import { usePreferences } from "@/composables/usePreferences";
-import { useStreams } from "@/composables/useStreams";
+import { useStreams, type Stream } from "@/composables/useStreams";
+import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useTranscription } from "@/composables/useTranscription";
 import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
 import { isTauri } from "@/composables/useUpdater";
@@ -152,6 +153,21 @@ const selectedStreamObj = computed(() =>
   streams.value.find((s) => `${s.platform}:${s.channel}` === selectedChat.value)
 );
 
+const { getStatus } = useLiveStatus();
+
+const getStreamDisplayName = (stream: Stream) => {
+  if (stream.platform === "youtube") {
+    const status = getStatus(stream.displayName || stream.channel, "youtube");
+    const resolvedName =
+      stream.displayName || status?.displayName || stream.handle || status?.handle;
+
+    if (resolvedName) {
+      return resolvedName.replace(/^@/, "");
+    }
+  }
+  return stream.displayName || stream.channel;
+};
+
 function openAddDialog() {
   addDialogOpen.value = true;
 }
@@ -266,7 +282,7 @@ onUnmounted(() => {
                     :is="platformIcons[selectedStreamObj.platform]"
                     class="w-4 h-4 shrink-0"
                   />
-                  <span class="truncate">{{ selectedStreamObj.channel }}</span>
+                  <span class="truncate">{{ getStreamDisplayName(selectedStreamObj) }}</span>
                 </div>
                 <span v-else>{{ $t("chat.selectPlaceholder") }}</span>
               </SelectValue>
@@ -281,7 +297,7 @@ onUnmounted(() => {
                 >
                   <div class="flex items-center gap-2">
                     <component :is="platformIcons[stream.platform]" class="w-4 h-4 shrink-0" />
-                    <span class="truncate">{{ stream.channel }}</span>
+                    <span class="truncate">{{ getStreamDisplayName(stream) }}</span>
                   </div>
                 </SelectItem>
                 <SelectItem

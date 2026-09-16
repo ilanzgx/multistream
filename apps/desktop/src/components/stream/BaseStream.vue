@@ -352,7 +352,7 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
         if (displayName) statuses.value[`youtube:${displayName.toLowerCase()}`] = statusObj;
 
         if (handle) {
-          channelToSave = handle;
+          channelToSave = handle.startsWith("@") ? handle : `@${handle}`;
         }
         if (displayName) {
           displayNameToSave = displayName;
@@ -362,6 +362,15 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
       // silently ignore
     }
   }
+
+  const rawDisplayName =
+    displayNameToSave ||
+    props.displayName ||
+    liveStatus.value?.displayName ||
+    liveStatus.value?.handle ||
+    (channelToSave.startsWith("@") ? channelToSave : undefined);
+
+  const toastName = rawDisplayName ? rawDisplayName.replace(/^@/, "") : channelToSave;
 
   if (isFavorite.value) {
     removeFavorite(channelToSave, platform, props.iframeUrl);
@@ -380,14 +389,14 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
     if (liveStatus.value?.displayName && liveStatus.value.displayName !== channelToSave) {
       removeFavorite(liveStatus.value.displayName, platform);
     }
-    toast.success(`${channelToSave} ${t("toasts.favorite.removed")}`);
+    toast.success(`${toastName} ${t("toasts.favorite.removed")}`);
   } else {
     if (platform === "youtube" && displayNameToSave) {
       displayNameToSave = displayNameToSave.replace(/^@/, "");
     }
     addFavorite(channelToSave, platform, props.iframeUrl, displayNameToSave);
     checkAll();
-    toast.success(`${channelToSave} ${t("toasts.favorite.added")}`);
+    toast.success(`${toastName} ${t("toasts.favorite.added")}`);
   }
 };
 

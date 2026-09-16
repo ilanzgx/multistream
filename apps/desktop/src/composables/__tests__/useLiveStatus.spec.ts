@@ -1519,8 +1519,95 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       // Assert — no spurious notification fired because network failure returned null and preserved previous status
       expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
         "send_notification",
-        expect.objectContaining({ channel: "abc12345678" })
+        expect.objectContaining({ channel: "batzera1" })
       );
+    });
+
+    it("should not fire spurious notifications when YouTube channel flakes to isLive: false for a single cycle and recovers (hysteresis)", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "kaicenat", platform: "youtube" }];
+      mockRecents.value = [{ channel: "kaicenat", platform: "youtube" }];
+      mockIsTauri.mockReturnValue(true);
+      mockNotificationsEnabled.value = true;
+
+      const liveStatus = [
+        {
+          channel: "kaicenat",
+          isLive: true,
+          videoId: "live_vid_123",
+          handle: "@kaicenat",
+          displayName: "Kai Cenat",
+          viewerCount: 80000,
+          title: "Mafiathon 2",
+        },
+      ];
+
+      const flakyOfflineStatus = [
+        {
+          channel: "kaicenat",
+          isLive: false,
+          videoId: null,
+          handle: "@kaicenat",
+          displayName: "Kai Cenat",
+        },
+      ];
+
+      // Cycle 1: Channel is live on first check (welcome toast fires)
+      vi.mocked(invoke).mockResolvedValueOnce(liveStatus);
+      let p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+      vi.mocked(toast.info).mockClear();
+      vi.mocked(invoke as any).mockClear();
+
+      // Cycle 2: Transient glitch returns isLive: false for 1 cycle
+      vi.mocked(invoke).mockResolvedValueOnce(flakyOfflineStatus);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Cycle 3: Scraper recovers and reports live again
+      vi.mocked(invoke).mockResolvedValueOnce(liveStatus);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Assert — hysteresis prevented spurious notification on recovery
+      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({ channel: "kaicenat" })
+      );
+    });
+
+    it("should track YouTube channel consistently regardless of @ prefix in favorite channel", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "ufc", platform: "youtube" }];
+      mockRecents.value = [{ channel: "@ufc", platform: "youtube" }];
+      mockIsTauri.mockReturnValue(true);
+      mockNotificationsEnabled.value = true;
+
+      const liveStatusWithAt = [
+        {
+          channel: "@ufc",
+          isLive: true,
+          videoId: "ufc_live_999",
+          handle: "@ufc",
+          displayName: "UFC",
+          viewerCount: 50000,
+          title: "UFC Live Event",
+        },
+      ];
+
+      // Act — Cycle 1 check
+      vi.mocked(invoke).mockResolvedValueOnce(liveStatusWithAt);
+      const p1 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p1;
+
+      // Assert — both ufc and @ufc keys are recognized in statuses
+      expect(sut.getStatus("ufc", "youtube")).not.toBeNull();
+      expect(sut.getStatus("@ufc", "youtube")).not.toBeNull();
+      expect(sut.getStatus("ufc", "youtube")?.isLive).toBe(true);
     });
   });
 });
