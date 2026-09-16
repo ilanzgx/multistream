@@ -71,4 +71,4 @@ Check `parse_viewer_count` in `apps/desktop/src-tauri/src/youtube/parser.rs`:
 Always execute the following checks after adding a new language:
 1. **i18n Key Parity:** `bun run desktop:test -- keys.spec.ts`
 2. **TypeScript Validation:** `bun run desktop:typecheck`
-3. **Rust Backend Validation:** `cargo check` and `cargo test youtube::parser` (from `apps/desktop/src-tauri/`)
+3. **Rust Backend Validation:** `cargo check` and `bun run desktop:test:backend -- -E 'test(youtube::parser)'`

@@ -277,7 +277,7 @@ fn load_config() -> Result<Config, Error> {
 
 A readability refactor that changes behavior is a bug, not a refactor. Before presenting the diff as done:
 
-1. **Run typecheck and the existing test suite** (`bun run desktop:typecheck`, `bun run desktop:test`, and the Rust equivalent `cargo check` / `cargo test` for backend changes) and confirm they pass.
+1. **Run typecheck and the existing test suite** (`bun run desktop:typecheck`, `bun run desktop:test`, and the Rust equivalent `cargo check` / `bun run desktop:test:backend` for backend changes) and confirm they pass.
 2. **If the touched code has no test coverage**, say so explicitly rather than presenting the refactor as verified — "no existing tests cover this path; recommend adding one before merging" is an honest and useful statement, silence is not.
 3. **For early-return / control-flow changes specifically**, manually trace at least one case that used to hit the deepest nested branch and confirm it still produces the same outcome post-refactor — this is the highest-risk category for silently changing behavior.
 4. **For extracted shared helpers**, confirm every call site was intended to share the exact same behavior — a passing typecheck does not prove semantic equivalence, only structural compatibility.

@@ -117,6 +117,7 @@ If you want to compile the app yourself or contribute to the project, follow the
 
 - [Bun](https://bun.sh/)
 - [Rust](https://www.rust-lang.org/)
+- [cargo-nextest](https://nexte.st/) *(optional, recommended for ~10x faster backend tests)*
 
 ### Setup
 

@@ -54,7 +54,7 @@ Multistream is a local-first desktop application built with Tauri v2, Rust and V
 | **Run linters**                     | `bun run lint`                                                  |
 | **Start website (Astro)**           | `bun run website:dev`                                           |
 | **Check Rust backend**              | `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml` |
-| **Test Rust backend**               | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`  |
+| **Test Rust backend**               | `bun run desktop:test:backend` *(uses `cargo-nextest` if installed, falls back to `cargo test`)* |
 
 ## Translations (i18n)
 

@@ -495,3 +495,19 @@ Functions containing complex business rules, conditional logic, or data formatti
 - `audio/transcription.rs`: Determining the correct `whisper-cli` filename depending on the compilation target (`OS` + `ARCH`) is tested across matrix combinations without needing the actual file system.
 
 This surgical approach ensures the highest code reliability across Windows, macOS, and Linux without the overhead of heavy Mocking libraries or End-to-End flaky tests for pure business rules.
+
+### Test Runner (`cargo-nextest`)
+
+The repository uses [`cargo-nextest`](https://nexte.st/) as the recommended test runner for the Rust backend. Nextest runs each unit test in an isolated process with a unified work-stealing thread pool, reducing local test suite execution time from minutes to ~2 seconds without mutex contention in async runtimes.
+
+```bash
+# Recommended (runs nextest if installed, falls back to cargo test automatically):
+bun run desktop:test:backend
+
+# Direct CLI execution:
+cargo nextest run --manifest-path apps/desktop/src-tauri/Cargo.toml
+
+# Filter by module or test name:
+cargo nextest run --manifest-path apps/desktop/src-tauri/Cargo.toml -E 'test(twitch)'
+cargo nextest run --manifest-path apps/desktop/src-tauri/Cargo.toml -E 'test(kick)'
+```

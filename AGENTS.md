@@ -15,7 +15,7 @@ Multistream is a native, cross-platform desktop application that enables power u
 
 - ALMOST NEVER write comments. We're senior engineers here, not learners.
 - NEVER run the backend or frontend manually. The human is already doing this.
-- ALWAYS test rust backend changes by running 'cargo check', and if you modify any business logic or important commands, also run 'cargo test'.
+- NEVER run standard 'cargo test' (it is extremely slow). ALWAYS test rust backend changes by running 'cargo check', and if you modify any business logic or important commands, run 'bun run desktop:test:backend'.
 - ALWAYS test frontend changes by running Playwright MCP.
 - ALWAYS follow the current design system and minimalist aesthetics of the application. Do not invent new visual patterns, do not introduce jarring colors, and strictly respect the dark/neutral color palette (e.g., bg-[#0f1115], text-gray-400) used across the app.
 - ALWAYS profile before suggesting architectural performance changes. Do not recommend virtualization, caching, memoization, background workers, or other advanced optimizations unless there is evidence they address the actual bottleneck.
@@ -51,8 +51,9 @@ This repository contains custom, specialized skills for AI Agents located in the
 | :---------------------- | :----------------------------------- |
 | **Dev (Tauri)**         | `bun run desktop:tauri:dev`          |
 | **Build (Tauri)**       | `bun run desktop:build:tauri`        |
-| **Tests (Unit)**        | `bun run desktop:test`               |
-| **Tests (Unit Single)** | `bun run desktop:test -- <filename>` |
+| **Tests (Frontend)**    | `bun run desktop:test`               |
+| **Tests (Frontend Single)** | `bun run desktop:test -- <filename>` |
+| **Tests (Backend)**     | `bun run desktop:test:backend`       |
 | **Coverage**            | `bun run desktop:test:coverage`      |
 | **Tests (E2E)**         | `bun run desktop:test:e2e`           |
 | **Tests (UI)**          | `bun run desktop:test:e2e:ui`        |
@@ -130,6 +131,7 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
   - **Case Convention:** Use lowercase for the type, the optional scope, and the start of the description (e.g., `feat: watch timer...` instead of `feat: Watch timer...`).
   - **No Trailing Period:** Do not end the commit subject line with a period.
   - **Breaking Changes:** Append `!` to the type/scope (e.g., `fix!: prevent xss...`).
+- **Pull Requests (GitHub CLI):** When creating a Pull Request via GitHub CLI (`gh pr create`), ALWAYS use the structure from [`.github/pull_request_template.md`](.github/pull_request_template.md) as the template/base for the PR body (filling in Description, Key Changes, Release Impact, Test Plan, and Notes).
 - **State Management:** Leverage Vue's Composition API and Composables located in `apps/desktop/src/composables/`.
 - **Code Style:** Prioritize clarity and maintainability. Use early returns to minimize `if/else` nesting and extract duplicated logic into reusable helpers to keep the codebase DRY.
 
