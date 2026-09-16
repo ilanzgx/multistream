@@ -119,24 +119,24 @@ describe("useStreams composable unit tests", () => {
     expect(streams.value.length).toBe(2);
   });
 
-  it("should remove a stream by ID", () => {
+  it("should remove a stream by ID and show displayName in toast", () => {
     // Arrange
     const { addStream, removeStream, streams } = sut;
 
     addStream("stream1", "kick");
-    addStream("stream2", "youtube");
+    addStream("dQw4w9WgXcQ", "youtube", undefined, "Batzera", "batzera1");
 
     // Assert (check if streams were added)
     expect(streams.value.length).toBe(2);
 
     // Act
-    const stream1Id = streams.value.find((s) => s.channel === "stream1")!.id;
-    removeStream(stream1Id);
+    const ytStreamId = streams.value.find((s) => s.channel === "dQw4w9WgXcQ")!.id;
+    removeStream(ytStreamId);
 
-    // Assert (check if stream1 was removed)
+    // Assert (check if ytStream was removed and toast used displayName)
     expect(streams.value.length).toBe(1);
-    expect(streams.value.find((s) => s.channel === "stream1")).toBeUndefined();
-    expect(streams.value.find((s) => s.channel === "stream2")).toBeDefined();
+    expect(streams.value.find((s) => s.channel === "dQw4w9WgXcQ")).toBeUndefined();
+    expect(toast.success).toHaveBeenCalledWith("Batzera toasts.remove");
   });
 
   it("should clear all streams", () => {

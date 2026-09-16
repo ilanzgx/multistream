@@ -172,7 +172,8 @@ const _useStreams = () => {
 
     now.value = Date.now();
 
-    toast.success(`${displayName || channel} ${t("toasts.add.added")}`);
+    const streamName = displayName || cleanHandle || channel;
+    toast.success(`${streamName} ${t("toasts.add.added")}`);
     addRecent(channel, platform, iframeUrl, displayName, cleanHandle);
   };
 
@@ -199,7 +200,8 @@ const _useStreams = () => {
       clearFocus();
     }
 
-    toast.success(`${stream.channel} ${t("toasts.remove")}`);
+    const streamName = stream.displayName || stream.handle || stream.channel;
+    toast.success(`${streamName} ${t("toasts.remove")}`);
 
     flushStreamWatchTime(stream);
   };

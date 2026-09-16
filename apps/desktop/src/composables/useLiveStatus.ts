@@ -814,7 +814,9 @@ const _useLiveStatus = () => {
             } else {
               const MAX_STREAMS = 12;
               const topStreams = newLiveChannels.slice(0, MAX_STREAMS);
-              const names = topStreams.map((c) => c.fav.channel).join(", ");
+              const names = topStreams
+                .map((c) => c.fav.displayName || c.status?.displayName || c.fav.channel)
+                .join(", ");
               const remainingCount = newLiveChannels.length - MAX_STREAMS;
 
               if (remainingCount > 0) {
@@ -837,7 +839,8 @@ const _useLiveStatus = () => {
           } else {
             // Individual notifications for small number of updates
             for (const { fav, status } of newLiveChannels) {
-              const title = t("notifications.live", { channel: fav.channel });
+              const channelName = fav.displayName || status?.displayName || fav.channel;
+              const title = t("notifications.live", { channel: channelName });
               let body: string;
 
               if (status?.title && status?.category) {
@@ -851,7 +854,7 @@ const _useLiveStatus = () => {
                 });
               } else {
                 body = t("notifications.liveBodyFallback", {
-                  channel: fav.channel,
+                  channel: channelName,
                   platform: fav.platform,
                 });
               }
