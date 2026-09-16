@@ -765,9 +765,41 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
 
       // Assert
       expect(toast.info).not.toHaveBeenCalled();
-      expect(invoke).not.toHaveBeenCalled();
+      expect(invoke).not.toHaveBeenCalledWith("send_notification", expect.anything());
 
       fetchSpy.mockRestore();
+    });
+
+    it("should query youtube_check_channels_status and update statuses", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "@casimiro", platform: "youtube" }];
+      vi.mocked(invoke).mockResolvedValueOnce([
+        {
+          channel: "@casimiro",
+          isLive: true,
+          videoId: "dQw4w9WgXcQ",
+          viewerCount: 15000,
+          title: "Transmissao ao vivo",
+          avatarUrl: "http://avatar.com/caze",
+        },
+      ]);
+
+      // Act
+      await sut.checkAll();
+
+      // Assert
+      expect(invoke).toHaveBeenCalledWith("youtube_check_channels_status", {
+        channels: ["@casimiro"],
+      });
+      const status = sut.getStatus("@casimiro", "youtube");
+      expect(status).toEqual({
+        isLive: true,
+        videoId: "dQw4w9WgXcQ",
+        viewerCount: 15000,
+        title: "Transmissao ao vivo",
+        avatarUrl: "http://avatar.com/caze",
+        thumbnailUrl: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
+      });
     });
   });
 
@@ -1442,6 +1474,52 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
         "send_notification",
         expect.objectContaining({ channel: "gaules" })
+      );
+    });
+
+    it("should not fire spurious notifications when YouTube status check fails with network error", async () => {
+      // Arrange — batzera1 is a YouTube favorite
+      mockFavorites.value = [{ channel: "batzera1", platform: "youtube" }];
+      mockRecents.value = [{ channel: "batzera1", platform: "youtube" }];
+      mockIsTauri.mockReturnValue(true);
+      mockNotificationsEnabled.value = true;
+
+      const liveYouTubeStatus = [
+        {
+          channel: "batzera1",
+          isLive: true,
+          videoId: "abc12345678",
+          handle: "batzera1",
+          displayName: "Batzera",
+          viewerCount: 5000,
+          title: "Ao vivo no YouTube",
+        },
+      ];
+
+      // Cycle 1: Live on initial check — triggers welcome toast
+      vi.mocked(invoke).mockResolvedValueOnce(liveYouTubeStatus);
+      let p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+      vi.mocked(toast.info).mockClear();
+      vi.mocked(invoke as any).mockClear();
+
+      // Cycle 2: Network timeout / error during background tasks (returns empty array from Rust)
+      vi.mocked(invoke).mockResolvedValueOnce([]);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Cycle 3: Network recovers — YouTube channel still live
+      vi.mocked(invoke).mockResolvedValueOnce(liveYouTubeStatus);
+      p = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p;
+
+      // Assert — no spurious notification fired because network failure returned null and preserved previous status
+      expect(vi.mocked(invoke)).not.toHaveBeenCalledWith(
+        "send_notification",
+        expect.objectContaining({ channel: "abc12345678" })
       );
     });
   });

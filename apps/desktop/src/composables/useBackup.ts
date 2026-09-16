@@ -38,6 +38,9 @@ const isValidChannelShape = (item: any): boolean => {
   if (typeof item.channel !== "string") return false;
   if (!VALID_PLATFORMS.has(item.platform)) return false;
   if (item.iframeUrl !== undefined && typeof item.iframeUrl !== "string") return false;
+  if (item.displayName !== undefined && typeof item.displayName !== "string") return false;
+  if (item.handle !== undefined && typeof item.handle !== "string") return false;
+  if (item.lastVideoId !== undefined && typeof item.lastVideoId !== "string") return false;
   return true;
 };
 
@@ -272,8 +275,10 @@ const _useBackup = () => {
     // 3. Additive Merge for Recents
     // First, convert currently watching streams into Recent format to inject at the top
     const currentStreamsAsRecents: RecentChannel[] = streams.value.map((s) => ({
-      channel: s.channel,
+      channel: s.platform === "youtube" && s.handle ? s.handle : s.channel,
       platform: s.platform,
+      displayName: s.displayName,
+      handle: s.handle,
       iframeUrl: s.iframeUrl,
       addedAt: Date.now(),
     }));

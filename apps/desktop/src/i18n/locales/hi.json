@@ -26,7 +26,8 @@
     "platformCustom": "कस्टम",
     "suggestedLabel": "सुझाए गए स्ट्रीम",
     "suggestedDescription": "इस समय के लोकप्रिय लाइव स्ट्रीम",
-    "noSuggestions": "कोई स्ट्रीम नहीं मिला"
+    "noSuggestions": "कोई स्ट्रीम नहीं मिला",
+    "resolvingLive": "YouTube लाइव स्थिति जांची जा रही है..."
   },
   "settings": {
     "tooltip": "सेटिंग्स",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "गुम मीडिया कोडेक का पता चला। कृपया स्ट्रीम देखने के लिए अपने सिस्टम कोडेक (उदा., ubuntu-restricted-extras या gstreamer-plugins) स्थापित करें।"
+    },
+    "youtube": {
+      "offline": "चैनल ऑफ़लाइन है या वर्तमान में लाइव प्रसारण नहीं कर रहा है।"
     }
   },
   "skeleton": {

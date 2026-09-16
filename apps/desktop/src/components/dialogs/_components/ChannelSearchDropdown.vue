@@ -45,7 +45,7 @@ const emit = defineEmits<{
       <template v-else>
         <div
           v-for="(result, index) in results"
-          :key="`${result.platform}:${result.channel}`"
+          :key="`${result.platform}:${result.handle || result.channel}`"
           role="option"
           tabindex="-1"
           :aria-selected="index === activeIndex"
@@ -67,7 +67,12 @@ const emit = defineEmits<{
           />
 
           <!-- Channel name -->
-          <span class="text-sm font-medium text-white truncate flex-1">{{ result.channel }}</span>
+          <span class="text-sm font-medium text-white truncate flex-1"
+            >{{ result.channel
+            }}<span v-if="result.handle" class="text-gray-500 font-normal ml-1"
+              >@{{ result.handle }}</span
+            ></span
+          >
 
           <!-- Live badge -->
           <span v-if="result.isLive" class="flex items-center gap-1.5 shrink-0">
@@ -77,9 +82,9 @@ const emit = defineEmits<{
             }}</span>
           </span>
 
-          <!-- Category (shown when live) -->
+          <!-- Category when live, or subscriber count for YouTube search results -->
           <span
-            v-if="result.isLive && result.category"
+            v-if="result.category && (result.isLive || result.handle)"
             class="text-[10px] text-gray-400 truncate max-w-20 shrink-0"
           >
             {{ result.category }}

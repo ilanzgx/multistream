@@ -26,7 +26,8 @@
     "platformCustom": "Пользовательский",
     "suggestedLabel": "Рекомендуемые стримы",
     "suggestedDescription": "Популярные прямые трансляции сейчас",
-    "noSuggestions": "Стримы не найдены"
+    "noSuggestions": "Стримы не найдены",
+    "resolvingLive": "Проверка статуса прямой трансляции YouTube..."
   },
   "settings": {
     "tooltip": "Настройки",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Отсутствуют медиакодеки. Установите системные кодеки (например, ubuntu-restricted-extras или gstreamer-plugins) для просмотра трансляций."
+    },
+    "youtube": {
+      "offline": "Канал оффлайн или в данный момент не ведет прямую трансляцию."
     }
   },
   "skeleton": {

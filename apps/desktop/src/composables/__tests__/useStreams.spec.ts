@@ -75,6 +75,20 @@ describe("useStreams composable unit tests", () => {
     expect(streams?.value[0]?.id).toBeDefined();
   });
 
+  it("should store displayName when provided to addStream", () => {
+    // Arrange
+    const { addStream, streams } = sut;
+
+    // Act
+    addStream("dQw4w9WgXcQ", "youtube", undefined, "@casimiro");
+
+    // Assert
+    expect(streams.value.length).toBe(1);
+    expect(streams.value[0]?.channel).toBe("dQw4w9WgXcQ");
+    expect(streams.value[0]?.platform).toBe("youtube");
+    expect(streams.value[0]?.displayName).toBe("@casimiro");
+  });
+
   it("should not add a duplicate stream", () => {
     // Arrange
     const { addStream, streams } = sut;

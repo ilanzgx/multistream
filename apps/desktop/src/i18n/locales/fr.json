@@ -26,7 +26,8 @@
     "platformCustom": "Personnalisé",
     "suggestedLabel": "Streams suggérés",
     "suggestedDescription": "Diffusions en direct populaires en ce moment",
-    "noSuggestions": "Aucun stream trouvé"
+    "noSuggestions": "Aucun stream trouvé",
+    "resolvingLive": "Vérification du direct YouTube..."
   },
   "settings": {
     "tooltip": "Paramètres",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Des codecs multimédias manquants ont été détectés. Veuillez installer vos codecs système (ex: ubuntu-restricted-extras ou gstreamer-plugins) pour regarder des flux."
+    },
+    "youtube": {
+      "offline": "La chaîne est hors ligne ou ne diffuse pas actuellement."
     }
   },
   "skeleton": {

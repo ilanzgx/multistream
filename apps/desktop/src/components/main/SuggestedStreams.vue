@@ -215,7 +215,9 @@ const handleManualRefresh = () => {
         v-for="stream in paginatedStreams"
         :key="`${stream.platform}:${stream.channel}`"
         class="group relative flex flex-col w-40 overflow-hidden rounded-xl bg-[#14161a] border border-[#2a2d33] transition-all duration-300 hover:border-[#3a3f4b] hover:-translate-y-1 cursor-pointer text-left"
-        @click="addStream(stream.channel, stream.platform)"
+        @click="
+          addStream(stream.channel, stream.platform, undefined, stream.displayName, stream.handle)
+        "
       >
         <!-- Thumbnail -->
         <div class="relative aspect-video w-full bg-[#0f1115] overflow-hidden">

@@ -22,6 +22,8 @@ import { PLATFORMS } from "@/config/platforms";
 import { REFRESH_CONFIG } from "@/config/api";
 import { History, Heart, Flame, RotateCw, Loader2 } from "@lucide/vue";
 import { parseStreamUrl } from "@/lib/platformParser";
+import { toast } from "@/composables/useToast";
+import { invoke } from "@tauri-apps/api/core";
 
 // props
 const props = defineProps<{
@@ -152,12 +154,14 @@ const activeSearchIndex = ref(-1);
 const isDropdownOpen = computed(
   () =>
     !isCustom.value &&
-    (selectedPlatform.value === "twitch" || selectedPlatform.value === "kick") &&
+    (selectedPlatform.value === "twitch" ||
+      selectedPlatform.value === "kick" ||
+      selectedPlatform.value === "youtube") &&
     (isSearching.value || searchResults.value.length > 0)
 );
 
-const selectSearchResult = (result: { channel: string }) => {
-  channelName.value = result.channel;
+const selectSearchResult = (result: { channel: string; handle?: string }) => {
+  channelName.value = (result.handle || result.channel).replace(/^@+/, "");
   clearSearch();
   activeSearchIndex.value = -1;
 };
@@ -197,6 +201,12 @@ watch(searchResults, () => {
   activeSearchIndex.value = -1;
 });
 
+watch(channelName, (newVal) => {
+  if (newVal && newVal.startsWith("@") && !newVal.includes("://") && !newVal.includes("/")) {
+    channelName.value = newVal.replace(/^@+/, "");
+  }
+});
+
 const handleChannelBlur = () => {
   // Delay so mousedown on a dropdown item fires before blur clears results
   setTimeout(() => {
@@ -220,7 +230,7 @@ const detectAndApply = async (value: string) => {
     await nextTick();
     customNameInput.value?.focus();
   } else {
-    channelName.value = result.channel;
+    channelName.value = result.channel.replace(/^@/, "");
   }
   return true;
 };
@@ -252,8 +262,10 @@ const handleIframeBlur = () => {
   }
 };
 
-const handleAddStream = () => {
-  if (!canSubmit.value) return;
+const isResolvingLive = ref(false);
+
+const handleAddStream = async () => {
+  if (!canSubmit.value || isResolvingLive.value) return;
 
   // Close any open autocomplete dropdown
   clearSearch();
@@ -303,6 +315,33 @@ const handleAddStream = () => {
     return;
   }
 
+  if (selectedPlatform.value === "youtube") {
+    const isVideoId = /^[a-zA-Z0-9_-]{11}$/.test(channel);
+    if (channel.startsWith("@") || !isVideoId) {
+      isResolvingLive.value = true;
+      try {
+        const liveId = await invoke<string | null>("youtube_resolve_live_id", {
+          channelOrHandle: channel,
+        });
+
+        if (liveId) {
+          const cleanChannel = channel.replace(/^@/, "");
+          addStream(liveId, "youtube", undefined, cleanChannel, cleanChannel);
+          channelName.value = "";
+          selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
+          emit("update:open", false);
+        } else {
+          toast.error(t("toasts.youtube.offline"));
+        }
+      } catch (err) {
+        toast.error(String(err));
+      } finally {
+        isResolvingLive.value = false;
+      }
+      return;
+    }
+  }
+
   addStream(channel, selectedPlatform.value);
 
   channelName.value = "";
@@ -342,14 +381,45 @@ const isValidCustomUrl = computed(() => {
 });
 
 const canSubmit = computed(() => {
+  if (isResolvingLive.value) {
+    return false;
+  }
   if (isCustom.value) {
     return isValidCustomUrl.value;
   }
   return channelName.value.trim().length > 0;
 });
 
-const handleQuickAdd = (channel: string, platform: Platform, iframeUrl?: string) => {
-  addStream(channel, platform, iframeUrl);
+const handleQuickAdd = async (
+  channel: string,
+  platform: Platform,
+  iframeUrl?: string,
+  displayName?: string
+) => {
+  const cleanDisplayName = (displayName || channel).replace(/^@/, "");
+  const cleanHandle = channel.replace(/^@/, "");
+  if (platform === "youtube") {
+    const isVideoId = /^[a-zA-Z0-9_-]{11}$/.test(channel);
+    if (channel.startsWith("@") || !isVideoId) {
+      try {
+        const liveId = await invoke<string | null>("youtube_resolve_live_id", {
+          channelOrHandle: channel,
+        });
+
+        if (liveId) {
+          addStream(liveId, "youtube", undefined, cleanDisplayName, cleanHandle);
+          emit("update:open", false);
+        } else {
+          toast.error(t("toasts.youtube.offline"));
+        }
+      } catch (err) {
+        toast.error(String(err));
+      }
+      return;
+    }
+  }
+
+  addStream(channel, platform, iframeUrl, cleanDisplayName, cleanHandle);
   emit("update:open", false);
 };
 
@@ -541,10 +611,18 @@ watch(
                   <StreamChip
                     v-for="recent in recents"
                     :key="`${recent.platform}:${recent.channel}`"
-                    :channel="recent.channel"
+                    :channel="recent.handle || recent.channel"
+                    :display-name="recent.displayName"
                     :platform="recent.platform"
                     class="w-full"
-                    @click="handleQuickAdd(recent.channel, recent.platform, recent.iframeUrl)"
+                    @click="
+                      handleQuickAdd(
+                        recent.handle || recent.channel,
+                        recent.platform,
+                        recent.iframeUrl,
+                        recent.displayName
+                      )
+                    "
                     @remove="removeRecent(recent.channel, recent.platform)"
                   />
                 </div>
@@ -574,9 +652,17 @@ watch(
                     v-for="favorite in sortedFavorites"
                     :key="`${favorite.platform}:${favorite.channel}`"
                     :channel="favorite.channel"
+                    :display-name="favorite.displayName"
                     :platform="favorite.platform"
                     class="w-full"
-                    @click="handleQuickAdd(favorite.channel, favorite.platform)"
+                    @click="
+                      handleQuickAdd(
+                        favorite.channel,
+                        favorite.platform,
+                        undefined,
+                        favorite.displayName
+                      )
+                    "
                     @remove="removeFavorite(favorite.channel, favorite.platform)"
                   />
                 </div>
@@ -669,7 +755,9 @@ watch(
                   :key="`${stream.platform}:${stream.channel}`"
                   type="button"
                   class="group relative flex flex-col w-full h-auto rounded-lg bg-[#181a1f] border border-[#262930] hover:border-[#3a3f4b] hover:bg-[#1f2229] transition-all duration-200 cursor-pointer text-left overflow-hidden focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
-                  @click="handleQuickAdd(stream.channel, stream.platform)"
+                  @click="
+                    handleQuickAdd(stream.channel, stream.platform, undefined, stream.displayName)
+                  "
                 >
                   <!-- Thumbnail -->
                   <div class="relative aspect-video w-full shrink-0 bg-[#0f1115] overflow-hidden">
@@ -782,12 +870,13 @@ watch(
           </Button>
         </DialogClose>
         <Button
-          :disabled="!canSubmit"
+          :disabled="!canSubmit || isResolvingLive"
           data-testid="add-submit-btn"
           class="bg-white text-[#14161a] font-medium border-transparent hover:bg-gray-200 active:scale-[0.98] transition-colors duration-150 disabled:opacity-35 disabled:cursor-not-allowed"
           @click="handleAddStream"
         >
-          {{ $t("add.addButton") }}
+          <Loader2 v-if="isResolvingLive" class="size-4 animate-spin mr-2" />
+          {{ isResolvingLive ? $t("add.resolvingLive") : $t("add.addButton") }}
         </Button>
       </DialogFooter>
     </DialogContent>

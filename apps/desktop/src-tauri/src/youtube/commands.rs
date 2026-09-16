@@ -1,5 +1,9 @@
-use super::api::fetch_live_streams;
-use super::types::YouTubeSuggestedStream;
+use super::api::{
+    check_channels_status_batch, fetch_live_streams, resolve_channel_live_status,
+    search_youtube_channels,
+};
+use super::types::{YouTubeChannelStatus, YouTubeSearchResult, YouTubeSuggestedStream};
+use std::time::Duration;
 
 #[tauri::command]
 pub async fn youtube_get_suggested_streams(
@@ -7,4 +11,48 @@ pub async fn youtube_get_suggested_streams(
     limit: Option<usize>,
 ) -> Result<Vec<YouTubeSuggestedStream>, String> {
     fetch_live_streams(locale.as_deref(), limit.unwrap_or(30)).await
+}
+
+#[tauri::command]
+pub async fn youtube_resolve_live_id(channel_or_handle: String) -> Result<Option<String>, String> {
+    let client = reqwest::Client::builder()
+        .use_rustls_tls()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let status = resolve_channel_live_status(&client, &channel_or_handle).await;
+    if let Some(status) = status {
+        if status.is_live && status.video_id.is_some() {
+            Ok(status.video_id)
+        } else {
+            Ok(None)
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+#[tauri::command]
+pub async fn youtube_check_channels_status(
+    channels: Vec<String>,
+) -> Result<Vec<YouTubeChannelStatus>, String> {
+    let client = reqwest::Client::builder()
+        .use_rustls_tls()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    Ok(check_channels_status_batch(&client, channels).await)
+}
+
+#[tauri::command]
+pub async fn youtube_search_channels(query: String) -> Result<Vec<YouTubeSearchResult>, String> {
+    let client = reqwest::Client::builder()
+        .use_rustls_tls()
+        .timeout(Duration::from_secs(6))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    search_youtube_channels(&client, &query).await
 }

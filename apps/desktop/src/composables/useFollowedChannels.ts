@@ -11,7 +11,7 @@ import { REFRESH_CONFIG } from "@/config/api";
 
 export interface FollowedChannel {
   id: string;
-  platform: "twitch" | "kick";
+  platform: "twitch" | "kick" | "youtube";
   displayName: string;
   avatarUrl: string;
   isLive: boolean;
@@ -21,22 +21,31 @@ export interface FollowedChannel {
   title?: string;
   isFavorite?: boolean;
   isFollowed?: boolean;
+  videoId?: string;
+  handle?: string;
 }
 
 const _useFollowedChannels = () => {
   const twitchChannels = ref<FollowedChannel[]>([]);
   const { authenticated: twitchAuthenticated } = useTwitchAuth();
-  const { statuses, isChecking } = useLiveStatus();
+  const { statuses, isChecking, checkAll } = useLiveStatus();
   const { favorites } = useFavorites();
   const isFetchingTwitch = ref(false);
-  const platformFilter = ref<"all" | "twitch" | "kick">("all");
+  const platformFilter = ref<"all" | "twitch" | "kick" | "youtube">("all");
   const hasLoadedTwitchOnce = ref(false);
+  const hasLoadedFavoritesOnce = ref(false);
+
+  watch(isChecking, (val) => {
+    if (!val) {
+      hasLoadedFavoritesOnce.value = true;
+    }
+  });
 
   const hasUncheckedFavorites = computed(() => {
     if (favorites.value.length === 0) return false;
     return favorites.value.some(
       (f) =>
-        (f.platform === "twitch" || f.platform === "kick") &&
+        (f.platform === "twitch" || f.platform === "kick" || f.platform === "youtube") &&
         statuses.value[`${f.platform}:${f.channel.toLowerCase()}`] === undefined
     );
   });
@@ -45,7 +54,11 @@ const _useFollowedChannels = () => {
     if (twitchAuthenticated.value && !hasLoadedTwitchOnce.value && isFetchingTwitch.value) {
       return true;
     }
-    if (hasUncheckedFavorites.value && (isChecking?.value ?? false)) {
+    if (
+      !hasLoadedFavoritesOnce.value &&
+      hasUncheckedFavorites.value &&
+      (isChecking?.value ?? false)
+    ) {
       return true;
     }
     return false;
@@ -70,6 +83,59 @@ const _useFollowedChannels = () => {
           game: status?.category,
           thumbnailUrl: status?.thumbnailUrl,
           isFavorite: true,
+        };
+      })
+      .filter((channel) => channel.isLive);
+  });
+
+  const youtubeChannels = computed<FollowedChannel[]>(() => {
+    const youtubeFavs = favorites.value.filter((f) => f.platform === "youtube");
+    return youtubeFavs
+      .map((f) => {
+        const key = `youtube:${f.channel.toLowerCase()}`;
+        let status = statuses.value[key];
+        if (!status) {
+          const channelLower = f.channel.toLowerCase();
+          const match = Object.entries(statuses.value).find(
+            ([k, s]) =>
+              k.startsWith("youtube:") &&
+              ((s.handle && s.handle.toLowerCase() === channelLower) ||
+                (s.videoId && s.videoId.toLowerCase() === channelLower) ||
+                (s.displayName && s.displayName.toLowerCase() === channelLower))
+          );
+          status = match ? match[1] : undefined;
+        }
+        const rawName =
+          (status?.displayName && !status.displayName.startsWith("@")
+            ? status.displayName
+            : null) ||
+          (f.displayName && !f.displayName.startsWith("@") ? f.displayName : null) ||
+          status?.displayName ||
+          f.displayName ||
+          status?.handle ||
+          f.channel;
+
+        const displayName = rawName.replace(/^@/, "");
+        const rawHandle =
+          status?.handle ||
+          (f.channel.startsWith("@") ? f.channel : undefined) ||
+          (status?.displayName?.startsWith("@") ? status.displayName : undefined) ||
+          f.channel;
+        const handle = rawHandle.replace(/^@+/, "");
+
+        return {
+          id: status?.videoId || f.channel,
+          platform: "youtube" as const,
+          displayName,
+          handle,
+          avatarUrl: status?.avatarUrl ?? "",
+          isLive: status?.isLive ?? false,
+          viewerCount: status?.viewerCount ?? 0,
+          title: status?.title,
+          game: status?.category,
+          thumbnailUrl: status?.thumbnailUrl,
+          isFavorite: true,
+          videoId: status?.videoId,
         };
       })
       .filter((channel) => channel.isLive);
@@ -107,7 +173,12 @@ const _useFollowedChannels = () => {
       return { ...c, isFollowed: true, ...(isFav && { isFavorite: true }) };
     });
 
-    const combined = [...twitchFollowed, ...twitchFavChannels.value, ...kickChannels.value];
+    const combined = [
+      ...twitchFollowed,
+      ...twitchFavChannels.value,
+      ...kickChannels.value,
+      ...youtubeChannels.value,
+    ];
 
     combined.sort((a, b) => {
       const viewersA = a.viewerCount || 0;
@@ -131,25 +202,30 @@ const _useFollowedChannels = () => {
     isFetchingTwitch.value = true;
     debugErrors.value = [];
     try {
+      const promises: Promise<any>[] = [checkAll()];
       if (twitchAuthenticated.value) {
-        const results = await invoke<FollowedChannel[]>("twitch_get_followed_streams").catch(
-          (e) => {
-            console.error("Failed to fetch Twitch followed streams", e);
-            debugErrors.value.push(`Twitch: ${String(e)}`);
-            return null;
-          }
+        promises.push(
+          invoke<FollowedChannel[]>("twitch_get_followed_streams")
+            .then((results) => {
+              if (results !== null) {
+                twitchChannels.value = results;
+              }
+            })
+            .catch((e) => {
+              console.error("Failed to fetch Twitch followed streams", e);
+              debugErrors.value.push(`Twitch: ${String(e)}`);
+            })
         );
-        if (results !== null) {
-          twitchChannels.value = results;
-        }
       } else {
         twitchChannels.value = [];
       }
+      await Promise.allSettled(promises);
     } catch (e) {
       console.error("Failed to refresh followed channels", e);
     } finally {
       isFetchingTwitch.value = false;
       hasLoadedTwitchOnce.value = true;
+      hasLoadedFavoritesOnce.value = true;
     }
   };
 

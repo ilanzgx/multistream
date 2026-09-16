@@ -9,6 +9,7 @@ import { useLiveStatus } from "@/composables/useLiveStatus";
 const props = defineProps<{
   channel: string;
   platform: Platform;
+  displayName?: string;
 }>();
 
 const emit = defineEmits<{
@@ -18,7 +19,7 @@ const emit = defineEmits<{
 
 const { getStatus } = useLiveStatus();
 const { locale } = useI18n();
-const status = computed(() => getStatus(props.channel, props.platform));
+const status = computed(() => getStatus(props.displayName || props.channel, props.platform));
 
 const formatViewers = (count?: number): string => {
   if (count === undefined || count === null) return "";
@@ -59,7 +60,9 @@ const formatViewers = (count?: number): string => {
         ]"
         :style="{ color: PLATFORMS[props.platform]?.color }"
       />
-      <span class="truncate flex-1 min-w-0 text-left">{{ props.channel }}</span>
+      <span class="truncate flex-1 min-w-0 text-left">{{
+        props.displayName || status?.displayName || props.channel
+      }}</span>
 
       <!-- viewer count badge -->
       <span

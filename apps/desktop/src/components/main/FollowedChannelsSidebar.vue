@@ -10,6 +10,7 @@ import { Skeleton } from "../../components/ui/skeleton";
 import { Radio, ChevronLeft, ChevronRight, RefreshCw } from "@lucide/vue";
 import TwitchIcon from "../../components/icons/TwitchIcon.vue";
 import KickIcon from "../../components/icons/KickIcon.vue";
+import YoutubeIcon from "../../components/icons/YoutubeIcon.vue";
 import LoginPrompt from "../../components/chat/LoginPrompt.vue";
 import { useI18n } from "vue-i18n";
 import { useFollowedChannels, type FollowedChannel } from "../../composables/useFollowedChannels";
@@ -38,7 +39,17 @@ const toggleSidebar = () => {
 };
 
 const onAddClick = (channel: FollowedChannel) => {
-  addStream(channel.id, channel.platform);
+  if (channel.platform === "youtube") {
+    addStream(
+      channel.videoId || channel.id,
+      channel.platform,
+      undefined,
+      channel.displayName,
+      channel.handle || channel.id.replace(/^@+/, "")
+    );
+  } else {
+    addStream(channel.id, channel.platform);
+  }
 };
 
 const formatViewers = (count: number) => {
@@ -122,6 +133,18 @@ const getThumbnailUrl = (url?: string) => {
         >
           <KickIcon class="w-3.5 h-3.5" />
         </button>
+        <button
+          class="p-1 rounded transition-colors"
+          :class="
+            platformFilter === 'youtube'
+              ? 'text-[#FF0000] bg-[#FF0000]/10'
+              : 'text-gray-500 hover:text-gray-300'
+          "
+          title="YouTube"
+          @click="platformFilter = 'youtube'"
+        >
+          <YoutubeIcon class="w-3.5 h-3.5" />
+        </button>
       </div>
       <button
         class="text-gray-500 hover:text-gray-300 transition-colors p-1 -mr-1 rounded-md"
@@ -190,6 +213,10 @@ const getThumbnailUrl = (url?: string) => {
                     <KickIcon
                       v-if="channel.platform === 'kick'"
                       class="w-2.5 h-2.5 text-[#53FC18]"
+                    />
+                    <YoutubeIcon
+                      v-if="channel.platform === 'youtube'"
+                      class="w-2.5 h-2.5 text-[#FF0000]"
                     />
                   </div>
                 </div>

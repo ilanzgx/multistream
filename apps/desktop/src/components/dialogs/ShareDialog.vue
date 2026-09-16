@@ -12,6 +12,7 @@ import {
 import Button from "../ui/button/Button.vue";
 import { useStreams } from "@/composables/useStreams";
 import { toast } from "@/composables/useToast";
+import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useI18n } from "vue-i18n";
 import { APP_LINKS } from "@/config/links";
 import { encodeBase64 } from "@/lib/base64";
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 }>();
 
 const { streams } = useStreams();
+const { getStatus } = useLiveStatus();
 
 const shareLink = computed(() => {
   if (!streams.value.length) {
@@ -49,7 +51,16 @@ const shareLink = computed(() => {
   // regular streams (kick, twitch, youtube)
   const regularStreams = streams.value.filter((s) => s.platform !== "custom");
   if (regularStreams.length) {
-    const streamsParam = regularStreams.map((s) => `${s.platform}:${s.channel}`).join(",");
+    const streamsParam = regularStreams
+      .map((s) => {
+        const status = getStatus(s.displayName || s.channel, s.platform);
+        const identifier = (s.handle || status?.handle || s.displayName || s.channel).replace(
+          /^@+/,
+          ""
+        );
+        return `${s.platform}:${identifier}`;
+      })
+      .join(",");
     params.push(`streams=${streamsParam}`);
   }
 

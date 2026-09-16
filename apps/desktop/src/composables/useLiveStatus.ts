@@ -17,6 +17,9 @@ import { SUPPORTED_LANGUAGES, DEFAULT_LOCALE } from "@/config/i18n";
 
 export interface LiveStatus {
   isLive: boolean;
+  videoId?: string;
+  handle?: string;
+  displayName?: string;
   viewerCount?: number;
   title?: string;
   category?: string;
@@ -32,6 +35,7 @@ export interface SuggestedStream {
   viewerCount: number;
   thumbnail?: string;
   displayName?: string;
+  handle?: string;
 }
 
 type StatusMap = Record<string, LiveStatus>;
@@ -292,6 +296,48 @@ async function checkKickStreams(channels: string[]): Promise<StatusMap | null> {
   }
 
   return result;
+}
+
+async function checkYouTubeStreams(channels: string[]): Promise<StatusMap | null> {
+  const result: StatusMap = {};
+  if (channels.length === 0) return result;
+
+  try {
+    const rawStatuses = await invoke<any[]>("youtube_check_channels_status", { channels });
+
+    if (!Array.isArray(rawStatuses)) return null;
+    if (channels.length > 0 && rawStatuses.length === 0) return null;
+
+    for (const item of rawStatuses) {
+      if (!item || !item.channel) continue;
+      const vid = item.videoId ?? item.video_id;
+      const handle = item.handle;
+      const displayName = item.displayName ?? item.display_name;
+      const statusObj: LiveStatus = {
+        isLive: Boolean(item.isLive ?? item.is_live),
+        videoId: vid,
+        handle,
+        displayName,
+        viewerCount: item.viewerCount ?? item.viewer_count,
+        title: item.title,
+        avatarUrl: item.avatarUrl ?? item.avatar_url,
+        thumbnailUrl: vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : undefined,
+      };
+      result[`youtube:${item.channel.toLowerCase()}`] = statusObj;
+      if (vid) {
+        result[`youtube:${vid.toLowerCase()}`] = statusObj;
+      }
+      if (handle) {
+        result[`youtube:${handle.toLowerCase()}`] = statusObj;
+      }
+      if (displayName) {
+        result[`youtube:${displayName.toLowerCase()}`] = statusObj;
+      }
+    }
+    return result;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -648,6 +694,7 @@ const _useLiveStatus = () => {
 
     const twitchSet = new Set<string>();
     const kickSet = new Set<string>();
+    const youtubeSet = new Set<string>();
 
     // Collect channels from both recents and favorites
     const allChannels = [...recents.value, ...favorites.value];
@@ -657,13 +704,16 @@ const _useLiveStatus = () => {
         twitchSet.add(entry.channel);
       } else if (entry.platform === "kick") {
         kickSet.add(entry.channel);
+      } else if (entry.platform === "youtube") {
+        youtubeSet.add(entry.channel);
       }
     }
 
     const twitchChannels = [...twitchSet];
     const kickChannels = [...kickSet];
+    const youtubeChannels = [...youtubeSet];
 
-    if (twitchChannels.length === 0 && kickChannels.length === 0) {
+    if (twitchChannels.length === 0 && kickChannels.length === 0 && youtubeChannels.length === 0) {
       statuses.value = {};
       return;
     }
@@ -671,26 +721,33 @@ const _useLiveStatus = () => {
     isChecking.value = true;
 
     try {
-      const [twitchResults, kickResults] = await Promise.allSettled([
+      const [twitchResults, kickResults, youtubeResults] = await Promise.allSettled([
         checkTwitchStreams(twitchChannels),
         checkKickStreams(kickChannels),
+        checkYouTubeStreams(youtubeChannels),
       ]);
 
       const twitchData = twitchResults.status === "fulfilled" ? twitchResults.value : null;
       const kickData = kickResults.status === "fulfilled" ? kickResults.value : null;
+      const youtubeData = youtubeResults.status === "fulfilled" ? youtubeResults.value : null;
 
-      // Both APIs failed — skip update entirely to avoid poisoning previousStatuses
+      // All APIs failed — skip update entirely to avoid poisoning previousStatuses
       // with stale data that would trigger false "went live" notifications on recovery
-      if (twitchData === null && kickData === null) return;
+      if (twitchData === null && kickData === null && youtubeData === null) return;
 
       const newStatuses: StatusMap = { ...statuses.value };
       if (twitchData !== null) Object.assign(newStatuses, twitchData);
       if (kickData !== null) Object.assign(newStatuses, kickData);
+      if (youtubeData !== null) Object.assign(newStatuses, youtubeData);
 
       // Only consider channels for which we received fresh, confirmed data this cycle.
       // This prevents channels that were NOT re-fetched (due to partial API failure)
       // from incorrectly driving offline→online notification transitions.
-      const freshKeys = new Set([...Object.keys(twitchData ?? {}), ...Object.keys(kickData ?? {})]);
+      const freshKeys = new Set([
+        ...Object.keys(twitchData ?? {}),
+        ...Object.keys(kickData ?? {}),
+        ...Object.keys(youtubeData ?? {}),
+      ]);
 
       // detect offline -> online transitions for favorites
       if (isTauri() && notificationsEnabled.value) {
@@ -699,7 +756,8 @@ const _useLiveStatus = () => {
         const newLiveChannels: { fav: any; status: any }[] = [];
 
         for (const fav of favorites.value) {
-          if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
+          if (fav.platform !== "twitch" && fav.platform !== "kick" && fav.platform !== "youtube")
+            continue;
 
           const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
 
@@ -731,14 +789,26 @@ const _useLiveStatus = () => {
             );
 
             if (newLiveChannels.length === 1) {
-              const { fav } = newLiveChannels[0]!;
+              const { fav, status } = newLiveChannels[0]!;
+              const targetChannel =
+                fav.platform === "youtube" && status?.videoId ? status.videoId : fav.channel;
               toast.info(t("notifications.welcome"), {
                 description: t("notifications.welcomeBodySingle", { channel: fav.channel }),
                 position: "bottom-left",
                 duration: 10000,
                 action: {
                   label: t("notifications.actionWatch"),
-                  onClick: () => addStream(fav.channel, fav.platform),
+                  onClick: () => {
+                    const handle =
+                      fav.platform === "youtube" ? fav.channel.replace(/^@/, "") : undefined;
+                    if (handle) {
+                      addStream(targetChannel, fav.platform, undefined, fav.displayName, handle);
+                    } else if (fav.displayName) {
+                      addStream(targetChannel, fav.platform, undefined, fav.displayName);
+                    } else {
+                      addStream(targetChannel, fav.platform);
+                    }
+                  },
                 },
               });
             } else {
@@ -838,17 +908,36 @@ const _useLiveStatus = () => {
    * @return The status of the stream
    */
   const getStatus = (channel: string, platform: Platform): LiveStatus | null => {
-    if (platform !== "twitch" && platform !== "kick") return null;
+    if (platform !== "twitch" && platform !== "kick" && platform !== "youtube") return null;
     const key = `${platform}:${channel.toLowerCase()}`;
-    return statuses.value[key] ?? null;
+    const direct = statuses.value[key];
+    if (direct) return direct;
+
+    if (platform === "youtube") {
+      const channelLower = channel.toLowerCase();
+      const match = Object.entries(statuses.value).find(
+        ([k, s]) =>
+          k.startsWith("youtube:") &&
+          ((s.handle && s.handle.toLowerCase() === channelLower) ||
+            (s.videoId && s.videoId.toLowerCase() === channelLower) ||
+            (s.displayName && s.displayName.toLowerCase() === channelLower))
+      );
+      if (match) return match[1];
+    }
+
+    return null;
   };
 
   /**
    * @brief Check if there are channels to track
    */
   const hasChannels = () =>
-    recents.value.some((r) => r.platform === "twitch" || r.platform === "kick") ||
-    favorites.value.some((f) => f.platform === "twitch" || f.platform === "kick");
+    recents.value.some(
+      (r) => r.platform === "twitch" || r.platform === "kick" || r.platform === "youtube"
+    ) ||
+    favorites.value.some(
+      (f) => f.platform === "twitch" || f.platform === "kick" || f.platform === "youtube"
+    );
 
   /**
    * @brief Start polling
@@ -900,7 +989,7 @@ const _useLiveStatus = () => {
   watch(
     () =>
       [...recents.value, ...favorites.value]
-        .filter((e) => e.platform === "twitch" || e.platform === "kick")
+        .filter((e) => e.platform === "twitch" || e.platform === "kick" || e.platform === "youtube")
         .map((e) => `${e.platform}:${e.channel.toLowerCase()}`)
         .toSorted()
         .join(","),

@@ -4,7 +4,12 @@ import BaseStream from "./BaseStream.vue";
 import { PLATFORMS } from "@/config/platforms";
 import { usePreferences } from "@/composables/usePreferences";
 
-const props = defineProps<{ channel: string; channelid: string }>();
+const props = defineProps<{
+  channel: string;
+  channelid: string;
+  displayName?: string;
+  handle?: string;
+}>();
 
 const { adblockEnabled } = usePreferences();
 
@@ -15,7 +20,13 @@ const embedUrl = computed(() => {
 </script>
 
 <template>
-  <BaseStream :channelid="channelid" :channel="channel" platform="youtube">
+  <BaseStream
+    :channelid="channelid"
+    :channel="channel"
+    platform="youtube"
+    :display-name="displayName"
+    :handle="handle"
+  >
     <iframe
       :key="`${channel}-${adblockEnabled}`"
       :name="`multistream-player-${adblockEnabled ? 'adblock' : 'vanilla'}`"

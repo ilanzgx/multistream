@@ -9,11 +9,12 @@ Backend of the Multistream application, built with [Tauri 2](https://v2.tauri.ap
 1. [Twitch Authentication](#1-twitch-authentication)
 2. [Kick Authentication](#2-kick-authentication)
 3. [Whisper Transcription](#3-whisper-transcription)
-4. [Global Commands (`lib.rs`)](#4-global-commands-librs)
-5. [Auto-update](#5-auto-update)
-6. [Build Script (`build.rs`)](#6-build-script-buildrs)
-7. [Local Stream Recording](#7-local-stream-recording)
-8. [Testing Strategy](#8-testing-strategy)
+4. [YouTube Live Suggestions](#4-youtube-live-suggestions)
+5. [Global Commands (`lib.rs`)](#5-global-commands-librs)
+6. [Auto-update](#6-auto-update)
+7. [Build Script (`build.rs`)](#7-build-script-buildrs)
+8. [Local Stream Recording](#8-local-stream-recording)
+9. [Testing Strategy](#9-testing-strategy)
 
 ---
 
@@ -58,16 +59,18 @@ Outbound messages (`twitch_send_message`) are sent via an `mpsc` channel to the 
 
 ### IPC Commands
 
-| Command | Description |
-|---|---|
-| `twitch_login` | Starts the Device Flow, returns `DeviceFlowResponse` |
-| `twitch_cancel_login` | Aborts the polling loop |
-| `twitch_logout` | Disconnects IRC, clears state and credentials |
-| `twitch_get_auth_state` | Returns `{ authenticated, username }` |
-| `twitch_set_channels` | Sets IRC channels (validates/refreshes token first) |
-| `twitch_get_messages` | Returns the message buffer (max 1,000) |
-| `twitch_get_connection_state` | Returns the current connection state |
-| `twitch_send_message` | Sends a message via the IRC channel |
+| Command | Parameters | Description |
+|---|---|---|
+| `twitch_login` | — | Starts the Device Flow, returns `DeviceFlowResponse` |
+| `twitch_cancel_login` | — | Aborts the polling loop |
+| `twitch_logout` | — | Disconnects IRC, clears state and credentials |
+| `twitch_get_auth_state` | — | Returns `{ authenticated, username }` |
+| `twitch_set_channels` | `channels: string[]` | Sets IRC channels (validates/refreshes token first) |
+| `twitch_get_messages` | — | Returns the message buffer (max 1,000) |
+| `twitch_get_connection_state` | — | Returns the current connection state |
+| `twitch_send_message` | `channel: string, message: string` | Sends a message via the IRC channel |
+| `twitch_get_followed_streams` | — | Fetches followed channels currently live with viewer count, game, thumbnail, and avatar |
+| `twitch_get_hls_url` | `channel: string` | Obtains raw HLS (`.m3u8`) playback URL via Twitch GQL playback access token |
 
 ### Emitted Events
 
@@ -95,23 +98,25 @@ kick_login
   └─ Generates PKCE: verifier  (32 random bytes, Base64 URL-safe no-pad)
                      challenge  (SHA-256 of verifier, Base64 URL-safe no-pad)
                      state      (16 random bytes — CSRF protection)
-  └─ Opens TcpListener on 127.0.0.1:14832 (timeout: 2 min)
+  └─ Generates redirect_uri based on locale (e.g. https://usemultistream.vercel.app/en/ or /pt-br/)
   └─ Emits kick-auth-url → frontend opens the browser
-  └─ Waits for GET /callback?code=...&state=...
-       → validates state (CSRF) — if invalid → HTTP 400
-       → validates code is present — if missing → HTTP 400
+  └─ User authorizes on Kick → redirected to landing page gateway → deep link triggered:
+       multistream://oauth/kick?code=...&state=...
+  └─ Frontend captures deep link or callback and calls `kick_handle_callback(code, state)`
+       → validates state (CSRF protection) — if invalid → returns error
+       → sends (code, state) through oneshot channel to unblock login task (timeout: 5 min)
   └─ POST https://id.kick.com/oauth/token (exchanges code + verifier for tokens)
   └─ GET https://api.kick.com/public/v1/users (fetches username)
   └─ Persists credentials → emits kick-auth-changed
 ```
 
-`kick_cancel_login` connects to `127.0.0.1:14832` and sends `GET /cancel HTTP/1.1`, causing the listener to abort.
+`kick_cancel_login` signals the callback channel with cancellation, stopping the pending flow immediately.
 
 > `KICK_CLIENT_ID` and `KICK_CLIENT_SECRET` are injected via `option_env!()` **at compile time** from the `.env` file.
 
 ### Persistence
 
-Credentials are saved to `%APPDATA%\multistream\kick_auth.json`. Legacy tokens missing the `has_chat_write = true` flag are discarded on startup, forcing a new login with the correct permissions.
+Credentials are saved to `%APPDATA%\multistream\kick_auth.json` (or `kick_auth_dev.json` in debug builds). Legacy tokens missing the `has_chat_write = true` flag are discarded on startup, forcing a new login with the correct permissions.
 
 ### Chat via Pusher
 
@@ -125,14 +130,15 @@ After authenticating, `kick_set_channels` connects to Kick's Pusher WebSocket en
 
 ### IPC Commands
 
-| Command | Description |
-|---|---|
-| `kick_login` | Starts the PKCE Flow |
-| `kick_cancel_login` | Cancels the login in progress |
-| `kick_logout` | Disconnects Pusher, clears credentials |
-| `kick_get_auth_state` | Returns `{ authenticated, username }` |
-| `kick_send_message` | Sends a message (with automatic retry after refresh) |
-| `kick_set_channels` | Sets Pusher channels: `[slug, chatroom_id][]` |
+| Command | Parameters | Description |
+|---|---|---|
+| `kick_login` | `locale?: string` | Starts the PKCE Flow and awaits callback channel |
+| `kick_cancel_login` | — | Cancels the login in progress |
+| `kick_handle_callback` | `code: string, oauth_state: string` | Delivers the OAuth authorization code and state from deep link/gateway |
+| `kick_logout` | — | Disconnects Pusher, clears credentials |
+| `kick_get_auth_state` | — | Returns `{ authenticated, username }` |
+| `kick_send_message` | `chatroom_id: number, message: string` | Sends a message (with automatic retry after token refresh) |
+| `kick_set_channels` | `channels: [string, number][]` | Sets Pusher channels: `[slug, chatroom_id][]` |
 
 ### Emitted Events
 
@@ -213,9 +219,78 @@ Available models: `tiny`, `base`, `small`.
 
 ---
 
-## 4. Global Commands (`lib.rs`)
+## 4. YouTube Live Status & Channel Discovery
 
-In addition to the modules above, `lib.rs` registers two utility commands:
+Fetches trending live streams, checks channel live status with canonical handle resolution, and performs native channel search without requiring OAuth or YouTube Data API keys.
+
+### Scraping & Parsing Pipeline
+
+```
+youtube_get_suggested_streams(locale, limit)
+  ├─ Maps app locale to YouTube metadata:
+  │    (hl: language code, gl: region code, accept_lang: HTTP Accept-Language)
+  │    e.g. "pt-BR" → hl: "pt-BR", gl: "BR"
+  ├─ Configures reqwest client with rustls and browser User-Agent
+  ├─ Sets PREF cookie: PREF=hl=<hl>&gl=<gl>&tz=UTC
+  ├─ Fetches YouTube landing pages sequentially:
+  │    1. https://www.youtube.com/live?hl=<hl>&gl=<gl>
+  │    2. https://www.youtube.com/gaming?hl=<hl>&gl=<gl>
+  ├─ Extracts inline JavaScript state `ytInitialData`:
+  │    Searches for `var ytInitialData = `, `window["ytInitialData"] = `, or `ytInitialData = `
+  │    Parses raw JSON payload into serde_json::Value
+  ├─ Traverses YouTube component hierarchy:
+  │    Contents → Tabs → richGridRenderer / itemSectionRenderer → videoRenderer / compactVideoRenderer
+  ├─ Normalizes localized live badge and viewer counts (supports K, M, 万, mil, etc.)
+  └─ Deduplicates streams by channel ID and returns `Vec<YouTubeSuggestedStream>`
+```
+
+### Channel Live Status & Canonical Handle Resolution
+
+```
+youtube_resolve_channel(channel)
+  ├─ Queries channel page (https://www.youtube.com/@<channel>/live or /<channel>)
+  ├─ Extracts canonical handle from `canonicalBaseUrl` (e.g. "/@batzera1" → "batzera1")
+  ├─ Extracts channel display name (e.g. "Batzera")
+  ├─ Determines live status and parses real-time viewer count from ytInitialData / HTML meta tags
+  └─ Returns `YouTubeChannelStatus { is_live, video_id, viewer_count, handle, display_name }`
+```
+
+### Native YouTube Channel Search Engine
+
+```
+youtube_search_channels(query)
+  ├─ Executes search with channel-only filter:
+  │    https://www.youtube.com/results?search_query=<query>&sp=EgIQAg%253D%253D
+  ├─ Extracts `ytInitialData` and traverses DFS for `channelRenderer` components:
+  │    ├─ Canonical handle from `canonicalBaseUrl`
+  │    ├─ Public display name from `title.simpleText` / `runs`
+  │    ├─ Avatar URL from `thumbnail.thumbnails`
+  │    ├─ Live status from `badges` (e.g. `BADGE_STYLE_TYPE_LIVE_NOW`)
+  │    └─ Subscriber count / description snippet
+  └─ Returns up to 5 `YouTubeSearchResult` items
+```
+
+### Pure Unit Tests
+
+The parsing pipeline is rigorously tested with AAA unit tests against real JSON snippets and edge cases:
+- Localized viewer count parsing across languages (`1.5M`, `25k`, `10万`, `500 mil`).
+- Incomplete or malformed `ytInitialData` blobs.
+- Channel search renderer traversal and handle extraction.
+- Locale mapping validation for all 10 supported app languages.
+
+### IPC Commands
+
+| Command | Parameters | Description |
+|---|---|---|
+| `youtube_get_suggested_streams` | `locale?: string, limit?: number` | Fetches trending live streams localized to the user's language/region |
+| `youtube_resolve_channel` | `channel: string` | Resolves live status, active video ID, viewer count, and canonical handle |
+| `youtube_search_channels` | `query: string` | Searches YouTube channels matching query, returning handles and live status |
+
+---
+
+## 5. Global Commands (`lib.rs`)
+
+In addition to the platform modules, `lib.rs` registers utility commands for desktop shell integration, screenshots, and window lifecycle:
 
 ### `send_notification`
 
@@ -223,7 +298,7 @@ In addition to the modules above, `lib.rs` registers two utility commands:
 invoke("send_notification", { title, body })
 ```
 
-Displays a native OS notification via `tauri-plugin-notification`. The text is already localized by the frontend before being sent.
+Displays a native OS notification via `tauri-plugin-notification`. The text is localized by the frontend before invocation.
 
 ### `save_screenshot`
 
@@ -238,9 +313,28 @@ Receives raw PNG image bytes (`Uint8Array`) directly across Tauri IPC with the s
 
 Creates the directory if it does not exist. Returns the absolute path of the saved file.
 
+### `open_screenshot_folder`
+
+```
+invoke("open_screenshot_folder")
+```
+
+Opens the `~/Pictures/Multistream/` folder in the OS native file manager (e.g. Windows File Explorer) via `tauri-plugin-opener`.
+
+### `splashscreen_ready` & `close_splashscreen`
+
+```
+invoke("splashscreen_ready")
+invoke("close_splashscreen")
+```
+
+Controls the seamless startup transition:
+- `splashscreen_ready`: Displays the dedicated splash screen window while background initializations run.
+- `close_splashscreen`: Closes the splash screen and unminimizes/focuses the main window when the frontend is fully mounted and ready.
+
 ---
 
-## 5. Auto-update
+## 6. Auto-update
 
 Managed by `tauri-plugin-updater`, pointing to the GitHub Releases endpoint:
 
@@ -261,7 +355,7 @@ updater:allow-install
 
 ---
 
-## 6. Build Script (`build.rs`)
+## 7. Build Script (`build.rs`)
 
 Run by Cargo before compiling the crate. Performs three tasks:
 
@@ -291,7 +385,7 @@ Generates capability schemas and prepares the Tauri security manifest. Must be t
 
 ---
 
-## 7. Local Stream Recording
+## 8. Local Stream Recording
 
 Local live stream recording is powered by [Streamlink](https://streamlink.github.io/) for HLS/DASH chunk capture and [FFmpeg](https://ffmpeg.org/) for stream-copy remuxing (`.ts` to `.mp4`), executed directly via `tokio::process::Command`. **Supported on Windows (x86_64), Linux (x86_64), and macOS.**
 
@@ -384,7 +478,7 @@ If the application is terminated abruptly during recording (e.g., system crash, 
 
 ---
 
-## 8. Testing Strategy
+## 9. Testing Strategy
 
 The Rust backend adopts a pragmatic **AAA (Arrange, Act, Assert)** unit testing methodology, heavily focused on separating pure business logic from side-effect-heavy Tauri/I/O boundaries.
 

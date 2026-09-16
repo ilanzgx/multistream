@@ -26,7 +26,8 @@
     "platformCustom": "Custom",
     "suggestedLabel": "Suggested Streams",
     "suggestedDescription": "Popular live streams right now",
-    "noSuggestions": "No streams found"
+    "noSuggestions": "No streams found",
+    "resolvingLive": "Checking YouTube live status..."
   },
   "settings": {
     "tooltip": "Settings",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Missing media codecs detected. Please install your system codecs (e.g., ubuntu-restricted-extras or gstreamer-plugins) to watch streams."
+    },
+    "youtube": {
+      "offline": "The channel is offline or not currently broadcasting."
     }
   },
   "skeleton": {

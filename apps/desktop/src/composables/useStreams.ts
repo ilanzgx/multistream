@@ -17,6 +17,8 @@ export interface Stream {
   channel: string;
   platform: Platform;
   iframeUrl?: string;
+  displayName?: string;
+  handle?: string;
 }
 
 const _useStreams = () => {
@@ -130,7 +132,13 @@ const _useStreams = () => {
    * @param iframeUrl The iframe URL (optional)
    * @return void
    */
-  const addStream = (channel: string, platform: Platform, iframeUrl?: string) => {
+  const addStream = (
+    channel: string,
+    platform: Platform,
+    iframeUrl?: string,
+    displayName?: string,
+    handle?: string
+  ) => {
     if (
       streams.value.some(
         (s) => s.channel.toLowerCase() === channel.toLowerCase() && s.platform === platform
@@ -147,6 +155,8 @@ const _useStreams = () => {
 
     checkVideoCodecs();
 
+    const cleanHandle = handle ? handle.replace(/^@+/, "").trim() : undefined;
+
     const newId = crypto.randomUUID();
     streams.value = [
       ...streams.value,
@@ -155,14 +165,15 @@ const _useStreams = () => {
         channel,
         platform,
         ...(iframeUrl && { iframeUrl }),
+        ...(displayName && { displayName }),
+        ...(cleanHandle && { handle: cleanHandle }),
       },
     ];
 
     now.value = Date.now();
 
-    toast.success(`${channel} ${t("toasts.add.added")}`);
-
-    addRecent(channel, platform, iframeUrl);
+    toast.success(`${displayName || channel} ${t("toasts.add.added")}`);
+    addRecent(channel, platform, iframeUrl, displayName, cleanHandle);
   };
 
   /**

@@ -6,6 +6,11 @@ vi.mock("@tauri-apps/plugin-http", () => ({
   fetch: vi.fn(),
 }));
 
+const mockInvoke = vi.fn();
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: (...args: any[]) => mockInvoke(...args),
+}));
+
 vi.mock("@/config/api", () => ({
   API_CONFIG: {
     twitch: {
@@ -18,9 +23,27 @@ vi.mock("@/config/api", () => ({
   },
 }));
 
+const mockFavorites = ref<any[]>([]);
+const mockRecents = ref<any[]>([]);
+const mockSuggestedStreams = ref<any[]>([]);
+const mockGetStatus = vi.fn();
+
+vi.mock("../useFavorites", () => ({
+  useFavorites: () => ({
+    favorites: mockFavorites,
+  }),
+}));
+
+vi.mock("../useRecents", () => ({
+  useRecents: () => ({
+    recents: mockRecents,
+  }),
+}));
+
 vi.mock("../useLiveStatus", () => ({
   useLiveStatus: () => ({
-    suggestedStreams: ref([]),
+    suggestedStreams: mockSuggestedStreams,
+    getStatus: mockGetStatus,
   }),
 }));
 
@@ -39,6 +62,11 @@ describe("useChannelSearch", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     fetchSpy = vi.spyOn(globalThis, "fetch");
+    mockFavorites.value = [];
+    mockRecents.value = [];
+    mockSuggestedStreams.value = [];
+    mockGetStatus.mockReturnValue(null);
+    mockInvoke.mockResolvedValue([]);
     sut = useChannelSearch();
   });
 
@@ -52,7 +80,7 @@ describe("useChannelSearch", () => {
     it("should return live and offline channels from Twitch GQL", async () => {
       // Arrange
       const query = ref("xarola");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -99,7 +127,7 @@ describe("useChannelSearch", () => {
     it("should cap results at SEARCH_LIMIT (5)", async () => {
       // Arrange
       const query = ref("test");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -128,7 +156,7 @@ describe("useChannelSearch", () => {
     it("should return empty results on Twitch API failure", async () => {
       // Arrange
       const query = ref("anyone");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       fetchSpy.mockResolvedValue({ ok: false, status: 500 } as any);
 
@@ -144,7 +172,7 @@ describe("useChannelSearch", () => {
     it("should return empty results on network error", async () => {
       // Arrange
       const query = ref("crash");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       fetchSpy.mockRejectedValue(new Error("Network error"));
 
@@ -162,7 +190,7 @@ describe("useChannelSearch", () => {
     it("should return a live channel when slug resolves", async () => {
       // Arrange
       const query = ref("xarola");
-      const platform = ref<"twitch" | "kick">("kick");
+      const platform = ref<"twitch" | "kick" | "youtube">("kick");
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -191,7 +219,7 @@ describe("useChannelSearch", () => {
     it("should return offline channel when slug resolves but no stream", async () => {
       // Arrange
       const query = ref("xarola");
-      const platform = ref<"twitch" | "kick">("kick");
+      const platform = ref<"twitch" | "kick" | "youtube">("kick");
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -215,7 +243,7 @@ describe("useChannelSearch", () => {
     it("should return empty array on 404 (channel does not exist)", async () => {
       // Arrange
       const query = ref("doesnotexist99999");
-      const platform = ref<"twitch" | "kick">("kick");
+      const platform = ref<"twitch" | "kick" | "youtube">("kick");
 
       fetchSpy.mockResolvedValue({ ok: false, status: 404 } as any);
 
@@ -230,7 +258,7 @@ describe("useChannelSearch", () => {
     it("should return empty results on non-404 API failure", async () => {
       // Arrange
       const query = ref("anyone");
-      const platform = ref<"twitch" | "kick">("kick");
+      const platform = ref<"twitch" | "kick" | "youtube">("kick");
 
       fetchSpy.mockResolvedValue({ ok: false, status: 500 } as any);
 
@@ -243,11 +271,127 @@ describe("useChannelSearch", () => {
     });
   });
 
+  describe("YouTube search & local matching", () => {
+    it("should match local YouTube favorites and recents", async () => {
+      // Arrange
+      mockFavorites.value = [
+        { channel: "batzera1", platform: "youtube", displayName: "batzera" },
+        { channel: "gaules", platform: "twitch" },
+      ];
+      mockRecents.value = [{ channel: "alanzoka", platform: "youtube" }];
+      mockGetStatus.mockImplementation((channel) => {
+        if (channel === "batzera1" || channel === "batzera") {
+          return { isLive: true, category: "Gaming" };
+        }
+        return null;
+      });
+
+      const query = ref("bat");
+      const platform = ref<"twitch" | "kick" | "youtube">("youtube");
+
+      // Act
+      const { results } = sut.search(query, platform);
+      await flush();
+
+      // Assert
+      expect(results.value).toHaveLength(1);
+      expect(results.value[0]).toMatchObject({
+        channel: "batzera",
+        platform: "youtube",
+        isLive: true,
+        category: "Gaming",
+      });
+    });
+
+    it("should return typed query as direct candidate when not in local favorites", async () => {
+      // Arrange
+      const query = ref("@newchannel");
+      const platform = ref<"twitch" | "kick" | "youtube">("youtube");
+
+      // Act
+      const { results } = sut.search(query, platform);
+      await flush();
+
+      // Assert
+      expect(results.value).toHaveLength(1);
+      expect(results.value[0]).toMatchObject({
+        channel: "newchannel",
+        platform: "youtube",
+        isLive: false,
+      });
+    });
+
+    it("should call youtube_search_channels and map display_name + handle", async () => {
+      // Arrange
+      mockInvoke.mockResolvedValueOnce([
+        {
+          channel: "batzera1",
+          display_name: "Batzera",
+          is_live: true,
+          category: "150 mil inscritos",
+        },
+        {
+          channel: "batzera2",
+          display_name: "Batzera Fan",
+          is_live: false,
+          category: "10 mil inscritos",
+        },
+      ]);
+
+      const query = ref("batzera");
+      const platform = ref<"twitch" | "kick" | "youtube">("youtube");
+
+      // Act
+      const { results } = sut.search(query, platform);
+      await flush();
+
+      // Assert
+      expect(mockInvoke).toHaveBeenCalledWith("youtube_search_channels", { query: "batzera" });
+      expect(results.value).toHaveLength(2);
+      expect(results.value[0]).toMatchObject({
+        channel: "Batzera",
+        handle: "batzera1",
+        platform: "youtube",
+        isLive: true,
+        category: "150 mil inscritos",
+      });
+      expect(results.value[1]).toMatchObject({
+        channel: "Batzera Fan",
+        handle: "batzera2",
+        platform: "youtube",
+        isLive: false,
+      });
+    });
+
+    it("should deduplicate local favorites against remote YouTube results", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "batzera1", platform: "youtube", displayName: "Batzera" }];
+      mockInvoke.mockResolvedValueOnce([
+        { channel: "batzera1", display_name: "Batzera", is_live: true, category: "Gaming" },
+        { channel: "batzera2", display_name: "Batzera Fan", is_live: false },
+      ]);
+
+      const query = ref("batzera");
+      const platform = ref<"twitch" | "kick" | "youtube">("youtube");
+
+      // Act
+      const { results } = sut.search(query, platform);
+      await flush();
+
+      // Assert — batzera1 from favorites + batzera2 from remote, no duplicate batzera1
+      expect(results.value).toHaveLength(2);
+      const handles = results.value.map((r) => r.handle ?? r.channel);
+      expect(handles).toEqual(["batzera1", "batzera2"]);
+      const channels = results.value.map((r) => r.channel);
+      expect(channels).toEqual(["Batzera", "Batzera Fan"]);
+    });
+  });
+
   describe("Debounce behavior", () => {
     it("should only fire one request per burst of keystrokes", async () => {
       // Arrange
       const query = ref("g");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -278,7 +422,7 @@ describe("useChannelSearch", () => {
     it("should clear results and stop loading", async () => {
       // Arrange
       const query = ref("xarola");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -309,7 +453,7 @@ describe("useChannelSearch", () => {
     it("should clear results when platform changes", async () => {
       // Arrange
       const query = ref("xqc");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       fetchSpy.mockResolvedValue({
         ok: true,
@@ -341,7 +485,7 @@ describe("useChannelSearch", () => {
     it("should not fire a request when query is empty", async () => {
       // Arrange
       const query = ref("");
-      const platform = ref<"twitch" | "kick">("twitch");
+      const platform = ref<"twitch" | "kick" | "youtube">("twitch");
 
       // Act
       sut.search(query, platform);
@@ -355,7 +499,7 @@ describe("useChannelSearch", () => {
     it("should not fire a request for unsupported platforms", async () => {
       // Arrange
       const query = ref("test");
-      const platform = ref<any>("youtube");
+      const platform = ref<any>("custom");
 
       // Act
       sut.search(query, platform);

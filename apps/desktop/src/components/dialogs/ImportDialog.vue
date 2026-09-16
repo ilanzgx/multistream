@@ -12,6 +12,7 @@ import {
 import Button from "../ui/button/Button.vue";
 import { useStreams } from "@/composables/useStreams";
 import { parseUrlOptions } from "@/lib/parseUrlOptions";
+import { resolveStream } from "@/lib/streamResolver";
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { APP_LINKS } from "@/config/links";
@@ -34,7 +35,7 @@ const { addStream, clearStreams } = useStreams();
 
 const importLink = ref("");
 
-const handleImport = () => {
+const handleImport = async () => {
   const link = importLink.value.trim();
   if (!link) return;
 
@@ -47,8 +48,30 @@ const handleImport = () => {
       return;
     }
 
+    const resolvedList = [];
+    for (const s of parsedStreams) {
+      const resolved = await resolveStream(s);
+      if (resolved) {
+        resolvedList.push(resolved);
+      } else if (s.platform === "youtube") {
+        toast.error(t("toasts.youtube.offline"));
+      }
+    }
+
+    if (resolvedList.length === 0) {
+      return;
+    }
+
     clearStreams();
-    parsedStreams.forEach((s) => addStream(s.channel, s.platform, s.iframeUrl));
+    for (const resolved of resolvedList) {
+      addStream(
+        resolved.channel,
+        resolved.platform,
+        resolved.iframeUrl,
+        resolved.displayName,
+        resolved.handle
+      );
+    }
 
     toast.success(t("import.success"));
     importLink.value = "";

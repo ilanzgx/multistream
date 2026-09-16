@@ -8,7 +8,8 @@ import { useScreenshot } from "@/composables/useScreenshot";
 import { useI18n } from "vue-i18n";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/composables/useToast";
-import { useLiveStatus } from "@/composables/useLiveStatus";
+import { useLiveStatus, type LiveStatus } from "@/composables/useLiveStatus";
+import { invoke } from "@tauri-apps/api/core";
 import { useElementSize } from "@vueuse/core";
 import { useProfilePicture } from "@/composables/useProfilePicture";
 import { useRecording } from "@/composables/useRecording";
@@ -62,6 +63,8 @@ const props = defineProps<{
   channelid: string;
   channel: string;
   platform: "twitch" | "kick" | "youtube" | "custom";
+  displayName?: string;
+  handle?: string;
 }>();
 
 const platformConfig = computed(() => {
@@ -70,10 +73,42 @@ const platformConfig = computed(() => {
 
 const isLoading = ref(true);
 const containerRef = ref<HTMLElement>();
+const { getStatus, checkAll, statuses } = useLiveStatus();
+const liveStatus = computed(() => getStatus(props.displayName || props.channel, props.platform));
+const resolvedChannelKey = computed(() => {
+  if (props.platform === "youtube") {
+    return (
+      props.handle ||
+      liveStatus.value?.handle ||
+      (props.channel.startsWith("@") ? props.channel : undefined) ||
+      liveStatus.value?.displayName ||
+      props.displayName ||
+      props.channel
+    );
+  }
+  return props.displayName || props.channel;
+});
+
 const isFavorite = computed(() => {
-  return favorites.value.find(
-    (f) => f.channel.toLowerCase() === props.channel.toLowerCase() && f.platform === props.platform
-  );
+  const channelToMatch = resolvedChannelKey.value.toLowerCase();
+  const rawChannel = props.channel.toLowerCase();
+  const rawDisplayName = props.displayName?.toLowerCase();
+  const handle = liveStatus.value?.handle?.toLowerCase();
+  const videoId = liveStatus.value?.videoId?.toLowerCase();
+  const statusDisplayName = liveStatus.value?.displayName?.toLowerCase();
+
+  return favorites.value.some((f) => {
+    if (f.platform !== props.platform) return false;
+    const fav = f.channel.toLowerCase();
+    return (
+      fav === channelToMatch ||
+      fav === rawChannel ||
+      (rawDisplayName && fav === rawDisplayName) ||
+      (handle && fav === handle) ||
+      (videoId && fav === videoId) ||
+      (statusDisplayName && fav === statusDisplayName)
+    );
+  });
 });
 
 const isStreamFocused = computed(() => isFocused(props.channelid));
@@ -81,10 +116,8 @@ const isStreamFocused = computed(() => isFocused(props.channelid));
 // true when another stream is focused and this one is miniaturized in the sidebar
 const isMiniaturized = computed(() => !!focusedStreamId.value && !isFocused(props.channelid));
 
-const { getStatus } = useLiveStatus();
-const liveStatus = computed(() => getStatus(props.channel, props.platform));
 const { getProfilePicture } = useProfilePicture();
-const profilePictureUrl = getProfilePicture(props.channel, props.platform);
+const profilePictureUrl = getProfilePicture(props.displayName || props.channel, props.platform);
 
 const viewerCountDisplay = computed(() => {
   const status = liveStatus.value;
@@ -221,6 +254,35 @@ watch(adblockEnabled, () => {
 });
 
 onMounted(() => {
+  if (props.platform === "youtube" && !liveStatus.value) {
+    invoke<any[]>("youtube_check_channels_status", {
+      channels: [props.channel],
+    })
+      .then((raw) => {
+        if (Array.isArray(raw) && raw.length > 0 && raw[0]) {
+          const item = raw[0];
+          const vid = item.videoId ?? item.video_id;
+          const handle = item.handle;
+          const displayName = item.displayName ?? item.display_name;
+          const statusObj: LiveStatus = {
+            isLive: Boolean(item.isLive ?? item.is_live),
+            videoId: vid,
+            handle,
+            displayName,
+            viewerCount: item.viewerCount ?? item.viewer_count,
+            title: item.title,
+            avatarUrl: item.avatarUrl ?? item.avatar_url,
+            thumbnailUrl: vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : undefined,
+          };
+          statuses.value[`youtube:${props.channel.toLowerCase()}`] = statusObj;
+          if (vid) statuses.value[`youtube:${vid.toLowerCase()}`] = statusObj;
+          if (handle) statuses.value[`youtube:${handle.toLowerCase()}`] = statusObj;
+          if (displayName) statuses.value[`youtube:${displayName.toLowerCase()}`] = statusObj;
+        }
+      })
+      .catch(() => {});
+  }
+
   setTimeout(() => {
     if (isLoading.value) {
       connectionStatus.value = "ESTABLISHING_HANDSHAKE";
@@ -253,13 +315,72 @@ function onScreenshotEvent() {
   handleScreenshot();
 }
 
-const handleFavoriteStream = (channel: string, platform: Platform) => {
+const handleFavoriteStream = async (_channel: string, platform: Platform) => {
+  let channelToSave = resolvedChannelKey.value;
+  let displayNameToSave = props.displayName || liveStatus.value?.displayName;
+
+  if (platform === "youtube" && !channelToSave.startsWith("@") && !liveStatus.value?.handle) {
+    try {
+      const raw = await invoke<any[]>("youtube_check_channels_status", {
+        channels: [props.channel],
+      });
+      if (Array.isArray(raw) && raw.length > 0 && raw[0]) {
+        const item = raw[0];
+        const vid = item.videoId ?? item.video_id;
+        const handle = item.handle;
+        const displayName = item.displayName ?? item.display_name;
+        const statusObj: LiveStatus = {
+          isLive: Boolean(item.isLive ?? item.is_live),
+          videoId: vid,
+          handle,
+          displayName,
+          viewerCount: item.viewerCount ?? item.viewer_count,
+          title: item.title,
+          avatarUrl: item.avatarUrl ?? item.avatar_url,
+          thumbnailUrl: vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : undefined,
+        };
+        statuses.value[`youtube:${props.channel.toLowerCase()}`] = statusObj;
+        if (vid) statuses.value[`youtube:${vid.toLowerCase()}`] = statusObj;
+        if (handle) statuses.value[`youtube:${handle.toLowerCase()}`] = statusObj;
+        if (displayName) statuses.value[`youtube:${displayName.toLowerCase()}`] = statusObj;
+
+        if (handle) {
+          channelToSave = handle;
+        }
+        if (displayName) {
+          displayNameToSave = displayName;
+        }
+      }
+    } catch {
+      // silently ignore
+    }
+  }
+
   if (isFavorite.value) {
-    removeFavorite(channel, platform);
-    toast.success(`${channel} ${t("toasts.favorite.removed")}`);
+    removeFavorite(channelToSave, platform);
+    if (props.channel && props.channel !== channelToSave) {
+      removeFavorite(props.channel, platform);
+    }
+    if (props.displayName && props.displayName !== channelToSave) {
+      removeFavorite(props.displayName, platform);
+    }
+    if (liveStatus.value?.handle && liveStatus.value.handle !== channelToSave) {
+      removeFavorite(liveStatus.value.handle, platform);
+    }
+    if (liveStatus.value?.videoId && liveStatus.value.videoId !== channelToSave) {
+      removeFavorite(liveStatus.value.videoId, platform);
+    }
+    if (liveStatus.value?.displayName && liveStatus.value.displayName !== channelToSave) {
+      removeFavorite(liveStatus.value.displayName, platform);
+    }
+    toast.success(`${channelToSave} ${t("toasts.favorite.removed")}`);
   } else {
-    addFavorite(channel, platform);
-    toast.success(`${channel} ${t("toasts.favorite.added")}`);
+    if (platform === "youtube" && displayNameToSave) {
+      displayNameToSave = displayNameToSave.replace(/^@/, "");
+    }
+    addFavorite(channelToSave, platform, undefined, displayNameToSave);
+    checkAll();
+    toast.success(`${channelToSave} ${t("toasts.favorite.added")}`);
   }
 };
 
@@ -354,7 +475,7 @@ const handleScreenshot = () => {
                       : 'text-xs'
                 "
               >
-                {{ t("skeleton.loadingChannel", { channel: props.channel }) }}
+                {{ t("skeleton.loadingChannel", { channel: props.displayName || props.channel }) }}
               </div>
               <!-- Diagnostics Panel -->
               <div
@@ -428,7 +549,7 @@ const handleScreenshot = () => {
             <div v-if="!isMiniaturized" class="space-y-2">
               <!-- real channel name, muted -->
               <p class="h-4 text-sm font-medium text-white/30 leading-none tracking-wide">
-                {{ props.channel }}
+                {{ props.displayName || props.channel }}
               </p>
               <!-- category skeleton or real category -->
               <Skeleton v-if="!liveStatus?.category" class="h-3 w-24 bg-white/5" />

@@ -22,6 +22,7 @@ import KickAuthDialog from "./components/dialogs/KickAuthDialog.vue";
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { parseUrlOptions } from "./lib/parseUrlOptions";
+import { resolveStream } from "./lib/streamResolver";
 import { APP_LINKS } from "./config/links";
 
 const sidebarRef = ref<InstanceType<typeof SidebarPanel> | null>(null);
@@ -185,8 +186,21 @@ onMounted(async () => {
     try {
       unlistenWatch = await listen<{ channel: string; platform: Platform }>(
         "notification-watch",
-        (event) => {
+        async (event) => {
           const { channel, platform } = event.payload;
+          if (platform === "youtube") {
+            const resolved = await resolveStream({ channel, platform });
+            if (resolved) {
+              addStream(
+                resolved.channel,
+                resolved.platform,
+                resolved.iframeUrl,
+                resolved.displayName,
+                resolved.handle
+              );
+              return;
+            }
+          }
           addStream(channel, platform);
         }
       );
@@ -217,7 +231,20 @@ onMounted(async () => {
       }
     } else {
       clearStreams();
-      parsedStreams.forEach((s) => addStream(s.channel, s.platform, s.iframeUrl));
+      for (const s of parsedStreams) {
+        const resolved = await resolveStream(s);
+        if (resolved) {
+          addStream(
+            resolved.channel,
+            resolved.platform,
+            resolved.iframeUrl,
+            resolved.displayName,
+            resolved.handle
+          );
+        } else if (s.platform === "youtube") {
+          toast.error(t("toasts.youtube.offline"));
+        }
+      }
       window.history.replaceState({}, "", window.location.pathname);
     }
   } catch {

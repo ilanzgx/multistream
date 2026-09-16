@@ -114,19 +114,41 @@ describe("useRecents composable unit tests", () => {
     expect(recents.value[0]?.channel).toBe("alanzoka");
   });
 
-  it("should clear all recent channels", () => {
+  it("should store displayName and handle and prioritize handle as channel for youtube", () => {
     // Arrange
-    const { addRecent, clearRecents, recents } = sut;
-
-    addRecent("gaules", "twitch");
-    addRecent("alanzoka", "youtube");
-
-    expect(recents.value.length).toBe(2);
+    const { addRecent, recents } = sut;
 
     // Act
-    clearRecents();
+    addRecent("5pzeFSTt18c", "youtube", undefined, "Batzera", "batzera1");
+
+    // Assert
+    expect(recents.value.length).toBe(1);
+    expect(recents.value[0]?.channel).toBe("batzera1");
+    expect(recents.value[0]?.displayName).toBe("Batzera");
+    expect(recents.value[0]?.handle).toBe("batzera1");
+  });
+
+  it("should deduplicate and remove recent by handle or channel", () => {
+    // Arrange
+    const { addRecent, removeRecent, recents } = sut;
+    addRecent("5pzeFSTt18c", "youtube", undefined, "Batzera", "batzera1");
+
+    // Act
+    removeRecent("batzera1", "youtube");
 
     // Assert
     expect(recents.value.length).toBe(0);
+  });
+
+  it("should not remove recent by displayName alone", () => {
+    // Arrange
+    const { addRecent, removeRecent, recents } = sut;
+    addRecent("5pzeFSTt18c", "youtube", undefined, "BatzeraNick", "batzera1");
+
+    // Act
+    removeRecent("BatzeraNick", "youtube");
+
+    // Assert
+    expect(recents.value.length).toBe(1);
   });
 });

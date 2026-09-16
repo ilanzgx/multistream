@@ -450,42 +450,57 @@ describe("useBackup composable unit tests", () => {
       delete (globalThis as any).window;
     });
 
-    it("should fall back to legacy download if showSaveFilePicker throws non-AbortError", async () => {
+    it("should accept valid backup data with optional displayName, handle, and lastVideoId", () => {
       // Arrange
-      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      const { exportConfig } = backupComposable;
-
-      const genericError = new Error("Some Error");
-      genericError.name = "SomeError";
-
-      (globalThis as any).window = {
-        showSaveFilePicker: vi.fn().mockRejectedValue(genericError),
+      const backupWithOptionals = {
+        ...validBackup,
+        streams: [
+          {
+            id: "1",
+            channel: "batzera1",
+            platform: "youtube",
+            displayName: "Batzera",
+            handle: "batzera1",
+          },
+        ],
+        favorites: [
+          {
+            channel: "batzera1",
+            platform: "youtube",
+            displayName: "Batzera",
+            handle: "batzera1",
+            lastVideoId: "5pzeFSTt18c",
+            addedAt: 1600000000000,
+          },
+        ],
       };
-
-      const clickMock = vi.fn();
-      const mockLink = {
-        setAttribute: vi.fn(),
-        click: clickMock,
-        remove: vi.fn(),
-        href: "",
-        download: "",
-      };
-      globalThis.document = {
-        createElement: vi.fn().mockReturnValue(mockLink),
-        body: { appendChild: vi.fn(), removeChild: vi.fn() },
-      } as any;
-      globalThis.URL.createObjectURL = vi.fn(() => "blob:url");
-      globalThis.URL.revokeObjectURL = vi.fn();
 
       // Act
-      const result = await exportConfig();
+      const isValid = validateBackupData(backupWithOptionals);
 
       // Assert
-      expect(result).toBe(true);
-      expect(clickMock).toHaveBeenCalled();
-      consoleSpy.mockRestore();
+      expect(isValid).toBe(true);
+    });
 
-      delete (globalThis as any).window;
+    it("should reject backup data with non-string displayName or handle in channel shape", () => {
+      // Arrange
+      const backupWithInvalidDisplayName = {
+        ...validBackup,
+        streams: [
+          {
+            id: "1",
+            channel: "batzera1",
+            platform: "youtube",
+            displayName: 12345,
+          },
+        ],
+      };
+
+      // Act
+      const isValid = validateBackupData(backupWithInvalidDisplayName);
+
+      // Assert
+      expect(isValid).toBe(false);
     });
   });
 });

@@ -26,7 +26,8 @@
     "platformCustom": "Personalizado",
     "suggestedLabel": "Transmissões Sugeridas",
     "suggestedDescription": "Transmissões ao vivo em alta no momento",
-    "noSuggestions": "Nenhuma transmissão encontrada"
+    "noSuggestions": "Nenhuma transmissão encontrada",
+    "resolvingLive": "Verificando transmissão ao vivo..."
   },
   "settings": {
     "tooltip": "Configurações",
@@ -368,6 +369,9 @@
     },
     "codecs": {
       "missing": "Falta de codecs de mídia detectada. Instale os codecs do seu sistema (ex: ubuntu-restricted-extras ou gstreamer-plugins) para assistir às streams."
+    },
+    "youtube": {
+      "offline": "O canal está offline ou não possui transmissão ao vivo no momento."
     }
   },
   "skeleton": {

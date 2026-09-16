@@ -25,9 +25,12 @@ export function parseUrlOptions(queryString: string): ParsedStream[] | null {
   if (streamsParam) {
     const streamList = streamsParam.split(",");
     streamList.forEach((stream) => {
-      const [platform, channel] = stream.split(":");
-      if (platform && channel) {
-        results.push({ channel, platform: platform as Platform });
+      const [platform, rawChannel] = stream.split(":");
+      if (platform && rawChannel) {
+        const channel = rawChannel.trim();
+        if (channel) {
+          results.push({ channel, platform: platform as Platform });
+        }
       }
     });
   }
