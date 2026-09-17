@@ -13,6 +13,19 @@ use tokio::sync::Semaphore;
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
+pub fn get_youtube_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::Client::builder()
+            .use_rustls_tls()
+            .timeout(Duration::from_secs(10))
+            .pool_idle_timeout(Duration::from_secs(90))
+            .tcp_keepalive(Duration::from_secs(30))
+            .build()
+            .unwrap_or_default()
+    })
+}
+
 pub fn extract_canonical_video_id(html: &str) -> Option<String> {
     static CANONICAL_RE_1: OnceLock<Option<regex::Regex>> = OnceLock::new();
     let re1 = CANONICAL_RE_1.get_or_init(|| {
@@ -349,6 +362,60 @@ pub fn is_interstitial_or_challenge_page(html: &str) -> bool {
         || html.contains("Our systems have detected unusual traffic")
 }
 
+pub fn is_not_currently_live(node: Option<&Value>) -> bool {
+    let n = match node {
+        Some(node) => node,
+        None => return false,
+    };
+
+    if let Some(vd) = n.get("videoDetails").or_else(|| find_video_details(n)) {
+        if vd
+            .get("isUpcoming")
+            .and_then(|u| u.as_bool())
+            .unwrap_or(false)
+        {
+            return true;
+        }
+        if let Some(is_live) = vd.get("isLive").and_then(|l| l.as_bool()) {
+            let is_live_content = vd
+                .get("isLiveContent")
+                .and_then(|l| l.as_bool())
+                .unwrap_or(false);
+            if !is_live && !is_live_content {
+                return true;
+            }
+        }
+    }
+
+    if let Some(microformat) = n
+        .get("microformat")
+        .and_then(|m| m.get("playerMicroformatRenderer"))
+    {
+        if let Some(lbd) = microformat.get("liveBroadcastDetails") {
+            if let Some(is_live_now) = lbd.get("isLiveNow").and_then(|b| b.as_bool()) {
+                if !is_live_now {
+                    return true;
+                }
+            }
+            if lbd.get("endTimestamp").is_some() {
+                return true;
+            }
+        }
+    }
+
+    if let Some(status) = n
+        .get("playabilityStatus")
+        .and_then(|ps| ps.get("status"))
+        .and_then(|s| s.as_str())
+    {
+        if status == "LIVE_STREAM_OFFLINE" || status == "UNPLAYABLE" || status == "ENDED" {
+            return true;
+        }
+    }
+
+    false
+}
+
 pub async fn resolve_channel_live_status(
     client: &reqwest::Client,
     channel_or_handle: &str,
@@ -392,9 +459,10 @@ pub async fn resolve_channel_live_status(
 
         match resp {
             Ok(r) if r.status().is_success() => break Some(r),
+            Ok(r) if r.status().is_client_error() => break None,
             _ if retries > 0 => {
                 retries -= 1;
-                tokio::time::sleep(Duration::from_millis(500)).await;
+                tokio::time::sleep(Duration::from_millis(200)).await;
             }
             _ => break None,
         }
@@ -425,7 +493,11 @@ pub async fn resolve_channel_live_status(
         return None;
     }
 
-    let canonical_id = extract_canonical_video_id(&html);
+    let canonical_id = if video_id_from_url.is_none() {
+        extract_canonical_video_id(&html)
+    } else {
+        None
+    };
     let mut video_id = video_id_from_url.or(canonical_id);
 
     let mut title: Option<String> = None;
@@ -436,69 +508,14 @@ pub async fn resolve_channel_live_status(
     let mut display_name: Option<String> = None;
     let mut handle: Option<String> = None;
 
-    if let Some(json_data) = extract_yt_initial_data(&html) {
-        avatar_url = find_channel_avatar(&json_data);
-        let (found_name, found_handle) = find_channel_info(&json_data);
-        display_name = found_name;
-        handle = found_handle;
+    let player_data = extract_yt_initial_player_response(&html);
 
-        if let Some(vd) = find_video_details(&json_data) {
-            if video_id.is_none() {
-                video_id = vd
-                    .get("videoId")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-            }
-
-            if display_name.is_none() {
-                display_name = vd
-                    .get("author")
-                    .and_then(|a| a.as_str())
-                    .map(|s| s.to_string());
-            }
-
-            title = vd
-                .get("title")
-                .and_then(|t| t.as_str())
-                .map(|s| s.to_string());
-
-            let vd_is_live = vd.get("isLive").and_then(|l| l.as_bool()).unwrap_or(false);
-            let vd_is_upcoming = vd
-                .get("isUpcoming")
-                .and_then(|u| u.as_bool())
-                .unwrap_or(false);
-
-            if vd_is_live && !vd_is_upcoming {
-                is_live = true;
-            }
-
-            if viewer_count.is_none() {
-                if let Some(vc) = vd.get("viewCount") {
-                    if let Some(s) = vc.as_str() {
-                        let count = parse_viewer_count(s);
-                        if count > 0 {
-                            viewer_count = Some(count);
-                        }
-                    } else if let Some(n) = vc.as_u64() {
-                        if n > 0 {
-                            viewer_count = Some(n);
-                        }
-                    }
-                }
-            }
-        }
-
+    if let Some(ref player) = player_data {
         if viewer_count.is_none() {
-            viewer_count = find_viewer_count(&json_data);
-        }
-    }
-
-    if let Some(player_data) = extract_yt_initial_player_response(&html) {
-        if viewer_count.is_none() {
-            viewer_count = find_viewer_count(&player_data);
+            viewer_count = find_viewer_count(player);
         }
 
-        if let Some(microformat) = player_data
+        if let Some(microformat) = player
             .get("microformat")
             .and_then(|m| m.get("playerMicroformatRenderer"))
         {
@@ -519,17 +536,18 @@ pub async fn resolve_channel_live_status(
                 }
             }
             if !is_live {
-                let is_live_stream = microformat
-                    .get("isLiveStream")
-                    .and_then(|l| l.as_bool())
-                    .unwrap_or(false);
-                if is_live_stream {
+                let is_live_now = microformat
+                    .get("liveBroadcastDetails")
+                    .and_then(|lbd| lbd.get("isLiveNow"))
+                    .and_then(|b| b.as_bool());
+
+                if is_live_now == Some(true) {
                     is_live = true;
                 }
             }
         }
 
-        if let Some(vd) = player_data.get("videoDetails") {
+        if let Some(vd) = player.get("videoDetails") {
             if display_name.is_none() {
                 if let Some(author) = vd.get("author").and_then(|a| a.as_str()) {
                     display_name = Some(author.to_string());
@@ -551,12 +569,91 @@ pub async fn resolve_channel_live_status(
                     .get("isLiveContent")
                     .and_then(|l| l.as_bool())
                     .unwrap_or(false);
-                if vd_is_live || vd_is_live_content {
+                let vd_is_upcoming = vd
+                    .get("isUpcoming")
+                    .and_then(|u| u.as_bool())
+                    .unwrap_or(false);
+                if (vd_is_live || vd_is_live_content) && !vd_is_upcoming {
                     is_live = true;
                 }
             }
         }
     }
+
+    let json_data = if player_data.is_none() || (display_name.is_none() && handle.is_none()) {
+        extract_yt_initial_data(&html)
+    } else {
+        None
+    };
+
+    if let Some(ref json) = json_data {
+        avatar_url = find_channel_avatar(json);
+        let (found_name, found_handle) = find_channel_info(json);
+        if display_name.is_none() {
+            display_name = found_name;
+        }
+        if handle.is_none() {
+            handle = found_handle;
+        }
+
+        if let Some(vd) = find_video_details(json) {
+            if video_id.is_none() {
+                video_id = vd
+                    .get("videoId")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+            }
+
+            if display_name.is_none() {
+                display_name = vd
+                    .get("author")
+                    .and_then(|a| a.as_str())
+                    .map(|s| s.to_string());
+            }
+
+            if title.is_none() {
+                title = vd
+                    .get("title")
+                    .and_then(|t| t.as_str())
+                    .map(|s| s.to_string());
+            }
+
+            let vd_is_live = vd.get("isLive").and_then(|l| l.as_bool()).unwrap_or(false);
+            let vd_is_live_content = vd
+                .get("isLiveContent")
+                .and_then(|l| l.as_bool())
+                .unwrap_or(false);
+            let vd_is_upcoming = vd
+                .get("isUpcoming")
+                .and_then(|u| u.as_bool())
+                .unwrap_or(false);
+
+            if (vd_is_live || vd_is_live_content) && !vd_is_upcoming {
+                is_live = true;
+            }
+
+            if viewer_count.is_none() {
+                if let Some(vc) = vd.get("viewCount") {
+                    if let Some(s) = vc.as_str() {
+                        let count = parse_viewer_count(s);
+                        if count > 0 {
+                            viewer_count = Some(count);
+                        }
+                    } else if let Some(n) = vc.as_u64() {
+                        if n > 0 {
+                            viewer_count = Some(n);
+                        }
+                    }
+                }
+            }
+        }
+
+        if viewer_count.is_none() {
+            viewer_count = find_viewer_count(json);
+        }
+    }
+
+    let is_offline = is_not_currently_live(player_data.as_ref());
 
     if viewer_count.is_none() {
         viewer_count = extract_viewer_count_from_html(&html);
@@ -591,15 +688,17 @@ pub async fn resolve_channel_live_status(
         display_name = Some(channel_or_handle.trim_start_matches('@').to_string());
     }
 
-    if !is_live {
-        let redirected_to_watch = url.ends_with("/live") && final_url.path() == "/watch";
-        let has_live_badge = html.contains(r#""style":"LIVE""#)
-            || html.contains("BADGE_STYLE_TYPE_LIVE_NOW")
-            || html.contains(r#""isLive":true"#);
+    if !is_live && !is_offline {
+        let has_live_badge =
+            html.contains(r#""style":"LIVE""#) || html.contains("BADGE_STYLE_TYPE_LIVE_NOW");
 
-        if (redirected_to_watch || has_live_badge) && video_id.is_some() {
+        if has_live_badge && video_id.is_some() {
             is_live = true;
         }
+    }
+
+    if is_offline {
+        is_live = false;
     }
 
     if title.is_none() {
@@ -666,7 +765,7 @@ pub async fn check_channels_status_batch(
         }
     }
 
-    let semaphore = Arc::new(Semaphore::new(3));
+    let semaphore = Arc::new(Semaphore::new(8));
     let mut tasks = Vec::with_capacity(unique_channels.len());
 
     for ch in unique_channels {
@@ -801,43 +900,43 @@ pub async fn fetch_live_streams(
     locale: Option<&str>,
     limit: usize,
 ) -> Result<Vec<YouTubeSuggestedStream>, String> {
-    let client = reqwest::Client::builder()
-        .use_rustls_tls()
-        .timeout(Duration::from_secs(10))
-        .build()
-        .map_err(|e| e.to_string())?;
-
+    let client = get_youtube_client();
     let meta = get_youtube_locale_meta(locale);
     let cookie_val = format!("PREF=hl={}&gl={}&tz=UTC", meta.hl, meta.gl);
 
-    let endpoints = [
-        format!("https://www.youtube.com/live?hl={}&gl={}", meta.hl, meta.gl),
-        format!(
-            "https://www.youtube.com/gaming?hl={}&gl={}",
-            meta.hl, meta.gl
-        ),
-    ];
+    let live_url = format!("https://www.youtube.com/live?hl={}&gl={}", meta.hl, meta.gl);
+    let gaming_url = format!(
+        "https://www.youtube.com/gaming?hl={}&gl={}",
+        meta.hl, meta.gl
+    );
+
+    let fetch_page = |url: String| {
+        let cookie = cookie_val.clone();
+        async move {
+            client
+                .get(&url)
+                .header("User-Agent", USER_AGENT)
+                .header("Accept-Language", meta.accept_lang)
+                .header("Cookie", &cookie)
+                .header("X-YouTube-Client-Name", "1")
+                .header(
+                    "Accept",
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                )
+                .send()
+                .await
+        }
+    };
+
+    let (live_res, gaming_res) = tokio::join!(fetch_page(live_url), fetch_page(gaming_url));
 
     let mut all_streams = Vec::new();
     let mut seen_ids = std::collections::HashSet::new();
 
-    for url in endpoints {
+    for resp in [live_res, gaming_res] {
         if all_streams.len() >= limit {
             break;
         }
-
-        let resp = client
-            .get(&url)
-            .header("User-Agent", USER_AGENT)
-            .header("Accept-Language", meta.accept_lang)
-            .header("Cookie", &cookie_val)
-            .header("X-YouTube-Client-Name", "1")
-            .header(
-                "Accept",
-                "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            )
-            .send()
-            .await;
 
         if let Ok(res) = resp {
             if res.status().is_success() {
@@ -1107,5 +1206,60 @@ mod tests {
         assert!(is_interstitial_or_challenge_page(consent_html));
         assert!(is_interstitial_or_challenge_page(captcha_html));
         assert!(!is_interstitial_or_challenge_page(normal_html));
+    }
+
+    #[test]
+    fn should_detect_not_currently_live_broadcasts() {
+        // Arrange
+        let upcoming_json = serde_json::json!({
+            "videoDetails": { "isUpcoming": true, "isLive": true }
+        });
+        let offline_json = serde_json::json!({
+            "playabilityStatus": { "status": "LIVE_STREAM_OFFLINE" }
+        });
+        let ended_json = serde_json::json!({
+            "playabilityStatus": { "status": "ENDED" },
+            "microformat": {
+                "playerMicroformatRenderer": {
+                    "liveBroadcastDetails": {
+                        "isLiveNow": false,
+                        "endTimestamp": "2026-09-16T17:00:00Z"
+                    }
+                }
+            }
+        });
+        let not_live_now_json = serde_json::json!({
+            "microformat": {
+                "playerMicroformatRenderer": {
+                    "liveBroadcastDetails": {
+                        "isLiveNow": false
+                    }
+                }
+            }
+        });
+        let live_json = serde_json::json!({
+            "videoDetails": { "isUpcoming": false, "isLive": true },
+            "playabilityStatus": { "status": "OK" },
+            "microformat": {
+                "playerMicroformatRenderer": {
+                    "liveBroadcastDetails": {
+                        "isLiveNow": true
+                    }
+                }
+            }
+        });
+        let live_content_json = serde_json::json!({
+            "videoDetails": { "isUpcoming": false, "isLive": false, "isLiveContent": true },
+            "playabilityStatus": { "status": "OK" }
+        });
+
+        // Act & Assert
+        assert!(is_not_currently_live(Some(&upcoming_json)));
+        assert!(is_not_currently_live(Some(&offline_json)));
+        assert!(is_not_currently_live(Some(&ended_json)));
+        assert!(is_not_currently_live(Some(&not_live_now_json)));
+        assert!(!is_not_currently_live(Some(&live_json)));
+        assert!(!is_not_currently_live(Some(&live_content_json)));
+        assert!(!is_not_currently_live(None));
     }
 }

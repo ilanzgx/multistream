@@ -92,16 +92,17 @@ const _useFollowedChannels = () => {
     const youtubeFavs = favorites.value.filter((f) => f.platform === "youtube");
     return youtubeFavs
       .map((f) => {
-        const key = `youtube:${f.channel.toLowerCase()}`;
-        let status = statuses.value[key];
+        const channelClean = f.channel.toLowerCase().replace(/^@+/, "");
+        const key = `youtube:${channelClean}`;
+        let status = statuses.value[key] || statuses.value[`youtube:@${channelClean}`];
         if (!status) {
-          const channelLower = f.channel.toLowerCase();
           const match = Object.entries(statuses.value).find(
             ([k, s]) =>
               k.startsWith("youtube:") &&
-              ((s.handle && s.handle.toLowerCase() === channelLower) ||
-                (s.videoId && s.videoId.toLowerCase() === channelLower) ||
-                (s.displayName && s.displayName.toLowerCase() === channelLower))
+              ((s.handle && s.handle.toLowerCase().replace(/^@+/, "") === channelClean) ||
+                (s.videoId && s.videoId.toLowerCase() === channelClean) ||
+                (s.displayName && s.displayName.toLowerCase() === channelClean) ||
+                k.replace(/^youtube:@?/, "") === channelClean)
           );
           status = match ? match[1] : undefined;
         }

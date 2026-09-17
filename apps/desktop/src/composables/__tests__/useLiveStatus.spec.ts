@@ -1609,5 +1609,152 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(sut.getStatus("@ufc", "youtube")).not.toBeNull();
       expect(sut.getStatus("ufc", "youtube")?.isLive).toBe(true);
     });
+
+    it("should never send desktop notifications for youtube favorites", async () => {
+      // Arrange
+      mockIsTauri.mockReturnValue(true);
+      mockNotificationsEnabled.value = true;
+      mockFavorites.value = [{ channel: "cazetv", platform: "youtube", displayName: "CazéTV" }];
+      mockStreams.value = [];
+
+      const initialOffline = [{ channel: "cazetv", isLive: false }];
+      const liveStatus = [
+        {
+          channel: "cazetv",
+          isLive: true,
+          videoId: "live_50k_stream",
+          displayName: "CazéTV",
+          handle: "@cazetv",
+          viewerCount: 50000,
+          title: "Big Match Live",
+        },
+      ];
+
+      // Act — Cycle 1 (offline initial check)
+      vi.mocked(invoke).mockResolvedValueOnce(initialOffline);
+      const p1 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p1;
+
+      // Act — Cycle 2 (turns live)
+      vi.mocked(invoke).mockClear();
+      vi.mocked(invoke).mockResolvedValueOnce(liveStatus);
+      const p2 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p2;
+
+      // Assert — send_notification should NOT be called for YouTube favorites
+      const notificationCalls = vi
+        .mocked(invoke)
+        .mock.calls.filter((call) => call[0] === "send_notification");
+      expect(notificationCalls.length).toBe(0);
+
+      // Assert — but live status is still updated in statuses map for UI
+      expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
+    });
+
+    it("should still send desktop notifications for twitch and kick favorites", async () => {
+      // Arrange
+      mockIsTauri.mockReturnValue(true);
+      mockNotificationsEnabled.value = true;
+      mockFavorites.value = [{ channel: "gaules", platform: "twitch" }];
+      mockStreams.value = [];
+
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              stream: null,
+            },
+          },
+        }),
+      } as Response);
+
+      // Act — Cycle 1 (initial check completed offline)
+      const p1 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p1;
+
+      // Act — Cycle 2 (twitch channel goes live)
+      fetchSpy.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          data: {
+            c0: {
+              profileImageURL: "https://avatar.png",
+              stream: {
+                title: "Major CS2",
+                viewersCount: 30000,
+                game: { displayName: "CS2" },
+              },
+            },
+          },
+        }),
+      } as Response);
+      vi.mocked(invoke).mockClear();
+
+      const p2 = sut.checkAll();
+      await vi.advanceTimersByTimeAsync(500);
+      await p2;
+
+      // Assert — send_notification is called for twitch
+      const notificationCalls = vi
+        .mocked(invoke)
+        .mock.calls.filter((call) => call[0] === "send_notification");
+      expect(notificationCalls.length).toBe(1);
+
+      fetchSpy.mockRestore();
+    });
+
+    it("should retain youtube live status in UI statuses map during a single transient offline check cycle", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "cazetv", platform: "youtube" }];
+      vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+        if (cmd === "youtube_check_channels_status") {
+          return [
+            {
+              channel: "cazetv",
+              is_live: true,
+              video_id: "vid123",
+              title: "Live Game",
+              viewer_count: 50000,
+            },
+          ];
+        }
+        return [];
+      });
+
+      // Act — Flush initial debounce and complete Cycle 1
+      await vi.advanceTimersByTimeAsync(1500);
+
+      // Assert
+      expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
+
+      // Act — Cycle 2 (transient offline glitch)
+      vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+        if (cmd === "youtube_check_channels_status") {
+          return [
+            {
+              channel: "cazetv",
+              is_live: false,
+            },
+          ];
+        }
+        return [];
+      });
+
+      await sut.checkAll();
+
+      // Assert
+      expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
+      expect(sut.getStatus("cazetv", "youtube")?.videoId).toBe("vid123");
+
+      // Act — Cycle 3 (second consecutive offline check confirms stream ended)
+      await sut.checkAll();
+
+      // Assert
+      expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(false);
+    });
   });
 });

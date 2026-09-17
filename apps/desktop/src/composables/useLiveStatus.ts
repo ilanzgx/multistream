@@ -766,8 +766,7 @@ const _useLiveStatus = () => {
         const newLiveChannels: { fav: any; status: any }[] = [];
 
         for (const fav of favorites.value) {
-          if (fav.platform !== "twitch" && fav.platform !== "kick" && fav.platform !== "youtube")
-            continue;
+          if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
 
           const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
 
@@ -889,6 +888,8 @@ const _useLiveStatus = () => {
       // "was live" flag and triggering spurious "went live" notifications on recovery.
       // New channels (not yet tracked) bypass this check and are written immediately.
       const nextPreviousStatuses = { ...previousStatuses.value };
+      const nextStatuses = { ...newStatuses };
+
       for (const key of freshKeys) {
         const newStatus = newStatuses[key];
         if (newStatus === undefined) continue;
@@ -903,6 +904,14 @@ const _useLiveStatus = () => {
           } else {
             const count = (offlineCounters.get(key) || 0) + 1;
             offlineCounters.set(key, count);
+
+            if (key.startsWith("youtube:")) {
+              const currentLiveStatus = statuses.value[key];
+              if (currentLiveStatus?.isLive && count < 2) {
+                nextStatuses[key] = currentLiveStatus;
+              }
+            }
+
             if (count >= 2) {
               nextPreviousStatuses[key] = newStatus;
               offlineCounters.delete(key);
@@ -911,7 +920,7 @@ const _useLiveStatus = () => {
         }
       }
       previousStatuses.value = nextPreviousStatuses;
-      statuses.value = newStatuses;
+      statuses.value = nextStatuses;
       hasCompletedFirstCheck.value = true;
     } finally {
       isChecking.value = false;

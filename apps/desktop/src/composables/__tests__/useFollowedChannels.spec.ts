@@ -237,6 +237,30 @@ describe("useFollowedChannels", () => {
     expect(channels.value[0]?.displayName).toBe("batzera1");
   });
 
+  it("should match youtube status when favorite has no @ but status key or handle has @", () => {
+    // Arrange
+    mockFavorites.favorites.value = [
+      { channel: "cazetv", platform: "youtube", displayName: "CazeTV", addedAt: 0 },
+    ];
+    mockLiveStatus.statuses.value = {
+      "youtube:@cazetv": {
+        isLive: true,
+        videoId: "xyz123",
+        handle: "@cazetv",
+        viewerCount: 20000,
+        title: "Match",
+      } as any,
+    };
+
+    // Act
+    const { channels } = useFollowedChannels();
+
+    // Assert
+    expect(channels.value).toHaveLength(1);
+    expect(channels.value[0]?.id).toBe("xyz123");
+    expect(channels.value[0]?.isLive).toBe(true);
+  });
+
   it("should call checkAll when refresh is invoked", async () => {
     // Arrange
     const { refresh } = useFollowedChannels();
