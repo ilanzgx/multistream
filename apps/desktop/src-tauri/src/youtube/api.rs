@@ -100,6 +100,59 @@ fn find_video_details(node: &Value) -> Option<&Value> {
     None
 }
 
+fn extract_channel_avatar_from_html(html: &str) -> Option<String> {
+    static OWNER_THUMB_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
+    let owner_thumb_re = OWNER_THUMB_RE.get_or_init(|| {
+        regex::Regex::new(
+            r#""videoOwnerRenderer"\s*:\s*\{.*?"thumbnails"\s*:\s*\[\{"url"\s*:\s*"([^"]+)""#,
+        )
+        .ok()
+    });
+    if let Some(re) = owner_thumb_re.as_ref() {
+        if let Some(caps) = re.captures(html) {
+            if let Some(m) = caps.get(1) {
+                let url = m.as_str();
+                return Some(if url.starts_with("//") {
+                    format!("https:{}", url)
+                } else {
+                    url.to_string()
+                });
+            }
+        }
+    }
+
+    static CHANNEL_THUMB_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
+    let channel_thumb_re = CHANNEL_THUMB_RE.get_or_init(|| {
+        regex::Regex::new(r#""channelThumbnailWithLinkRenderer"\s*:\s*\{.*?"thumbnails"\s*:\s*\[\{"url"\s*:\s*"([^"]+)""#).ok()
+    });
+    if let Some(re) = channel_thumb_re.as_ref() {
+        if let Some(caps) = re.captures(html) {
+            if let Some(m) = caps.get(1) {
+                let url = m.as_str();
+                return Some(if url.starts_with("//") {
+                    format!("https:{}", url)
+                } else {
+                    url.to_string()
+                });
+            }
+        }
+    }
+
+    static YT3_AVATAR_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
+    let yt3_avatar_re = YT3_AVATAR_RE.get_or_init(|| {
+        regex::Regex::new(r#"["'](https://yt3\.(?:ggpht|googleusercontent)\.com/[a-zA-Z0-9_-]+=[sS](?:88|176|68|48)[^"'\s]*)["']"#).ok()
+    });
+    if let Some(re) = yt3_avatar_re.as_ref() {
+        if let Some(caps) = re.captures(html) {
+            if let Some(m) = caps.get(1) {
+                return Some(m.as_str().to_string());
+            }
+        }
+    }
+
+    None
+}
+
 fn find_channel_avatar(node: &Value) -> Option<String> {
     fn extract_thumbnail(obj: &Value) -> Option<String> {
         let thumbs = obj.get("thumbnails").and_then(|t| t.as_array())?;
@@ -192,21 +245,6 @@ fn find_viewer_count(node: &Value) -> Option<u64> {
             }
         }
 
-        if let Some(vd) = map.get("videoDetails") {
-            if let Some(vc) = vd.get("viewCount") {
-                if let Some(s) = vc.as_str() {
-                    let count = parse_viewer_count(s);
-                    if count > 0 {
-                        return Some(count);
-                    }
-                } else if let Some(n) = vc.as_u64() {
-                    if n > 0 {
-                        return Some(n);
-                    }
-                }
-            }
-        }
-
         for val in map.values() {
             if let Some(found) = find_viewer_count(val) {
                 return Some(found);
@@ -255,7 +293,7 @@ fn extract_viewer_count_from_html(html: &str) -> Option<u64> {
 
     static WATCHING_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
     let watching_re = WATCHING_RE.get_or_init(|| {
-        regex::Regex::new(r#"([0-9.,]+(?:\s*[kKmM]|\s*mil|\s*milhões|\s*tsd|\s*тыс)?)\s*(?:assistindo|watching|espectadores|zuschauer|visualizações)"#).ok()
+        regex::Regex::new(r#"([0-9.,]+(?:\s*[kKmM]|\s*mil|\s*milhões|\s*tsd|\s*тыс)?)\s*(?:assistindo\s+agora|watching\s+now|assistindo|watching|espectadores|zuschauer)"#).ok()
     });
     if let Some(re) = watching_re.as_ref() {
         if let Some(caps) = re.captures(html) {
@@ -377,11 +415,7 @@ pub fn is_not_currently_live(node: Option<&Value>) -> bool {
             return true;
         }
         if let Some(is_live) = vd.get("isLive").and_then(|l| l.as_bool()) {
-            let is_live_content = vd
-                .get("isLiveContent")
-                .and_then(|l| l.as_bool())
-                .unwrap_or(false);
-            if !is_live && !is_live_content {
+            if !is_live {
                 return true;
             }
         }
@@ -510,6 +544,10 @@ pub async fn resolve_channel_live_status(
 
     let player_data = extract_yt_initial_player_response(&html);
 
+    if viewer_count.is_none() {
+        viewer_count = extract_viewer_count_from_html(&html);
+    }
+
     if let Some(ref player) = player_data {
         if viewer_count.is_none() {
             viewer_count = find_viewer_count(player);
@@ -565,15 +603,11 @@ pub async fn resolve_channel_live_status(
             }
             if !is_live {
                 let vd_is_live = vd.get("isLive").and_then(|l| l.as_bool()).unwrap_or(false);
-                let vd_is_live_content = vd
-                    .get("isLiveContent")
-                    .and_then(|l| l.as_bool())
-                    .unwrap_or(false);
                 let vd_is_upcoming = vd
                     .get("isUpcoming")
                     .and_then(|u| u.as_bool())
                     .unwrap_or(false);
-                if (vd_is_live || vd_is_live_content) && !vd_is_upcoming {
+                if vd_is_live && !vd_is_upcoming {
                     is_live = true;
                 }
             }
@@ -624,16 +658,12 @@ pub async fn resolve_channel_live_status(
             }
 
             let vd_is_live = vd.get("isLive").and_then(|l| l.as_bool()).unwrap_or(false);
-            let vd_is_live_content = vd
-                .get("isLiveContent")
-                .and_then(|l| l.as_bool())
-                .unwrap_or(false);
             let vd_is_upcoming = vd
                 .get("isUpcoming")
                 .and_then(|u| u.as_bool())
                 .unwrap_or(false);
 
-            if (vd_is_live || vd_is_live_content) && !vd_is_upcoming {
+            if vd_is_live && !vd_is_upcoming {
                 is_live = true;
             }
 
@@ -655,6 +685,28 @@ pub async fn resolve_channel_live_status(
 
         if viewer_count.is_none() {
             viewer_count = find_viewer_count(json);
+        }
+
+        if !is_live {
+            let streams = extract_live_streams_from_initial_data(json, 1);
+            if let Some(stream) = streams.first() {
+                is_live = true;
+                if video_id.is_none() {
+                    video_id = Some(stream.channel.clone());
+                }
+                if title.is_none() {
+                    title = Some(stream.title.clone());
+                }
+                if viewer_count.is_none() && stream.viewer_count > 0 {
+                    viewer_count = Some(stream.viewer_count);
+                }
+                if handle.is_none() {
+                    handle = stream.handle.clone();
+                }
+                if display_name.is_none() {
+                    display_name = stream.display_name.clone();
+                }
+            }
         }
     }
 
@@ -693,10 +745,8 @@ pub async fn resolve_channel_live_status(
         display_name = Some(channel_or_handle.trim_start_matches('@').to_string());
     }
 
-    if !is_live && !is_offline {
-        if has_live_badge && video_id.is_some() {
-            is_live = true;
-        }
+    if !is_live && !is_offline && has_live_badge && video_id.is_some() {
+        is_live = true;
     }
 
     if is_offline {
@@ -725,20 +775,7 @@ pub async fn resolve_channel_live_status(
     }
 
     if avatar_url.is_none() {
-        static OG_IMAGE_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
-        let og_image_re = OG_IMAGE_RE.get_or_init(|| {
-            regex::Regex::new(
-                r#"<meta\b[^>]*\bproperty=["']og:image["'][^>]*\bcontent=["']([^"']+)["']"#,
-            )
-            .ok()
-        });
-        if let Some(re) = og_image_re.as_ref() {
-            if let Some(caps) = re.captures(&html) {
-                if let Some(m) = caps.get(1) {
-                    avatar_url = Some(m.as_str().to_string());
-                }
-            }
-        }
+        avatar_url = extract_channel_avatar_from_html(&html);
     }
 
     if !is_live {
@@ -1265,7 +1302,7 @@ mod tests {
         assert!(is_not_currently_live(Some(&ended_json)));
         assert!(is_not_currently_live(Some(&not_live_now_json)));
         assert!(!is_not_currently_live(Some(&live_json)));
-        assert!(!is_not_currently_live(Some(&live_content_json)));
+        assert!(is_not_currently_live(Some(&live_content_json)));
         assert!(!is_not_currently_live(None));
     }
 }

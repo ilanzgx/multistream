@@ -12,7 +12,14 @@ pub fn extract_yt_initial_data(html: &str) -> Option<Value> {
     for pattern in patterns {
         if let Some(start_pos) = html.find(pattern) {
             let json_start = start_pos + pattern.len();
-            let slice = &html[json_start..];
+            let slice = html[json_start..].trim_start();
+
+            if slice.starts_with('{') {
+                let mut de = serde_json::Deserializer::from_str(slice).into_iter::<Value>();
+                if let Some(Ok(val)) = de.next() {
+                    return Some(val);
+                }
+            }
 
             let json_str = if let Some(end_pos) = slice.find(";</script>") {
                 &slice[..end_pos]
@@ -40,7 +47,14 @@ pub fn extract_yt_initial_player_response(html: &str) -> Option<Value> {
     for pattern in patterns {
         if let Some(start_pos) = html.find(pattern) {
             let json_start = start_pos + pattern.len();
-            let slice = &html[json_start..];
+            let slice = html[json_start..].trim_start();
+
+            if slice.starts_with('{') {
+                let mut de = serde_json::Deserializer::from_str(slice).into_iter::<Value>();
+                if let Some(Ok(val)) = de.next() {
+                    return Some(val);
+                }
+            }
 
             let json_str = if let Some(end_pos) = slice.find(";</script>") {
                 &slice[..end_pos]
