@@ -500,4 +500,66 @@ describe("useFollowedChannels", () => {
     expect(channels.value[0]?.isLive).toBe(true);
     expect(channels.value[0]?.videoId).toBe("vid_caze");
   });
+
+  it("should expand multiple concurrent live streams for a single favorited YouTube channel", async () => {
+    // Arrange
+    mockFavorites.favorites.value = [
+      { channel: "@CazeTV", platform: "youtube", addedAt: Date.now() },
+    ];
+    mockLiveStatus.statuses.value = {
+      "youtube:cazetv": {
+        isLive: true,
+        displayName: "CazéTV",
+        handle: "CazeTV",
+        avatarUrl: "https://yt3.ggpht.com/avatar.jpg",
+        videoId: "stream1",
+        title: "Match 1",
+        viewerCount: 100000,
+        liveStreams: [
+          {
+            videoId: "stream1",
+            title: "Flamengo x Vasco | Ao Vivo",
+            viewerCount: 100000,
+            thumbnailUrl: "https://i.ytimg.com/vi/stream1/hqdefault.jpg",
+          },
+          {
+            videoId: "stream2",
+            title: "Corinthians x Palmeiras | Ao Vivo",
+            viewerCount: 80000,
+            thumbnailUrl: "https://i.ytimg.com/vi/stream2/hqdefault.jpg",
+          },
+          {
+            videoId: "stream3",
+            title: "Mesa Redonda Pós-Jogo",
+            viewerCount: 25000,
+            thumbnailUrl: "https://i.ytimg.com/vi/stream3/hqdefault.jpg",
+          },
+        ],
+      } as any,
+    };
+
+    // Act
+    const { channels } = useFollowedChannels();
+    await nextTick();
+
+    // Assert
+    expect(channels.value).toHaveLength(3);
+    expect(channels.value[0]?.id).toBe("stream1");
+    expect(channels.value[0]?.videoId).toBe("stream1");
+    expect(channels.value[0]?.displayName).toBe("CazéTV");
+    expect(channels.value[0]?.title).toBe("Flamengo x Vasco | Ao Vivo");
+    expect(channels.value[0]?.viewerCount).toBe(100000);
+
+    expect(channels.value[1]?.id).toBe("stream2");
+    expect(channels.value[1]?.videoId).toBe("stream2");
+    expect(channels.value[1]?.displayName).toBe("CazéTV");
+    expect(channels.value[1]?.title).toBe("Corinthians x Palmeiras | Ao Vivo");
+    expect(channels.value[1]?.viewerCount).toBe(80000);
+
+    expect(channels.value[2]?.id).toBe("stream3");
+    expect(channels.value[2]?.videoId).toBe("stream3");
+    expect(channels.value[2]?.displayName).toBe("CazéTV");
+    expect(channels.value[2]?.title).toBe("Mesa Redonda Pós-Jogo");
+    expect(channels.value[2]?.viewerCount).toBe(25000);
+  });
 });

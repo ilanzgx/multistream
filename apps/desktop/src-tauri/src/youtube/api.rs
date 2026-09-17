@@ -3,7 +3,9 @@ use super::parser::{
     extract_yt_initial_data, extract_yt_initial_player_response, get_text_from_node,
     parse_viewer_count,
 };
-use super::types::{YouTubeChannelStatus, YouTubeSearchResult, YouTubeSuggestedStream};
+use super::types::{
+    YouTubeChannelStatus, YouTubeLiveStreamInfo, YouTubeSearchResult, YouTubeSuggestedStream,
+};
 use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -599,6 +601,7 @@ pub async fn resolve_channel_live_status(
 
     let mut display_name: Option<String> = None;
     let mut handle: Option<String> = None;
+    let mut live_streams: Vec<YouTubeLiveStreamInfo> = Vec::new();
 
     let player_data = extract_yt_initial_player_response(&html);
 
@@ -672,14 +675,7 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    let json_data = if player_data.is_none()
-        || (display_name.is_none() && handle.is_none())
-        || avatar_url.is_none()
-    {
-        extract_yt_initial_data(&html)
-    } else {
-        None
-    };
+    let json_data = extract_yt_initial_data(&html);
 
     if let Some(ref json) = json_data {
         if avatar_url.is_none() {
@@ -729,32 +725,59 @@ pub async fn resolve_channel_live_status(
         if viewer_count.is_none() {
             viewer_count = find_viewer_count(json);
         }
-
-        if !is_live {
-            let streams = extract_live_streams_from_initial_data(json, 1);
-            if let Some(stream) = streams.first() {
-                is_live = true;
-                if video_id.is_none() {
-                    video_id = Some(stream.channel.clone());
-                }
-                if title.is_none() {
-                    title = Some(stream.title.clone());
-                }
-                if viewer_count.is_none() && stream.viewer_count > 0 {
-                    viewer_count = Some(stream.viewer_count);
-                }
-                if handle.is_none() {
-                    handle = stream.handle.clone();
-                }
-                if display_name.is_none() {
-                    display_name = stream.display_name.clone();
-                }
-            }
-        }
     }
 
     let is_offline =
         is_not_currently_live(player_data.as_ref()) || is_not_currently_live(json_data.as_ref());
+
+    if is_offline {
+        is_live = false;
+        live_streams.clear();
+    }
+
+    if is_live && !is_offline && !is_video_id && !trimmed.starts_with("http") {
+        let streams_url = if trimmed.starts_with("channel/") {
+            format!("https://www.youtube.com/{}/streams", trimmed)
+        } else if trimmed.starts_with("UC") && trimmed.len() == 24 {
+            format!("https://www.youtube.com/channel/{}/streams", trimmed)
+        } else {
+            let clean = trimmed.trim_start_matches('@');
+            format!("https://www.youtube.com/@{}/streams", clean)
+        };
+
+        if let Ok(resp) = client
+            .get(&streams_url)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept-Language", "en-US,en;q=0.9")
+            .header(
+                "Cookie",
+                "CONSENT=PENDING+999; SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg",
+            )
+            .send()
+            .await
+        {
+            if resp.status().is_success() {
+                if let Ok(streams_html) = resp.text().await {
+                    if let Some(streams_json) = extract_yt_initial_data(&streams_html) {
+                        let detected = extract_live_streams_from_initial_data(&streams_json, 25);
+                        for s in detected {
+                            if !live_streams
+                                .iter()
+                                .any(|existing| existing.video_id == s.channel)
+                            {
+                                live_streams.push(YouTubeLiveStreamInfo {
+                                    video_id: s.channel.clone(),
+                                    title: s.title.clone(),
+                                    viewer_count: s.viewer_count,
+                                    thumbnail_url: s.thumbnail.clone(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     if viewer_count.is_none() {
         viewer_count = extract_viewer_count_from_html(&html);
@@ -791,6 +814,7 @@ pub async fn resolve_channel_live_status(
 
     if is_offline {
         is_live = false;
+        live_streams.clear();
     }
 
     if title.is_none() {
@@ -818,9 +842,36 @@ pub async fn resolve_channel_live_status(
         avatar_url = extract_channel_avatar_from_html(&html);
     }
 
-    if !is_live {
+    if is_live {
+        if let Some(ref vid) = video_id {
+            if !live_streams.iter().any(|s| s.video_id == *vid) {
+                live_streams.insert(
+                    0,
+                    YouTubeLiveStreamInfo {
+                        video_id: vid.clone(),
+                        title: title.clone().unwrap_or_else(|| "YouTube Live".to_string()),
+                        viewer_count: viewer_count.unwrap_or(0),
+                        thumbnail_url: Some(format!(
+                            "https://i.ytimg.com/vi/{}/hqdefault.jpg",
+                            vid
+                        )),
+                    },
+                );
+            }
+        }
+        if video_id.is_none() && !live_streams.is_empty() {
+            video_id = Some(live_streams[0].video_id.clone());
+            if title.is_none() {
+                title = Some(live_streams[0].title.clone());
+            }
+            if viewer_count.is_none() || viewer_count == Some(0) {
+                viewer_count = Some(live_streams[0].viewer_count);
+            }
+        }
+    } else {
         video_id = None;
         viewer_count = None;
+        live_streams.clear();
     }
 
     Some(YouTubeChannelStatus {
@@ -832,6 +883,7 @@ pub async fn resolve_channel_live_status(
         viewer_count,
         title,
         avatar_url,
+        live_streams,
     })
 }
 

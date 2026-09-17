@@ -91,7 +91,7 @@ const _useFollowedChannels = () => {
   const youtubeChannels = computed<FollowedChannel[]>(() => {
     const youtubeFavs = favorites.value.filter((f) => f.platform === "youtube");
     return youtubeFavs
-      .map((f) => {
+      .flatMap((f) => {
         const channelClean = f.channel.toLowerCase().replace(/^@+/, "");
         const key = `youtube:${channelClean}`;
         let status = statuses.value[key] || statuses.value[`youtube:@${channelClean}`];
@@ -109,6 +109,10 @@ const _useFollowedChannels = () => {
             status = match[1];
           }
         }
+        if (!status || !status.isLive) {
+          return [];
+        }
+
         const rawName =
           (status?.displayName && !status.displayName.startsWith("@")
             ? status.displayName
@@ -127,20 +131,40 @@ const _useFollowedChannels = () => {
           f.channel;
         const handle = rawHandle.replace(/^@+/, "");
 
-        return {
-          id: status?.videoId || f.channel,
-          platform: "youtube" as const,
-          displayName,
-          handle,
-          avatarUrl: status?.avatarUrl ?? "",
-          isLive: status?.isLive ?? false,
-          viewerCount: status?.viewerCount ?? 0,
-          title: status?.title,
-          game: status?.category,
-          thumbnailUrl: status?.thumbnailUrl,
-          isFavorite: true,
-          videoId: status?.videoId,
-        };
+        if (status.liveStreams && status.liveStreams.length > 0) {
+          return status.liveStreams.map((stream) => ({
+            id: stream.videoId,
+            platform: "youtube" as const,
+            displayName,
+            handle,
+            avatarUrl: status?.avatarUrl ?? "",
+            isLive: true,
+            viewerCount: stream.viewerCount,
+            title: stream.title || status?.title,
+            game: status?.category,
+            thumbnailUrl:
+              stream.thumbnailUrl || `https://i.ytimg.com/vi/${stream.videoId}/hqdefault.jpg`,
+            isFavorite: true,
+            videoId: stream.videoId,
+          }));
+        }
+
+        return [
+          {
+            id: status?.videoId || f.channel,
+            platform: "youtube" as const,
+            displayName,
+            handle,
+            avatarUrl: status?.avatarUrl ?? "",
+            isLive: true,
+            viewerCount: status?.viewerCount ?? 0,
+            title: status?.title,
+            game: status?.category,
+            thumbnailUrl: status?.thumbnailUrl,
+            isFavorite: true,
+            videoId: status?.videoId,
+          },
+        ];
       })
       .filter((channel) => channel.isLive);
   });

@@ -15,6 +15,13 @@ import { API_CONFIG, REFRESH_CONFIG } from "@/config/api";
 import { CDN_CONFIG } from "@/config/cdn";
 import { SUPPORTED_LANGUAGES, DEFAULT_LOCALE } from "@/config/i18n";
 
+export interface YouTubeLiveStreamInfo {
+  videoId: string;
+  title: string;
+  viewerCount: number;
+  thumbnailUrl?: string;
+}
+
 export interface LiveStatus {
   isLive: boolean;
   videoId?: string;
@@ -25,6 +32,7 @@ export interface LiveStatus {
   category?: string;
   avatarUrl?: string;
   thumbnailUrl?: string;
+  liveStreams?: YouTubeLiveStreamInfo[];
 }
 
 export interface SuggestedStream {
@@ -313,6 +321,22 @@ async function checkYouTubeStreams(channels: string[]): Promise<StatusMap | null
       const vid = item.videoId ?? item.video_id;
       const handle = item.handle;
       const displayName = item.displayName ?? item.display_name;
+      const rawStreams = item.liveStreams ?? item.live_streams;
+      const liveStreams: YouTubeLiveStreamInfo[] | undefined =
+        Array.isArray(rawStreams) && rawStreams.length > 0
+          ? rawStreams.map((s: any) => ({
+              videoId: s.videoId ?? s.video_id,
+              title: s.title || "",
+              viewerCount: s.viewerCount ?? s.viewer_count ?? 0,
+              thumbnailUrl:
+                s.thumbnailUrl ??
+                s.thumbnail_url ??
+                (s.videoId || s.video_id
+                  ? `https://i.ytimg.com/vi/${s.videoId || s.video_id}/hqdefault.jpg`
+                  : undefined),
+            }))
+          : undefined;
+
       const statusObj: LiveStatus = {
         isLive: Boolean(item.isLive ?? item.is_live),
         videoId: vid,
@@ -322,6 +346,7 @@ async function checkYouTubeStreams(channels: string[]): Promise<StatusMap | null
         title: item.title,
         avatarUrl: item.avatarUrl ?? item.avatar_url,
         thumbnailUrl: vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : undefined,
+        liveStreams,
       };
       const rawChannel = item.channel.toLowerCase();
       const cleanChannel = rawChannel.replace(/^@+/, "");

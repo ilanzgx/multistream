@@ -1,6 +1,7 @@
 use super::types::{YouTubeSearchResult, YouTubeSuggestedStream};
 use serde_json::Value;
 use std::collections::HashSet;
+use std::sync::OnceLock;
 
 pub fn extract_yt_initial_data(html: &str) -> Option<Value> {
     let patterns = [
@@ -296,6 +297,226 @@ fn parse_single_video_renderer(renderer: &Value) -> Option<YouTubeSuggestedStrea
     })
 }
 
+pub fn is_live_lockup(lockup: &Value) -> bool {
+    let str_repr = lockup.to_string().to_lowercase();
+    if str_repr.contains("upcomingeventdata")
+        || str_repr.contains("premieres")
+        || str_repr.contains("programado")
+        || str_repr.contains("estreia")
+        || str_repr.contains("\"text\":\"upcoming\"")
+        || str_repr.contains("thumbnail_overlay_badge_style_upcoming")
+    {
+        return false;
+    }
+
+    let overlays = lockup
+        .get("contentImage")
+        .and_then(|ci| ci.get("thumbnailViewModel"))
+        .and_then(|tv| tv.get("overlays"))
+        .or_else(|| lockup.get("overlays"))
+        .and_then(|o| o.as_array());
+
+    if let Some(overlays) = overlays {
+        for overlay in overlays {
+            if let Some(bottom_badges) = overlay
+                .get("thumbnailBottomOverlayViewModel")
+                .and_then(|b| b.get("badges"))
+                .and_then(|b| b.as_array())
+            {
+                for b in bottom_badges {
+                    if let Some(vm) = b.get("thumbnailBadgeViewModel") {
+                        let badge_style =
+                            vm.get("badgeStyle").and_then(|s| s.as_str()).unwrap_or("");
+                        let text = vm.get("text").and_then(|t| t.as_str()).unwrap_or("");
+
+                        if badge_style.contains("TIME_STATUS") || text.contains(':') {
+                            return false;
+                        }
+                        if text.eq_ignore_ascii_case("upcoming") || badge_style.contains("UPCOMING")
+                        {
+                            return false;
+                        }
+
+                        let has_live_icon = vm
+                            .get("icon")
+                            .and_then(|i| i.get("sources"))
+                            .and_then(|s| s.as_array())
+                            .and_then(|arr| arr.first())
+                            .and_then(|s| s.get("clientResource"))
+                            .and_then(|cr| cr.get("imageName"))
+                            .and_then(|n| n.as_str())
+                            == Some("LIVE");
+
+                        if badge_style == "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE"
+                            || text.eq_ignore_ascii_case("live")
+                            || text.eq_ignore_ascii_case("ao vivo")
+                            || has_live_icon
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            if let Some(time_status) = overlay.get("thumbnailOverlayTimeStatusRenderer") {
+                let style = time_status
+                    .get("style")
+                    .and_then(|s| s.as_str())
+                    .unwrap_or("");
+                let text = time_status
+                    .get("text")
+                    .and_then(|t| t.get("runs"))
+                    .and_then(|r| r.get(0))
+                    .and_then(|r| r.get("text"))
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("");
+                if style != "LIVE" && text.contains(':') {
+                    return false;
+                }
+                if style == "LIVE"
+                    || text.eq_ignore_ascii_case("live")
+                    || text.eq_ignore_ascii_case("ao vivo")
+                {
+                    return true;
+                }
+            }
+
+            if let Some(badge) = overlay.get("thumbnailOverlayBadgeViewModel") {
+                let str_badge = badge.to_string().to_lowercase();
+                if str_badge.contains("live_now")
+                    || str_badge.contains("\"live\"")
+                    || str_badge.contains("\"ao vivo\"")
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    let meta_obj = lockup
+        .get("metadata")
+        .and_then(|m| m.get("lockupMetadataViewModel"));
+    let meta_rows = meta_obj
+        .and_then(|m| m.get("metadata"))
+        .and_then(|m| m.get("contentMetadataViewModel"))
+        .and_then(|c| c.get("metadataRows"))
+        .or_else(|| meta_obj.and_then(|m| m.get("metadataRows")))
+        .and_then(|r| r.as_array());
+
+    if let Some(rows) = meta_rows {
+        for row in rows {
+            let row_str = row.to_string().to_lowercase();
+            if (row_str.contains("watching")
+                || row_str.contains("assistindo")
+                || row_str.contains("espectadores")
+                || row_str.contains("zuschauer")
+                || row_str.contains("зрител")
+                || row_str.contains("regardent")
+                || row_str.contains("izleyici"))
+                && !row_str.contains("streamed")
+                && !row_str.contains("transmitido")
+                && !row_str.contains("views")
+                && !row_str.contains("visualiz")
+            {
+                return true;
+            }
+        }
+    }
+
+    false
+}
+
+pub fn parse_lockup_view_model(lockup: &Value) -> Option<YouTubeSuggestedStream> {
+    if !is_live_lockup(lockup) {
+        return None;
+    }
+
+    let video_id = lockup
+        .get("contentId")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            static VIDEO_ID_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
+            let re = VIDEO_ID_RE
+                .get_or_init(|| regex::Regex::new(r#""videoId"\s*:\s*"([a-zA-Z0-9_-]{11})""#).ok());
+            let s = lockup.to_string();
+            re.as_ref()
+                .and_then(|r| r.captures(&s))
+                .and_then(|c| c.get(1))
+                .map(|m| m.as_str().to_string())
+        })?;
+
+    if video_id.len() != 11 {
+        return None;
+    }
+
+    let metadata = lockup
+        .get("metadata")
+        .and_then(|m| m.get("lockupMetadataViewModel"));
+
+    let title = metadata
+        .and_then(|m| m.get("title"))
+        .and_then(|t| t.get("content"))
+        .and_then(|c| c.as_str())
+        .unwrap_or("YouTube Live")
+        .to_string();
+
+    let mut viewer_count = 0u64;
+    let meta_rows = metadata
+        .and_then(|m| m.get("metadata"))
+        .and_then(|m| m.get("contentMetadataViewModel"))
+        .and_then(|c| c.get("metadataRows"))
+        .or_else(|| metadata.and_then(|m| m.get("metadataRows")))
+        .and_then(|r| r.as_array());
+
+    if let Some(rows) = meta_rows {
+        for row in rows {
+            let row_str = row.to_string();
+            let lower = row_str.to_lowercase();
+            if (lower.contains("watching")
+                || lower.contains("assistindo")
+                || lower.contains("espectadores")
+                || lower.contains("zuschauer")
+                || lower.contains("зрител")
+                || lower.contains("regardent")
+                || lower.contains("izleyici"))
+                && !lower.contains("streamed")
+                && !lower.contains("transmitido")
+                && !lower.contains("views")
+                && !lower.contains("visualiz")
+            {
+                viewer_count = parse_viewer_count(&row_str);
+                if viewer_count > 0 {
+                    break;
+                }
+            }
+        }
+    }
+
+    let thumbnail = lockup
+        .get("contentImage")
+        .and_then(|ci| ci.get("thumbnailViewModel"))
+        .and_then(|tv| tv.get("image"))
+        .and_then(|img| img.get("sources"))
+        .and_then(|s| s.as_array())
+        .and_then(|arr| arr.last())
+        .and_then(|item| item.get("url"))
+        .and_then(|u| u.as_str())
+        .map(|u| u.to_string())
+        .or_else(|| Some(format!("https://i.ytimg.com/vi/{}/hqdefault.jpg", video_id)));
+
+    Some(YouTubeSuggestedStream {
+        channel: video_id,
+        display_name: None,
+        handle: None,
+        platform: "youtube".to_string(),
+        title,
+        category: "Live".to_string(),
+        viewer_count,
+        thumbnail,
+    })
+}
+
 pub fn extract_live_streams_from_initial_data(
     data: &Value,
     limit: usize,
@@ -315,19 +536,36 @@ pub fn extract_live_streams_from_initial_data(
 
         match node {
             Value::Object(map) => {
-                let renderer = map
-                    .get("videoRenderer")
-                    .or_else(|| map.get("compactVideoRenderer"))
-                    .or_else(|| map.get("gridVideoRenderer"));
+                let mut handled = false;
 
-                if let Some(r) = renderer {
-                    if let Some(stream) = parse_single_video_renderer(r) {
+                if let Some(lockup) = map.get("lockupViewModel") {
+                    if let Some(stream) = parse_lockup_view_model(lockup) {
                         if !seen_ids.contains(&stream.channel) {
                             seen_ids.insert(stream.channel.clone());
                             results.push(stream);
                         }
+                        handled = true;
                     }
-                } else {
+                }
+
+                if !handled {
+                    let renderer = map
+                        .get("videoRenderer")
+                        .or_else(|| map.get("compactVideoRenderer"))
+                        .or_else(|| map.get("gridVideoRenderer"));
+
+                    if let Some(r) = renderer {
+                        if let Some(stream) = parse_single_video_renderer(r) {
+                            if !seen_ids.contains(&stream.channel) {
+                                seen_ids.insert(stream.channel.clone());
+                                results.push(stream);
+                            }
+                            handled = true;
+                        }
+                    }
+                }
+
+                if !handled {
                     for (_, val) in map {
                         traverse(val, results, seen_ids, limit);
                         if results.len() >= limit {
@@ -768,5 +1006,212 @@ mod tests {
         assert!(stream.is_some());
         let val = stream.unwrap();
         assert_eq!(val.viewer_count, 0);
+    }
+
+    #[test]
+    fn should_parse_live_lockup_view_model_correctly() {
+        // Arrange
+        let lockup = serde_json::json!({
+            "contentId": "B-HPksUoZYI",
+            "contentType": "LOCKUP_CONTENT_TYPE_VIDEO",
+            "contentImage": {
+                "thumbnailViewModel": {
+                    "image": {
+                        "sources": [
+                            { "url": "https://i.ytimg.com/vi/B-HPksUoZYI/hqdefault.jpg" }
+                        ]
+                    },
+                    "overlays": [
+                        {
+                            "thumbnailOverlayTimeStatusRenderer": {
+                                "style": "LIVE",
+                                "text": { "runs": [{ "text": "AO VIVO" }] }
+                            }
+                        }
+                    ]
+                }
+            },
+            "metadata": {
+                "lockupMetadataViewModel": {
+                    "title": { "content": "VASCO X FLAMENGO AO VIVO" },
+                    "metadataRows": [
+                        {
+                            "metadataRowRenderer": {
+                                "contents": [{ "runs": [{ "text": "150.000 assistindo" }] }]
+                            }
+                        }
+                    ]
+                }
+            }
+        });
+
+        // Act
+        let stream = parse_lockup_view_model(&lockup);
+
+        // Assert
+        assert!(stream.is_some());
+        let stream = stream.unwrap();
+        assert_eq!(stream.channel, "B-HPksUoZYI");
+        assert_eq!(stream.title, "VASCO X FLAMENGO AO VIVO");
+        assert_eq!(stream.viewer_count, 150000);
+        assert_eq!(
+            stream.thumbnail.as_deref(),
+            Some("https://i.ytimg.com/vi/B-HPksUoZYI/hqdefault.jpg")
+        );
+    }
+
+    #[test]
+    fn should_reject_vod_lockup_view_model_with_duration() {
+        // Arrange
+        let vod_lockup = serde_json::json!({
+            "contentId": "pastVod1234",
+            "contentImage": {
+                "thumbnailViewModel": {
+                    "overlays": [
+                        {
+                            "thumbnailOverlayTimeStatusRenderer": {
+                                "style": "DEFAULT",
+                                "text": { "runs": [{ "text": "1:23:45" }] }
+                            }
+                        }
+                    ]
+                }
+            },
+            "metadata": {
+                "lockupMetadataViewModel": {
+                    "title": { "content": "VOD Passado" }
+                }
+            }
+        });
+
+        // Act
+        let stream = parse_lockup_view_model(&vod_lockup);
+
+        // Assert
+        assert!(stream.is_none());
+    }
+
+    #[test]
+    fn should_extract_multiple_concurrent_live_streams_from_initial_data_with_lockup_view_models() {
+        // Arrange
+        let json_data = serde_json::json!({
+            "contents": {
+                "twoColumnBrowseResultsRenderer": {
+                    "tabs": [
+                        {
+                            "tabRenderer": {
+                                "content": {
+                                    "richGridRenderer": {
+                                        "contents": [
+                                            {
+                                                "richItemRenderer": {
+                                                    "content": {
+                                                        "lockupViewModel": {
+                                                            "contentId": "stream11111",
+                                                            "contentImage": {
+                                                                "thumbnailViewModel": {
+                                                                    "overlays": [
+                                                                        {
+                                                                            "thumbnailOverlayTimeStatusRenderer": {
+                                                                                "style": "LIVE",
+                                                                                "text": { "runs": [{ "text": "LIVE" }] }
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "metadata": {
+                                                                "lockupMetadataViewModel": {
+                                                                    "title": { "content": "Game 1 Live" },
+                                                                    "metadataRows": [
+                                                                        {
+                                                                            "text": "10.000 watching"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "richItemRenderer": {
+                                                    "content": {
+                                                        "lockupViewModel": {
+                                                            "contentId": "stream22222",
+                                                            "contentImage": {
+                                                                "thumbnailViewModel": {
+                                                                    "overlays": [
+                                                                        {
+                                                                            "thumbnailOverlayTimeStatusRenderer": {
+                                                                                "style": "LIVE",
+                                                                                "text": { "runs": [{ "text": "LIVE" }] }
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "metadata": {
+                                                                "lockupMetadataViewModel": {
+                                                                    "title": { "content": "Game 2 Live" },
+                                                                    "metadataRows": [
+                                                                        {
+                                                                            "text": "25.000 assistindo"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "richItemRenderer": {
+                                                    "content": {
+                                                        "lockupViewModel": {
+                                                            "contentId": "pastVod5555",
+                                                            "contentImage": {
+                                                                "thumbnailViewModel": {
+                                                                    "overlays": [
+                                                                        {
+                                                                            "thumbnailOverlayTimeStatusRenderer": {
+                                                                                "style": "DEFAULT",
+                                                                                "text": { "runs": [{ "text": "45:10" }] }
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "metadata": {
+                                                                "lockupMetadataViewModel": {
+                                                                    "title": { "content": "Old Broadcast VOD" }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        });
+
+        // Act
+        let streams = extract_live_streams_from_initial_data(&json_data, 10);
+
+        // Assert
+        assert_eq!(streams.len(), 2);
+        assert_eq!(streams[0].channel, "stream11111");
+        assert_eq!(streams[0].title, "Game 1 Live");
+        assert_eq!(streams[0].viewer_count, 10000);
+
+        assert_eq!(streams[1].channel, "stream22222");
+        assert_eq!(streams[1].title, "Game 2 Live");
+        assert_eq!(streams[1].viewer_count, 25000);
     }
 }
