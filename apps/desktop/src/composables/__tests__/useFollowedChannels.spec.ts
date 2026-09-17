@@ -473,4 +473,31 @@ describe("useFollowedChannels", () => {
     // Assert - isInitialLoading must remain false (no skeleton flash)
     expect(isInitialLoading.value).toBe(false);
   });
+
+  it("should match live YouTube channel when direct key is offline but an alias is live", async () => {
+    // Arrange
+    mockFavorites.favorites.value = [
+      { channel: "cazetv", platform: "youtube", addedAt: Date.now() },
+    ];
+    mockLiveStatus.statuses.value = {
+      "youtube:cazetv": { isLive: false } as any,
+      "youtube:@cazetv": {
+        isLive: true,
+        handle: "@cazetv",
+        displayName: "CazéTV",
+        videoId: "vid_caze",
+        viewerCount: 50000,
+      } as any,
+    };
+
+    // Act
+    const { channels } = useFollowedChannels();
+    await nextTick();
+
+    // Assert
+    expect(channels.value).toHaveLength(1);
+    expect(channels.value[0]?.displayName).toBe("CazéTV");
+    expect(channels.value[0]?.isLive).toBe(true);
+    expect(channels.value[0]?.videoId).toBe("vid_caze");
+  });
 });

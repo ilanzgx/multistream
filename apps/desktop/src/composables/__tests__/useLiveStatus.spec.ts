@@ -1707,7 +1707,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       fetchSpy.mockRestore();
     });
 
-    it("should retain youtube live status in UI statuses map during a single transient offline check cycle", async () => {
+    it("should retain youtube live status in UI statuses map across grace period cycles before confirming offline", async () => {
       // Arrange
       mockFavorites.value = [{ channel: "cazetv", platform: "youtube" }];
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
@@ -1731,7 +1731,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       // Assert
       expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
 
-      // Act — Cycle 2 (transient offline glitch)
+      // Act — Cycles 2, 3, 4 (transient offline misses)
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
         if (cmd === "youtube_check_channels_status") {
           return [
@@ -1744,17 +1744,54 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
         return [];
       });
 
+      // Cycle 2 (offline #1)
       await sut.checkAll();
-
-      // Assert
       expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
       expect(sut.getStatus("cazetv", "youtube")?.videoId).toBe("vid123");
 
-      // Act — Cycle 3 (second consecutive offline check confirms stream ended)
+      // Cycle 3 (offline #2)
+      await sut.checkAll();
+      expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
+
+      // Cycle 4 (offline #3)
+      await sut.checkAll();
+      expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
+
+      // Act — Cycle 5 (4th consecutive offline check confirms stream ended)
       await sut.checkAll();
 
       // Assert
       expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(false);
+    });
+
+    it("should correctly populate avatarUrl, thumbnailUrl, and real-time viewerCount for YouTube channels", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "ufc", platform: "youtube" }];
+      vi.mocked(invoke).mockImplementation(async (cmd: string) => {
+        if (cmd === "youtube_check_channels_status") {
+          return [
+            {
+              channel: "ufc",
+              is_live: true,
+              video_id: "ufc_live_123",
+              title: "UFC Live 24/7",
+              viewer_count: 3200,
+              avatar_url: "https://yt3.ggpht.com/ufc_avatar=s176-c-k-c0x00ffffff-no-rj",
+            },
+          ];
+        }
+        return [];
+      });
+
+      // Act
+      await vi.advanceTimersByTimeAsync(1500);
+
+      // Assert
+      const status = sut.getStatus("ufc", "youtube");
+      expect(status?.isLive).toBe(true);
+      expect(status?.viewerCount).toBe(3200);
+      expect(status?.avatarUrl).toBe("https://yt3.ggpht.com/ufc_avatar=s176-c-k-c0x00ffffff-no-rj");
+      expect(status?.thumbnailUrl).toBe("https://i.ytimg.com/vi/ufc_live_123/hqdefault.jpg");
     });
   });
 });

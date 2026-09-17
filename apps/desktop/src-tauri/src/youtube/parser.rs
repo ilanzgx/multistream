@@ -140,6 +140,13 @@ pub fn parse_viewer_count(text: &str) -> u64 {
 }
 
 fn is_live_video(renderer: &Value) -> bool {
+    if renderer.get("lengthText").is_some() {
+        return false;
+    }
+    if renderer.get("upcomingEventData").is_some() {
+        return false;
+    }
+
     if let Some(badges) = renderer.get("badges").and_then(|b| b.as_array()) {
         for badge in badges {
             if let Some(meta) = badge.get("metadataBadgeRenderer") {
@@ -178,11 +185,19 @@ fn is_live_video(renderer: &Value) -> bool {
 
     if let Some(view_text) = get_text_from_node(renderer.get("viewCountText")) {
         let lower = view_text.to_lowercase();
-        if lower.contains("watching")
+        if (lower.contains("watching")
             || lower.contains("assistindo")
             || lower.contains("mirando")
             || lower.contains("zuschauer")
             || lower.contains("зрител")
+            || lower.contains("regardent")
+            || lower.contains("izleyici")
+            || lower.contains("visualizzatori"))
+            && !lower.contains("streamed")
+            && !lower.contains("transmitido")
+            && !lower.contains("gravad")
+            && !lower.contains("views")
+            && !lower.contains("visualiz")
         {
             return true;
         }
@@ -248,6 +263,15 @@ fn parse_single_video_renderer(renderer: &Value) -> Option<YouTubeSuggestedStrea
         });
 
     let viewer_count = get_text_from_node(renderer.get("viewCountText"))
+        .filter(|t| {
+            let lower = t.to_lowercase();
+            !lower.contains("views")
+                && !lower.contains("visualiz")
+                && !lower.contains("aufruf")
+                && !lower.contains("streamed")
+                && !lower.contains("transmitido")
+                && !lower.contains("gravad")
+        })
         .map(|t| parse_viewer_count(&t))
         .unwrap_or(0);
 
@@ -291,15 +315,13 @@ pub fn extract_live_streams_from_initial_data(
 
         match node {
             Value::Object(map) => {
-                if let Some(renderer) = map.get("videoRenderer") {
-                    if let Some(stream) = parse_single_video_renderer(renderer) {
-                        if !seen_ids.contains(&stream.channel) {
-                            seen_ids.insert(stream.channel.clone());
-                            results.push(stream);
-                        }
-                    }
-                } else if let Some(renderer) = map.get("compactVideoRenderer") {
-                    if let Some(stream) = parse_single_video_renderer(renderer) {
+                let renderer = map
+                    .get("videoRenderer")
+                    .or_else(|| map.get("compactVideoRenderer"))
+                    .or_else(|| map.get("gridVideoRenderer"));
+
+                if let Some(r) = renderer {
+                    if let Some(stream) = parse_single_video_renderer(r) {
                         if !seen_ids.contains(&stream.channel) {
                             seen_ids.insert(stream.channel.clone());
                             results.push(stream);
@@ -585,6 +607,30 @@ mod tests {
     }
 
     #[test]
+    fn should_extract_yt_initial_player_response_with_trailing_inline_js() {
+        // Arrange
+        let sample_html = r#"
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <script>
+                        var ytInitialPlayerResponse = {"videoDetails":{"videoId":"3L8SVq0UMR4","isLive":true}};var meta = document.createElement('meta');
+                    </script>
+                </head>
+            </html>
+        "#;
+
+        // Act
+        let result = extract_yt_initial_player_response(sample_html);
+
+        // Assert
+        assert!(result.is_some());
+        let val = result.unwrap();
+        assert_eq!(val["videoDetails"]["videoId"], "3L8SVq0UMR4");
+        assert_eq!(val["videoDetails"]["isLive"], true);
+    }
+
+    #[test]
     fn should_extract_channels_from_search_results() {
         // Arrange
         let json_data = serde_json::json!({
@@ -646,5 +692,81 @@ mod tests {
             res.avatar_url.as_deref(),
             Some("https://yt3.ggpht.com/avatar.jpg")
         );
+    }
+
+    #[test]
+    fn should_not_consider_video_with_length_text_as_live() {
+        // Arrange
+        let vod_renderer = serde_json::json!({
+            "videoId": "vod999",
+            "title": { "runs": [{ "text": "SBT Notícias Ontem" }] },
+            "lengthText": { "simpleText": "1:15:30" },
+            "badges": [
+                {
+                    "metadataBadgeRenderer": {
+                        "style": "BADGE_STYLE_TYPE_LIVE_NOW",
+                        "label": "AO VIVO"
+                    }
+                }
+            ]
+        });
+
+        // Act
+        let stream = parse_single_video_renderer(&vod_renderer);
+
+        // Assert
+        assert!(stream.is_none());
+    }
+
+    #[test]
+    fn should_not_consider_upcoming_event_as_live() {
+        // Arrange
+        let upcoming_renderer = serde_json::json!({
+            "videoId": "upcoming123",
+            "title": { "runs": [{ "text": "Waiting Room" }] },
+            "upcomingEventData": {
+                "startTime": "1800000000"
+            },
+            "thumbnailOverlays": [
+                {
+                    "thumbnailOverlayTimeStatusRenderer": {
+                        "style": "LIVE",
+                        "text": { "runs": [{ "text": "LIVE" }] }
+                    }
+                }
+            ]
+        });
+
+        // Act
+        let stream = parse_single_video_renderer(&upcoming_renderer);
+
+        // Assert
+        assert!(stream.is_none());
+    }
+
+    #[test]
+    fn should_not_use_cumulative_viewcount_text_as_concurrent_viewers() {
+        // Arrange
+        let renderer = serde_json::json!({
+            "videoId": "live123",
+            "title": { "runs": [{ "text": "Live Stream" }] },
+            "viewCountText": { "runs": [{ "text": "1.2M views" }] },
+            "thumbnailOverlays": [
+                {
+                    "thumbnailOverlayTimeStatusRenderer": {
+                        "style": "LIVE",
+                        "text": { "runs": [{ "text": "LIVE" }] }
+                    }
+                }
+            ]
+        });
+
+        // Act
+        let stream = parse_single_video_renderer(&renderer);
+
+        // Assert
+        assert!(stream.is_some());
+        let val = stream.unwrap();
+        assert_eq!(val.viewer_count, 0);
     }
 }

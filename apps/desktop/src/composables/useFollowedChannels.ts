@@ -95,16 +95,19 @@ const _useFollowedChannels = () => {
         const channelClean = f.channel.toLowerCase().replace(/^@+/, "");
         const key = `youtube:${channelClean}`;
         let status = statuses.value[key] || statuses.value[`youtube:@${channelClean}`];
-        if (!status) {
+        if (!status || !status.isLive) {
           const match = Object.entries(statuses.value).find(
             ([k, s]) =>
+              s.isLive &&
               k.startsWith("youtube:") &&
               ((s.handle && s.handle.toLowerCase().replace(/^@+/, "") === channelClean) ||
                 (s.videoId && s.videoId.toLowerCase() === channelClean) ||
                 (s.displayName && s.displayName.toLowerCase() === channelClean) ||
                 k.replace(/^youtube:@?/, "") === channelClean)
           );
-          status = match ? match[1] : undefined;
+          if (match) {
+            status = match[1];
+          }
         }
         const rawName =
           (status?.displayName && !status.displayName.startsWith("@")

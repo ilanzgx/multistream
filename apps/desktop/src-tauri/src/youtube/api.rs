@@ -140,7 +140,7 @@ fn extract_channel_avatar_from_html(html: &str) -> Option<String> {
 
     static YT3_AVATAR_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
     let yt3_avatar_re = YT3_AVATAR_RE.get_or_init(|| {
-        regex::Regex::new(r#"["'](https://yt3\.(?:ggpht|googleusercontent)\.com/[a-zA-Z0-9_-]+=[sS](?:88|176|68|48)[^"'\s]*)["']"#).ok()
+        regex::Regex::new(r#"["'](https://yt3\.(?:ggpht|googleusercontent)\.com/[a-zA-Z0-9_/.-]+=[sS](?:88|176|68|48)[^"'\s]*)["']"#).ok()
     });
     if let Some(re) = yt3_avatar_re.as_ref() {
         if let Some(caps) = re.captures(html) {
@@ -194,20 +194,48 @@ fn find_channel_avatar(node: &Value) -> Option<String> {
     None
 }
 
+pub fn is_concurrent_viewer_text(text: &str) -> bool {
+    let lower = text.to_lowercase();
+    (lower.contains("watching")
+        || lower.contains("assistindo")
+        || lower.contains("espectadores")
+        || lower.contains("mirando")
+        || lower.contains("zuschauer")
+        || lower.contains("зрител")
+        || lower.contains("regardent")
+        || lower.contains("izleyici")
+        || lower.contains("visualizzatori"))
+        && !lower.contains("views")
+        && !lower.contains("visualiz")
+        && !lower.contains("aufruf")
+        && !lower.contains("streamed")
+        && !lower.contains("transmitido")
+        && !lower.contains("gravad")
+}
+
 fn find_viewer_count(node: &Value) -> Option<u64> {
     if let Value::Object(map) = node {
         if let Some(vvcr) = map.get("videoViewCountRenderer") {
+            let is_live_vvcr = vvcr
+                .get("isLive")
+                .and_then(|l| l.as_bool())
+                .unwrap_or(false);
+
             if let Some(ovc) = vvcr.get("originalViewCount").and_then(|v| v.as_str()) {
-                let count = parse_viewer_count(ovc);
-                if count > 0 {
-                    return Some(count);
+                if is_live_vvcr {
+                    let count = parse_viewer_count(ovc);
+                    if count > 0 {
+                        return Some(count);
+                    }
                 }
             }
             if let Some(vc) = vvcr.get("viewCount") {
                 if let Some(s) = get_text_from_node(Some(vc)) {
-                    let count = parse_viewer_count(&s);
-                    if count > 0 {
-                        return Some(count);
+                    if is_live_vvcr || is_concurrent_viewer_text(&s) {
+                        let count = parse_viewer_count(&s);
+                        if count > 0 {
+                            return Some(count);
+                        }
                     }
                 }
             }
@@ -216,9 +244,11 @@ fn find_viewer_count(node: &Value) -> Option<u64> {
                 .or_else(|| vvcr.get("shortViewCount"))
             {
                 if let Some(s) = get_text_from_node(Some(svc)) {
-                    let count = parse_viewer_count(&s);
-                    if count > 0 {
-                        return Some(count);
+                    if is_live_vvcr || is_concurrent_viewer_text(&s) {
+                        let count = parse_viewer_count(&s);
+                        if count > 0 {
+                            return Some(count);
+                        }
                     }
                 }
             }
@@ -229,18 +259,11 @@ fn find_viewer_count(node: &Value) -> Option<u64> {
             .or_else(|| map.get("shortViewCountText"))
         {
             if let Some(s) = get_text_from_node(Some(vct)) {
-                let count = parse_viewer_count(&s);
-                if count > 0 {
-                    return Some(count);
-                }
-            }
-        }
-
-        if let Some(vc) = map.get("viewCount") {
-            if let Some(s) = get_text_from_node(Some(vc)) {
-                let count = parse_viewer_count(&s);
-                if count > 0 {
-                    return Some(count);
+                if is_concurrent_viewer_text(&s) {
+                    let count = parse_viewer_count(&s);
+                    if count > 0 {
+                        return Some(count);
+                    }
                 }
             }
         }
@@ -414,8 +437,24 @@ pub fn is_not_currently_live(node: Option<&Value>) -> bool {
         {
             return true;
         }
-        if let Some(is_live) = vd.get("isLive").and_then(|l| l.as_bool()) {
+
+        let is_live_val = vd.get("isLive").and_then(|l| l.as_bool());
+        if let Some(is_live) = is_live_val {
             if !is_live {
+                return true;
+            }
+        }
+
+        let is_live_content = vd
+            .get("isLiveContent")
+            .and_then(|c| c.as_bool())
+            .unwrap_or(false);
+        if is_live_content && is_live_val != Some(true) {
+            return true;
+        }
+
+        if let Some(len_str) = vd.get("lengthSeconds").and_then(|l| l.as_str()) {
+            if len_str != "0" && !len_str.is_empty() && is_live_val != Some(true) {
                 return true;
             }
         }
@@ -432,6 +471,21 @@ pub fn is_not_currently_live(node: Option<&Value>) -> bool {
                 }
             }
             if lbd.get("endTimestamp").is_some() {
+                return true;
+            }
+        }
+
+        let is_live_content = microformat
+            .get("isLiveContent")
+            .and_then(|c| c.as_bool())
+            .unwrap_or(false);
+        if is_live_content {
+            let is_now = microformat
+                .get("liveBroadcastDetails")
+                .and_then(|lbd| lbd.get("isLiveNow"))
+                .and_then(|b| b.as_bool())
+                .unwrap_or(false);
+            if !is_now {
                 return true;
             }
         }
@@ -493,6 +547,10 @@ pub async fn resolve_channel_live_status(
 
         match resp {
             Ok(r) if r.status().is_success() => break Some(r),
+            Ok(r) if r.status() == reqwest::StatusCode::TOO_MANY_REQUESTS && retries > 0 => {
+                retries -= 1;
+                tokio::time::sleep(Duration::from_millis(500)).await;
+            }
             Ok(r) if r.status().is_client_error() => break None,
             _ if retries > 0 => {
                 retries -= 1;
@@ -614,11 +672,9 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    let has_live_badge =
-        html.contains(r#""style":"LIVE""#) || html.contains("BADGE_STYLE_TYPE_LIVE_NOW");
-
-    let json_data = if (player_data.is_none() && has_live_badge)
-        || (player_data.is_some() && (display_name.is_none() && handle.is_none()))
+    let json_data = if player_data.is_none()
+        || (display_name.is_none() && handle.is_none())
+        || avatar_url.is_none()
     {
         extract_yt_initial_data(&html)
     } else {
@@ -626,7 +682,9 @@ pub async fn resolve_channel_live_status(
     };
 
     if let Some(ref json) = json_data {
-        avatar_url = find_channel_avatar(json);
+        if avatar_url.is_none() {
+            avatar_url = find_channel_avatar(json);
+        }
         let (found_name, found_handle) = find_channel_info(json);
         if display_name.is_none() {
             display_name = found_name;
@@ -666,21 +724,6 @@ pub async fn resolve_channel_live_status(
             if vd_is_live && !vd_is_upcoming {
                 is_live = true;
             }
-
-            if viewer_count.is_none() {
-                if let Some(vc) = vd.get("viewCount") {
-                    if let Some(s) = vc.as_str() {
-                        let count = parse_viewer_count(s);
-                        if count > 0 {
-                            viewer_count = Some(count);
-                        }
-                    } else if let Some(n) = vc.as_u64() {
-                        if n > 0 {
-                            viewer_count = Some(n);
-                        }
-                    }
-                }
-            }
         }
 
         if viewer_count.is_none() {
@@ -710,7 +753,8 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    let is_offline = is_not_currently_live(player_data.as_ref());
+    let is_offline =
+        is_not_currently_live(player_data.as_ref()) || is_not_currently_live(json_data.as_ref());
 
     if viewer_count.is_none() {
         viewer_count = extract_viewer_count_from_html(&html);
@@ -743,10 +787,6 @@ pub async fn resolve_channel_live_status(
 
     if display_name.is_none() && channel_or_handle.starts_with('@') {
         display_name = Some(channel_or_handle.trim_start_matches('@').to_string());
-    }
-
-    if !is_live && !is_offline && has_live_badge && video_id.is_some() {
-        is_live = true;
     }
 
     if is_offline {
@@ -808,7 +848,7 @@ pub async fn check_channels_status_batch(
         }
     }
 
-    let semaphore = Arc::new(Semaphore::new(8));
+    let semaphore = Arc::new(Semaphore::new(4));
     let mut tasks = Vec::with_capacity(unique_channels.len());
 
     for ch in unique_channels {
@@ -1304,5 +1344,154 @@ mod tests {
         assert!(!is_not_currently_live(Some(&live_json)));
         assert!(is_not_currently_live(Some(&live_content_json)));
         assert!(!is_not_currently_live(None));
+    }
+
+    #[test]
+    fn should_detect_vod_with_length_seconds_and_omitted_islive_as_not_currently_live() {
+        // Arrange
+        let vod_json = serde_json::json!({
+            "videoDetails": {
+                "videoId": "vod12345678",
+                "lengthSeconds": "7200",
+                "isLiveContent": true,
+                "viewCount": "45210"
+            },
+            "playabilityStatus": { "status": "OK" }
+        });
+
+        // Act & Assert
+        assert!(is_not_currently_live(Some(&vod_json)));
+    }
+
+    #[test]
+    fn should_detect_microformat_vod_without_live_now_as_not_currently_live() {
+        // Arrange
+        let vod_microformat = serde_json::json!({
+            "microformat": {
+                "playerMicroformatRenderer": {
+                    "isLiveContent": true,
+                    "liveBroadcastDetails": {
+                        "isLiveNow": false,
+                        "endTimestamp": "2026-09-17T02:00:00Z"
+                    }
+                }
+            }
+        });
+
+        // Act & Assert
+        assert!(is_not_currently_live(Some(&vod_microformat)));
+    }
+
+    #[test]
+    fn should_reject_cumulative_views_and_only_accept_concurrent_viewers() {
+        // Arrange
+        let cumulative_json = serde_json::json!({
+            "videoViewCountRenderer": {
+                "viewCount": { "simpleText": "977.412 visualizações" }
+            },
+            "videoDetails": {
+                "viewCount": "977412"
+            }
+        });
+
+        let concurrent_json = serde_json::json!({
+            "videoViewCountRenderer": {
+                "isLive": true,
+                "originalViewCount": "3200",
+                "viewCount": { "runs": [{ "text": "3.200" }, { "text": " assistindo agora" }] }
+            }
+        });
+
+        // Act
+        let cumulative_res = find_viewer_count(&cumulative_json);
+        let concurrent_res = find_viewer_count(&concurrent_json);
+
+        // Assert
+        assert_eq!(cumulative_res, None);
+        assert_eq!(concurrent_res, Some(3200));
+    }
+
+    #[test]
+    fn should_extract_channel_avatar_from_video_owner_renderer_html() {
+        // Arrange
+        let html = r#"<html><body><script>var data = {"videoOwnerRenderer":{"thumbnails":[{"url":"https://yt3.ggpht.com/a/sample_owner_avatar.jpg"}]}};</script></body></html>"#;
+
+        // Act
+        let avatar = extract_channel_avatar_from_html(html);
+
+        // Assert
+        assert_eq!(
+            avatar,
+            Some("https://yt3.ggpht.com/a/sample_owner_avatar.jpg".to_string())
+        );
+    }
+
+    #[test]
+    fn should_extract_channel_avatar_from_channel_thumbnail_renderer_html() {
+        // Arrange
+        let html = r#"<html><body><script>var data = {"channelThumbnailWithLinkRenderer":{"thumbnails":[{"url":"//yt3.ggpht.com/sample_channel_thumb.jpg"}]}};</script></body></html>"#;
+
+        // Act
+        let avatar = extract_channel_avatar_from_html(html);
+
+        // Assert
+        assert_eq!(
+            avatar,
+            Some("https://yt3.ggpht.com/sample_channel_thumb.jpg".to_string())
+        );
+    }
+
+    #[test]
+    fn should_extract_channel_avatar_from_yt3_avatar_regex() {
+        // Arrange
+        let html = r#"<html><body><img src="https://yt3.ggpht.com/ytc/AIdro_sample=s176-c-k-c0x00ffffff-no-rj" /></body></html>"#;
+
+        // Act
+        let avatar = extract_channel_avatar_from_html(html);
+
+        // Assert
+        assert_eq!(
+            avatar,
+            Some("https://yt3.ggpht.com/ytc/AIdro_sample=s176-c-k-c0x00ffffff-no-rj".to_string())
+        );
+    }
+
+    #[test]
+    fn should_find_channel_avatar_from_json_tree() {
+        // Arrange
+        let json = serde_json::json!({
+            "contents": {
+                "twoColumnWatchNextResults": {
+                    "results": {
+                        "results": {
+                            "contents": [
+                                {
+                                    "videoSecondaryInfoRenderer": {
+                                        "owner": {
+                                            "videoOwnerRenderer": {
+                                                "thumbnail": {
+                                                    "thumbnails": [
+                                                        { "url": "//yt3.ggpht.com/channel_avatar.jpg" }
+                                                    ]
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        });
+
+        // Act
+        let avatar = find_channel_avatar(&json);
+
+        // Assert
+        assert_eq!(
+            avatar,
+            Some("https://yt3.ggpht.com/channel_avatar.jpg".to_string())
+        );
     }
 }

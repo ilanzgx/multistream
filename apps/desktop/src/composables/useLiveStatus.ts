@@ -905,14 +905,16 @@ const _useLiveStatus = () => {
             const count = (offlineCounters.get(key) || 0) + 1;
             offlineCounters.set(key, count);
 
+            const maxGraceCycles = key.startsWith("youtube:") ? 4 : 2;
+
             if (key.startsWith("youtube:")) {
               const currentLiveStatus = statuses.value[key];
-              if (currentLiveStatus?.isLive && count < 2) {
+              if (currentLiveStatus?.isLive && count < maxGraceCycles) {
                 nextStatuses[key] = currentLiveStatus;
               }
             }
 
-            if (count >= 2) {
+            if (count >= maxGraceCycles) {
               nextPreviousStatuses[key] = newStatus;
               offlineCounters.delete(key);
             }

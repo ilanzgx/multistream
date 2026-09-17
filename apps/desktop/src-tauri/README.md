@@ -274,6 +274,9 @@ youtube_search_channels(query)
 
 The parsing pipeline is rigorously tested with AAA unit tests against real JSON snippets and edge cases:
 - Localized viewer count parsing across languages (`1.5M`, `25k`, `10万`, `500 mil`).
+- Real-time concurrent viewers vs cumulative views (`originalViewCount`, `"X assistindo agora"`, `"X watching now"`).
+- Channel profile avatar extraction from `videoOwnerRenderer`, `channelThumbnailWithLinkRenderer`, and `yt3.ggpht.com` CDN patterns (preventing video thumbnail injection from `og:image`).
+- Streaming JSON deserialization with trailing inline JavaScript (`ytInitialPlayerResponse`).
 - Incomplete or malformed `ytInitialData` blobs.
 - Channel search renderer traversal and handle extraction.
 - Locale mapping validation for all 10 supported app languages.
@@ -283,7 +286,8 @@ The parsing pipeline is rigorously tested with AAA unit tests against real JSON 
 | Command | Parameters | Description |
 |---|---|---|
 | `youtube_get_suggested_streams` | `locale?: string, limit?: number` | Fetches trending live streams localized to the user's language/region |
-| `youtube_resolve_channel` | `channel: string` | Resolves live status, active video ID, viewer count, and canonical handle |
+| `youtube_resolve_live_id` | `channel_or_handle: string` | Resolves active video ID if the channel is currently live |
+| `youtube_check_channels_status` | `channels: string[]` | Batch checks live status, concurrent viewers, title, handle, and avatar for channels |
 | `youtube_search_channels` | `query: string` | Searches YouTube channels matching query, returning handles and live status |
 
 ---
