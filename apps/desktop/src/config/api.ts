@@ -37,7 +37,7 @@ export const API_CONFIG = {
 };
 
 export const REFRESH_CONFIG = {
-  interval: 30000, // 30s
+  interval: 60000, // 60s
   suggestionsInterval: 300000, // 5m (300,000ms)
   maxKickPages: 8,
   suggestionsLimit: 150,

@@ -180,7 +180,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(fetchSpy).toHaveBeenCalledTimes(1);
 
       // Fast-forward interval
-      await vi.advanceTimersByTimeAsync(30000);
+      await vi.advanceTimersByTimeAsync(60000);
 
       // Assert
       expect(fetchSpy).toHaveBeenCalledTimes(2);

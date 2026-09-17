@@ -197,10 +197,35 @@ const _useFollowedChannels = () => {
     return channels.value.filter((c) => c.platform === platformFilter.value);
   });
 
+  const fetchTwitchFollowed = async () => {
+    if (!isTauri() || !twitchAuthenticated.value || isFetchingTwitch.value) {
+      if (!twitchAuthenticated.value) {
+        twitchChannels.value = [];
+      }
+      return;
+    }
+
+    isFetchingTwitch.value = true;
+    try {
+      const results = await invoke<FollowedChannel[]>("twitch_get_followed_streams");
+      if (results !== null) {
+        twitchChannels.value = results;
+      }
+    } catch (e) {
+      console.error("Failed to fetch Twitch followed streams", e);
+      debugErrors.value.push(`Twitch: ${String(e)}`);
+    } finally {
+      isFetchingTwitch.value = false;
+      hasLoadedTwitchOnce.value = true;
+    }
+  };
+
   const refresh = async () => {
     if (!isTauri() || isFetchingTwitch.value) return;
 
-    isFetchingTwitch.value = true;
+    if (twitchAuthenticated.value) {
+      isFetchingTwitch.value = true;
+    }
     debugErrors.value = [];
     try {
       const promises: Promise<any>[] = [checkAll()];
@@ -216,6 +241,10 @@ const _useFollowedChannels = () => {
               console.error("Failed to fetch Twitch followed streams", e);
               debugErrors.value.push(`Twitch: ${String(e)}`);
             })
+            .finally(() => {
+              isFetchingTwitch.value = false;
+              hasLoadedTwitchOnce.value = true;
+            })
         );
       } else {
         twitchChannels.value = [];
@@ -224,16 +253,20 @@ const _useFollowedChannels = () => {
     } catch (e) {
       console.error("Failed to refresh followed channels", e);
     } finally {
-      isFetchingTwitch.value = false;
-      hasLoadedTwitchOnce.value = true;
       hasLoadedFavoritesOnce.value = true;
+    }
+  };
+
+  const poll = async () => {
+    if (twitchAuthenticated.value) {
+      await fetchTwitchFollowed();
     }
   };
 
   const startPolling = () => {
     if (pollInterval) clearInterval(pollInterval);
     refresh();
-    pollInterval = setInterval(refresh, REFRESH_CONFIG.interval);
+    pollInterval = setInterval(poll, REFRESH_CONFIG.interval);
   };
 
   const stopPolling = () => {

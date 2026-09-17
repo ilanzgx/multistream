@@ -580,7 +580,12 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    let json_data = if player_data.is_none() || (display_name.is_none() && handle.is_none()) {
+    let has_live_badge =
+        html.contains(r#""style":"LIVE""#) || html.contains("BADGE_STYLE_TYPE_LIVE_NOW");
+
+    let json_data = if (player_data.is_none() && has_live_badge)
+        || (player_data.is_some() && (display_name.is_none() && handle.is_none()))
+    {
         extract_yt_initial_data(&html)
     } else {
         None
@@ -689,9 +694,6 @@ pub async fn resolve_channel_live_status(
     }
 
     if !is_live && !is_offline {
-        let has_live_badge =
-            html.contains(r#""style":"LIVE""#) || html.contains("BADGE_STYLE_TYPE_LIVE_NOW");
-
         if has_live_badge && video_id.is_some() {
             is_live = true;
         }
@@ -716,6 +718,10 @@ pub async fn resolve_channel_live_status(
                 }
             }
         }
+    }
+
+    if display_name.is_none() {
+        display_name = title.clone();
     }
 
     if avatar_url.is_none() {
