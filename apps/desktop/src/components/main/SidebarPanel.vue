@@ -158,8 +158,13 @@ const { getStatus } = useLiveStatus();
 const getStreamDisplayName = (stream: Stream) => {
   if (stream.platform === "youtube") {
     const status = getStatus(stream.displayName || stream.channel, "youtube");
+    const isVideoId = (str?: string) =>
+      !!str && !str.startsWith("@") && /^[a-zA-Z0-9_-]{11}$/.test(str);
     const resolvedName =
-      stream.displayName || status?.displayName || stream.handle || status?.handle;
+      (!isVideoId(stream.displayName) ? stream.displayName : undefined) ||
+      status?.displayName ||
+      (!isVideoId(stream.handle) ? stream.handle : undefined) ||
+      status?.handle;
 
     if (resolvedName) {
       return resolvedName.replace(/^@/, "");

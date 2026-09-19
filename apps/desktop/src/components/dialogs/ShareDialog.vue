@@ -14,8 +14,7 @@ import { useStreams } from "@/composables/useStreams";
 import { toast } from "@/composables/useToast";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useI18n } from "vue-i18n";
-import { APP_LINKS } from "@/config/links";
-import { encodeBase64 } from "@/lib/base64";
+import { buildShareUrl } from "@/lib/shareUrl";
 
 const { t, locale } = useI18n();
 
@@ -32,49 +31,13 @@ const { streams } = useStreams();
 const { getStatus } = useLiveStatus();
 
 const shareLink = computed(() => {
-  if (!streams.value.length) {
-    return t("share.noStreams");
-  }
-
-  const baseUrl =
-    window.location.hostname === "localhost" || window.location.hostname === "tauri.localhost"
-      ? APP_LINKS.website
-      : window.location.origin;
-
-  // Map app locale to website supported locales
-  const websiteLocale = locale.value === "pt" || locale.value === "pt-br" ? "pt-br" : "en";
-
-  const url = `${baseUrl}/${websiteLocale}/`;
-
-  const params: string[] = ["action=share"];
-
-  // regular streams (kick, twitch, youtube)
-  const regularStreams = streams.value.filter((s) => s.platform !== "custom");
-  if (regularStreams.length) {
-    const streamsParam = regularStreams
-      .map((s) => {
-        const status = getStatus(s.displayName || s.channel, s.platform);
-        const identifier = (s.handle || status?.handle || s.displayName || s.channel).replace(
-          /^@+/,
-          ""
-        );
-        return `${s.platform}:${identifier}`;
-      })
-      .join(",");
-    params.push(`streams=${streamsParam}`);
-  }
-
-  // custom streams - Base64 encoded
-  const customStreams = streams.value.filter((s) => s.platform === "custom");
-  if (customStreams.length) {
-    const customData = customStreams.map((s) => ({
-      n: s.channel,
-      u: s.iframeUrl || "",
-    }));
-    params.push(`c=${encodeBase64(JSON.stringify(customData))}`);
-  }
-
-  return `${url}?${params.join("&")}`;
+  return (
+    buildShareUrl({
+      streams: streams.value,
+      locale: locale.value,
+      getStatus,
+    }) || t("share.noStreams")
+  );
 });
 
 const copyLink = async () => {
