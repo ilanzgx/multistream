@@ -171,6 +171,20 @@ const isMiniaturized = computed(() => !!focusedStreamId.value && !isFocused(prop
 const { getProfilePicture } = useProfilePicture();
 const profilePictureUrl = getProfilePicture(props.displayName || props.channel, props.platform);
 
+const effectiveAvatarUrl = computed(() => {
+  if (liveStatus.value?.avatarUrl) {
+    return liveStatus.value.avatarUrl;
+  }
+  if (matchingFavorite.value) {
+    const favStatus = getStatus(
+      matchingFavorite.value.displayName || matchingFavorite.value.channel,
+      props.platform
+    );
+    if (favStatus?.avatarUrl) return favStatus.avatarUrl;
+  }
+  return profilePictureUrl.value;
+});
+
 const viewerCountDisplay = computed(() => {
   const status = liveStatus.value;
   if (!status || !status.isLive || status.viewerCount === undefined) return "offline/pending";
@@ -522,8 +536,8 @@ const handleCopyUrl = async () => {
                 ]"
               >
                 <img
-                  v-if="profilePictureUrl"
-                  :src="profilePictureUrl"
+                  v-if="effectiveAvatarUrl"
+                  :src="effectiveAvatarUrl"
                   :alt="props.channel"
                   class="w-full h-full object-cover transition-opacity duration-700 ease-in-out"
                 />
@@ -610,15 +624,22 @@ const handleCopyUrl = async () => {
 
           <!-- info area skeleton -->
           <div :class="['flex items-center', isMiniaturized ? 'gap-2' : 'gap-3']">
-            <!-- avatar: real platform icon instead of grey circle -->
+            <!-- avatar: real channel avatar or platform icon fallback -->
             <div
               :class="[
-                'rounded-full flex items-center justify-center shrink-0 bg-white/5',
+                'rounded-full flex items-center justify-center shrink-0 bg-white/5 overflow-hidden',
                 isMiniaturized ? 'size-6' : 'size-12',
               ]"
             >
+              <img
+                v-if="effectiveAvatarUrl"
+                :src="effectiveAvatarUrl"
+                :alt="props.channel"
+                class="w-full h-full object-cover"
+              />
               <component
                 :is="platformConfig?.icon"
+                v-else
                 :size="isMiniaturized ? 14 : 26"
                 :style="{ color: platformConfig?.color }"
                 class="opacity-40"
