@@ -7,13 +7,99 @@ use super::types::{
     YouTubeChannelStatus, YouTubeLiveStreamInfo, YouTubeSearchResult, YouTubeSuggestedStream,
 };
 use serde_json::Value;
-use std::collections::HashSet;
-use std::sync::Arc;
-use std::sync::OnceLock;
-use std::time::Duration;
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, OnceLock, RwLock};
+use std::time::{Duration, Instant};
 use tokio::sync::Semaphore;
 
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+const STATUS_CACHE_TTL: Duration = Duration::from_secs(45);
+
+fn get_youtube_semaphore() -> &'static Arc<Semaphore> {
+    static SEMAPHORE: OnceLock<Arc<Semaphore>> = OnceLock::new();
+    SEMAPHORE.get_or_init(|| Arc::new(Semaphore::new(2)))
+}
+
+fn get_status_cache() -> &'static RwLock<HashMap<String, (Instant, YouTubeChannelStatus)>> {
+    static CACHE: OnceLock<RwLock<HashMap<String, (Instant, YouTubeChannelStatus)>>> =
+        OnceLock::new();
+    CACHE.get_or_init(|| RwLock::new(HashMap::new()))
+}
+
+pub fn get_cached_status(key: &str) -> Option<YouTubeChannelStatus> {
+    let clean = key.trim().to_lowercase();
+    let cache = get_status_cache().read().ok()?;
+    if let Some((cached_at, status)) = cache.get(&clean) {
+        if cached_at.elapsed() < STATUS_CACHE_TTL {
+            let mut res = status.clone();
+            res.channel = key.to_string();
+            if clean.len() == 11 && !clean.starts_with('@') {
+                if let Some(sub) = res
+                    .live_streams
+                    .iter()
+                    .find(|s| s.video_id.to_lowercase() == clean)
+                {
+                    res.video_id = Some(sub.video_id.clone());
+                    res.title = Some(sub.title.clone());
+                    res.viewer_count = Some(sub.viewer_count);
+                }
+            }
+            return Some(res);
+        }
+    }
+    None
+}
+
+pub fn store_cached_status(status: &YouTubeChannelStatus) {
+    if let Ok(mut cache) = get_status_cache().write() {
+        let now = Instant::now();
+        let mut keys = Vec::new();
+
+        let ch = status.channel.trim().to_lowercase();
+        if !ch.is_empty() {
+            keys.push(ch.clone());
+            let clean = ch.trim_start_matches('@').to_string();
+            if !clean.is_empty() {
+                keys.push(clean.clone());
+                keys.push(format!("@{}", clean));
+            }
+        }
+
+        if let Some(ref handle) = status.handle {
+            let h = handle.trim().to_lowercase();
+            if !h.is_empty() {
+                keys.push(h.clone());
+                let clean = h.trim_start_matches('@').to_string();
+                if !clean.is_empty() {
+                    keys.push(clean.clone());
+                    keys.push(format!("@{}", clean));
+                }
+            }
+        }
+
+        if let Some(ref vid) = status.video_id {
+            let v = vid.trim().to_lowercase();
+            if !v.is_empty() {
+                keys.push(v);
+            }
+        }
+
+        for stream in &status.live_streams {
+            let v = stream.video_id.trim().to_lowercase();
+            if !v.is_empty() {
+                keys.push(v);
+            }
+        }
+
+        for key in keys {
+            cache.insert(key, (now, status.clone()));
+        }
+
+        if cache.len() > 200 {
+            cache.retain(|_, (cached_at, _)| cached_at.elapsed() < STATUS_CACHE_TTL * 2);
+        }
+    }
+}
 
 pub fn get_youtube_client() -> &'static reqwest::Client {
     static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
@@ -525,34 +611,17 @@ pub fn is_not_currently_live(node: Option<&Value>) -> bool {
     false
 }
 
-pub async fn resolve_channel_live_status(
+async fn fetch_and_parse_channel_status(
     client: &reqwest::Client,
+    url: &str,
     channel_or_handle: &str,
+    is_video_id: bool,
 ) -> Option<YouTubeChannelStatus> {
     let trimmed = channel_or_handle.trim();
-    let is_video_id = !trimmed.starts_with('@')
-        && trimmed.len() == 11
-        && trimmed
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
-
-    let url = if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
-        trimmed.to_string()
-    } else if is_video_id {
-        format!("https://www.youtube.com/watch?v={}", trimmed)
-    } else if trimmed.starts_with("channel/") {
-        format!("https://www.youtube.com/{}/live", trimmed)
-    } else if trimmed.starts_with("UC") && trimmed.len() == 24 {
-        format!("https://www.youtube.com/channel/{}/live", trimmed)
-    } else {
-        let clean = trimmed.trim_start_matches('@');
-        format!("https://www.youtube.com/@{}/live", clean)
-    };
-
     let mut retries = 1;
     let res = loop {
         let resp = client
-            .get(&url)
+            .get(url)
             .header("User-Agent", USER_AGENT)
             .header("Accept-Language", "en-US,en;q=0.9")
             .header(
@@ -785,20 +854,52 @@ pub async fn resolve_channel_live_status(
                     )
                     .send()
                     .await?;
+                if !resp.status().is_success() {
+                    return Ok(String::new());
+                }
                 resp.text().await
             }
         };
 
-        let phase2_result = tokio::time::timeout(Duration::from_secs(6), async {
-            let (r1, r2) = tokio::join!(fetch_page(streams_url), fetch_page(home_url));
-            (r1.ok(), r2.ok())
-        })
-        .await;
+        let mut found_in_streams = false;
+        let streams_html = tokio::time::timeout(Duration::from_secs(10), fetch_page(streams_url))
+            .await
+            .ok()
+            .and_then(|r| r.ok())
+            .unwrap_or_default();
 
-        if let Ok((r_streams, r_home)) = phase2_result {
-            for html in [r_streams, r_home].into_iter().flatten() {
-                if let Some(streams_json) = extract_yt_initial_data(&html) {
-                    let detected = extract_live_streams_from_initial_data(&streams_json, 25);
+        if !streams_html.is_empty() {
+            if let Some(streams_json) = extract_yt_initial_data(&streams_html) {
+                let detected = extract_live_streams_from_initial_data(&streams_json, 25);
+                if !detected.is_empty() {
+                    found_in_streams = true;
+                    for s in detected {
+                        if !live_streams
+                            .iter()
+                            .any(|existing| existing.video_id == s.channel)
+                        {
+                            live_streams.push(YouTubeLiveStreamInfo {
+                                video_id: s.channel.clone(),
+                                title: s.title.clone(),
+                                viewer_count: s.viewer_count,
+                                thumbnail_url: s.thumbnail.clone(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+
+        if !found_in_streams {
+            let home_html = tokio::time::timeout(Duration::from_secs(10), fetch_page(home_url))
+                .await
+                .ok()
+                .and_then(|r| r.ok())
+                .unwrap_or_default();
+
+            if !home_html.is_empty() {
+                if let Some(home_json) = extract_yt_initial_data(&home_html) {
+                    let detected = extract_live_streams_from_initial_data(&home_json, 25);
                     for s in detected {
                         if !live_streams
                             .iter()
@@ -835,8 +936,11 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    if handle.is_none() && channel_or_handle.starts_with('@') {
-        handle = Some(channel_or_handle.to_string());
+    if handle.is_none() {
+        let clean = channel_or_handle.trim().trim_start_matches('@');
+        if !clean.is_empty() {
+            handle = Some(format!("@{}", clean));
+        }
     }
 
     if let Some(h) = handle.as_mut() {
@@ -845,8 +949,11 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    if display_name.is_none() && channel_or_handle.starts_with('@') {
-        display_name = Some(channel_or_handle.trim_start_matches('@').to_string());
+    if display_name.is_none() {
+        let clean = channel_or_handle.trim().trim_start_matches('@');
+        if !clean.is_empty() {
+            display_name = Some(clean.to_string());
+        }
     }
 
     if title.is_none() {
@@ -936,20 +1043,83 @@ pub async fn resolve_channel_live_status(
     })
 }
 
+pub async fn resolve_channel_live_status(
+    client: &reqwest::Client,
+    channel_or_handle: &str,
+) -> Option<YouTubeChannelStatus> {
+    let trimmed = channel_or_handle.trim();
+    if let Some(cached) = get_cached_status(trimmed) {
+        return Some(cached);
+    }
+
+    let is_video_id = !trimmed.starts_with('@')
+        && trimmed.len() == 11
+        && trimmed
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-');
+
+    if is_video_id {
+        let watch_url = format!("https://www.youtube.com/watch?v={}", trimmed);
+        if let Some(status) =
+            fetch_and_parse_channel_status(client, &watch_url, channel_or_handle, true).await
+        {
+            if status.is_live && status.video_id.is_some() {
+                store_cached_status(&status);
+                return Some(status);
+            }
+        }
+        let clean = trimmed.trim_start_matches('@');
+        let handle_url = format!("https://www.youtube.com/@{}/live", clean);
+        let status =
+            fetch_and_parse_channel_status(client, &handle_url, channel_or_handle, false).await;
+        if let Some(ref st) = status {
+            store_cached_status(st);
+        }
+        return status;
+    }
+
+    let url = if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
+        trimmed.to_string()
+    } else if trimmed.starts_with("channel/") {
+        format!("https://www.youtube.com/{}/live", trimmed)
+    } else if trimmed.starts_with("UC") && trimmed.len() == 24 {
+        format!("https://www.youtube.com/channel/{}/live", trimmed)
+    } else {
+        let clean = trimmed.trim_start_matches('@');
+        format!("https://www.youtube.com/@{}/live", clean)
+    };
+
+    let status = fetch_and_parse_channel_status(client, &url, channel_or_handle, false).await;
+    if let Some(ref st) = status {
+        store_cached_status(st);
+    }
+    status
+}
+
 pub async fn check_channels_status_batch(
     client: &reqwest::Client,
     channels: Vec<String>,
 ) -> Vec<YouTubeChannelStatus> {
     let mut unique_channels = Vec::new();
     let mut seen = HashSet::new();
+    let mut results = Vec::new();
+
     for ch in channels {
         let trimmed = ch.trim().to_string();
         if !trimmed.is_empty() && seen.insert(trimmed.clone()) {
-            unique_channels.push(trimmed);
+            if let Some(cached) = get_cached_status(&trimmed) {
+                results.push(cached);
+            } else {
+                unique_channels.push(trimmed);
+            }
         }
     }
 
-    let semaphore = Arc::new(Semaphore::new(4));
+    if unique_channels.is_empty() {
+        return results;
+    }
+
+    let semaphore = get_youtube_semaphore();
     let mut tasks = Vec::with_capacity(unique_channels.len());
 
     for ch in unique_channels {
@@ -966,7 +1136,6 @@ pub async fn check_channels_status_batch(
         }));
     }
 
-    let mut results = Vec::with_capacity(tasks.len());
     for task in tasks {
         if let Ok(Some(status)) = task.await {
             results.push(status);
@@ -1594,5 +1763,75 @@ mod tests {
             avatar,
             Some("https://yt3.ggpht.com/channel_avatar.jpg".to_string())
         );
+    }
+
+    #[test]
+    fn should_detect_error_playability_status_for_invalid_video_ids() {
+        // Arrange
+        let error_player = serde_json::json!({
+            "playabilityStatus": {
+                "status": "ERROR",
+                "reason": "This video is unavailable."
+            }
+        });
+
+        // Act
+        let video_details = find_video_details(&error_player);
+
+        // Assert
+        assert!(video_details.is_none());
+    }
+
+    #[test]
+    fn should_store_and_retrieve_cached_status_across_channel_and_video_keys() {
+        // Arrange
+        let status = YouTubeChannelStatus {
+            channel: "CazeTV".to_string(),
+            is_live: true,
+            video_id: Some("primary1234".to_string()),
+            handle: Some("@CazeTV".to_string()),
+            display_name: Some("CazéTV".to_string()),
+            viewer_count: Some(50000),
+            title: Some("Live Stream".to_string()),
+            avatar_url: None,
+            live_streams: vec![
+                YouTubeLiveStreamInfo {
+                    video_id: "stream11111".to_string(),
+                    title: "Game 1".to_string(),
+                    viewer_count: 30000,
+                    thumbnail_url: None,
+                },
+                YouTubeLiveStreamInfo {
+                    video_id: "stream22222".to_string(),
+                    title: "Game 2".to_string(),
+                    viewer_count: 20000,
+                    thumbnail_url: None,
+                },
+            ],
+        };
+
+        // Act
+        store_cached_status(&status);
+
+        // Assert
+        let by_channel = get_cached_status("CazeTV");
+        assert!(by_channel.is_some());
+        assert_eq!(by_channel.unwrap().channel, "CazeTV");
+
+        let by_handle = get_cached_status("@cazetv");
+        assert!(by_handle.is_some());
+
+        let by_clean = get_cached_status("cazetv");
+        assert!(by_clean.is_some());
+
+        let by_primary_vid = get_cached_status("primary1234");
+        assert!(by_primary_vid.is_some());
+
+        let by_sub_stream_1 = get_cached_status("stream11111");
+        assert!(by_sub_stream_1.is_some());
+        assert_eq!(by_sub_stream_1.unwrap().live_streams.len(), 2);
+
+        let by_sub_stream_2 = get_cached_status("stream22222");
+        assert!(by_sub_stream_2.is_some());
     }
 }
