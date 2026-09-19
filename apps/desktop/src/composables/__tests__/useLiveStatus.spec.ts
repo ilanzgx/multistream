@@ -1707,7 +1707,7 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       fetchSpy.mockRestore();
     });
 
-    it("should retain youtube live status in UI statuses map across grace period cycles before confirming offline", async () => {
+    it("should retain youtube live status in UI statuses map during offline confirmation window and confirm offline after 10 minutes", async () => {
       // Arrange
       mockFavorites.value = [{ channel: "cazetv", platform: "youtube" }];
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
@@ -1725,42 +1725,35 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
         return [];
       });
 
-      // Act — Flush initial debounce and complete Cycle 1
+      // Act — Flush initial debounce and complete Cycle 1 (channel online)
       await vi.advanceTimersByTimeAsync(1500);
 
-      // Assert
+      // Assert — channel visible
       expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
 
-      // Act — Cycles 2, 3, 4 (transient offline misses)
+      // Switch backend to return offline
       vi.mocked(invoke).mockImplementation(async (cmd: string) => {
         if (cmd === "youtube_check_channels_status") {
-          return [
-            {
-              channel: "cazetv",
-              is_live: false,
-            },
-          ];
+          return [{ channel: "cazetv", is_live: false }];
         }
         return [];
       });
 
-      // Cycle 2 (offline #1)
+      // Act — Cycle 2: first offline reading, timer starts. Channel must stay live.
       await sut.checkAll();
       expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
       expect(sut.getStatus("cazetv", "youtube")?.videoId).toBe("vid123");
 
-      // Cycle 3 (offline #2)
+      // Act — Advance 5 minutes (halfway through 10-min window) and poll again
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
       await sut.checkAll();
       expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
 
-      // Cycle 4 (offline #3)
-      await sut.checkAll();
-      expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(true);
-
-      // Act — Cycle 5 (4th consecutive offline check confirms stream ended)
+      // Act — Advance past the 10-minute confirmation window and poll
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000 + 1000);
       await sut.checkAll();
 
-      // Assert
+      // Assert — channel confirmed offline after 10+ continuous minutes
       expect(sut.getStatus("cazetv", "youtube")?.isLive).toBe(false);
     });
 

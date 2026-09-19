@@ -927,19 +927,20 @@ const _useLiveStatus = () => {
           if (isNewChannel) {
             nextPreviousStatuses[key] = newStatus;
           } else {
-            const count = (offlineCounters.get(key) || 0) + 1;
-            offlineCounters.set(key, count);
-
-            const maxGraceCycles = key.startsWith("youtube:") ? 4 : 2;
+            if (!offlineCounters.has(key)) {
+              offlineCounters.set(key, Date.now());
+            }
+            const offlineSinceMs = Date.now() - offlineCounters.get(key)!;
+            const confirmationMs = key.startsWith("youtube:") ? 10 * 60 * 1000 : 2 * 60 * 1000;
 
             if (key.startsWith("youtube:")) {
-              const currentLiveStatus = statuses.value[key];
-              if (currentLiveStatus?.isLive && count < maxGraceCycles) {
-                nextStatuses[key] = currentLiveStatus;
+              const prevLiveStatus = previousStatuses.value[key];
+              if (prevLiveStatus?.isLive && offlineSinceMs < confirmationMs) {
+                nextStatuses[key] = prevLiveStatus;
               }
             }
 
-            if (count >= maxGraceCycles) {
+            if (offlineSinceMs >= confirmationMs) {
               nextPreviousStatuses[key] = newStatus;
               offlineCounters.delete(key);
             }

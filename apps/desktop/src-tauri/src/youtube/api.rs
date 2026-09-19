@@ -24,7 +24,7 @@ pub fn get_youtube_client() -> &'static reqwest::Client {
             .pool_idle_timeout(Duration::from_secs(90))
             .tcp_keepalive(Duration::from_secs(30))
             .build()
-            .unwrap_or_default()
+            .expect("Failed to build YouTube HTTP client with rustls-tls")
     })
 }
 
@@ -316,10 +316,29 @@ fn extract_viewer_count_from_html(html: &str) -> Option<u64> {
         }
     }
 
+    static VCR_SCOPE_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
+    let vcr_scope_re = VCR_SCOPE_RE.get_or_init(|| {
+        regex::Regex::new(r#""videoViewCountRenderer"\s*:\s*\{([^}]{0,400})\}"#).ok()
+    });
     static WATCHING_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
     let watching_re = WATCHING_RE.get_or_init(|| {
         regex::Regex::new(r#"([0-9.,]+(?:\s*[kKmM]|\s*mil|\s*milhões|\s*tsd|\s*тыс)?)\s*(?:assistindo\s+agora|watching\s+now|assistindo|watching|espectadores|zuschauer)"#).ok()
     });
+    if let (Some(scope_re), Some(watch_re)) = (vcr_scope_re.as_ref(), watching_re.as_ref()) {
+        if let Some(scope_caps) = scope_re.captures(html) {
+            if let Some(block) = scope_caps.get(1) {
+                if let Some(caps) = watch_re.captures(block.as_str()) {
+                    if let Some(m) = caps.get(1) {
+                        let count = parse_viewer_count(m.as_str());
+                        if count > 0 {
+                            return Some(count);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     if let Some(re) = watching_re.as_ref() {
         if let Some(caps) = re.captures(html) {
             if let Some(m) = caps.get(1) {
@@ -727,38 +746,59 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    let is_offline =
-        is_not_currently_live(player_data.as_ref()) || is_not_currently_live(json_data.as_ref());
+    let is_offline = is_not_currently_live(player_data.as_ref());
 
     if is_offline {
         is_live = false;
         live_streams.clear();
     }
 
-    if is_live && !is_offline && !is_video_id && !trimmed.starts_with("http") {
-        let streams_url = if trimmed.starts_with("channel/") {
-            format!("https://www.youtube.com/{}/streams", trimmed)
+    if is_live && !is_video_id && !trimmed.starts_with("http") {
+        let (streams_url, home_url) = if trimmed.starts_with("channel/") {
+            (
+                format!("https://www.youtube.com/{}/streams", trimmed),
+                format!("https://www.youtube.com/{}", trimmed),
+            )
         } else if trimmed.starts_with("UC") && trimmed.len() == 24 {
-            format!("https://www.youtube.com/channel/{}/streams", trimmed)
+            (
+                format!("https://www.youtube.com/channel/{}/streams", trimmed),
+                format!("https://www.youtube.com/channel/{}", trimmed),
+            )
         } else {
             let clean = trimmed.trim_start_matches('@');
-            format!("https://www.youtube.com/@{}/streams", clean)
+            (
+                format!("https://www.youtube.com/@{}/streams", clean),
+                format!("https://www.youtube.com/@{}", clean),
+            )
         };
 
-        if let Ok(resp) = client
-            .get(&streams_url)
-            .header("User-Agent", USER_AGENT)
-            .header("Accept-Language", "en-US,en;q=0.9")
-            .header(
-                "Cookie",
-                "CONSENT=PENDING+999; SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg",
-            )
-            .send()
-            .await
-        {
-            if resp.status().is_success() {
-                if let Ok(streams_html) = resp.text().await {
-                    if let Some(streams_json) = extract_yt_initial_data(&streams_html) {
+        let fetch_page = |url: String| {
+            let client = client.clone();
+            async move {
+                let resp = client
+                    .get(&url)
+                    .header("User-Agent", USER_AGENT)
+                    .header("Accept-Language", "en-US,en;q=0.9")
+                    .header(
+                        "Cookie",
+                        "CONSENT=PENDING+999; SOCS=CAESEwgDEgk0ODE3Nzk3MjQaAmVuIAEaBgiA_LyaBg",
+                    )
+                    .send()
+                    .await?;
+                resp.text().await
+            }
+        };
+
+        let phase2_result = tokio::time::timeout(Duration::from_secs(6), async {
+            let (r1, r2) = tokio::join!(fetch_page(streams_url), fetch_page(home_url));
+            (r1.ok(), r2.ok())
+        })
+        .await;
+
+        if let Ok((r_streams, r_home)) = phase2_result {
+            for html_opt in [r_streams, r_home] {
+                if let Some(html) = html_opt {
+                    if let Some(streams_json) = extract_yt_initial_data(&html) {
                         let detected = extract_live_streams_from_initial_data(&streams_json, 25);
                         for s in detected {
                             if !live_streams
@@ -784,12 +824,11 @@ pub async fn resolve_channel_live_status(
     }
 
     if handle.is_none() {
-        static LINK_HANDLE_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
-        let link_handle_re = LINK_HANDLE_RE.get_or_init(|| {
-            regex::Regex::new(r#"["'](?:https?://(?:www\.)?youtube\.com)?/(@[a-zA-Z0-9_.-]+)["']"#)
-                .ok()
+        static OWNER_PROFILE_HANDLE_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
+        let handle_re = OWNER_PROFILE_HANDLE_RE.get_or_init(|| {
+            regex::Regex::new(r#""ownerProfileUrl"\s*:\s*"[^"]*?/(@[a-zA-Z0-9_.-]+)""#).ok()
         });
-        if let Some(re) = link_handle_re.as_ref() {
+        if let Some(re) = handle_re.as_ref() {
             if let Some(caps) = re.captures(&html) {
                 if let Some(m) = caps.get(1) {
                     handle = Some(m.as_str().to_string());
@@ -812,11 +851,6 @@ pub async fn resolve_channel_live_status(
         display_name = Some(channel_or_handle.trim_start_matches('@').to_string());
     }
 
-    if is_offline {
-        is_live = false;
-        live_streams.clear();
-    }
-
     if title.is_none() {
         static OG_TITLE_RE: OnceLock<Option<regex::Regex>> = OnceLock::new();
         let og_title_re = OG_TITLE_RE.get_or_init(|| {
@@ -834,17 +868,23 @@ pub async fn resolve_channel_live_status(
         }
     }
 
-    if display_name.is_none() {
-        display_name = title.clone();
-    }
-
     if avatar_url.is_none() {
         avatar_url = extract_channel_avatar_from_html(&html);
     }
 
     if is_live {
         if let Some(ref vid) = video_id {
-            if !live_streams.iter().any(|s| s.video_id == *vid) {
+            if let Some(existing) = live_streams.iter_mut().find(|s| s.video_id == *vid) {
+                if existing.viewer_count == 0 {
+                    if let Some(vc) = viewer_count {
+                        existing.viewer_count = vc;
+                    }
+                } else if let Some(vc) = viewer_count {
+                    if vc > 0 {
+                        existing.viewer_count = vc;
+                    }
+                }
+            } else {
                 live_streams.insert(
                     0,
                     YouTubeLiveStreamInfo {
@@ -866,6 +906,19 @@ pub async fn resolve_channel_live_status(
             }
             if viewer_count.is_none() || viewer_count == Some(0) {
                 viewer_count = Some(live_streams[0].viewer_count);
+            }
+        } else if (viewer_count.is_none() || viewer_count == Some(0)) && !live_streams.is_empty() {
+            if let Some(ref vid) = video_id {
+                if let Some(matching) = live_streams.iter().find(|s| s.video_id == *vid) {
+                    if matching.viewer_count > 0 {
+                        viewer_count = Some(matching.viewer_count);
+                    }
+                }
+            }
+            if viewer_count.is_none() || viewer_count == Some(0) {
+                if live_streams[0].viewer_count > 0 {
+                    viewer_count = Some(live_streams[0].viewer_count);
+                }
             }
         }
     } else {

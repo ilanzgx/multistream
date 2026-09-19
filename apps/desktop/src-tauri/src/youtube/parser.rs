@@ -3,74 +3,54 @@ use serde_json::Value;
 use std::collections::HashSet;
 use std::sync::OnceLock;
 
-pub fn extract_yt_initial_data(html: &str) -> Option<Value> {
-    let patterns = [
-        "var ytInitialData = ",
-        "window[\"ytInitialData\"] = ",
-        "ytInitialData = ",
-    ];
-
+fn extract_js_variable(html: &str, patterns: &[&str]) -> Option<Value> {
     for pattern in patterns {
-        if let Some(start_pos) = html.find(pattern) {
-            let json_start = start_pos + pattern.len();
-            let slice = html[json_start..].trim_start();
-
-            if slice.starts_with('{') {
-                let mut de = serde_json::Deserializer::from_str(slice).into_iter::<Value>();
-                if let Some(Ok(val)) = de.next() {
-                    return Some(val);
-                }
-            }
-
-            let json_str = if let Some(end_pos) = slice.find(";</script>") {
-                &slice[..end_pos]
-            } else if let Some(end_pos) = slice.find("</script>") {
-                slice[..end_pos].trim().trim_end_matches(';')
-            } else {
-                slice
-            };
-
-            if let Ok(parsed) = serde_json::from_str::<Value>(json_str) {
-                return Some(parsed);
-            }
+        let start_pos = match html.find(pattern) {
+            Some(p) => p,
+            None => continue,
+        };
+        let slice = html[start_pos + pattern.len()..].trim_start();
+        if !slice.starts_with('{') {
+            continue;
+        }
+        let mut de = serde_json::Deserializer::from_str(slice).into_iter::<Value>();
+        if let Some(Ok(val)) = de.next() {
+            return Some(val);
+        }
+        let json_str = if let Some(end) = slice.find(";</script>") {
+            &slice[..end]
+        } else if let Some(end) = slice.find("</script>") {
+            slice[..end].trim().trim_end_matches(';')
+        } else {
+            slice
+        };
+        if let Ok(parsed) = serde_json::from_str::<Value>(json_str) {
+            return Some(parsed);
         }
     }
     None
 }
 
+pub fn extract_yt_initial_data(html: &str) -> Option<Value> {
+    extract_js_variable(
+        html,
+        &[
+            "var ytInitialData = ",
+            "window[\"ytInitialData\"] = ",
+            "ytInitialData = ",
+        ],
+    )
+}
+
 pub fn extract_yt_initial_player_response(html: &str) -> Option<Value> {
-    let patterns = [
-        "var ytInitialPlayerResponse = ",
-        "window[\"ytInitialPlayerResponse\"] = ",
-        "ytInitialPlayerResponse = ",
-    ];
-
-    for pattern in patterns {
-        if let Some(start_pos) = html.find(pattern) {
-            let json_start = start_pos + pattern.len();
-            let slice = html[json_start..].trim_start();
-
-            if slice.starts_with('{') {
-                let mut de = serde_json::Deserializer::from_str(slice).into_iter::<Value>();
-                if let Some(Ok(val)) = de.next() {
-                    return Some(val);
-                }
-            }
-
-            let json_str = if let Some(end_pos) = slice.find(";</script>") {
-                &slice[..end_pos]
-            } else if let Some(end_pos) = slice.find("</script>") {
-                slice[..end_pos].trim().trim_end_matches(';')
-            } else {
-                slice
-            };
-
-            if let Ok(parsed) = serde_json::from_str::<Value>(json_str) {
-                return Some(parsed);
-            }
-        }
-    }
-    None
+    extract_js_variable(
+        html,
+        &[
+            "var ytInitialPlayerResponse = ",
+            "window[\"ytInitialPlayerResponse\"] = ",
+            "ytInitialPlayerResponse = ",
+        ],
+    )
 }
 
 pub fn parse_viewer_count(text: &str) -> u64 {
@@ -80,9 +60,18 @@ pub fn parse_viewer_count(text: &str) -> u64 {
     let is_million = normalized.contains("milhões")
         || normalized.contains("million")
         || normalized.contains(" млн")
-        || normalized.contains("m ")
-        || normalized.ends_with('m')
-        || normalized.contains("mi ");
+        || normalized.contains(" milhão")
+        || {
+            let after_digits = normalized
+                .trim_start_matches(|c: char| {
+                    c.is_ascii_digit() || c == '.' || c == ',' || c == ' '
+                })
+                .trim_start();
+            after_digits.starts_with("m ")
+                || after_digits == "m"
+                || after_digits.starts_with("mi ")
+                || after_digits == "mi"
+        };
     let is_thousand = !is_million
         && !is_ten_thousand
         && (normalized.contains("mil ")
@@ -209,8 +198,17 @@ fn is_live_video(renderer: &Value) -> bool {
 
 pub fn get_text_from_node(node: Option<&Value>) -> Option<String> {
     let node = node?;
+    if let Some(s) = node.as_str() {
+        return Some(s.to_string());
+    }
     if let Some(simple) = node.get("simpleText").and_then(|s| s.as_str()) {
         return Some(simple.to_string());
+    }
+    if let Some(content) = node.get("content").and_then(|c| c.as_str()) {
+        return Some(content.to_string());
+    }
+    if let Some(text) = node.get("text").and_then(|t| t.as_str()) {
+        return Some(text.to_string());
     }
     if let Some(runs) = node.get("runs").and_then(|r| r.as_array()) {
         let texts: Vec<&str> = runs
@@ -298,13 +296,16 @@ fn parse_single_video_renderer(renderer: &Value) -> Option<YouTubeSuggestedStrea
 }
 
 pub fn is_live_lockup(lockup: &Value) -> bool {
+    if lockup.get("upcomingEventData").is_some() {
+        return false;
+    }
     let str_repr = lockup.to_string().to_lowercase();
-    if str_repr.contains("upcomingeventdata")
-        || str_repr.contains("premieres")
-        || str_repr.contains("programado")
-        || str_repr.contains("estreia")
+    if str_repr.contains("thumbnail_overlay_badge_style_upcoming")
         || str_repr.contains("\"text\":\"upcoming\"")
-        || str_repr.contains("thumbnail_overlay_badge_style_upcoming")
+        || str_repr.contains("upcomingeventdata")
+        || str_repr.contains("programado para")
+        || str_repr.contains("\"programado\"")
+        || str_repr.contains("\"text\":\"programado\"")
     {
         return false;
     }
@@ -347,7 +348,7 @@ pub fn is_live_lockup(lockup: &Value) -> bool {
                             .and_then(|n| n.as_str())
                             == Some("LIVE");
 
-                        if badge_style == "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE"
+                        if badge_style.contains("LIVE")
                             || text.eq_ignore_ascii_case("live")
                             || text.eq_ignore_ascii_case("ao vivo")
                             || has_live_icon
@@ -363,13 +364,7 @@ pub fn is_live_lockup(lockup: &Value) -> bool {
                     .get("style")
                     .and_then(|s| s.as_str())
                     .unwrap_or("");
-                let text = time_status
-                    .get("text")
-                    .and_then(|t| t.get("runs"))
-                    .and_then(|r| r.get(0))
-                    .and_then(|r| r.get("text"))
-                    .and_then(|t| t.as_str())
-                    .unwrap_or("");
+                let text = get_text_from_node(time_status.get("text")).unwrap_or_default();
                 if style != "LIVE" && text.contains(':') {
                     return false;
                 }
@@ -382,10 +377,36 @@ pub fn is_live_lockup(lockup: &Value) -> bool {
             }
 
             if let Some(badge) = overlay.get("thumbnailOverlayBadgeViewModel") {
+                if let Some(inner) = badge.get("thumbnailBadgeViewModel") {
+                    let style = inner
+                        .get("badgeStyle")
+                        .and_then(|s| s.as_str())
+                        .unwrap_or("");
+                    let text = inner.get("text").and_then(|t| t.as_str()).unwrap_or("");
+                    if style.contains("LIVE")
+                        || text.eq_ignore_ascii_case("live")
+                        || text.eq_ignore_ascii_case("ao vivo")
+                    {
+                        return true;
+                    }
+                }
                 let str_badge = badge.to_string().to_lowercase();
                 if str_badge.contains("live_now")
+                    || str_badge.contains("style_live")
+                    || str_badge.contains("badge_style_live")
                     || str_badge.contains("\"live\"")
                     || str_badge.contains("\"ao vivo\"")
+                {
+                    return true;
+                }
+            }
+
+            if let Some(vm) = overlay.get("thumbnailBadgeViewModel") {
+                let style = vm.get("badgeStyle").and_then(|s| s.as_str()).unwrap_or("");
+                let text = vm.get("text").and_then(|t| t.as_str()).unwrap_or("");
+                if style.contains("LIVE")
+                    || text.eq_ignore_ascii_case("live")
+                    || text.eq_ignore_ascii_case("ao vivo")
                 {
                     return true;
                 }
@@ -423,6 +444,14 @@ pub fn is_live_lockup(lockup: &Value) -> bool {
         }
     }
 
+    if str_repr.contains("\"islive\":true")
+        || str_repr.contains("\"islivenow\":true")
+        || str_repr.contains("thumbnail_overlay_badge_style_live")
+        || str_repr.contains("badge_style_type_live_now")
+    {
+        return true;
+    }
+
     false
 }
 
@@ -455,11 +484,8 @@ pub fn parse_lockup_view_model(lockup: &Value) -> Option<YouTubeSuggestedStream>
         .and_then(|m| m.get("lockupMetadataViewModel"));
 
     let title = metadata
-        .and_then(|m| m.get("title"))
-        .and_then(|t| t.get("content"))
-        .and_then(|c| c.as_str())
-        .unwrap_or("YouTube Live")
-        .to_string();
+        .and_then(|m| get_text_from_node(m.get("title")))
+        .unwrap_or_else(|| "YouTube Live".to_string());
 
     let mut viewer_count = 0u64;
     let meta_rows = metadata
@@ -470,24 +496,83 @@ pub fn parse_lockup_view_model(lockup: &Value) -> Option<YouTubeSuggestedStream>
         .and_then(|r| r.as_array());
 
     if let Some(rows) = meta_rows {
-        for row in rows {
-            let row_str = row.to_string();
-            let lower = row_str.to_lowercase();
-            if (lower.contains("watching")
-                || lower.contains("assistindo")
-                || lower.contains("espectadores")
-                || lower.contains("zuschauer")
-                || lower.contains("зрител")
-                || lower.contains("regardent")
-                || lower.contains("izleyici"))
-                && !lower.contains("streamed")
-                && !lower.contains("transmitido")
-                && !lower.contains("views")
-                && !lower.contains("visualiz")
+        'rows: for row in rows {
+            let mut candidates = Vec::new();
+
+            if let Some(parts) = row.get("metadataParts").and_then(|p| p.as_array()) {
+                for part in parts {
+                    if let Some(text_node) = part.get("text") {
+                        if let Some(t) = get_text_from_node(Some(text_node)) {
+                            candidates.push(t);
+                        }
+                    }
+                    if let Some(t) = get_text_from_node(Some(part)) {
+                        candidates.push(t);
+                    }
+                }
+            }
+
+            if let Some(contents) = row
+                .get("metadataRowRenderer")
+                .and_then(|r| r.get("contents"))
+                .and_then(|c| c.as_array())
             {
-                viewer_count = parse_viewer_count(&row_str);
-                if viewer_count > 0 {
-                    break;
+                for cell in contents {
+                    if let Some(t) = get_text_from_node(Some(cell)) {
+                        candidates.push(t);
+                    }
+                }
+            }
+
+            if let Some(t) = get_text_from_node(Some(row)) {
+                candidates.push(t);
+            }
+            if let Some(t) = row.get("text").and_then(Value::as_str) {
+                candidates.push(t.to_string());
+            }
+
+            for text in candidates {
+                let lower = text.to_lowercase();
+                if (lower.contains("watching")
+                    || lower.contains("assistindo")
+                    || lower.contains("espectadores")
+                    || lower.contains("zuschauer")
+                    || lower.contains("зрител")
+                    || lower.contains("regardent")
+                    || lower.contains("izleyici"))
+                    && !lower.contains("streamed")
+                    && !lower.contains("transmitido")
+                    && !lower.contains("views")
+                    && !lower.contains("visualiz")
+                {
+                    viewer_count = parse_viewer_count(&text);
+                    if viewer_count > 0 {
+                        break 'rows;
+                    }
+                }
+            }
+        }
+
+        if viewer_count == 0 {
+            for row in rows {
+                let row_str = row.to_string();
+                let lower = row_str.to_lowercase();
+                if (lower.contains("watching")
+                    || lower.contains("assistindo")
+                    || lower.contains("espectadores")
+                    || lower.contains("zuschauer")
+                    || lower.contains("зрител")
+                    || lower.contains("regardent")
+                    || lower.contains("izleyici"))
+                    && !lower.contains("streamed")
+                    && !lower.contains("transmitido")
+                    && !lower.contains("views")
+                    && !lower.contains("visualiz")
+                {
+                    viewer_count = parse_viewer_count(&row_str);
+                    if viewer_count > 0 {
+                        break;
+                    }
                 }
             }
         }
@@ -1213,5 +1298,210 @@ mod tests {
         assert_eq!(streams[1].channel, "stream22222");
         assert_eq!(streams[1].title, "Game 2 Live");
         assert_eq!(streams[1].viewer_count, 25000);
+    }
+
+    #[test]
+    fn should_parse_live_lockup_view_model_with_metadata_parts() {
+        // Arrange
+        let lockup = serde_json::json!({
+            "contentId": "3PFJ9SETS4M",
+            "contentImage": {
+                "thumbnailViewModel": {
+                    "overlays": [
+                        {
+                            "thumbnailOverlayTimeStatusRenderer": {
+                                "style": "LIVE",
+                                "text": { "runs": [{ "text": "LIVE" }] }
+                            }
+                        }
+                    ]
+                }
+            },
+            "metadata": {
+                "lockupMetadataViewModel": {
+                    "title": { "content": "lofi house radio - lounge music to vibe/chill to" },
+                    "metadata": {
+                        "contentMetadataViewModel": {
+                            "metadataRows": [
+                                {
+                                    "metadataParts": [
+                                        {
+                                            "text": {
+                                                "content": "2.5K watching"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        });
+
+        // Act
+        let stream = parse_lockup_view_model(&lockup);
+
+        // Assert
+        assert!(stream.is_some());
+        let stream = stream.unwrap();
+        assert_eq!(stream.channel, "3PFJ9SETS4M");
+        assert_eq!(
+            stream.title,
+            "lofi house radio - lounge music to vibe/chill to"
+        );
+        assert_eq!(stream.viewer_count, 2500);
+    }
+
+    #[test]
+    fn should_parse_live_lockup_with_thumbnail_overlay_badge_view_model() {
+        // Arrange
+        let lockup = serde_json::json!({
+            "contentId": "cazeLive123",
+            "contentImage": {
+                "thumbnailViewModel": {
+                    "overlays": [
+                        {
+                            "thumbnailOverlayBadgeViewModel": {
+                                "thumbnailBadgeViewModel": {
+                                    "badgeStyle": "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE",
+                                    "text": "AO VIVO"
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
+            "metadata": {
+                "lockupMetadataViewModel": {
+                    "title": { "runs": [{ "text": "CazéTV Live Transmission 2" }] },
+                    "metadata": {
+                        "contentMetadataViewModel": {
+                            "metadataRows": [
+                                {
+                                    "metadataParts": [
+                                        {
+                                            "text": {
+                                                "content": "45.000 assistindo"
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+        });
+
+        // Act
+        let stream = parse_lockup_view_model(&lockup);
+
+        // Assert
+        assert!(stream.is_some());
+        let stream = stream.unwrap();
+        assert_eq!(stream.channel, "cazeLive123");
+        assert_eq!(stream.title, "CazéTV Live Transmission 2");
+        assert_eq!(stream.viewer_count, 45000);
+    }
+
+    #[test]
+    fn should_parse_live_lockup_with_is_live_flag_fallback() {
+        // Arrange
+        let lockup = serde_json::json!({
+            "contentId": "cazeLive456",
+            "isLive": true,
+            "metadata": {
+                "lockupMetadataViewModel": {
+                    "title": { "simpleText": "CazéTV Concurrent Broadcast" }
+                }
+            }
+        });
+
+        // Act
+        let is_live = is_live_lockup(&lockup);
+        let stream = parse_lockup_view_model(&lockup);
+
+        // Assert
+        assert!(is_live);
+        assert!(stream.is_some());
+        let stream = stream.unwrap();
+        assert_eq!(stream.channel, "cazeLive456");
+        assert_eq!(stream.title, "CazéTV Concurrent Broadcast");
+    }
+
+    #[test]
+    fn should_extract_multiple_concurrent_live_streams_from_initial_data() {
+        // Arrange
+        let json_data = serde_json::json!({
+            "contents": {
+                "twoColumnBrowseResultsRenderer": {
+                    "tabs": [
+                        {
+                            "tabRenderer": {
+                                "title": "Ao vivo",
+                                "content": {
+                                    "richGridRenderer": {
+                                        "contents": [
+                                            {
+                                                "richItemRenderer": {
+                                                    "content": {
+                                                        "lockupViewModel": {
+                                                            "contentId": "stream_one1",
+                                                            "isLive": true,
+                                                            "metadata": {
+                                                                "lockupMetadataViewModel": {
+                                                                    "title": { "content": "Broadcast One" }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                "richItemRenderer": {
+                                                    "content": {
+                                                        "lockupViewModel": {
+                                                            "contentId": "stream_two2",
+                                                            "contentImage": {
+                                                                "thumbnailViewModel": {
+                                                                    "overlays": [
+                                                                        {
+                                                                            "thumbnailOverlayBadgeViewModel": {
+                                                                                "thumbnailBadgeViewModel": {
+                                                                                    "badgeStyle": "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE",
+                                                                                    "text": "AO VIVO"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "metadata": {
+                                                                "lockupMetadataViewModel": {
+                                                                    "title": { "content": "Broadcast Two" }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        });
+
+        // Act
+        let streams = extract_live_streams_from_initial_data(&json_data, 10);
+
+        // Assert
+        assert_eq!(streams.len(), 2);
+        assert_eq!(streams[0].channel, "stream_one1");
+        assert_eq!(streams[1].channel, "stream_two2");
     }
 }
