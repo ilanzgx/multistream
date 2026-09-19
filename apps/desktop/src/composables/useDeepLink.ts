@@ -2,6 +2,7 @@ import { onMounted, onUnmounted } from "vue";
 import { onOpenUrl, getCurrent } from "@tauri-apps/plugin-deep-link";
 import { invoke } from "@tauri-apps/api/core";
 import { useStreams } from "./useStreams";
+import { useLiveStatus } from "./useLiveStatus";
 import { parseUrlOptions } from "../lib/parseUrlOptions";
 import { resolveStream } from "../lib/streamResolver";
 import { toast } from "@/composables/useToast";
@@ -9,6 +10,7 @@ import { i18n } from "../i18n";
 
 export function useDeepLink() {
   const { addStream, clearStreams } = useStreams();
+  const { getStatus } = useLiveStatus();
   let unlisten: (() => void) | null = null;
   let isUnmounted = false;
 
@@ -22,18 +24,31 @@ export function useDeepLink() {
           const parsedStreams = parseUrlOptions(url.search);
           if (parsedStreams && parsedStreams.length > 0) {
             clearStreams();
-            for (const s of parsedStreams) {
-              const resolved = await resolveStream(s);
-              if (resolved) {
-                addStream(
-                  resolved.channel,
-                  resolved.platform,
-                  resolved.iframeUrl,
-                  resolved.displayName,
-                  resolved.handle
-                );
-              } else if (s.platform === "youtube") {
-                toast.error(i18n.global.t("toasts.youtube.offline"));
+            const hasYoutube = parsedStreams.some((s) => s.platform === "youtube");
+            if (hasYoutube) {
+              toast.info(i18n.global.t("toasts.youtube.detecting"), {
+                id: "yt-detecting",
+                duration: 8000,
+              });
+            }
+            try {
+              for (const s of parsedStreams) {
+                const resolved = await resolveStream(s, getStatus);
+                if (resolved) {
+                  addStream(
+                    resolved.channel,
+                    resolved.platform,
+                    resolved.iframeUrl,
+                    resolved.displayName,
+                    resolved.handle
+                  );
+                } else if (s.platform === "youtube") {
+                  toast.error(i18n.global.t("toasts.youtube.offline"));
+                }
+              }
+            } finally {
+              if (hasYoutube) {
+                toast.dismiss("yt-detecting");
               }
             }
             toast.success(i18n.global.t("import.deepLinkSuccess"));

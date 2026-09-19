@@ -10,24 +10,43 @@ export interface ResolvedStream {
   handle?: string;
 }
 
-export async function resolveStream(s: ParsedStream): Promise<ResolvedStream | null> {
-  const isExplicitHandle = s.channel.startsWith("@");
+export type StreamStatusGetter = (
+  channel: string,
+  platform: Platform
+) => { displayName?: string; handle?: string } | null | undefined;
+
+export async function resolveStream(
+  s: ParsedStream,
+  getStatus?: StreamStatusGetter
+): Promise<ResolvedStream | null> {
   const cleanChannel = s.channel.replace(/^@+/, "").trim();
   if (!cleanChannel) return null;
 
   if (s.platform === "youtube") {
-    const isVideoId = !isExplicitHandle && /^[a-zA-Z0-9_-]{11}$/.test(cleanChannel);
-    if ((isExplicitHandle || !isVideoId) && isTauri()) {
+    if (isTauri()) {
       try {
         const liveId = await invoke<string | null>("youtube_resolve_live_id", {
           channelOrHandle: cleanChannel,
         });
         if (liveId) {
+          const isInputVideoId = cleanChannel === liveId && !s.channel.startsWith("@");
+          const matchedStatus = getStatus
+            ? getStatus(cleanChannel, "youtube") || getStatus(liveId, "youtube")
+            : undefined;
+
+          const displayName =
+            matchedStatus?.displayName || (isInputVideoId ? undefined : cleanChannel);
+          const handle = matchedStatus?.handle
+            ? matchedStatus.handle.replace(/^@+/, "")
+            : isInputVideoId
+              ? undefined
+              : cleanChannel;
+
           return {
             channel: liveId,
             platform: "youtube",
-            displayName: cleanChannel,
-            handle: cleanChannel,
+            displayName,
+            handle,
           };
         }
         return null;

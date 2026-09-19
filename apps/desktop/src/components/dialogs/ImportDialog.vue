@@ -13,11 +13,13 @@ import Button from "../ui/button/Button.vue";
 import { useStreams } from "@/composables/useStreams";
 import { parseUrlOptions } from "@/lib/parseUrlOptions";
 import { resolveStream } from "@/lib/streamResolver";
+import { useLiveStatus } from "@/composables/useLiveStatus";
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
 import { APP_LINKS } from "@/config/links";
 
 const { t, locale } = useI18n();
+const { getStatus } = useLiveStatus();
 
 const websiteLocale = computed(() =>
   locale.value === "pt" || locale.value === "pt-br" ? "pt-br" : "en"
@@ -48,13 +50,24 @@ const handleImport = async () => {
       return;
     }
 
+    const hasYoutube = parsedStreams.some((s) => s.platform === "youtube");
+    if (hasYoutube) {
+      toast.info(t("toasts.youtube.detecting"), { id: "yt-detecting", duration: 8000 });
+    }
+
     const resolvedList = [];
-    for (const s of parsedStreams) {
-      const resolved = await resolveStream(s);
-      if (resolved) {
-        resolvedList.push(resolved);
-      } else if (s.platform === "youtube") {
-        toast.error(t("toasts.youtube.offline"));
+    try {
+      for (const s of parsedStreams) {
+        const resolved = await resolveStream(s, getStatus);
+        if (resolved) {
+          resolvedList.push(resolved);
+        } else if (s.platform === "youtube") {
+          toast.error(t("toasts.youtube.offline"));
+        }
+      }
+    } finally {
+      if (hasYoutube) {
+        toast.dismiss("yt-detecting");
       }
     }
 

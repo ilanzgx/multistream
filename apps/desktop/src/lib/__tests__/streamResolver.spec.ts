@@ -64,20 +64,37 @@ describe("streamResolver", () => {
     expect(invoke).not.toHaveBeenCalled();
   });
 
-  it("should return 11-character YouTube video IDs directly without invoke", async () => {
+  it("should resolve 11-character YouTube channel handles without @ via invoke", async () => {
     // Arrange
-    const videoId = "5pzeFSTt18c";
+    vi.mocked(invoke).mockResolvedValueOnce("8HLTlILsQCQ");
 
     // Act
-    const result = await resolveStream({ channel: videoId, platform: "youtube" });
+    const result = await resolveStream({ channel: "canalgoatbr", platform: "youtube" });
 
     // Assert
-    expect(result).toEqual({
-      channel: videoId,
-      platform: "youtube",
-      iframeUrl: undefined,
+    expect(invoke).toHaveBeenCalledWith("youtube_resolve_live_id", {
+      channelOrHandle: "canalgoatbr",
     });
-    expect(invoke).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      channel: "8HLTlILsQCQ",
+      platform: "youtube",
+      displayName: "canalgoatbr",
+      handle: "canalgoatbr",
+    });
+  });
+
+  it("should return null for 11-character YouTube channel handles when offline", async () => {
+    // Arrange
+    vi.mocked(invoke).mockResolvedValueOnce(null);
+
+    // Act
+    const result = await resolveStream({ channel: "canalgoatbr", platform: "youtube" });
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("youtube_resolve_live_id", {
+      channelOrHandle: "canalgoatbr",
+    });
+    expect(result).toBeNull();
   });
 
   it("should resolve YouTube channel handles via invoke", async () => {
@@ -160,5 +177,63 @@ describe("streamResolver", () => {
       iframeUrl: undefined,
     });
     expect(invoke).not.toHaveBeenCalled();
+  });
+
+  it("should resolve YouTube video ID using getStatus metadata when available", async () => {
+    // Arrange
+    vi.mocked(invoke).mockResolvedValueOnce("Zm5YJptWpa4");
+    const mockGetStatus = vi.fn().mockReturnValue({
+      displayName: "CazéTV",
+      handle: "@CazeTV",
+    });
+
+    // Act
+    const result = await resolveStream(
+      { channel: "Zm5YJptWpa4", platform: "youtube" },
+      mockGetStatus
+    );
+
+    // Assert
+    expect(result).toEqual({
+      channel: "Zm5YJptWpa4",
+      platform: "youtube",
+      displayName: "CazéTV",
+      handle: "CazeTV",
+    });
+  });
+
+  it("should leave displayName and handle undefined when YouTube stream input is a raw video ID without status", async () => {
+    // Arrange
+    vi.mocked(invoke).mockResolvedValueOnce("Zm5YJptWpa4");
+
+    // Act
+    const result = await resolveStream({ channel: "Zm5YJptWpa4", platform: "youtube" });
+
+    // Assert
+    expect(result).toEqual({
+      channel: "Zm5YJptWpa4",
+      platform: "youtube",
+      displayName: undefined,
+      handle: undefined,
+    });
+  });
+
+  it("should preserve distinct video IDs when resolving multiple concurrent live streams from the same channel", async () => {
+    // Arrange
+    const videoIds = ["Zm5YJptWpa4", "cDvqBEla-Vc", "QQbVDgHCW-g", "TmwEk5lnQpo"];
+    for (const vid of videoIds) {
+      vi.mocked(invoke).mockResolvedValueOnce(vid);
+    }
+
+    // Act
+    const results = [];
+    for (const vid of videoIds) {
+      const res = await resolveStream({ channel: vid, platform: "youtube" });
+      results.push(res?.channel);
+    }
+
+    // Assert
+    expect(results).toEqual(videoIds);
+    expect(new Set(results).size).toBe(4);
   });
 });
