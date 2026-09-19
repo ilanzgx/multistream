@@ -796,22 +796,20 @@ pub async fn resolve_channel_live_status(
         .await;
 
         if let Ok((r_streams, r_home)) = phase2_result {
-            for html_opt in [r_streams, r_home] {
-                if let Some(html) = html_opt {
-                    if let Some(streams_json) = extract_yt_initial_data(&html) {
-                        let detected = extract_live_streams_from_initial_data(&streams_json, 25);
-                        for s in detected {
-                            if !live_streams
-                                .iter()
-                                .any(|existing| existing.video_id == s.channel)
-                            {
-                                live_streams.push(YouTubeLiveStreamInfo {
-                                    video_id: s.channel.clone(),
-                                    title: s.title.clone(),
-                                    viewer_count: s.viewer_count,
-                                    thumbnail_url: s.thumbnail.clone(),
-                                });
-                            }
+            for html in [r_streams, r_home].into_iter().flatten() {
+                if let Some(streams_json) = extract_yt_initial_data(&html) {
+                    let detected = extract_live_streams_from_initial_data(&streams_json, 25);
+                    for s in detected {
+                        if !live_streams
+                            .iter()
+                            .any(|existing| existing.video_id == s.channel)
+                        {
+                            live_streams.push(YouTubeLiveStreamInfo {
+                                video_id: s.channel.clone(),
+                                title: s.title.clone(),
+                                viewer_count: s.viewer_count,
+                                thumbnail_url: s.thumbnail.clone(),
+                            });
                         }
                     }
                 }
@@ -915,10 +913,8 @@ pub async fn resolve_channel_live_status(
                     }
                 }
             }
-            if viewer_count.is_none() || viewer_count == Some(0) {
-                if live_streams[0].viewer_count > 0 {
-                    viewer_count = Some(live_streams[0].viewer_count);
-                }
+            if viewer_count.unwrap_or(0) == 0 && live_streams[0].viewer_count > 0 {
+                viewer_count = Some(live_streams[0].viewer_count);
             }
         }
     } else {
