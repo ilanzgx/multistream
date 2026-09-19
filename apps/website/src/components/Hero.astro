@@ -177,8 +177,8 @@ const getUrl = (ext: string, incl: string = '') =>
     const streams = params.get('streams');
 
     if (action === 'share' && streams) {
-      // Validação estrita: apenas caracteres alfanuméricos, barras, vírgulas, dois-pontos e hífens
-      const sanitizedStreams = streams.replace(/[^a-zA-Z0-9,/_:-]/g, '');
+      // Validação estrita: apenas caracteres alfanuméricos, barras, vírgulas, dois-pontos, hífens, arroba e pontos
+      const sanitizedStreams = streams.replace(/[^a-zA-Z0-9,/_:@.-]/g, '');
 
       if (sanitizedStreams.length > 0) {
         const hero = document.getElementById('hero-content');
