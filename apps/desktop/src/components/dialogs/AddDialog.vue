@@ -332,30 +332,30 @@ const handleAddStream = async () => {
   }
 
   if (selectedPlatform.value === "youtube") {
-    const isVideoId = /^[a-zA-Z0-9_-]{11}$/.test(channel);
-    if (channel.startsWith("@") || !isVideoId) {
-      isResolvingLive.value = true;
-      try {
-        const liveId = await invoke<string | null>("youtube_resolve_live_id", {
-          channelOrHandle: channel,
-        });
+    isResolvingLive.value = true;
+    toast.info(t("toasts.youtube.detecting"), { id: "yt-detecting", duration: 8000 });
+    try {
+      const liveId = await invoke<string | null>("youtube_resolve_live_id", {
+        channelOrHandle: channel,
+      });
+      toast.dismiss("yt-detecting");
 
-        if (liveId) {
-          const cleanChannel = channel.replace(/^@/, "");
-          addStream(liveId, "youtube", undefined, cleanChannel, cleanChannel);
-          channelName.value = "";
-          selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
-          emit("update:open", false);
-        } else {
-          toast.error(t("toasts.youtube.offline"));
-        }
-      } catch (err) {
-        toast.error(String(err));
-      } finally {
-        isResolvingLive.value = false;
+      if (liveId) {
+        const cleanChannel = channel.replace(/^@/, "");
+        addStream(liveId, "youtube", undefined, cleanChannel, cleanChannel);
+        channelName.value = "";
+        selectedPlatform.value = PLATFORMS.twitch!.id as Platform;
+        emit("update:open", false);
+      } else {
+        toast.error(t("toasts.youtube.offline"));
       }
-      return;
+    } catch (err) {
+      toast.dismiss("yt-detecting");
+      toast.error(String(err));
+    } finally {
+      isResolvingLive.value = false;
     }
+    return;
   }
 
   addStream(channel, selectedPlatform.value);
@@ -406,6 +406,11 @@ const canSubmit = computed(() => {
   return channelName.value.trim().length > 0;
 });
 
+const handleSelectSuggestion = (stream: SuggestedStream) => {
+  addStream(stream.channel, stream.platform, undefined, stream.displayName, stream.handle);
+  emit("update:open", false);
+};
+
 const handleQuickAdd = async (
   channel: string,
   platform: Platform,
@@ -415,24 +420,31 @@ const handleQuickAdd = async (
   const cleanDisplayName = (displayName || channel).replace(/^@/, "");
   const cleanHandle = channel.replace(/^@/, "");
   if (platform === "youtube") {
-    const isVideoId = /^[a-zA-Z0-9_-]{11}$/.test(channel);
-    if (channel.startsWith("@") || !isVideoId) {
-      try {
-        const liveId = await invoke<string | null>("youtube_resolve_live_id", {
-          channelOrHandle: channel,
-        });
-
-        if (liveId) {
-          addStream(liveId, "youtube", undefined, cleanDisplayName, cleanHandle);
-          emit("update:open", false);
-        } else {
-          toast.error(t("toasts.youtube.offline"));
-        }
-      } catch (err) {
-        toast.error(String(err));
-      }
+    const status = getStatus(channel, "youtube") || getStatus(cleanDisplayName, "youtube");
+    if (status?.isLive && status?.videoId) {
+      addStream(status.videoId, "youtube", undefined, cleanDisplayName, cleanHandle);
+      emit("update:open", false);
       return;
     }
+
+    toast.info(t("toasts.youtube.detecting"), { id: "yt-detecting", duration: 8000 });
+    try {
+      const liveId = await invoke<string | null>("youtube_resolve_live_id", {
+        channelOrHandle: channel,
+      });
+      toast.dismiss("yt-detecting");
+
+      if (liveId) {
+        addStream(liveId, "youtube", undefined, cleanDisplayName, cleanHandle);
+        emit("update:open", false);
+      } else {
+        toast.error(t("toasts.youtube.offline"));
+      }
+    } catch (err) {
+      toast.dismiss("yt-detecting");
+      toast.error(String(err));
+    }
+    return;
   }
 
   if (platform === "custom" && !url) {
@@ -781,9 +793,7 @@ watch(
                   :key="`${stream.platform}:${stream.channel}`"
                   type="button"
                   class="group relative flex flex-col w-full h-auto rounded-lg bg-[#181a1f] border border-[#262930] hover:border-[#3a3f4b] hover:bg-[#1f2229] transition-all duration-200 cursor-pointer text-left overflow-hidden focus:outline-none focus-visible:ring-1 focus-visible:ring-white/40"
-                  @click="
-                    handleQuickAdd(stream.channel, stream.platform, undefined, stream.displayName)
-                  "
+                  @click="handleSelectSuggestion(stream)"
                 >
                   <!-- Thumbnail -->
                   <div class="relative aspect-video w-full shrink-0 bg-[#0f1115] overflow-hidden">

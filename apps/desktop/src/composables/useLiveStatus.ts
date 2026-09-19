@@ -746,7 +746,30 @@ const _useLiveStatus = () => {
 
     const twitchChannels = [...twitchSet];
     const kickChannels = [...kickSet];
-    const youtubeChannels = [...youtubeSet];
+    const rawYoutubeChannels = [...youtubeSet];
+    const youtubeChannels = rawYoutubeChannels.filter((ch) => {
+      const chLower = ch.toLowerCase();
+      const isVideoId = chLower.length === 11 && !chLower.startsWith("@");
+      if (!isVideoId) return true;
+
+      const matchingStatus = Object.values(statuses.value).find(
+        (s) =>
+          s.videoId?.toLowerCase() === chLower ||
+          s.liveStreams?.some((ls) => ls.videoId.toLowerCase() === chLower)
+      );
+      if (matchingStatus) {
+        const handle = matchingStatus.handle?.toLowerCase().replace(/^@+/, "");
+        const displayName = matchingStatus.displayName?.toLowerCase();
+        const hasParentInBatch = rawYoutubeChannels.some((other) => {
+          const otherClean = other.toLowerCase().replace(/^@+/, "");
+          return (handle && otherClean === handle) || (displayName && otherClean === displayName);
+        });
+        if (hasParentInBatch) {
+          return false;
+        }
+      }
+      return true;
+    });
 
     if (twitchChannels.length === 0 && kickChannels.length === 0 && youtubeChannels.length === 0) {
       statuses.value = {};
@@ -972,14 +995,32 @@ const _useLiveStatus = () => {
 
     if (platform === "youtube") {
       const channelLower = channel.toLowerCase();
+      const cleanLower = channelLower.replace(/^@+/, "");
       const match = Object.entries(statuses.value).find(
         ([k, s]) =>
           k.startsWith("youtube:") &&
-          ((s.handle && s.handle.toLowerCase() === channelLower) ||
+          ((s.handle && s.handle.toLowerCase().replace(/^@+/, "") === cleanLower) ||
             (s.videoId && s.videoId.toLowerCase() === channelLower) ||
-            (s.displayName && s.displayName.toLowerCase() === channelLower))
+            (s.displayName && s.displayName.toLowerCase() === channelLower) ||
+            (s.displayName && s.displayName.toLowerCase().replace(/^@+/, "") === cleanLower) ||
+            k.slice(8).toLowerCase().replace(/^@+/, "") === cleanLower ||
+            s.liveStreams?.some((ls) => ls.videoId.toLowerCase() === channelLower))
       );
-      if (match) return match[1];
+      if (match) {
+        const foundStream = match[1].liveStreams?.find(
+          (ls) => ls.videoId.toLowerCase() === channelLower
+        );
+        if (foundStream) {
+          return {
+            ...match[1],
+            videoId: foundStream.videoId,
+            title: foundStream.title,
+            viewerCount: foundStream.viewerCount,
+            thumbnailUrl: foundStream.thumbnailUrl || match[1].thumbnailUrl,
+          };
+        }
+        return match[1];
+      }
     }
 
     return null;

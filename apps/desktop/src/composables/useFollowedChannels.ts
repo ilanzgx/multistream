@@ -103,7 +103,8 @@ const _useFollowedChannels = () => {
               ((s.handle && s.handle.toLowerCase().replace(/^@+/, "") === channelClean) ||
                 (s.videoId && s.videoId.toLowerCase() === channelClean) ||
                 (s.displayName && s.displayName.toLowerCase() === channelClean) ||
-                k.replace(/^youtube:@?/, "") === channelClean)
+                k.replace(/^youtube:@?/, "") === channelClean ||
+                s.liveStreams?.some((ls) => ls.videoId.toLowerCase() === channelClean))
           );
           if (match) {
             status = match[1];

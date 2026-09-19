@@ -149,6 +149,46 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(sut.getStatus("gaules", "custom" as any)).toBeNull();
       expect(sut.getStatus("gaules", "youtube" as any)).toBeNull();
     });
+
+    it("should find YouTube status by videoId present in liveStreams array", () => {
+      // Arrange
+      sut.statuses.value["youtube:cazetv"] = {
+        isLive: true,
+        displayName: "CazéTV",
+        handle: "@CazeTV",
+        videoId: "mainVid1",
+        liveStreams: [
+          { videoId: "streamVid1", title: "Game 1", viewerCount: 150000 },
+          { videoId: "streamVid2", title: "Game 2", viewerCount: 80000 },
+        ],
+      };
+
+      // Act
+      const result = sut.getStatus("streamVid2", "youtube");
+
+      // Assert
+      expect(result).not.toBeNull();
+      expect(result?.displayName).toBe("CazéTV");
+      expect(result?.handle).toBe("@CazeTV");
+      expect(result?.videoId).toBe("streamVid2");
+      expect(result?.title).toBe("Game 2");
+      expect(result?.viewerCount).toBe(80000);
+    });
+
+    it("should normalize @ when matching YouTube channel or handle in getStatus", () => {
+      // Arrange
+      sut.statuses.value["youtube:cazetv"] = {
+        isLive: true,
+        displayName: "CazéTV",
+        handle: "@CazeTV",
+        videoId: "vid123",
+      };
+
+      // Act & Assert
+      expect(sut.getStatus("@CazeTV", "youtube")?.displayName).toBe("CazéTV");
+      expect(sut.getStatus("cazetv", "youtube")?.displayName).toBe("CazéTV");
+      expect(sut.getStatus("CazeTV", "youtube")?.displayName).toBe("CazéTV");
+    });
   });
 
   describe("Polling Controls", () => {
@@ -1785,6 +1825,39 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(status?.viewerCount).toBe(3200);
       expect(status?.avatarUrl).toBe("https://yt3.ggpht.com/ufc_avatar=s176-c-k-c0x00ffffff-no-rj");
       expect(status?.thumbnailUrl).toBe("https://i.ytimg.com/vi/ufc_live_123/hqdefault.jpg");
+    });
+
+    it("should deduplicate videoId from batch when parent channel is already present", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "CazeTV", platform: "youtube" }];
+      mockRecents.value = [{ channel: "Zm5YJptWpa4", platform: "youtube" }];
+      let checkedChannels: string[] = [];
+      vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
+        if (cmd === "youtube_check_channels_status") {
+          checkedChannels = args?.channels || [];
+          return [
+            {
+              channel: "CazeTV",
+              handle: "@CazeTV",
+              is_live: true,
+              video_id: "TmwEk5lnQpo",
+              live_streams: [
+                { video_id: "Zm5YJptWpa4", title: "Game 1", viewer_count: 50000 },
+                { video_id: "TmwEk5lnQpo", title: "Game 2", viewer_count: 30000 },
+              ],
+            },
+          ];
+        }
+        return [];
+      });
+
+      // Act
+      await sut.checkAll();
+      await sut.checkAll();
+
+      // Assert
+      expect(checkedChannels).toContain("CazeTV");
+      expect(checkedChannels).not.toContain("Zm5YJptWpa4");
     });
   });
 });

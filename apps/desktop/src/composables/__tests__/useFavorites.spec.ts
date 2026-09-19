@@ -112,6 +112,31 @@ describe("useFavorites composable unit tests", () => {
     expect(favorites.value[0]?.channel).toBe("robb");
   });
 
+  it("should prevent duplicate YouTube favorite when channel has leading @", () => {
+    // Arrange
+    const { addFavorite, favorites } = sut;
+
+    // Act
+    addFavorite("CazeTV", "youtube");
+    addFavorite("@CazeTV", "youtube");
+
+    // Assert
+    expect(favorites.value.length).toBe(1);
+    expect(favorites.value[0]?.channel).toBe("CazeTV");
+  });
+
+  it("should remove YouTube favorite when channel has or omits leading @", () => {
+    // Arrange
+    const { addFavorite, removeFavorite, favorites } = sut;
+    addFavorite("CazeTV", "youtube");
+
+    // Act
+    removeFavorite("@cazetv", "youtube");
+
+    // Assert
+    expect(favorites.value.length).toBe(0);
+  });
+
   it("should allow different custom streams with the same name if iframeUrls differ", () => {
     // Arrange
     const { addFavorite, favorites } = sut;

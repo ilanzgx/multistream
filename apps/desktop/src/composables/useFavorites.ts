@@ -20,6 +20,11 @@ const isMatchingFavorite = (
   if (platform === "custom" && (iframeUrl || favorite.iframeUrl)) {
     return favorite.iframeUrl?.toLowerCase() === (iframeUrl || "").toLowerCase();
   }
+  if (platform === "youtube") {
+    const cleanFav = favorite.channel.replace(/^@+/, "").toLowerCase();
+    const cleanChan = channel.replace(/^@+/, "").toLowerCase();
+    if (cleanFav === cleanChan) return true;
+  }
   return favorite.channel.toLowerCase() === channel.toLowerCase();
 };
 

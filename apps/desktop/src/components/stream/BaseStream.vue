@@ -75,30 +75,21 @@ const platformConfig = computed(() => {
 const isLoading = ref(true);
 const containerRef = ref<HTMLElement>();
 const { getStatus, checkAll, statuses } = useLiveStatus();
-const liveStatus = computed(() => getStatus(props.displayName || props.channel, props.platform));
-const resolvedChannelKey = computed(() => {
-  if (props.platform === "youtube") {
-    return (
-      props.handle ||
-      liveStatus.value?.handle ||
-      (props.channel.startsWith("@") ? props.channel : undefined) ||
-      liveStatus.value?.displayName ||
-      props.displayName ||
-      props.channel
-    );
-  }
-  return props.displayName || props.channel;
-});
+const isCandidateVideoId = (val?: string) =>
+  !!val && !val.startsWith("@") && /^[a-zA-Z0-9_-]{11}$/.test(val);
 
-const isFavorite = computed(() => {
-  const channelToMatch = resolvedChannelKey.value.toLowerCase();
+const matchingFavorite = computed(() => {
   const rawChannel = props.channel.toLowerCase();
+  const cleanRawChannel = rawChannel.replace(/^@+/, "");
   const rawDisplayName = props.displayName?.toLowerCase();
-  const handle = liveStatus.value?.handle?.toLowerCase();
-  const videoId = liveStatus.value?.videoId?.toLowerCase();
-  const statusDisplayName = liveStatus.value?.displayName?.toLowerCase();
+  const cleanRawDisplayName = rawDisplayName?.replace(/^@+/, "");
 
-  return favorites.value.some((f) => {
+  const directStatus = getStatus(props.displayName || props.channel, props.platform);
+  const statusHandle = directStatus?.handle?.toLowerCase().replace(/^@+/, "");
+  const statusDisplayName = directStatus?.displayName?.toLowerCase();
+  const statusVideoId = directStatus?.videoId?.toLowerCase();
+
+  return favorites.value.find((f) => {
     if (f.platform !== props.platform) return false;
     if (props.platform === "custom") {
       if (props.iframeUrl || f.iframeUrl) {
@@ -106,17 +97,71 @@ const isFavorite = computed(() => {
       }
       return f.channel.toLowerCase() === rawChannel;
     }
-    const fav = f.channel.toLowerCase();
-    return (
-      fav === channelToMatch ||
-      fav === rawChannel ||
-      (rawDisplayName && fav === rawDisplayName) ||
-      (handle && fav === handle) ||
-      (videoId && fav === videoId) ||
-      (statusDisplayName && fav === statusDisplayName)
-    );
+
+    const favChannel = f.channel.toLowerCase();
+    const cleanFav = favChannel.replace(/^@+/, "").trim();
+    if (!cleanFav) return false;
+    const favDisplayName = f.displayName?.toLowerCase().trim();
+
+    if (
+      cleanFav === cleanRawChannel ||
+      (cleanRawDisplayName && cleanFav === cleanRawDisplayName) ||
+      (statusHandle && cleanFav === statusHandle) ||
+      (statusDisplayName &&
+        (cleanFav === statusDisplayName || cleanFav === statusDisplayName.replace(/^@+/, ""))) ||
+      (favDisplayName && cleanRawDisplayName && favDisplayName === cleanRawDisplayName)
+    ) {
+      return true;
+    }
+
+    if (statusVideoId && cleanFav === statusVideoId) {
+      return true;
+    }
+
+    if (props.platform === "youtube") {
+      const favStatus = getStatus(f.displayName || f.channel, "youtube");
+      if (favStatus) {
+        if (favStatus.videoId?.toLowerCase() === rawChannel) return true;
+        if (favStatus.liveStreams?.some((ls) => ls.videoId.toLowerCase() === rawChannel)) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   });
 });
+
+const liveStatus = computed(() => {
+  const status = getStatus(props.displayName || props.channel, props.platform);
+  if (status) return status;
+  if (props.platform === "youtube" && matchingFavorite.value) {
+    return (
+      getStatus(matchingFavorite.value.displayName || matchingFavorite.value.channel, "youtube") ||
+      getStatus(matchingFavorite.value.channel, "youtube")
+    );
+  }
+  return null;
+});
+
+const resolvedChannelKey = computed(() => {
+  if (props.platform === "youtube") {
+    const validHandle = !isCandidateVideoId(props.handle) ? props.handle : undefined;
+    const validDisplayName = !isCandidateVideoId(props.displayName) ? props.displayName : undefined;
+
+    return (
+      validHandle ||
+      liveStatus.value?.handle ||
+      (props.channel.startsWith("@") ? props.channel : undefined) ||
+      liveStatus.value?.displayName ||
+      validDisplayName ||
+      props.channel
+    );
+  }
+  return props.displayName || props.channel;
+});
+
+const isFavorite = computed(() => !!matchingFavorite.value);
 
 const isStreamFocused = computed(() => isFocused(props.channelid));
 
@@ -262,32 +307,36 @@ watch(adblockEnabled, () => {
 
 onMounted(() => {
   if (props.platform === "youtube" && !liveStatus.value) {
-    invoke<any[]>("youtube_check_channels_status", {
-      channels: [props.channel],
-    })
-      .then((raw) => {
-        if (Array.isArray(raw) && raw.length > 0 && raw[0]) {
-          const item = raw[0];
-          const vid = item.videoId ?? item.video_id;
-          const handle = item.handle;
-          const displayName = item.displayName ?? item.display_name;
-          const statusObj: LiveStatus = {
-            isLive: Boolean(item.isLive ?? item.is_live),
-            videoId: vid,
-            handle,
-            displayName,
-            viewerCount: item.viewerCount ?? item.viewer_count,
-            title: item.title,
-            avatarUrl: item.avatarUrl ?? item.avatar_url,
-            thumbnailUrl: vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : undefined,
-          };
-          statuses.value[`youtube:${props.channel.toLowerCase()}`] = statusObj;
-          if (vid) statuses.value[`youtube:${vid.toLowerCase()}`] = statusObj;
-          if (handle) statuses.value[`youtube:${handle.toLowerCase()}`] = statusObj;
-          if (displayName) statuses.value[`youtube:${displayName.toLowerCase()}`] = statusObj;
-        }
+    const rawKey = `youtube:${props.channel.toLowerCase()}`;
+    const cleanKey = `youtube:${props.channel.toLowerCase().replace(/^@+/, "")}`;
+    if (!statuses.value[rawKey] && !statuses.value[cleanKey]) {
+      invoke<any[]>("youtube_check_channels_status", {
+        channels: [props.channel],
       })
-      .catch(() => {});
+        .then((raw) => {
+          if (Array.isArray(raw) && raw.length > 0 && raw[0]) {
+            const item = raw[0];
+            const vid = item.videoId ?? item.video_id;
+            const handle = item.handle;
+            const displayName = item.displayName ?? item.display_name;
+            const statusObj: LiveStatus = {
+              isLive: Boolean(item.isLive ?? item.is_live),
+              videoId: vid,
+              handle,
+              displayName,
+              viewerCount: item.viewerCount ?? item.viewer_count,
+              title: item.title,
+              avatarUrl: item.avatarUrl ?? item.avatar_url,
+              thumbnailUrl: vid ? `https://i.ytimg.com/vi/${vid}/hqdefault.jpg` : undefined,
+            };
+            statuses.value[`youtube:${props.channel.toLowerCase()}`] = statusObj;
+            if (vid) statuses.value[`youtube:${vid.toLowerCase()}`] = statusObj;
+            if (handle) statuses.value[`youtube:${handle.toLowerCase()}`] = statusObj;
+            if (displayName) statuses.value[`youtube:${displayName.toLowerCase()}`] = statusObj;
+          }
+        })
+        .catch(() => {});
+    }
   }
 
   setTimeout(() => {
@@ -373,6 +422,9 @@ const handleFavoriteStream = async (_channel: string, platform: Platform) => {
   const toastName = rawDisplayName ? rawDisplayName.replace(/^@/, "") : channelToSave;
 
   if (isFavorite.value) {
+    if (matchingFavorite.value) {
+      removeFavorite(matchingFavorite.value.channel, platform, matchingFavorite.value.iframeUrl);
+    }
     removeFavorite(channelToSave, platform, props.iframeUrl);
     if (props.channel && props.channel !== channelToSave) {
       removeFavorite(props.channel, platform, props.iframeUrl);
@@ -575,7 +627,11 @@ const handleCopyUrl = async () => {
             <div v-if="!isMiniaturized" class="space-y-2">
               <!-- real channel name, muted -->
               <p class="h-4 text-sm font-medium text-white/30 leading-none tracking-wide">
-                {{ props.displayName || props.channel }}
+                {{
+                  (!isCandidateVideoId(props.displayName) ? props.displayName : undefined) ||
+                  liveStatus?.displayName ||
+                  resolvedChannelKey
+                }}
               </p>
               <!-- category skeleton or real category -->
               <Skeleton v-if="!liveStatus?.category" class="h-3 w-24 bg-white/5" />
