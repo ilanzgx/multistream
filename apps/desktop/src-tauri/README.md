@@ -244,15 +244,28 @@ youtube_get_suggested_streams(locale, limit)
   └─ Deduplicates streams by channel ID and returns `Vec<YouTubeSuggestedStream>`
 ```
 
-### Channel Live Status & Canonical Handle Resolution
+### Two-Phase Detection Pipeline, Rate Limiting & TTL Cache
 
 ```
-youtube_resolve_channel(channel)
-  ├─ Queries channel page (https://www.youtube.com/@<channel>/live or /<channel>)
-  ├─ Extracts canonical handle from `canonicalBaseUrl` (e.g. "/@batzera1" → "batzera1")
-  ├─ Extracts channel display name (e.g. "Batzera")
-  ├─ Determines live status and parses real-time viewer count from ytInitialData / HTML meta tags
-  └─ Returns `YouTubeChannelStatus { is_live, video_id, viewer_count, handle, display_name }`
+youtube_check_channels_status(channels)
+  ├─ Global In-Memory TTL Cache Check (45s TTL):
+  │    Indexed by @handle, clean handle, display name, video_id, and sub-streams.
+  │    Sub-stream hits clone the entry and dynamically set video_id = sub_stream_id.
+  ├─ Global Static Semaphore Gatekeeper (limit: 2 permits):
+  │    Prevents HTTP 429 rate limiting across concurrent component queries.
+  ├─ Phase 1: Mandatory Gatekeeper
+  │    GET https://www.youtube.com/@<channel>/live
+  │    - Offline? Returns is_live = false immediately with sub-millisecond meta tag extraction.
+  │    - Active? Confirms live status and proceeds to Phase 2.
+  ├─ Phase 2: Tiered Multiplexer
+  │    1. Tier 1: GET /@<channel>/streams (10s timeout)
+  │       - Parses active lockupViewModel elements and populates live_streams: Vec<...>.
+  │       - If active streams are found, skips Tier 2 entirely (50% bandwidth saved).
+  │    2. Tier 2 (Fallback): GET /@<channel> (Home page)
+  │       - Executed only if Tier 1 yields 0 live streams (defeats the 30-item upcoming pagination trap).
+  │       - Inspects the prominent top "Live Now" ("Ao Vivo Agora") shelf.
+  ├─ Writes resolved payload to GLOBAL_CACHE (45s TTL).
+  └─ Returns Vec<YouTubeChannelStatus> { is_live, video_id, viewer_count, handle, display_name, avatar_url, live_streams }
 ```
 
 ### Native YouTube Channel Search Engine

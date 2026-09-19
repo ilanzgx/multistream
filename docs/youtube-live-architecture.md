@@ -13,6 +13,12 @@ YouTube does not provide a public, unauthenticated WebSocket or push API for rea
    - Scraping offline channels bypasses deserialization and traversal of the ~1MB `ytInitialData` JSON AST, extracting metadata in sub-millisecond time via HTML `<meta>` tags.
 3. **Timestamp-Based Offline Confirmation (10-Minute Window)**:
    - To eliminate UI flickering and prevent channels from dropping out during transient CDN glitches or stream end transitions, YouTube channels utilize a timestamp-based confirmation window (`offlineSinceMs >= 10 * 60 * 1000`). A channel requires 10 continuous minutes of offline readings before being confirmed offline and removed from the sidebar. Any live poll immediately resets the timer, and previous confirmed live state is defensively preserved via `previousStatuses.value[key]`.
+4. **Global Scraping Rate-Limiting & Concurrency Control**:
+   - To prevent HTTP 429 ("Too Many Requests") rate limits from YouTube's anti-scraping perimeter, all outgoing YouTube HTTP requests across all application components are gated through a process-wide global static semaphore (`Semaphore::new(2)`).
+5. **Global In-Memory 45-Second Multi-Key TTL Cache**:
+   - All live channel scrape results are cached for 45 seconds in an in-memory `Mutex<HashMap<String, (Instant, YouTubeLiveResponse)>>`. Caches are indexed across `@handle`, clean handle, display name, primary `videoId`, and all discovered sub-stream `videoId`s. Queries matching sub-streams dynamically clone and update `res.video_id` to preserve distinct stream IDs.
+6. **Optimized Two-Tier Phase 2 Multiplexing**:
+   - Instead of blindly fetching both `/streams` and the Channel Home page simultaneously on every live check, Phase 2 queries `/@{handle}/streams` first with a 10s timeout. If active live broadcasts are found, the Home page request is skipped entirely (saving 50% bandwidth). The Home page is queried only if `/streams` returns 0 live broadcasts (defeating the 30-item upcoming pagination trap).
 
 ---
 
@@ -27,48 +33,62 @@ YouTube responses contain two major JavaScript data islands injected into the HT
                                          │
                                          ▼
                      ┌───────────────────────────────────────┐
-                     │ Phase 1: Primary Gatekeeper           │
-                     │ GET /@{handle}/live                   │
-                     │ (reqwest + rustls, custom UA & lang)  │
+                     │ Global In-Memory TTL Cache (45s)      │
+                     │ (Matches handle, videoId, sub-streams)│
                      └───────────────────┬───────────────────┘
                                          │
-                 ┌───────────────────────┴───────────────────────┐
-                 │                                               │
-                 ▼ (Redirects to /watch or Live Player)          ▼ (Offline Channel Page)
-   ┌───────────────────────────┐                   ┌───────────────────────────┐
-   │  ytInitialPlayerResponse  │                   │ No Active Live Broadcast  │
-   │  - isLive: true           │                   │ - is_not_currently_live   │
-   │  - isUpcoming: false      │                   │ - Skip /streams & home    │
-   │  - playability: "OK"      │                   │ - Sub-ms metadata extract │
-   │  - liveBroadcastDetails   │                   │ Latency: < 0.1ms parse    │
-   └─────────────┬─────────────┘                   └─────────────┬─────────────┘
-                 │                                               │
-                 ▼                                               ▼
-   ┌───────────────────────────┐                   ┌───────────────────────────┐
-   │ Gatekeeper PASSED (Live)  │                   │ is_live = false           │
-   │ Channel is confirmed live │                   │ display_name, avatar_url  │
-   └─────────────┬─────────────┘                   │ live_streams: []          │
-                 │                                 └─────────────┬─────────────┘
-                 ▼                                               │
-   ┌─────────────────────────────────────────┐                   │
-   │ Phase 2: Concurrent Streams Multiplexer │                   │
-   │ GET /@{handle}/streams                  │                   │
-   │          +                              │                   │
-   │ GET /@{handle} (Home Page)              │                   │
-   │ (Executed concurrently via tokio::join!)│                   │
-   │ - Bypasses 30-item upcoming trap        │                   │
-   │ - Parses lockupViewModel elements       │                   │
-   │ - Merges & deduplicates active streams  │                   │
-   │ - Populates live_streams: Vec<Stream>   │                   │
-   └─────────────────────┬───────────────────┘                   │
-                         │                                       │
-                         ▼                                       │
-   ┌─────────────────────────────────────────┐                   │
-   │ is_live = true                          │                   │
-   │ live_streams = [Stream 1, Stream 2, ...]│                   │
-   └─────────────────────┬───────────────────┘                   │
-                         │                                       │
-                         └───────────────────┬───────────────────┘
+                         ┌───────────────┴───────────────┐
+                         │ Cache Hit                     │ Cache Miss
+                         ▼                               ▼
+               ┌───────────────────┐     ┌───────────────────────────────────────┐
+               │ Return cached     │     │ Global Static Semaphore (Limit: 2)    │
+               │ status instantly  │     │ (Prevents HTTP 429 rate limiting)     │
+               └─────────┬─────────┘     └───────────────────┬───────────────────┘
+                         │                                   │
+                         │                                   ▼
+                         │               ┌───────────────────────────────────────┐
+                         │               │ Phase 1: Primary Gatekeeper           │
+                         │               │ GET /@{handle}/live                   │
+                         │               │ (reqwest + rustls, custom UA & lang)  │
+                         │               └───────────────────┬───────────────────┘
+                         │                                   │
+                         │           ┌───────────────────────┴───────────────────────┐
+                         │           │                                               │
+                         │           ▼ (Redirects to /watch or Live Player)          ▼ (Offline Channel Page)
+                         │ ┌───────────────────────────┐                   ┌───────────────────────────┐
+                         │ │  ytInitialPlayerResponse  │                   │ No Active Live Broadcast  │
+                         │ │  - isLive: true           │                   │ - is_not_currently_live   │
+                         │ │  - isUpcoming: false      │                   │ - Skip /streams & home    │
+                         │ │  - playability: "OK"      │                   │ - Sub-ms metadata extract │
+                         │ │  - liveBroadcastDetails   │                   │ Latency: < 0.1ms parse    │
+                         │ └─────────────┬─────────────┘                   └─────────────┬─────────────┘
+                         │               │                                               │
+                         │               ▼                                               ▼
+                         │ ┌───────────────────────────┐                   ┌───────────────────────────┐
+                         │ │ Gatekeeper PASSED (Live)  │                   │ is_live = false           │
+                         │ │ Channel is confirmed live │                   │ display_name, avatar_url  │
+                         │ └─────────────┬─────────────┘                   │ live_streams: []          │
+                         │               │                                 └─────────────┬─────────────┘
+                         │               ▼                                               │
+                         │ ┌─────────────────────────────────────────┐                   │
+                         │ │ Phase 2: Tiered Multiplexer             │                   │
+                         │ │ Tier 1: GET /@{handle}/streams (10s)    │                   │
+                         │ │ (If lives found -> skip Tier 2!)        │                   │
+                         │ │ Tier 2 (Fallback): GET /@{handle} (Home)│                   │
+                         │ │ (Only if /streams has 0 lives)          │                   │
+                         │ │ - Bypasses 30-item upcoming trap        │                   │
+                         │ │ - Merges & deduplicates active streams  │                   │
+                         │ │ - Populates live_streams: Vec<Stream>   │                   │
+                         │ └─────────────────────┬───────────────────┘                   │
+                         │                       │                                       │
+                         │                       ▼                                       │
+                         │ ┌─────────────────────────────────────────┐                   │
+                         │ │ Cache Write (45s TTL multi-key)         │                   │
+                         │ │ is_live = true, live_streams: [...]     │                   │
+                         │ └─────────────────────┬───────────────────┘                   │
+                         │                       │                                       │
+                         └───────────────────────┼───────────────────────────────────────┘
+                                                 │
                                              │
                                              ▼
                          ┌───────────────────────────────────────┐
@@ -177,7 +197,7 @@ YouTube broadcasts exist in multiple subtle states. The scraper classifies them 
 
 ---
 
-## 5. Performance & Resource Optimization
+## 5. Performance, Concurrency & Rate-Limiting Architecture
 
 ### 5.1 Fast-Path for Offline Channels
 Channels that are offline represent >80% of checks in typical usage. Parsing `ytInitialData` for every offline channel consumed noticeable CPU during polling:
@@ -185,10 +205,37 @@ Channels that are offline represent >80% of checks in typical usage. Parsing `yt
 2. **Bypass**: The engine skips deserializing `ytInitialData` entirely.
 3. **Metadata Extraction**: Display name and avatar are parsed in $< 0.1\text{ ms}$ using standard `<meta property="og:title">` and targeted channel avatar patterns.
 
-### 5.2 Polling Frequency & Concurrency
+### 5.2 Global Static Semaphore (Anti-429 Rate Limiting)
+YouTube's perimeter blocks aggressive bursts of concurrent HTTP requests with HTTP 429 ("Too Many Requests").
+- Previously, local semaphores (`Semaphore::new(4)`) were instantiated per batch call. When multiple `BaseStream` components mounted concurrently or polling overlapped with user interactions, independent tasks spawned up to 20 parallel HTTP requests to YouTube, quickly tripping IP-level rate limits.
+- **Architectural Solution**: Enforce a process-wide, static global semaphore (`GLOBAL_SCRAPE_SEMAPHORE: OnceLock<Semaphore>` initialized to `Semaphore::new(2)`) across all channel and stream requests in `api.rs`.
+- Even if the UI requests status checks for 10 streams simultaneously, requests are serialized through the 2-permit gatekeeper, completely eliminating HTTP 429 spikes.
+
+### 5.3 Global In-Memory Multi-Key TTL Cache (45-Second TTL)
+To prevent duplicate network queries across multiple components (sidebar, stream grid, share import dialog) querying the same channel or stream:
+- `GLOBAL_CACHE`: A process-wide in-memory cache wrapped in `LazyLock<Mutex<HashMap<String, (Instant, YouTubeLiveResponse)>>>` with `CACHE_TTL = Duration::from_secs(45)`.
+- **Symmetric Multi-Key Indexing**: When a channel status is resolved, the resulting payload is stored under:
+  1. `raw_handle` (e.g. `"@cazetv"`)
+  2. `clean_handle` (e.g. `"cazetv"`)
+  3. `display_name` (e.g. `"CazéTV"`)
+  4. Primary `video_id` (e.g. `"Zm5YJptWpa4"`)
+  5. Each sub-stream `video_id` in `live_streams` (e.g. `"cDvqBEla-Vc"`, `"QQbVDgHCW-g"`)
+- **Sub-Stream Identity Preservation**: When `get_cached_status(key)` matches an entry via a sub-stream `video_id`, it clones the cached response and dynamically rewrites `res.video_id = Some(sub.video_id.clone())`. This ensures importing or mounting distinct simultaneous broadcasts from the same creator retains their unique playback IDs rather than collapsing into the primary stream ID.
+
+### 5.4 Tiered Phase 2 Discovery (Streams First, Home on Fallback)
+Instead of unconditionally firing simultaneous network requests to both `/@handle/streams` AND the Channel Home page on every live check:
+1. **Tier 1 (`/@{handle}/streams`)**: Phase 2 queries the `/streams` tab with an expanded 10-second timeout.
+2. **Early Completion**: If active live broadcasts are found on `/streams`, the Channel Home request is skipped entirely. This reduces Phase 2 network traffic by 50% for standard broadcasters.
+3. **Tier 2 Fallback (`/@{handle}`)**: Only if `/streams` returns 0 active live streams (the 30-item pagination trap where upcoming tournament matches push live items past index 30), Phase 2 queries the Channel Home page to inspect the top "Live Now" ("Ao Vivo Agora") shelf.
+
+### 5.5 Frontend Deduplication & Zero-Request Skeleton Avatar Integration
+1. **Batch Deduplication**: `useLiveStatus.ts` filters out candidate YouTube video IDs in `checkAll()` when their parent channel handle is already present in the polling batch.
+2. **Mount Guard**: `BaseStream.vue` inspects `statuses.value` before invoking `youtube_check_channels_status` on mount, skipping the IPC roundtrip if status is already in memory.
+3. **Skeleton Loader Avatar**: `BaseStream.vue` computes `effectiveAvatarUrl` from `liveStatus.value?.avatarUrl` (which is already populated by Rust during status scraping), rendering channel profile pictures inside the loading skeleton with zero extra network requests.
+
+### 5.6 Polling Frequency & Batch Coordination
 - Global polling interval is configured at `60000ms` (60 seconds) in `apps/desktop/src/config/api.ts`.
 - In `useFollowedChannels.ts`, background polling calls are desynchronized and deduplicated, ensuring `checkAll()` is managed strictly by `useLiveStatus`.
-- Network calls execute concurrently with bounded parallelism to prevent socket exhaustion and CPU spikes.
 
 ---
 
@@ -253,9 +300,9 @@ This section documents the battle-tested architecture that successfully solved t
                      │                                   │ - /streams is NEVER queried   │
                      ▼                                   │ - Zero risk of VOD leakage    │
       ┌───────────────────────────────────────────────┐                  └───────────────────────────────┘
-      │ Phase 2: Concurrent Multiplexer               │
-      │ GET /@{handle}/streams + GET /@{handle} (Home)│
-      │ (Parallel via tokio::join! — zero extra lag)  │
+      │ Phase 2: Tiered Multiplexer                   │
+      │ 1. GET /@{handle}/streams (10s timeout)       │
+      │ 2. GET /@{handle} (Home) ONLY if 0 lives      │
       │ Extract & merge all active broadcasts         │
       └───────────────────────┬───────────────────────┘
                               │
@@ -273,15 +320,12 @@ This section documents the battle-tested architecture that successfully solved t
 - If a channel is offline, YouTube's `/@{handle}/live` URL either stays on the channel home page or serves an offline shell with no live player response. The backend's `is_not_currently_live` and `is_live_now` checks deterministically tag the channel as offline.
 - Because offline channels **never reach Phase 2**, the backend never fetches `/@{handle}/streams` or channel home for offline channels. Past VODs residing on the `/streams` tab are never parsed or seen.
 
-#### Why Phase 2 Queries Both `/streams` and Home Concurrently
-- When a channel is confirmed live (Phase 1 passes), `apps/desktop/src-tauri/src/youtube/api.rs` initiates two parallel asynchronous HTTP requests using `tokio::join!`:
-  1. `/@{handle}/streams` (the dedicated live streams tab)
-  2. `/@{handle}` (the channel's home / featured tab)
-- **Why both are required**:
-  - Channels with standard broadcast patterns (e.g. ESPN Brasil, Lofi Girl) list all live streams on their `/streams` tab.
-  - Large sports networks or tournament organizers (e.g. CazéTV) frequently schedule **30+ upcoming matches** weeks in advance. Because YouTube's initial HTML payload strictly caps initial contents to 30 items, the active live broadcasts get pushed to indexes 34, 35, etc., which only load via client-side infinite scroll.
-  - However, on the channel's Home page (`/@{handle}`), YouTube **always pins active live broadcasts to the top "Live Now" ("Ao Vivo Agora") shelf** directly inside the initial HTML payload.
-  - Streams parsed from both responses are merged and deduplicated by their unique 11-character `videoId`.
+#### Why Phase 2 Uses a Tiered Discovery (Streams First, Home on Fallback)
+- When a channel is confirmed live (Phase 1 passes), `apps/desktop/src-tauri/src/youtube/api.rs` executes a prioritized tiered discovery:
+  1. **Tier 1 (`/@{handle}/streams`)**: First queries the dedicated streams tab with an expanded 10-second timeout.
+  2. **Early Completion**: Standard channels (e.g. ESPN Brasil, Lofi Girl) have their broadcasts clearly listed on `/streams`. If active streams are found here, the Channel Home request is skipped completely, saving 50% of the network overhead.
+  3. **Tier 2 Fallback (`/@{handle}`)**: Channels scheduling **30+ upcoming matches** (e.g. CazéTV during tournaments) push active broadcasts beyond the 30-item initial payload on `/streams`. When Tier 1 returns 0 live broadcasts, Phase 2 immediately falls back to querying the Channel Home page (`https://www.youtube.com/@handle`), where active broadcasts are **always pinned to the top "Live Now" ("Ao Vivo Agora") shelf**.
+  4. Active streams discovered across tabs are deduplicated by canonical 11-character `videoId`.
 - If Phase 2 yields 0 streams, the system gracefully falls back to the single live stream already confirmed in Phase 1.
 
 ### 7.2 Modern YouTube Component Parsing (`lockupViewModel`)
@@ -369,8 +413,10 @@ In Multistream, users favorite a **channel** (e.g. `@CazeTV`), but expect to see
 3. **NEVER accept stream cards without checking for duration colons (`:`)**: VODs always have duration timestamps (`"1:23:45"`). Active lives never have duration colons.
 4. **ALWAYS reject items with upcoming indicators**: Scheduled streams and premieres must not appear in the active live sidebar.
 5. **DO NOT trigger push notifications for YouTube**: Maintain the architectural decision of zero OS push notifications for scraped YouTube feeds due to CDN caching characteristics.
-6. **ALWAYS query both `/streams` and Channel Home concurrently in Phase 2**: Using `tokio::join!`, query both pages simultaneously to prevent channels with 30+ scheduled upcoming broadcasts from burying active live streams into pagination.
+6. **ALWAYS prioritize `/@{handle}/streams` in Phase 2 and query Channel Home only on fallback**: Checking `/streams` first with a 10-second timeout avoids redundant requests and rate-limiting, while falling back to Home guarantees capturing live streams that were pushed beyond index 30 by heavy upcoming schedules.
 7. **ALWAYS use timestamp-based confirmation for offline transitions**: Cycle counting causes timing jitter across varied polling and background states. Use `Date.now()` and a 10-minute continuous window for YouTube.
+8. **ALWAYS gate YouTube HTTP requests through the global semaphore**: Use `GLOBAL_SCRAPE_SEMAPHORE` (`Semaphore::new(2)`) to strictly prevent HTTP 429 rate-limiting from YouTube's edge infrastructure.
+9. **ALWAYS preserve distinct `videoId`s in cache resolution**: When retrieving from `GLOBAL_CACHE`, if the query key matches a sub-stream in `live_streams`, dynamically set `res.video_id = Some(sub.video_id.clone())` so multiple concurrent streams from the same channel retain their individual playback IDs.
 
 ---
 

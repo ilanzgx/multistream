@@ -44,6 +44,11 @@ apps/desktop/src-tauri/
     │   ├── irc.rs                  # Native IRC WebSocket connection manager & parser
     │   ├── oauth.rs                # Device Code Flow & token refresh
     │   └── state.rs                # TwitchState & message buffers
+    ├── youtube/                    # YouTube live scraping, multi-stream discovery & search
+    │   ├── api.rs                  # Two-phase HTTP scraping, global semaphore (limit: 2) & 45s TTL cache
+    │   ├── commands.rs             # IPC commands (youtube_check_channels_status, youtube_resolve_live_id, etc.)
+    │   ├── parser.rs               # AST parsing for lockupViewModel, ytInitialData, avatars & viewers
+    │   └── types.rs                # Shared structs (YouTubeChannelStatus, YouTubeSuggestedStream, etc.)
     └── recording/                  # Stream recording & remuxing pipeline
         ├── commands.rs             # IPC commands (start_recording, stop_recording, scan_orphans)
         ├── disk.rs                 # Disk space checks before recording/remuxing
@@ -145,6 +150,14 @@ pub async fn example_get_info(
 ### D. WebView Injection & Graveyard Protection
 - Global scripts injected in `lib.rs` via `initialization_script_for_all_frames(...)`:
   - `graveyard_script`: Intercepts `MULTISTREAM_GRAVEYARD_SUSPEND` postMessage to mute/pause `HTMLMediaElement` and monkey-patch `AudioContext` to silence dead iframe streams without unmounting them immediately (preventing WebView Mojo `ChannelError` crashes).
+
+---
+
+### E. Scraping Concurrency, Global Semaphores & TTL Caching (YouTube)
+- **Zero Local Semaphores for Scraping:** Never instantiate local `tokio::sync::Semaphore` instances inside batch commands or functions. Spawning multiple batches or component mounts concurrently bypasses local limiters and triggers YouTube HTTP 429 rate limits.
+- **Global Semaphore Gatekeeper:** Always gate outgoing scraping requests through `GLOBAL_SCRAPE_SEMAPHORE` (`OnceLock<Semaphore>` initialized to `Semaphore::new(2)`).
+- **Process-Wide 45s Multi-Key TTL Cache:** Cache all channel resolutions in `GLOBAL_CACHE` (`Mutex<HashMap<String, (Instant, YouTubeLiveResponse)>>`). Index entries under `@handle`, clean handle, display name, primary `video_id`, and all discovered sub-stream `video_id`s.
+- **Sub-Stream Video ID Preservation:** When querying by sub-stream `video_id`, clone the cached entry and dynamically set `res.video_id = Some(sub.video_id.clone())` so multiple concurrent streams from the same channel retain distinct playback IDs.
 
 ---
 
