@@ -41,6 +41,7 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 | **Memory usage**       | Low (Tauri + Rust)                     | High (separate Chromium processes per tab) |
 | **Chat**               | Unified Twitch & Kick feed             | Split across separate tabs                 |
 | **Privacy**            | 100% local, zero tracking              | Third-party scripts and telemetry          |
+| **Live alerts**        | Native OS alerts (Twitch & Kick)       | None or separate browser extensions        |
 | **Stream recording**   | Direct recording to MP4 via Streamlink | Requires external tools or extensions      |
 | **Live transcription** | Offline Whisper.cpp on CPU             | Not supported natively                     |
 
@@ -48,8 +49,11 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 
 - **Privacy by design**: Everything runs locally. No middleman servers, no data collection.
 - **Account Authentication & Unified Chat**: Log in to your Twitch and Kick accounts securely and read both chats together in one place, directly in the app. Free, no subscription. Supports 7TV, BTTV, and platform emotes.
+- **Desktop live notifications**: Native OS alerts when followed Twitch and Kick channels go live, without needing browser tabs open in the background.
+- **Smart YouTube live detection**: Follow YouTube channels without needing Google accounts or Cloud API keys. If a channel runs multiple streams at once (such as tournament coverage or multi-camera broadcasts), Multistream detects every active stream and lists them individually with real-time viewer counts.
 - **Direct from the source**: Streams load from the official players, so your views count and quality is exactly the same as on the platform itself.
-- **Lightweight**: Built with [Tauri](https://tauri.app/) and [Rust](https://www.rust-lang.org/), so memory usage is a fraction of what any browser-based alternative would use.
+- **Custom streams**: Add any stream using its embed URL to watch it alongside official platforms.
+- **Lightweight**: Built with [Tauri](https://v2.tauri.app/) and [Rust](https://www.rust-lang.org/), keeping memory usage much lower than browser setups.
 - **Local stream recording**: Record streams directly from the source using [Streamlink](https://streamlink.github.io/). Recordings are processed natively without heavy sidecars, keeping the app extremely lightweight, and are automatically remuxed to MP4 when finished.
 - **Available in 10 languages**: English, Portuguese, Spanish, German, Russian, Chinese, French, Turkish, Hindi, and Indonesian. _(Note: Languages other than English and Portuguese were AI-translated. Native speakers are highly welcome to open a PR to improve them!)_
 - **Cross-platform**: Works on Windows, macOS, and Linux.
@@ -117,7 +121,8 @@ If you want to compile the app yourself or contribute to the project, follow the
 
 - [Bun](https://bun.sh/)
 - [Rust](https://www.rust-lang.org/)
-- [cargo-nextest](https://nexte.st/) *(optional, recommended for ~10x faster backend tests)*
+- [cargo-nextest](https://nexte.st/) _(optional, recommended for ~10x faster backend tests)_
+- _Linux users:_ Standard [Tauri Linux dependencies](https://v2.tauri.app/start/prerequisites/#linux) (`libwebkit2gtk-4.1-dev`, `libappindicator3-dev`, etc.)
 
 ### Setup
 

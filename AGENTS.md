@@ -91,6 +91,7 @@ _(See [`multistream-desktop-backend`](.agents/skills/desktop-backend/SKILL.md) f
   - `kick/`: Kick API integration, OAuth flows, and WebSocket chat subscriptions.
   - `twitch/`: Twitch API integration and IRC chat connections.
   - `recording/`: Logic for capturing and recording streams/VODs.
+  - `youtube/`: YouTube live stream scraping, multi-stream concurrent discovery, and suggestions.
   - `models.rs`: Shared data structures and serialization models.
   - `main.rs`: Application entry point.
   - `lib.rs`: Main Tauri Builder setup, plugins initialization, and IPC commands registration.
@@ -146,7 +147,15 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
 
 ### Important Observations & Environment Context
 
-- **Platform Authentication & Architectures (Twitch vs. Kick):**
+- **Platform Architectures & Integrations (Twitch, Kick, YouTube, Custom):**
+  - **Platform Capabilities Matrix:**
+    | Platform | Stream | Chat Read | Chat Send | Chat Protocol | Live Status Detection | Desktop Push Notifications | Graveyard Required |
+    | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+    | **Twitch** | Official Iframe / Native HLS (Experimental) | ✅ Native | ✅ Native | IRC over WebSocket | GQL / API | ✅ Supported | ✅ Yes (Iframe) / ❌ No (HLS) |
+    | **Kick** | Official Iframe | ✅ Native | ✅ Native | Pusher WebSocket | HTTP + Cloudflare bypass | ✅ Supported | ✅ Yes |
+    | **YouTube** | Official Iframe | ✅ Embed | ❌ Embed only | Official Iframe Embed | Local 2-Phase Scraping | ❌ Disabled (CDN drift) | ✅ Yes |
+    | **Custom** | Embed URL (Iframe) | ❌ None | ❌ None | None | None (Embed URL only) | ❌ Disabled | ❌ No (Immediate GC) |
+
   - **Twitch Integration:**
     - **Chat Protocol:** Twitch uses standard IRC connections.
     - **Unified Chat (`useUnifiedChat.ts`):** Strictly READ-ONLY. It multiplexes multiple IRC channels into a single feed. Do NOT attempt to add message-sending logic here.
@@ -161,14 +170,32 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
     - **Two-Step Chat Protocol:** Kick chat does not use IRC. The backend must first fetch the `chatroom_id` and `broadcaster_user_id` via an HTTP API, and then subscribe to real-time events via a Pusher WebSocket connection.
     - **Send & Retry Mechanism:** Sending messages is handled via `kick_send_message` IPC. The Rust backend intercepts 401/403 HTTP errors and automatically triggers a token refresh (`auth.refresh_token`), saving the new session and retrying the request transparently.
 
+  - **YouTube Integration & Scraping Architecture:**
+    - **Zero API Quotas / 100% Local Scraping:** YouTube provides no unauthenticated WebSocket or push feed without paid Google Cloud quotas. Statuses are resolved client-side via lightweight HTTP scraping using `reqwest` in Rust (`apps/desktop/src-tauri/src/youtube/`).
+    - **Two-Phase Detection Pipeline:**
+      - **Phase 1 (Mandatory Gatekeeper):** Queries `/@{handle}/live`. If the channel is offline, it exits immediately. Offline channels NEVER reach Phase 2, preventing past recorded broadcasts (VODs with millions of views) from leaking into the UI.
+      - **Phase 2 (Concurrent Discovery via `tokio::join!`):** If Phase 1 confirms the channel is live, queries both `/@{handle}/streams` AND the Channel Home page (`/@{handle}`) concurrently.
+      - **The 30-Item Pagination Trap:** Channels scheduling 30+ upcoming events (e.g. sports tournaments like CazéTV) push active broadcasts past index 30 on `/streams` (accessible only via client-side pagination). The Channel Home page always pins active live broadcasts to the prominent "Live Now" ("Ao Vivo Agora") shelf in the initial HTML. Combining and deduplicating by 11-char `videoId` solves this trap.
+    - **Channel Page Trailer Trap:** Never call `is_not_currently_live` on channel pages. It inspects the channel's featured trailer clip and falsely marks actively broadcasting channels as offline.
+    - **Concurrent Viewers vs. Lifetime Views:** Never use `videoDetails.viewCount` (cumulative lifetime views). Strictly extract real-time concurrent viewers via `videoViewCountRenderer.originalViewCount` or localized watching text regex.
+    - **Timestamp-Based Offline Confirmation Window:** YouTube channels use an epoch timestamp window (`Date.now() - offlineSinceMs >= 10 * 60 * 1000`) in `useLiveStatus.ts`. A channel requires 10 continuous minutes of offline readings before being confirmed offline and removed from the sidebar. Any live signal immediately resets the timer, and confirmed live state is preserved via `previousStatuses.value[key]` during the window to eliminate UI flickering.
+    - **Zero Desktop Notifications for YouTube:** Desktop push notifications are strictly disabled for YouTube due to CDN caching and scraping jitter.
+    - **Multi-Language Parity:** Network requests enforce `Accept-Language: en-US` and consent cookies. View-model parsing prioritizes structural identifiers (`badgeStyle: "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE"`, `imageName: "LIVE"`, `isLive: true`), backed by a multilingual fallback dictionary covering all 10 supported locales.
+    - **Detailed Architecture Reference:** See [`docs/youtube-live-architecture.md`](docs/youtube-live-architecture.md) for full reverse-engineering notes and test matrices.
+
 - **Live Transcription (Whisper.cpp):**
   - **Platform Limitation:** Currently, the transcription feature is strictly Windows-only. Always verify platform conditions (e.g., checking if the OS is Windows) before rendering transcription-related UI components or invoking sidecars.
+
+- **Stream Recording Architecture (`recording/`):**
+  - **Tooling:** Uses Streamlink for stream acquisition and FFmpeg for remuxing.
+  - **Remuxing Pipeline:** Streams are piped directly and remuxed into `.mp4` containers (`-c copy`) without lossy video re-encoding, preserving native source quality with minimal CPU footprint.
+  - **Security & Validation:** Channel names, output filenames, and process arguments are strictly validated against path traversal (`..`, control characters) and allowed platform enums before spawning sidecars.
 
 - **WebView IPC & Graveyard Mechanism:**
   - **Mojo Crash Prevention:** In Tauri/WebView2 (Chromium), completely removing an `iframe` from the DOM while it has active internal connections (like media or websockets) can cause catastrophic `ChannelError` Mojo crashes that bring down the entire application window.
   - **Two-Phase Removal (Graveyard):** To prevent this, when a user closes a stream in `StreamGrid.vue`, the app uses a "Graveyard" approach. The stream is marked as `_isDead = true`, visually hidden (`v-show="false"`), and its iframe is sent a `MULTISTREAM_GRAVEYARD_SUSPEND` postMessage. A globally injected Rust script (`graveyard_script` in `lib.rs`) intercepts this message to monkey-patch and silence `HTMLMediaElement.play` and `AudioContext`, effectively pausing all media without tearing down the iframe immediately.
   - **Garbage Collection (GC):** The "dead" iframes are kept alive in the background until the _last_ active stream of that same platform is closed. When no active streams remain for a platform (e.g., all Twitch streams are closed), the GC safely removes all graveyard iframes of that platform from the DOM at once.
-  - **Custom Streams Bypass:** Streams with `platform === 'custom'` bypass this graveyard logic entirely and are removed from the DOM immediately, as they don't share the same risk of platform-wide IPC crash cascades.
+  - **Graveyard Bypass Exceptions:** Streams with `platform === 'custom'` and Twitch streams in Native HLS mode (`nativePlayerEnabled`) bypass graveyard logic entirely and are removed from the DOM immediately, as native `<video>` elements with `Hls.js` have no risk of WebView IPC Mojo crash cascades.
 
 - **Internationalization (i18n) & Automation (`scripts/i18n.ts`):**
   - **Always translate UI text:** Every new user-facing text string must be localized across all 10 supported languages in `apps/desktop/src/i18n/locales/` (`en.json`, `pt.json`, `es.json`, `de.json`, `ru.json`, `cn.json`, `fr.json`, `tr.json`, `hi.json`, `id.json`).
