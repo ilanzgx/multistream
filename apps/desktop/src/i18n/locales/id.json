@@ -372,7 +372,8 @@
       "missing": "Codec media yang hilang terdeteksi. Silakan instal codec sistem Anda (mis., ubuntu-restricted-extras atau gstreamer-plugins) untuk menonton stream."
     },
     "youtube": {
-      "offline": "Saluran sedang offline atau tidak sedang melakukan siaran langsung saat ini."
+      "offline": "Saluran sedang offline atau tidak sedang melakukan siaran langsung saat ini.",
+      "detecting": "Mendeteksi siaran langsung..."
     }
   },
   "skeleton": {

@@ -372,7 +372,8 @@
       "missing": "Falta de codecs de mídia detectada. Instale os codecs do seu sistema (ex: ubuntu-restricted-extras ou gstreamer-plugins) para assistir às streams."
     },
     "youtube": {
-      "offline": "O canal está offline ou não possui transmissão ao vivo no momento."
+      "offline": "O canal está offline ou não possui transmissão ao vivo no momento.",
+      "detecting": "Detectando transmissão ao vivo..."
     }
   },
   "skeleton": {

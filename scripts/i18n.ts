@@ -288,17 +288,6 @@ async function cmdCheck(): Promise<void> {
   }
 }
 
-async function cmdSort(): Promise<void> {
-  console.log("Sorting keys alphabetically across all 10 locales...\n");
-  for (const lang of SUPPORTED_LANGS) {
-    const data = await loadLocale(lang);
-    const sorted = sortObjectKeys(data);
-    await saveLocale(lang, sorted);
-    console.log(`  [sorted] ${lang}`);
-  }
-  console.log("\nDone.\n");
-}
-
 async function cmdBatch(batchFilePath: string): Promise<void> {
   if (!batchFilePath) {
     console.error("Usage: bun run scripts/i18n.ts batch <path/to/updates.json>");
@@ -389,10 +378,6 @@ Commands:
     Verify parity and consistency across all 10 locales against en.json.
     Example: bun run i18n:check
 
-  sort
-    Alphabetically sort and format all 10 locale JSON files.
-    Example: bun run i18n:sort
-
   batch <file.json>
     Apply a dictionary of updates across all locales at once.
     Example: bun run i18n batch updates.json
@@ -422,10 +407,6 @@ export async function runCli(argv = process.argv.slice(2)): Promise<void> {
     case "check":
     case "verify":
       await cmdCheck();
-      break;
-    case "sort":
-    case "format":
-      await cmdSort();
       break;
     case "batch":
       await cmdBatch(target);

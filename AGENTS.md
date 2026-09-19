@@ -60,7 +60,6 @@ This repository contains custom, specialized skills for AI Agents located in the
 | **Type Check**          | `bun run desktop:typecheck`          |
 | **Linting**             | `bun run lint`                       |
 | **i18n Check**          | `bun run i18n:check`                 |
-| **i18n Sort**           | `bun run i18n:sort`                  |
 | **i18n Test**           | `bun run i18n:test`                  |
 | **i18n CLI**            | `bun run i18n <get|set|del|batch>`   |
 
@@ -206,7 +205,6 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
     - **Add or update a key:** `bun run i18n set <key.path> --en "Text" --pt "Texto" [--all "Fallback"]`.
     - **Delete a key across all languages:** `bun run i18n delete <key.path>` (automatically cleans and prunes empty parent groups).
     - **Batch update from JSON:** `bun run i18n batch <path/to/batch.json>`.
-    - **Format and sort alphabetically:** `bun run i18n:sort`.
   - **Pre-Flight Checklist:** Always run `bun run i18n:check` before considering any UI implementation complete to guarantee 100% key parity across all 10 files. Do not rely solely on Vue `$t` fallbacks.
 
 - **UI Components (shadcn-vue):**

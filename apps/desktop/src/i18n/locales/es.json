@@ -372,7 +372,8 @@
       "missing": "Falta de códecs multimedia detectada. Instale los códecs de su sistema (ej: ubuntu-restricted-extras o gstreamer-plugins) para ver transmisiones."
     },
     "youtube": {
-      "offline": "El canal está desconectado o no está transmitiendo en este momento."
+      "offline": "El canal está desconectado o no está transmitiendo en este momento.",
+      "detecting": "Detectando transmisión en vivo..."
     }
   },
   "skeleton": {

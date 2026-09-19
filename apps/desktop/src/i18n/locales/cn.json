@@ -372,7 +372,8 @@
       "missing": "检测到缺失媒体编解码器。请安装您的系统编解码器（例如 ubuntu-restricted-extras 或 gstreamer-plugins）以观看直播。"
     },
     "youtube": {
-      "offline": "该频道目前处于离线状态或未在直播。"
+      "offline": "该频道目前处于离线状态或未在直播。",
+      "detecting": "正在检测直播..."
     }
   },
   "skeleton": {

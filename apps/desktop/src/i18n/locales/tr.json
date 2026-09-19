@@ -372,7 +372,8 @@
       "missing": "Eksik medya kodlayıcıları tespit edildi. Yayınları izlemek için lütfen sistem kodlayıcılarınızı (örneğin ubuntu-restricted-extras veya gstreamer-plugins) yükleyin."
     },
     "youtube": {
-      "offline": "Kanal çevrimdışı veya şu anda yayın yapmıyor."
+      "offline": "Kanal çevrimdışı veya şu anda yayın yapmıyor.",
+      "detecting": "Canlı yayın tespit ediliyor..."
     }
   },
   "skeleton": {

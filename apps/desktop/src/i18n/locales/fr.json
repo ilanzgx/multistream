@@ -372,7 +372,8 @@
       "missing": "Des codecs multimédias manquants ont été détectés. Veuillez installer vos codecs système (ex: ubuntu-restricted-extras ou gstreamer-plugins) pour regarder des flux."
     },
     "youtube": {
-      "offline": "La chaîne est hors ligne ou ne diffuse pas actuellement."
+      "offline": "La chaîne est hors ligne ou ne diffuse pas actuellement.",
+      "detecting": "Détection de la diffusion en direct..."
     }
   },
   "skeleton": {

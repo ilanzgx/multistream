@@ -16,7 +16,7 @@ All scripts run with [Bun](https://bun.sh).
 
 ## i18n.ts
 
-CLI for inspecting, updating, sorting, and validating parity across the 10 JSON files in `apps/desktop/src/i18n/locales/`.
+CLI for inspecting, updating, and validating parity across the 10 JSON files in `apps/desktop/src/i18n/locales/`.
 
 It uses Bun native file APIs (`Bun.file`, `Bun.write`), preserves each file's line endings (`\r\n` on Windows, `\n` on Linux), and skips writes when the serialized content matches disk.
 
@@ -67,14 +67,7 @@ Removes a key across all 10 locales and automatically deletes any empty parent o
 bun run i18n delete nav.oldLink
 ```
 
-#### 5. Alphabetical sort
-Sorts keys alphabetically across all 10 locale files.
-
-```bash
-bun run i18n:sort
-```
-
-#### 6. Batch update
+#### 5. Batch update
 Applies multiple key updates from a JSON file.
 
 ```bash
