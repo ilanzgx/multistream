@@ -25,6 +25,7 @@
     "website:check": "cd apps/website && bun run check",
     "prepare": "husky",
     "lint": "oxlint && eslint .",
+    "lint:staged": "lint-staged",
     "check:i18n": "cd apps/desktop && bun run test -- keys.spec.ts",
     "check:endpoints": "bun run scripts/check-endpoints.ts",
     "i18n": "bun run scripts/i18n.ts",

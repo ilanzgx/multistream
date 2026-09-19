@@ -1,25 +1,46 @@
 #!/bin/sh
 set -e
-echo "Type checking..."
-bun run desktop:typecheck
-
-echo "Running unit tests..."
-bun run desktop:test
 
 changed_files=$(git diff --name-only @{u}..HEAD 2>/dev/null || git diff --name-only origin/main..HEAD 2>/dev/null || git diff --name-only HEAD~1..HEAD 2>/dev/null || true)
 
+# 1. Desktop Frontend
+if echo "$changed_files" | grep -v '^apps/desktop/src-tauri' | grep -qE '^apps/desktop/|^package\.json|^bun\.lock'; then
+  if echo "$changed_files" | grep -v '^apps/desktop/src-tauri' | grep -q '^apps/desktop/'; then
+    echo "Changes detected in desktop frontend."
+  else
+    echo "Root dependencies or monorepo configs changed. Verifying desktop frontend..."
+  fi
+
+  echo "Type checking frontend..."
+  bun run desktop:typecheck
+
+  echo "Running frontend unit tests..."
+  bun run desktop:test
+else
+  echo "No desktop frontend changes detected. Skipping frontend checks."
+fi
+
+# 2. Rust Backend
 if echo "$changed_files" | grep -q '^apps/desktop/src-tauri'; then
-  echo "Running Rust backend tests..."
-  bun run desktop:test:backend
+  echo "Changes detected in src-tauri."
 
   echo "Running cargo clippy..."
   cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml -- -D warnings
+
+  echo "Running Rust backend tests..."
+  bun run desktop:test:backend
 else
   echo "No src-tauri changes detected. Skipping Rust backend checks."
 fi
 
-if echo "$changed_files" | grep -q '^apps/website'; then
-  echo "Checking website..."
+# 3. Website
+if echo "$changed_files" | grep -qE '^apps/website/|^package\.json|^bun\.lock'; then
+  if echo "$changed_files" | grep -q '^apps/website/'; then
+    echo "Changes detected in apps/website. Checking website..."
+  else
+    echo "Root dependencies or monorepo configs changed. Checking website..."
+  fi
+
   bun run website:check
 else
   echo "No website changes detected. Skipping website checks."

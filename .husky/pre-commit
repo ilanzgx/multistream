@@ -1,7 +1,10 @@
 #!/bin/sh
 set -e
-echo "Checking i18n key consistency..."
-bun run check:i18n
+
+if git diff --cached --name-only | grep -q '^apps/desktop/src/i18n/'; then
+  echo "Checking i18n key consistency..."
+  bun run check:i18n
+fi
 
 echo "Running staged linters and formatters..."
-bunx lint-staged
+bun run lint:staged
