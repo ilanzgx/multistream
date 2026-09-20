@@ -23,6 +23,8 @@
     "website:dev": "cd apps/website && bun run dev",
     "website:build": "cd apps/website && bun run build",
     "website:check": "cd apps/website && bun run check",
+    "extension:check": "bun run scripts/pack-extension.ts --check",
+    "extension:pack": "bun run scripts/pack-extension.ts",
     "prepare": "husky",
     "lint": "oxlint && eslint .",
     "lint:staged": "lint-staged",

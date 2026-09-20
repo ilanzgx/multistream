@@ -12,6 +12,7 @@ export default tseslint.config(
       "dist/",
       "dist-ssr/",
       "apps/desktop/dist/",
+      "apps/extension/dist/",
       "apps/desktop/coverage/",
       "node_modules/",
       "apps/desktop/src-tauri/",
@@ -35,6 +36,7 @@ export default tseslint.config(
       globals: {
         ...globals.browser,
         ...globals.node,
+        ...globals.webextensions,
       },
       parserOptions: {
         parser: tseslint.parser,

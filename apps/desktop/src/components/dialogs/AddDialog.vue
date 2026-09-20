@@ -22,6 +22,7 @@ import { PLATFORMS } from "@/config/platforms";
 import { REFRESH_CONFIG } from "@/config/api";
 import { History, Heart, Flame, RotateCw, Loader2 } from "@lucide/vue";
 import { parseStreamUrl } from "@/lib/platformParser";
+import { createCustomStreamName } from "@/lib/parseUrlOptions";
 import { toast } from "@/composables/useToast";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -262,11 +263,6 @@ const handleIframeBlur = () => {
 };
 
 const isResolvingLive = ref(false);
-
-const createCustomStreamName = (name?: string): string => {
-  const trimmed = name?.trim();
-  return trimmed || `custom-${crypto.randomUUID().slice(0, 4)}`;
-};
 
 const handleAddStream = async () => {
   if (!canSubmit.value || isResolvingLive.value) return;

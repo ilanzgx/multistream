@@ -69,7 +69,7 @@ describe("parseUrlOptions util unit tests", () => {
     });
   });
 
-  it("should fallback channel name to 'Custom Stream' if missing 'n' property but 'u' is present", () => {
+  it("should fallback channel name to generated 'custom-xxxx' if missing 'n' property but 'u' is present", () => {
     // Arrange
     const customPayload = [{ u: "https://my.iframe.url" }];
     const base64Param = btoa(JSON.stringify(customPayload));
@@ -78,11 +78,9 @@ describe("parseUrlOptions util unit tests", () => {
     const result = sut(`?c=${encodeURIComponent(base64Param)}`);
 
     // Assert
-    expect(result?.[0]).toEqual({
-      channel: "Custom Stream", // fallback behavior
-      platform: "custom",
-      iframeUrl: "https://my.iframe.url",
-    });
+    expect(result?.[0]?.platform).toBe("custom");
+    expect(result?.[0]?.iframeUrl).toBe("https://my.iframe.url");
+    expect(result?.[0]?.channel).toMatch(/^custom-[a-f0-9]{4}$/);
   });
 
   it("should ignore custom stream objects that are missing the 'u' (URL) property", () => {
@@ -112,11 +110,9 @@ describe("parseUrlOptions util unit tests", () => {
     // Assert
     expect(result?.length).toBe(2); // 1 regular + 1 custom
     expect(result?.[0]).toEqual({ channel: "coreano", platform: "twitch" });
-    expect(result?.[1]).toEqual({
-      channel: "Custom Stream",
-      platform: "custom",
-      iframeUrl: "https://custom.com",
-    });
+    expect(result?.[1]?.platform).toBe("custom");
+    expect(result?.[1]?.iframeUrl).toBe("https://custom.com");
+    expect(result?.[1]?.channel).toMatch(/^custom-[a-f0-9]{4}$/);
   });
 
   it("should throw an error if the base64 string is completely invalid", () => {

@@ -20,10 +20,13 @@ export function useDeepLink() {
       try {
         const url = new URL(link);
 
-        if (url.protocol === "multistream:" && url.host === "share") {
+        if (url.protocol === "multistream:" && (url.host === "share" || url.host === "add")) {
           const parsedStreams = parseUrlOptions(url.search);
           if (parsedStreams && parsedStreams.length > 0) {
-            clearStreams();
+            const isAppend = url.host === "add" || url.searchParams.get("mode") === "append";
+            if (!isAppend) {
+              clearStreams();
+            }
             const hasYoutube = parsedStreams.some((s) => s.platform === "youtube");
             if (hasYoutube) {
               toast.info(i18n.global.t("toasts.youtube.detecting"), {
@@ -31,6 +34,7 @@ export function useDeepLink() {
                 duration: 8000,
               });
             }
+            let addedCount = 0;
             try {
               for (const s of parsedStreams) {
                 const resolved = await resolveStream(s, getStatus);
@@ -42,6 +46,7 @@ export function useDeepLink() {
                     resolved.displayName,
                     resolved.handle
                   );
+                  addedCount++;
                 } else if (s.platform === "youtube") {
                   toast.error(i18n.global.t("toasts.youtube.offline"));
                 }
@@ -51,7 +56,9 @@ export function useDeepLink() {
                 toast.dismiss("yt-detecting");
               }
             }
-            toast.success(i18n.global.t("import.deepLinkSuccess"));
+            if (addedCount > 0) {
+              toast.success(i18n.global.t("import.deepLinkSuccess"));
+            }
           }
         }
 

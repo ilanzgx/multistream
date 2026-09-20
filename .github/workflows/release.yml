@@ -236,6 +236,7 @@ jobs:
           printf '| macOS (Intel) | [`Multistream-macos-x64.dmg`](%s/Multistream-macos-x64.dmg) |\n' "$BASE" >> changelog.md
           printf '| Linux (AppImage) | [`Multistream-linux-x64.AppImage`](%s/Multistream-linux-x64.AppImage) |\n' "$BASE" >> changelog.md
           printf '| Linux (Debian) | [`Multistream-linux-x64.deb`](%s/Multistream-linux-x64.deb) |\n' "$BASE" >> changelog.md
+          printf '| Browser Extension | [`multistream-extension.zip`](%s/multistream-extension.zip) |\n' "$BASE" >> changelog.md
 
           printf '\n### macOS (Homebrew)\n\n' >> changelog.md
           printf '```sh\n' >> changelog.md
@@ -310,6 +311,11 @@ jobs:
           console.log("Generated latest.json:");
           console.log(fs.readFileSync("latest.json", "utf8"));
           NODE
+
+      - name: Pack Browser Extension
+        run: |
+          mkdir -p release-files
+          (cd apps/extension && zip -r ../../release-files/multistream-extension.zip manifest.json background.js icons README.md)
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

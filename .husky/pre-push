@@ -45,3 +45,11 @@ if echo "$changed_files" | grep -qE '^apps/website/|^package\.json|^bun\.lock'; 
 else
   echo "No website changes detected. Skipping website checks."
 fi
+
+# 4. Browser Extension
+if echo "$changed_files" | grep -qE '^apps/extension/|^scripts/pack-extension\.ts'; then
+  echo "Changes detected in browser extension. Verifying syntax..."
+  bun run extension:check
+else
+  echo "No browser extension changes detected. Skipping extension checks."
+fi

@@ -8,7 +8,6 @@ import {
   getNestedValue,
   setNestedValue,
   deleteNestedValue,
-  sortObjectKeys,
   flattenKeys,
   parseCliArgs,
 } from "../apps/desktop/src/i18n/utils";
