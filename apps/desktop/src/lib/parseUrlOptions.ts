@@ -7,6 +7,11 @@ export interface ParsedStream {
   iframeUrl?: string;
 }
 
+export const createCustomStreamName = (name?: string): string => {
+  const trimmed = name?.trim();
+  return trimmed || `custom-${crypto.randomUUID().slice(0, 4)}`;
+};
+
 export function parseUrlOptions(queryString: string): ParsedStream[] | null {
   const urlParams = new URLSearchParams(queryString);
   const streamsParam = urlParams.get("streams");
@@ -62,7 +67,7 @@ export function parseUrlOptions(queryString: string): ParsedStream[] | null {
       }
 
       results.push({
-        channel: s.n && typeof s.n === "string" ? s.n : "Custom Stream",
+        channel: createCustomStreamName(typeof s.n === "string" ? s.n : undefined),
         platform: "custom",
         iframeUrl: s.u,
       });
