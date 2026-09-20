@@ -88,6 +88,25 @@ describe("useDeepLink", () => {
     expect(toast.success).toHaveBeenCalledWith("import.deepLinkSuccess");
   });
 
+  it("accumulates stream without calling clearStreams when host is add", async () => {
+    // Arrange
+    let urlHandler: (urls: string[]) => void = () => {};
+    vi.mocked(onOpenUrl).mockImplementation(async (handler) => {
+      urlHandler = handler;
+      return mockUnlisten;
+    });
+
+    useDeepLink();
+
+    // Act
+    await urlHandler(["multistream://add?streams=twitch:tarik"]);
+
+    // Assert
+    expect(mockClearStreams).not.toHaveBeenCalled();
+    expect(mockAddStream).toHaveBeenCalledWith("tarik", "twitch", undefined, undefined, undefined);
+    expect(toast.success).toHaveBeenCalledWith("import.deepLinkSuccess");
+  });
+
   it("handles initial urls from getCurrent and translates toast", async () => {
     vi.mocked(getCurrent).mockResolvedValue(["multistream://share?streams=youtube:qGYemvUYAac"]);
 
@@ -206,6 +225,6 @@ describe("useDeepLink", () => {
     expect(mockClearStreams).toHaveBeenCalled();
     expect(mockAddStream).not.toHaveBeenCalled();
     expect(toast.error).toHaveBeenCalledWith("toasts.youtube.offline");
-    expect(toast.success).toHaveBeenCalledWith("import.deepLinkSuccess");
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });
