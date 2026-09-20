@@ -7,7 +7,7 @@ Supported platforms: Twitch, Kick, YouTube, and HTML5 video iframes on arbitrary
 ## How stream detection works
 
 - Twitch and Kick: pulls the streamer's handle from the current channel page and ignores static account or settings pages.
-- YouTube: grabs the active stream's 11-character video ID from live broadcasts, `/live` URLs, and channel streams. Non-live pages and standard uploads are ignored.
+- YouTube: extracts the 11-character video ID from video URLs (watch?v=..., youtu.be/..., /live/...) or active playing streams on channel pages. Non-video pages like home and subscription feeds are ignored.
 - Custom players: inspects the page for genuine video iframes based on dimensions (at least 300x160), player aspect ratios, and media permissions. You can also right-click directly inside an embedded player frame.
 
 ## Installation

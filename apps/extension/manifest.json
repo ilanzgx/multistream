@@ -14,6 +14,7 @@
     }
   },
   "background": {
+    "scripts": ["background.js"],
     "service_worker": "background.js"
   },
   "icons": {
@@ -25,7 +26,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "extension@multistream.app",
-      "strict_min_version": "109.0"
+      "strict_min_version": "121.0"
     }
   }
 }
