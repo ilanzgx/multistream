@@ -11,5 +11,5 @@
       "@/*": ["../apps/desktop/src/*"]
     }
   },
-  "include": ["./i18n.ts", "./sync-version.ts"]
+  "include": ["./*.ts"]
 }

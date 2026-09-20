@@ -30,6 +30,11 @@ jobs:
       - name: Lint Check
         run: bun run lint
 
+      - name: Extension Syntax & Pack Check
+        run: |
+          bun run extension:check
+          bun run extension:pack
+
       - name: Type Check
         working-directory: ./apps/desktop
         run: bun run typecheck

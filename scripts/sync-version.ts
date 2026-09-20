@@ -43,4 +43,12 @@ let cargo = fs.readFileSync(cargoPath, "utf8");
 cargo = cargo.replace(/^version = ".*"$/m, `version = "${version}"`);
 fs.writeFileSync(cargoPath, cargo);
 
+// Extension manifest.json
+const extensionManifestPath = path.join(__dirname, "../apps/extension/manifest.json");
+if (fs.existsSync(extensionManifestPath)) {
+  const extensionManifest = JSON.parse(fs.readFileSync(extensionManifestPath, "utf8"));
+  extensionManifest.version = version;
+  fs.writeFileSync(extensionManifestPath, JSON.stringify(extensionManifest, null, 2) + "\n");
+}
+
 console.log(`Version synced to ${version}`);
