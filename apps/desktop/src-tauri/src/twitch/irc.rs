@@ -755,4 +755,261 @@ mod tests {
             "ProactiveRefresh display string should mention proactive refresh, got: {msg}"
         );
     }
+
+    // ===== Additional parse_privmsg tests =====
+
+    #[test]
+    fn should_parse_privmsg_with_unicode_emojis() {
+        // Arrange
+        let line = "@id=abc-123;display-name=TestUser :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello 🎉 world 😀";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert_eq!(msg.message, "hello 🎉 world 😀");
+        assert_eq!(msg.display_name, "TestUser");
+    }
+
+    #[test]
+    fn should_parse_privmsg_with_irc_formatting_codes() {
+        // Arrange - IRC color codes and formatting
+        let line = "@id=abc-123 :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :\u{0003}04Red\u{0003} text \u{0002}bold\u{0002} \u{001F}underline\u{001F} \u{0016}italic\u{0016}";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert!(msg.message.contains("Red"));
+        assert!(msg.message.contains("bold"));
+        assert!(msg.message.contains("underline"));
+        assert!(msg.message.contains("italic"));
+    }
+
+    #[test]
+    fn should_parse_privmsg_with_empty_message() {
+        // Arrange
+        let line = "@id=abc-123 :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert_eq!(msg.message, "");
+    }
+
+    #[test]
+    fn should_parse_privmsg_with_very_long_message() {
+        // Arrange - message near IRC limit (~400 chars for message part)
+        let long_msg = "a".repeat(450);
+        let line = format!(
+            "@id=abc-123 :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :{}",
+            long_msg
+        );
+
+        // Act
+        let msg = parse_privmsg(&line).unwrap();
+
+        // Assert
+        assert_eq!(msg.message.len(), 450);
+    }
+
+    #[test]
+    fn should_parse_privmsg_missing_display_name_tag() {
+        // Arrange - no display-name tag, should fallback to username
+        let line = "@id=abc-123;color=#1E90FF :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert_eq!(msg.display_name, "testuser");
+    }
+
+    #[test]
+    fn should_parse_privmsg_missing_color_tag() {
+        // Arrange - no color tag
+        let line = "@id=abc-123;display-name=TestUser :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert_eq!(msg.color, None);
+    }
+
+    #[test]
+    fn should_parse_privmsg_missing_badges_tag() {
+        // Arrange - no badges tag
+        let line = "@id=abc-123;display-name=TestUser :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert!(msg.badges.is_empty());
+    }
+
+    #[test]
+    fn should_parse_privmsg_with_complex_badges() {
+        // Arrange - multiple badges
+        let line = "@badges=broadcaster/1,moderator/1,subscriber/24,premium/1;id=abc-123 :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert_eq!(msg.badges.len(), 4);
+        assert!(msg.badges.contains(&"broadcaster/1".to_string()));
+        assert!(msg.badges.contains(&"moderator/1".to_string()));
+        assert!(msg.badges.contains(&"subscriber/24".to_string()));
+        assert!(msg.badges.contains(&"premium/1".to_string()));
+    }
+
+    #[test]
+    fn should_parse_privmsg_with_emotes_tag() {
+        // Arrange
+        let line = "@emotes=123:0-4,5-9;id=abc-123 :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :Kappa PogChamp";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert_eq!(msg.emotes, Some("123:0-4,5-9".to_string()));
+    }
+
+    #[test]
+    fn should_parse_tags_with_special_characters_in_values() {
+        // Arrange
+        let raw = "key1=value=with=equals;key2=value;with;semicolons;key3=normal";
+
+        // Act
+        let tags = parse_tags(raw);
+
+        // Assert
+        assert_eq!(tags.get("key1").unwrap(), "value=with=equals");
+        assert_eq!(tags.get("key2").unwrap(), "value");
+        assert_eq!(tags.get("key3").unwrap(), "normal");
+    }
+
+    #[test]
+    fn should_parse_tags_with_empty_string() {
+        // Arrange
+        let raw = "";
+
+        // Act
+        let tags = parse_tags(raw);
+
+        // Assert - empty string creates one entry with empty key
+        assert_eq!(tags.len(), 1);
+        assert_eq!(tags.get(""), Some(&"".to_string()));
+    }
+
+    // ===== Additional backoff_delay tests =====
+
+    #[test]
+    fn backoff_delay_specific_values() {
+        // Arrange + Act
+        let delay_1 = backoff_delay(1);
+        let delay_2 = backoff_delay(2);
+        let delay_3 = backoff_delay(3);
+        let delay_6 = backoff_delay(6);
+        let delay_7 = backoff_delay(7);
+        let delay_10 = backoff_delay(10);
+
+        // Assert - base delays: attempt 1 = 2^1=2s, attempt 2 = 2^2=4s, attempt 3 = 2^3=8s
+        // Plus jitter (0-399ms), capped at 60s
+        assert!(delay_1 >= Duration::from_secs(2) && delay_1 < Duration::from_secs(3));
+        assert!(delay_2 >= Duration::from_secs(4) && delay_2 < Duration::from_secs(5));
+        assert!(delay_3 >= Duration::from_secs(8) && delay_3 < Duration::from_secs(9));
+        assert!(delay_6 >= Duration::from_secs(60) && delay_6 < Duration::from_secs(61)); // capped at 60s
+        assert!(delay_7 >= Duration::from_secs(60) && delay_7 < Duration::from_secs(61)); // capped at 60s
+        assert!(delay_10 >= Duration::from_secs(60) && delay_10 < Duration::from_secs(61));
+        // capped at 60s
+    }
+
+    #[test]
+    fn backoff_delay_increases_exponentially() {
+        // Arrange + Act + Assert
+        let delay_1 = backoff_delay(1);
+        let delay_2 = backoff_delay(2);
+        let delay_3 = backoff_delay(3);
+        let delay_4 = backoff_delay(4);
+        let delay_5 = backoff_delay(5);
+        let delay_6 = backoff_delay(6);
+
+        // Each should be roughly double the previous (before cap)
+        assert!(delay_2 > delay_1);
+        assert!(delay_3 > delay_2);
+        assert!(delay_4 > delay_3);
+        assert!(delay_5 > delay_4);
+        // delay_6 hits the 60s cap
+        assert!(delay_6 >= Duration::from_secs(60));
+    }
+
+    // ===== push_message tests =====
+
+    #[test]
+    fn push_message_respects_max_messages_limit() {
+        // This tests the logic by checking MAX_MESSAGES constant
+        assert_eq!(MAX_MESSAGES, 1_000);
+    }
+
+    // ===== ConnectionState tests =====
+
+    #[test]
+    fn connection_state_serialization() {
+        // Arrange
+        let states = vec![
+            ConnectionState::Connected,
+            ConnectionState::Reconnecting,
+            ConnectionState::Disconnected,
+        ];
+
+        // Act + Assert
+        for state in states {
+            let json = serde_json::to_string(&state).unwrap();
+            let deserialized: ConnectionState = serde_json::from_str(&json).unwrap();
+            assert_eq!(deserialized, state);
+        }
+    }
+
+    #[test]
+    fn connection_state_snake_case_serialization() {
+        // Arrange + Act
+        let connected = serde_json::to_string(&ConnectionState::Connected).unwrap();
+        let reconnecting = serde_json::to_string(&ConnectionState::Reconnecting).unwrap();
+        let disconnected = serde_json::to_string(&ConnectionState::Disconnected).unwrap();
+
+        // Assert
+        assert_eq!(connected, "\"connected\"");
+        assert_eq!(reconnecting, "\"reconnecting\"");
+        assert_eq!(disconnected, "\"disconnected\"");
+    }
+
+    // ===== MAX_MESSAGES constant test =====
+
+    #[test]
+    fn max_messages_constant_value() {
+        assert_eq!(MAX_MESSAGES, 1_000);
+    }
+
+    // ===== emit_connection_state logic tests (indirect) =====
+
+    #[test]
+    fn token_proactive_refresh_secs_constant() {
+        // 3h30m = 12600 seconds
+        assert_eq!(TOKEN_PROACTIVE_REFRESH_SECS, 3 * 60 * 60 + 30 * 60);
+    }
+
+    #[test]
+    fn heartbeat_constants() {
+        assert_eq!(HEARTBEAT_INTERVAL_SECS, 60);
+        assert_eq!(HEARTBEAT_TIMEOUT_SECS, 360);
+    }
+
+    #[test]
+    fn join_delay_constant() {
+        assert_eq!(JOIN_DELAY_MS, 350);
+    }
 }

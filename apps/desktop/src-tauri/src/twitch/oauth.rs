@@ -251,4 +251,141 @@ mod tests {
         let empty = "";
         assert!(!should_continue_polling(empty));
     }
+
+    #[test]
+    fn should_detect_authorization_pending_edge_cases() {
+        // Arrange + Act + Assert
+        // Nested in error object
+        let nested = r#"{"error":"authorization_pending","message":"authorization pending"}"#;
+        assert!(should_continue_polling(nested));
+
+        // With additional fields
+        let with_fields = r#"{"status":400,"message":"authorization_pending","interval":5}"#;
+        assert!(should_continue_polling(with_fields));
+
+        // Slow down variant
+        let slow_down_space = r#"{"message":"slow down"}"#;
+        assert!(should_continue_polling(slow_down_space));
+
+        // Mixed case slow_down
+        let slow_down_mixed = r#"{"message":"Slow_Down"}"#;
+        assert!(should_continue_polling(slow_down_mixed));
+
+        // Invalid JSON should not panic
+        let invalid_json = "{not valid json}";
+        assert!(!should_continue_polling(invalid_json));
+
+        // Null body
+        let null_body = "null";
+        assert!(!should_continue_polling(null_body));
+
+        // Expired token error (should NOT continue polling)
+        let expired = r#"{"status":400,"message":"expired_token"}"#;
+        assert!(!should_continue_polling(expired));
+
+        // Access denied error (should NOT continue polling)
+        let denied = r#"{"status":400,"message":"access_denied"}"#;
+        assert!(!should_continue_polling(denied));
+    }
+
+    #[test]
+    fn device_flow_response_deserializes_correctly() {
+        // Arrange
+        let json = r#"{
+            "device_code": "test-device-code",
+            "expires_in": 600,
+            "interval": 5,
+            "user_code": "ABCD-EFGH",
+            "verification_uri": "https://id.twitch.tv/activate"
+        }"#;
+
+        // Act
+        let response: DeviceFlowResponse = serde_json::from_str(json).unwrap();
+
+        // Assert
+        assert_eq!(response.device_code, "test-device-code");
+        assert_eq!(response.expires_in, 600);
+        assert_eq!(response.interval, 5);
+        assert_eq!(response.user_code, "ABCD-EFGH");
+        assert_eq!(response.verification_uri, "https://id.twitch.tv/activate");
+    }
+
+    #[test]
+    fn token_response_deserializes_with_optional_refresh_token() {
+        // Arrange - with refresh_token
+        let json_with_refresh = r#"{
+            "access_token": "access-123",
+            "refresh_token": "refresh-456"
+        }"#;
+
+        // Act
+        let response: TokenResponse = serde_json::from_str(json_with_refresh).unwrap();
+
+        // Assert
+        assert_eq!(response.access_token, "access-123");
+        assert_eq!(response.refresh_token, Some("refresh-456".to_string()));
+
+        // Arrange - without refresh_token
+        let json_without_refresh = r#"{"access_token": "access-123"}"#;
+
+        // Act
+        let response: TokenResponse = serde_json::from_str(json_without_refresh).unwrap();
+
+        // Assert
+        assert_eq!(response.access_token, "access-123");
+        assert_eq!(response.refresh_token, None);
+    }
+
+    #[test]
+    fn validate_response_deserializes_correctly() {
+        // Arrange
+        let json = r#"{"login": "testuser", "user_id": "12345"}"#;
+
+        // Act
+        let response: ValidateResponse = serde_json::from_str(json).unwrap();
+
+        // Assert
+        assert_eq!(response.login, "testuser");
+        assert_eq!(response.user_id, "12345");
+    }
+
+    #[test]
+    fn twitch_auth_info_serialization_roundtrip() {
+        // Arrange
+        let auth = TwitchAuthInfo {
+            access_token: "access-token".to_string(),
+            refresh_token: "refresh-token".to_string(),
+            username: "testuser".to_string(),
+            user_id: "12345".to_string(),
+        };
+
+        // Act
+        let json = serde_json::to_string(&auth).unwrap();
+        let deserialized: TwitchAuthInfo = serde_json::from_str(&json).unwrap();
+
+        // Assert
+        assert_eq!(deserialized.access_token, auth.access_token);
+        assert_eq!(deserialized.refresh_token, auth.refresh_token);
+        assert_eq!(deserialized.username, auth.username);
+        assert_eq!(deserialized.user_id, auth.user_id);
+    }
+
+    #[test]
+    fn auth_file_path_contains_correct_components() {
+        // Act
+        let path = auth_file_path().unwrap();
+
+        // Assert
+        let path_str = path.to_string_lossy();
+        assert!(path_str.contains("multistream"));
+        assert!(path_str.contains("twitch_auth"));
+        assert!(path_str.ends_with(".json"));
+
+        // Debug builds should have _dev suffix
+        #[cfg(debug_assertions)]
+        assert!(path_str.contains("twitch_auth_dev"));
+
+        #[cfg(not(debug_assertions))]
+        assert!(!path_str.contains("twitch_auth_dev"));
+    }
 }
