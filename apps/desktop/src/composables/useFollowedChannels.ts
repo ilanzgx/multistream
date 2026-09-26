@@ -34,6 +34,7 @@ const _useFollowedChannels = () => {
   const platformFilter = ref<"all" | "twitch" | "kick" | "youtube">("all");
   const hasLoadedTwitchOnce = ref(false);
   const hasLoadedFavoritesOnce = ref(false);
+  const isManualRefreshing = ref(false);
 
   watch(isChecking, (val) => {
     if (!val) {
@@ -45,7 +46,7 @@ const _useFollowedChannels = () => {
     if (favorites.value.length === 0) return false;
     return favorites.value.some(
       (f) =>
-        (f.platform === "twitch" || f.platform === "kick" || f.platform === "youtube") &&
+        (f.platform === "twitch" || f.platform === "kick") &&
         statuses.value[`${f.platform}:${f.channel.toLowerCase()}`] === undefined
     );
   });
@@ -64,7 +65,7 @@ const _useFollowedChannels = () => {
     return false;
   });
 
-  const isLoading = computed(() => isFetchingTwitch.value || (isChecking?.value ?? false));
+  const isLoading = computed(() => isManualRefreshing.value || isFetchingTwitch.value);
   let pollInterval: ReturnType<typeof setInterval> | null = null;
 
   const kickChannels = computed<FollowedChannel[]>(() => {
@@ -249,31 +250,14 @@ const _useFollowedChannels = () => {
   };
 
   const refresh = async () => {
-    if (!isTauri() || isFetchingTwitch.value) return;
+    if (!isTauri() || isManualRefreshing.value) return;
 
-    if (twitchAuthenticated.value) {
-      isFetchingTwitch.value = true;
-    }
+    isManualRefreshing.value = true;
     debugErrors.value = [];
     try {
       const promises: Promise<any>[] = [checkAll()];
       if (twitchAuthenticated.value) {
-        promises.push(
-          invoke<FollowedChannel[]>("twitch_get_followed_streams")
-            .then((results) => {
-              if (results !== null) {
-                twitchChannels.value = results;
-              }
-            })
-            .catch((e) => {
-              console.error("Failed to fetch Twitch followed streams", e);
-              debugErrors.value.push(`Twitch: ${String(e)}`);
-            })
-            .finally(() => {
-              isFetchingTwitch.value = false;
-              hasLoadedTwitchOnce.value = true;
-            })
-        );
+        promises.push(fetchTwitchFollowed());
       } else {
         twitchChannels.value = [];
       }
@@ -281,6 +265,7 @@ const _useFollowedChannels = () => {
     } catch (e) {
       console.error("Failed to refresh followed channels", e);
     } finally {
+      isManualRefreshing.value = false;
       hasLoadedFavoritesOnce.value = true;
     }
   };
@@ -307,9 +292,9 @@ const _useFollowedChannels = () => {
   watch(twitchAuthenticated, (isAuth) => {
     if (isAuth) {
       hasLoadedTwitchOnce.value = false;
-    }
-    if (typeof document === "undefined" || document.visibilityState === "visible") {
-      refresh();
+      fetchTwitchFollowed();
+    } else {
+      twitchChannels.value = [];
     }
   });
 

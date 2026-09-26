@@ -50,8 +50,8 @@ describe("useFollowedChannels", () => {
     vi.clearAllMocks();
     vi.mocked(invoke).mockResolvedValue([]);
     mockIsTauri.mockReturnValue(true);
-    mockTwitchAuth.authenticated.value = false;
-    mockKickAuth.authenticated.value = false;
+    mockTwitchAuth.authenticated = ref(false);
+    mockKickAuth.authenticated = ref(false);
     mockLiveStatus.statuses.value = {};
     mockLiveStatus.isChecking.value = false;
     mockLiveStatus.checkAll = vi.fn().mockResolvedValue(undefined);
@@ -561,5 +561,67 @@ describe("useFollowedChannels", () => {
     expect(channels.value[2]?.displayName).toBe("CazéTV");
     expect(channels.value[2]?.title).toBe("Mesa Redonda Pós-Jogo");
     expect(channels.value[2]?.viewerCount).toBe(25000);
+  });
+
+  it("should not set isLoading to true during background polling when isChecking is active", async () => {
+    // Arrange
+    const { isLoading } = useFollowedChannels();
+    await nextTick();
+
+    // Act
+    mockLiveStatus.isChecking.value = true;
+    await nextTick();
+
+    // Assert
+    expect(isLoading.value).toBe(false);
+  });
+
+  it("should set isLoading to true during manual refresh and reset to false when complete", async () => {
+    // Arrange
+    let resolveCheck: () => void;
+    mockLiveStatus.checkAll = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCheck = resolve;
+        })
+    );
+    const { isLoading, refresh } = useFollowedChannels();
+    await nextTick();
+
+    // Act
+    const refreshPromise = refresh();
+    await nextTick();
+
+    // Assert
+    expect(isLoading.value).toBe(true);
+
+    // Act
+    resolveCheck!();
+    await refreshPromise;
+    await nextTick();
+
+    // Assert
+    expect(isLoading.value).toBe(false);
+  });
+
+  it("should not keep isInitialLoading true when YouTube favorite is still checking but Twitch/Kick favorites have resolved", async () => {
+    // Arrange
+    mockTwitchAuth.authenticated.value = false;
+    mockFavorites.favorites.value = [
+      { channel: "streamer_kick", platform: "kick", addedAt: Date.now() },
+      { channel: "cazetv", platform: "youtube", addedAt: Date.now() },
+    ];
+    mockLiveStatus.isChecking.value = true;
+    const { isInitialLoading } = useFollowedChannels();
+    expect(isInitialLoading.value).toBe(true);
+
+    // Act - Kick resolves while YouTube is still checking
+    mockLiveStatus.statuses.value = {
+      "kick:streamer_kick": { isLive: true, viewerCount: 150 } as any,
+    };
+    await nextTick();
+
+    // Assert - isInitialLoading must be false because Kick resolved even though YouTube is still scraping in the background
+    expect(isInitialLoading.value).toBe(false);
   });
 });
