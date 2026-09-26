@@ -624,22 +624,15 @@ const handleCopyUrl = async () => {
 
           <!-- info area skeleton -->
           <div :class="['flex items-center', isMiniaturized ? 'gap-2' : 'gap-3']">
-            <!-- avatar: real channel avatar or platform icon fallback -->
+            <!-- platform icon in info area -->
             <div
               :class="[
                 'rounded-full flex items-center justify-center shrink-0 bg-white/5 overflow-hidden',
                 isMiniaturized ? 'size-6' : 'size-12',
               ]"
             >
-              <img
-                v-if="effectiveAvatarUrl"
-                :src="effectiveAvatarUrl"
-                :alt="props.channel"
-                class="w-full h-full object-cover"
-              />
               <component
                 :is="platformConfig?.icon"
-                v-else
                 :size="isMiniaturized ? 14 : 26"
                 :style="{ color: platformConfig?.color }"
                 class="opacity-40"

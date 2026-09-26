@@ -14,11 +14,11 @@ YouTube does not provide a public, unauthenticated WebSocket or push API for rea
 3. **Timestamp-Based Offline Confirmation (10-Minute Window)**:
    - To eliminate UI flickering and prevent channels from dropping out during transient CDN glitches or stream end transitions, YouTube channels utilize a timestamp-based confirmation window (`offlineSinceMs >= 10 * 60 * 1000`). A channel requires 10 continuous minutes of offline readings before being confirmed offline and removed from the sidebar. Any live poll immediately resets the timer, and previous confirmed live state is defensively preserved via `previousStatuses.value[key]`.
 4. **Global Scraping Rate-Limiting & Concurrency Control**:
-   - To prevent HTTP 429 ("Too Many Requests") rate limits from YouTube's anti-scraping perimeter, all outgoing YouTube HTTP requests across all application components are gated through a process-wide global static semaphore (`Semaphore::new(2)`).
-5. **Global In-Memory 45-Second Multi-Key TTL Cache**:
-   - All live channel scrape results are cached for 45 seconds in an in-memory `Mutex<HashMap<String, (Instant, YouTubeLiveResponse)>>`. Caches are indexed across `@handle`, clean handle, display name, primary `videoId`, and all discovered sub-stream `videoId`s. Queries matching sub-streams dynamically clone and update `res.video_id` to preserve distinct stream IDs.
+   - To prevent HTTP 429 ("Too Many Requests") rate limits from YouTube's anti-scraping perimeter while enabling fast multi-channel checking, all outgoing YouTube HTTP requests across all application components are gated through a process-wide global static semaphore (`Semaphore::new(4)`).
+5. **Global In-Memory 45-Second Multi-Key TTL Cache & Offline Fallbacks**:
+   - All live channel scrape results are cached for 45 seconds in an in-memory `RwLock<HashMap<String, (Instant, YouTubeChannelStatus)>>`. Caches are indexed across `@handle`, clean handle, display name, primary `videoId`, and all discovered sub-stream `videoId`s. Queries matching sub-streams dynamically clone and update `res.video_id` to preserve distinct stream IDs. Furthermore, channels and video IDs that return 404 or offline are also cached with `is_live: false` for 45 seconds to prevent repeated slow scrape attempts.
 6. **Optimized Two-Tier Phase 2 Multiplexing**:
-   - Instead of blindly fetching both `/streams` and the Channel Home page simultaneously on every live check, Phase 2 queries `/@{handle}/streams` first with a 10s timeout. If active live broadcasts are found, the Home page request is skipped entirely (saving 50% bandwidth). The Home page is queried only if `/streams` returns 0 live broadcasts (defeating the 30-item upcoming pagination trap).
+   - Instead of blindly fetching both `/streams` and the Channel Home page simultaneously on every live check, Phase 2 queries `/@{handle}/streams` first with a 4s timeout (and 6s base client timeout). If active live broadcasts are found, the Home page request is skipped entirely (saving 50% bandwidth). The Home page is queried only if `/streams` returns 0 live broadcasts (defeating the 30-item upcoming pagination trap).
 
 ---
 

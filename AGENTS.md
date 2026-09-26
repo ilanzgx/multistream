@@ -2,18 +2,21 @@
 
 ## Overview
 
-Multistream is a native, cross-platform desktop application that enables power users to watch multiple live streams (Twitch, Kick, YouTube) simultaneously, featuring an integrated real-time chat interface.
+Multistream is a cross-platform desktop application that enables power users to watch multiple live streams (Twitch, Kick, YouTube) simultaneously, featuring an integrated real-time chat interface. The full operational map is [docs/architecture.md](docs/architecture.md).
+
+A primary, ongoing mission of the project is to eliminate the need for users to open a web browser to discover, verify, and import streams. Initially, adding broadcasts was a fragmented, manual process—users had to navigate to Twitch, Kick, and YouTube across multiple browser tabs, search for channels, verify who was online, and copy-paste URLs into the app. Since December 2025, Multistream has evolved to bring this entire workflow natively inside the desktop client: automated background status detection, multi-platform search, channel suggestions, and single-click extension deep linking, ensuring users never have to leave the app to discover and manage their live broadcasts.
 
 ### Core Objectives & Philosophy
 
 - **Privacy by Design:** 100% local processing. No middleman servers, no data collection, and no telemetry. Never introduce third-party tracking or cloud analytics.
 - **Direct Connections:** Streams and chat use direct connections (e.g., standard iframes, WebSocket) to official platforms.
 - **Lightweight & Performant:** Built with Tauri and Rust to maintain incredibly low memory usage and high performance compared to traditional Electron apps. Keep dependencies minimal.
+- **Zero-Browser Workflow:** Everything required to discover, verify, search, and watch live streams must be available directly within the desktop application, removing any need for manual browser tab hunting.
 - **Local AI Transcription:** Real-time translation and transcription must remain 100% local, offline, and free, powered by Whisper.cpp on the CPU. Do not integrate paid cloud AI APIs for this feature.
 
 ## Hard Rules
 
-- ALMOST NEVER write comments. We're senior engineers here, not learners.
+- AVOID unnecessary comments. Match the surrounding file's conventions: naming, comment density, module structure. Comments explain why, never restate what.
 - NEVER run the backend or frontend manually. The human is already doing this.
 - NEVER run standard 'cargo test' (it is extremely slow). ALWAYS test rust backend changes by running 'cargo check', and if you modify any business logic or important commands, run 'bun run desktop:test:backend'.
 - ALWAYS test frontend changes by running Playwright MCP.
@@ -35,13 +38,19 @@ This repository contains custom, specialized skills for AI Agents located in the
 - **[`multistream-critical-edge-case-analysis`](.agents/skills/critical-edge-case-analysis/SKILL.md)**: Rigorous, egoless methodology for auditing business logic, identifying hidden edge cases, questioning assumptions, remediating logic flaws, and authoring bulletproof unit tests (AAA pattern) across Multistream.
 - **[`multistream-code-structure-standards`](.agents/skills/code-structure-standards/SKILL.md)**: Rigorous, judgment-driven refactoring protocol for TypeScript, Vue, and Rust in Multistream. Applies Clean Code, DRY, and readability rules with objective triggers, explicit exceptions, and mandatory proof that behavior didn't change.
 
-## Tech Stack
+## Technology stack
 
-- **Frontend Framework:** [Vue 3](https://vuejs.org/)
-- **Desktop Framework:** [Tauri 2](https://v2.tauri.app/)
-- **Language:** TypeScript, Rust
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Tooling/Runtime:** Vite, Bun
+- **Desktop Framework:** Tauri 2 (Rust core, IPC bridge, capabilities ACL)
+- **Frontend App:** Vue 3 (Composition API, `<script setup>`), Vite, TypeScript
+- **Component Primitives & Icons:** Reka UI (headless), Lucide Icons, Tailwind CSS v4
+- **State & Reactivity:** VueUse (`createSharedComposable`, `useStorage`), LocalStorage
+- **Internationalization:** vue-i18n v11 (10 locales), custom CLI automation
+- **Backend Systems:** Rust (Tokio async runtime, Reqwest with rustls-tls, CPAL audio loopback)
+- **Native Sidecars:** Whisper.cpp (`whisper-cli`), Streamlink, FFmpeg
+- **Landing Website:** Astro 7 (SSG, zero-JS default), Tailwind CSS v4, Vercel
+- **Browser Extension:** Manifest V3 (Chromium Service Worker & Gecko background scripts)
+- **Testing & QA:** Vitest (AAA pattern), Playwright E2E, Cargo Nextest, Lighthouse CI
+- **Monorepo & Tooling:** Bun workspaces, Oxlint, ESLint, Prettier, Husky, Commitlint
 
 ## Development
 
@@ -173,10 +182,10 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
     - **Zero API Quotas / 100% Local Scraping:** YouTube provides no unauthenticated WebSocket or push feed without paid Google Cloud quotas. Statuses are resolved client-side via lightweight HTTP scraping using `reqwest` in Rust (`apps/desktop/src-tauri/src/youtube/`).
     - **Two-Phase Detection Pipeline:**
       - **Phase 1 (Mandatory Gatekeeper):** Queries `/@{handle}/live`. If the channel is offline, it exits immediately. Offline channels NEVER reach Phase 2, preventing past recorded broadcasts (VODs with millions of views) from leaking into the UI.
-      - **Phase 2 (Tiered Discovery):** If Phase 1 confirms the channel is live, queries `/@{handle}/streams` first with an expanded 10-second timeout. If active lives are found, it skips the Channel Home page entirely (saving 50% bandwidth). If 0 active streams are found, it falls back to the Channel Home page (`/@{handle}`) to check the "Live Now" ("Ao Vivo Agora") shelf and defeat the 30-item pagination trap. Combining and deduplicating by 11-char `videoId` solves this trap.
+      - **Phase 2 (Tiered Discovery):** If Phase 1 confirms the channel is live, queries `/@{handle}/streams` first with a 4-second timeout (and 6-second client timeout). If active lives are found, it skips the Channel Home page entirely (saving 50% bandwidth). If 0 active streams are found, it falls back to the Channel Home page (`/@{handle}`) to check the "Live Now" ("Ao Vivo Agora") shelf and defeat the 30-item pagination trap. Combining and deduplicating by 11-char `videoId` solves this trap.
       - **The 30-Item Pagination Trap:** Channels scheduling 30+ upcoming events (e.g. sports tournaments like CazéTV) push active broadcasts past index 30 on `/streams` (accessible only via client-side pagination). The Channel Home page always pins active live broadcasts to the prominent "Live Now" ("Ao Vivo Agora") shelf in the initial HTML.
-    - **Global Semaphore & Rate-Limiting (Anti-429):** All YouTube scraping requests are strictly throttled through a static global semaphore (`GLOBAL_SCRAPE_SEMAPHORE: OnceLock<Semaphore>` with `Semaphore::new(2)`). Never instantiate local semaphores for scraping endpoints.
-    - **Global In-Memory TTL Cache (45 Seconds):** Results are cached for 45s in `GLOBAL_CACHE` across multiple keys (`@handle`, clean handle, display name, primary `video_id`, and all sub-stream `video_id`s). Queries matching a sub-stream dynamically clone and update `res.video_id = Some(sub.video_id)` to preserve distinct stream IDs during multi-stream imports.
+    - **Global Semaphore & Rate-Limiting (Anti-429):** All YouTube scraping requests are strictly throttled through a static global semaphore (`GLOBAL_SCRAPE_SEMAPHORE: OnceLock<Semaphore>` with `Semaphore::new(4)`). Never instantiate local semaphores for scraping endpoints.
+    - **Global In-Memory TTL Cache (45 Seconds) & Offline Fallbacks:** Results are cached for 45s in `GLOBAL_CACHE` across multiple keys (`@handle`, clean handle, display name, primary `video_id`, and all sub-stream `video_id`s). Queries matching a sub-stream dynamically clone and update `res.video_id = Some(sub.video_id)` to preserve distinct stream IDs during multi-stream imports. Offline channels and video IDs are cached with `is_live: false` to eliminate redundant slow scrape requests.
     - **Skeleton Loader Zero-Request Avatar:** `BaseStream.vue` leverages `liveStatus.value?.avatarUrl` (scraped by Rust during channel status check) directly in the loading skeleton, avoiding redundant profile picture network requests.
     - **Channel Page Trailer Trap:** Never call `is_not_currently_live` on channel pages. It inspects the channel's featured trailer clip and falsely marks actively broadcasting channels as offline.
     - **Concurrent Viewers vs. Lifetime Views:** Never use `videoDetails.viewCount` (cumulative lifetime views). Strictly extract real-time concurrent viewers via `videoViewCountRenderer.originalViewCount` or localized watching text regex.
@@ -229,3 +238,8 @@ _(See [`multistream-website`](.agents/skills/website/SKILL.md) for full guide)_
 - **NO OVERENGINEERING:** Always prioritize simplicity and maintainability over adding unnecessary complexity.
 - **AVOID TRIAL AND ERROR:** When lacking context or information about a framework, library, or API, do not rely on trial and error. Always use the **Context7 MCP** to query and fetch the most up-to-date documentation.
 - **PRAGMATISM & PUSHBACK:** If a user requests a change or asks you to implement feedback from automated tools (e.g. CodeRabbit, linters) that adds significant maintenance burden, overengineering, or rigid corporate patterns (like strict hashes for all dependencies) to this personal project, YOU MUST QUESTION IT FIRST. Explain the trade-offs (e.g. 'If we do this, it will be a nightmare to maintain because X') and explicitly ask the user if they still want to proceed, or suggest a simpler pragmatic alternative. Do not blindly implement complex overhead without validating if it makes sense for the project's scale.
+
+## Documentation Map
+
+- **[`docs/architecture.md`](docs/architecture.md)**: Operational map for monorepo systems, frontend, backend IPC, and QA gates.
+- **[`docs/youtube-live-architecture.md`](docs/youtube-live-architecture.md)**: Operational map for YouTube scraping, anti-429 semaphore, and pagination bypass.
