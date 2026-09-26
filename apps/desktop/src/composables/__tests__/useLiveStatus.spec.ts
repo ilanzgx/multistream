@@ -1859,5 +1859,38 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(checkedChannels).toContain("CazeTV");
       expect(checkedChannels).not.toContain("Zm5YJptWpa4");
     });
+
+    it("should skip polling offline non-favorite videoId from recents on subsequent checks", async () => {
+      // Arrange
+      mockFavorites.value = [{ channel: "CazeTV", platform: "youtube" }];
+      mockRecents.value = [{ channel: "dQw4w9WgXcQ", platform: "youtube" }];
+      let checkedChannels: string[] = [];
+
+      vi.mocked(invoke).mockImplementation(async (cmd: string, args: any) => {
+        if (cmd === "youtube_check_channels_status") {
+          checkedChannels = args?.channels || [];
+          return [
+            { channel: "CazeTV", is_live: true, video_id: "live_vid_123" },
+            { channel: "dQw4w9WgXcQ", is_live: false },
+          ];
+        }
+        return [];
+      });
+
+      // Act - First check checks both channels and discovers dQw4w9WgXcQ is offline
+      await sut.checkAll();
+      expect(checkedChannels).toContain("CazeTV");
+      expect(checkedChannels).toContain("dQw4w9WgXcQ");
+
+      // Reset tracked channels for second check
+      checkedChannels = [];
+
+      // Act - Second check should skip dQw4w9WgXcQ because it is already confirmed offline and not a favorite
+      await sut.checkAll();
+
+      // Assert
+      expect(checkedChannels).toContain("CazeTV");
+      expect(checkedChannels).not.toContain("dQw4w9WgXcQ");
+    });
   });
 });

@@ -704,6 +704,7 @@ const _useLiveStatus = () => {
   const isLoadingMoreSuggestions = ref(false);
   let intervalId: ReturnType<typeof setInterval> | null = null;
   let suggestionsIntervalId: ReturnType<typeof setInterval> | null = null;
+  let activeCheckPromise: Promise<void> | null = null;
 
   /**
    * @brief Fetches and updates the live status for all tracked streams.
@@ -723,259 +724,301 @@ const _useLiveStatus = () => {
    *
    * @returns Promise<void>
    */
-  const checkAll = async () => {
+  const checkAll = async (): Promise<void> => {
+    if (activeCheckPromise) {
+      return activeCheckPromise;
+    }
     // Se o app estiver oculto/minimizado e as notificações estiverem desligadas, não há porquê gastar CPU/Rede
-    if (isChecking.value || (visibility.value === "hidden" && !notificationsEnabled.value)) return;
+    if (visibility.value === "hidden" && !notificationsEnabled.value) return;
 
-    const twitchSet = new Set<string>();
-    const kickSet = new Set<string>();
-    const youtubeSet = new Set<string>();
+    activeCheckPromise = (async () => {
+      try {
+        const twitchSet = new Set<string>();
+        const kickSet = new Set<string>();
+        const youtubeSet = new Set<string>();
 
-    // Collect channels from both recents and favorites
-    const allChannels = [...recents.value, ...favorites.value];
+        // Collect channels from both recents and favorites
+        const allChannels = [...recents.value, ...favorites.value];
 
-    for (const entry of allChannels) {
-      if (entry.platform === "twitch") {
-        twitchSet.add(entry.channel);
-      } else if (entry.platform === "kick") {
-        kickSet.add(entry.channel);
-      } else if (entry.platform === "youtube") {
-        youtubeSet.add(entry.channel);
-      }
-    }
-
-    const twitchChannels = [...twitchSet];
-    const kickChannels = [...kickSet];
-    const rawYoutubeChannels = [...youtubeSet];
-    const youtubeChannels = rawYoutubeChannels.filter((ch) => {
-      const chLower = ch.toLowerCase();
-      const isVideoId = chLower.length === 11 && !chLower.startsWith("@");
-      if (!isVideoId) return true;
-
-      const matchingStatus = Object.values(statuses.value).find(
-        (s) =>
-          s.videoId?.toLowerCase() === chLower ||
-          s.liveStreams?.some((ls) => ls.videoId.toLowerCase() === chLower)
-      );
-      if (matchingStatus) {
-        const handle = matchingStatus.handle?.toLowerCase().replace(/^@+/, "");
-        const displayName = matchingStatus.displayName?.toLowerCase();
-        const hasParentInBatch = rawYoutubeChannels.some((other) => {
-          const otherClean = other.toLowerCase().replace(/^@+/, "");
-          return (handle && otherClean === handle) || (displayName && otherClean === displayName);
-        });
-        if (hasParentInBatch) {
-          return false;
+        for (const entry of allChannels) {
+          if (entry.platform === "twitch") {
+            twitchSet.add(entry.channel);
+          } else if (entry.platform === "kick") {
+            kickSet.add(entry.channel);
+          } else if (entry.platform === "youtube") {
+            youtubeSet.add(entry.channel);
+          }
         }
-      }
-      return true;
-    });
 
-    if (twitchChannels.length === 0 && kickChannels.length === 0 && youtubeChannels.length === 0) {
-      statuses.value = {};
-      return;
-    }
+        const twitchChannels = [...twitchSet];
+        const kickChannels = [...kickSet];
+        const rawYoutubeChannels = [...youtubeSet];
+        const youtubeChannels = rawYoutubeChannels.filter((ch) => {
+          const chLower = ch.toLowerCase();
+          const isVideoId = chLower.length === 11 && !chLower.startsWith("@");
+          if (!isVideoId) return true;
 
-    isChecking.value = true;
+          // If an 11-char videoId from recents is already confirmed offline and is NOT a favorite, skip re-polling
+          const isFav = favorites.value.some(
+            (f) => f.platform === "youtube" && f.channel.toLowerCase() === chLower
+          );
+          if (!isFav) {
+            const cached = statuses.value[`youtube:${chLower}`];
+            if (cached && !cached.isLive) {
+              return false;
+            }
+          }
 
-    try {
-      const [twitchResults, kickResults, youtubeResults] = await Promise.allSettled([
-        checkTwitchStreams(twitchChannels),
-        checkKickStreams(kickChannels),
-        checkYouTubeStreams(youtubeChannels),
-      ]);
+          const matchingStatus = Object.values(statuses.value).find(
+            (s) =>
+              s.videoId?.toLowerCase() === chLower ||
+              s.liveStreams?.some((ls) => ls.videoId.toLowerCase() === chLower)
+          );
+          if (matchingStatus) {
+            const handle = matchingStatus.handle?.toLowerCase().replace(/^@+/, "");
+            const displayName = matchingStatus.displayName?.toLowerCase();
+            const hasParentInBatch = rawYoutubeChannels.some((other) => {
+              const otherClean = other.toLowerCase().replace(/^@+/, "");
+              return (
+                (handle && otherClean === handle) || (displayName && otherClean === displayName)
+              );
+            });
+            if (hasParentInBatch) {
+              return false;
+            }
+          }
+          return true;
+        });
 
-      const twitchData = twitchResults.status === "fulfilled" ? twitchResults.value : null;
-      const kickData = kickResults.status === "fulfilled" ? kickResults.value : null;
-      const youtubeData = youtubeResults.status === "fulfilled" ? youtubeResults.value : null;
+        if (
+          twitchChannels.length === 0 &&
+          kickChannels.length === 0 &&
+          youtubeChannels.length === 0
+        ) {
+          statuses.value = {};
+          return;
+        }
 
-      // All APIs failed — skip update entirely to avoid poisoning previousStatuses
-      // with stale data that would trigger false "went live" notifications on recovery
-      if (twitchData === null && kickData === null && youtubeData === null) return;
+        isChecking.value = true;
 
-      const newStatuses: StatusMap = { ...statuses.value };
-      if (twitchData !== null) Object.assign(newStatuses, twitchData);
-      if (kickData !== null) Object.assign(newStatuses, kickData);
-      if (youtubeData !== null) Object.assign(newStatuses, youtubeData);
+        const youtubePromise = checkYouTubeStreams(youtubeChannels).then((ytData) => {
+          if (ytData !== null) {
+            statuses.value = { ...statuses.value, ...ytData };
+          }
+          return ytData;
+        });
 
-      // Only consider channels for which we received fresh, confirmed data this cycle.
-      // This prevents channels that were NOT re-fetched (due to partial API failure)
-      // from incorrectly driving offline→online notification transitions.
-      const freshKeys = new Set([
-        ...Object.keys(twitchData ?? {}),
-        ...Object.keys(kickData ?? {}),
-        ...Object.keys(youtubeData ?? {}),
-      ]);
+        const [twitchResults, kickResults] = await Promise.allSettled([
+          checkTwitchStreams(twitchChannels),
+          checkKickStreams(kickChannels),
+        ]);
 
-      // detect offline -> online transitions for favorites
-      if (isTauri() && notificationsEnabled.value) {
-        const t = i18n.global.t;
-        const isFirstCheck = !hasCompletedFirstCheck.value;
-        const newLiveChannels: { fav: any; status: any }[] = [];
+        const twitchData = twitchResults.status === "fulfilled" ? twitchResults.value : null;
+        const kickData = kickResults.status === "fulfilled" ? kickResults.value : null;
 
-        for (const fav of favorites.value) {
-          if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
+        // Commit fast platforms immediately so UI (Twitch/Kick) updates in ~500ms
+        if (twitchData !== null || kickData !== null) {
+          const intermediateStatuses: StatusMap = { ...statuses.value };
+          if (twitchData !== null) Object.assign(intermediateStatuses, twitchData);
+          if (kickData !== null) Object.assign(intermediateStatuses, kickData);
+          statuses.value = intermediateStatuses;
+        }
 
-          const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
+        const youtubeData = await youtubePromise;
 
-          // Skip channels without fresh data — their previousStatuses would be stale
-          if (!freshKeys.has(key)) continue;
+        // All APIs failed — skip update entirely to avoid poisoning previousStatuses
+        // with stale data that would trigger false "went live" notifications on recovery
+        if (twitchData === null && kickData === null && youtubeData === null) return;
 
-          const hadPreviousStatus = key in previousStatuses.value;
-          const wasLive = previousStatuses.value[key]?.isLive ?? false;
-          const isNowLive = newStatuses[key]?.isLive ?? false;
+        const newStatuses: StatusMap = { ...statuses.value };
+        if (twitchData !== null) Object.assign(newStatuses, twitchData);
+        if (kickData !== null) Object.assign(newStatuses, kickData);
+        if (youtubeData !== null) Object.assign(newStatuses, youtubeData);
 
-          // Only notify if:
-          // 1. It's the first check (welcome notification)
-          // 2. OR it was already being tracked and changed from offline to online
-          if (isFirstCheck) {
-            if (isNowLive) {
+        // Only consider channels for which we received fresh, confirmed data this cycle.
+        // This prevents channels that were NOT re-fetched (due to partial API failure)
+        // from incorrectly driving offline→online notification transitions.
+        const freshKeys = new Set([
+          ...Object.keys(twitchData ?? {}),
+          ...Object.keys(kickData ?? {}),
+          ...Object.keys(youtubeData ?? {}),
+        ]);
+
+        // detect offline -> online transitions for favorites
+        if (isTauri() && notificationsEnabled.value) {
+          const t = i18n.global.t;
+          const isFirstCheck = !hasCompletedFirstCheck.value;
+          const newLiveChannels: { fav: any; status: any }[] = [];
+
+          for (const fav of favorites.value) {
+            if (fav.platform !== "twitch" && fav.platform !== "kick") continue;
+
+            const key = `${fav.platform}:${fav.channel.toLowerCase()}`;
+
+            // Skip channels without fresh data — their previousStatuses would be stale
+            if (!freshKeys.has(key)) continue;
+
+            const hadPreviousStatus = key in previousStatuses.value;
+            const wasLive = previousStatuses.value[key]?.isLive ?? false;
+            const isNowLive = newStatuses[key]?.isLive ?? false;
+
+            // Only notify if:
+            // 1. It's the first check (welcome notification)
+            // 2. OR it was already being tracked and changed from offline to online
+            if (isFirstCheck) {
+              if (isNowLive) {
+                newLiveChannels.push({ fav, status: newStatuses[key] });
+              }
+            } else if (hadPreviousStatus && !wasLive && isNowLive) {
               newLiveChannels.push({ fav, status: newStatuses[key] });
             }
-          } else if (hadPreviousStatus && !wasLive && isNowLive) {
-            newLiveChannels.push({ fav, status: newStatuses[key] });
           }
-        }
 
-        if (newLiveChannels.length > 0) {
-          // If it's the first check, consolidate notifications into a welcome message
-          if (isFirstCheck) {
-            // Sort by viewer count (descending)
-            newLiveChannels.sort(
-              (a, b) => (b.status?.viewerCount || 0) - (a.status?.viewerCount || 0)
-            );
+          if (newLiveChannels.length > 0) {
+            // If it's the first check, consolidate notifications into a welcome message
+            if (isFirstCheck) {
+              // Sort by viewer count (descending)
+              newLiveChannels.sort(
+                (a, b) => (b.status?.viewerCount || 0) - (a.status?.viewerCount || 0)
+              );
 
-            if (newLiveChannels.length === 1) {
-              const { fav, status } = newLiveChannels[0]!;
-              const targetChannel =
-                fav.platform === "youtube" && status?.videoId ? status.videoId : fav.channel;
-              toast.info(t("notifications.welcome"), {
-                description: t("notifications.welcomeBodySingle", { channel: fav.channel }),
-                position: "bottom-left",
-                duration: 10000,
-                action: {
-                  label: t("notifications.actionWatch"),
-                  onClick: () => {
-                    const handle =
-                      fav.platform === "youtube" ? fav.channel.replace(/^@/, "") : undefined;
-                    if (handle) {
-                      addStream(targetChannel, fav.platform, undefined, fav.displayName, handle);
-                    } else if (fav.displayName) {
-                      addStream(targetChannel, fav.platform, undefined, fav.displayName);
-                    } else {
-                      addStream(targetChannel, fav.platform);
-                    }
+              if (newLiveChannels.length === 1) {
+                const { fav, status } = newLiveChannels[0]!;
+                const targetChannel =
+                  fav.platform === "youtube" && status?.videoId ? status.videoId : fav.channel;
+                toast.info(t("notifications.welcome"), {
+                  description: t("notifications.welcomeBodySingle", { channel: fav.channel }),
+                  position: "bottom-left",
+                  duration: 10000,
+                  action: {
+                    label: t("notifications.actionWatch"),
+                    onClick: () => {
+                      const handle =
+                        fav.platform === "youtube" ? fav.channel.replace(/^@/, "") : undefined;
+                      if (handle) {
+                        addStream(targetChannel, fav.platform, undefined, fav.displayName, handle);
+                      } else if (fav.displayName) {
+                        addStream(targetChannel, fav.platform, undefined, fav.displayName);
+                      } else {
+                        addStream(targetChannel, fav.platform);
+                      }
+                    },
                   },
-                },
-              });
+                });
+              } else {
+                const MAX_STREAMS = 12;
+                const topStreams = newLiveChannels.slice(0, MAX_STREAMS);
+                const names = topStreams
+                  .map((c) => c.fav.displayName || c.status?.displayName || c.fav.channel)
+                  .join(", ");
+                const remainingCount = newLiveChannels.length - MAX_STREAMS;
+
+                if (remainingCount > 0) {
+                  toast.info(t("notifications.welcome"), {
+                    description: t("notifications.welcomeBodyMore", {
+                      channels: names,
+                      count: remainingCount,
+                    }),
+                    position: "bottom-left",
+                    duration: 10000,
+                  });
+                } else {
+                  toast.info(t("notifications.welcome"), {
+                    description: t("notifications.welcomeBody", { channels: names }),
+                    position: "bottom-left",
+                    duration: 10000,
+                  });
+                }
+              }
             } else {
-              const MAX_STREAMS = 12;
-              const topStreams = newLiveChannels.slice(0, MAX_STREAMS);
-              const names = topStreams
-                .map((c) => c.fav.displayName || c.status?.displayName || c.fav.channel)
-                .join(", ");
-              const remainingCount = newLiveChannels.length - MAX_STREAMS;
+              // Individual notifications for small number of updates
+              for (const { fav, status } of newLiveChannels) {
+                const channelName = fav.displayName || status?.displayName || fav.channel;
+                const title = t("notifications.live", { channel: channelName });
+                let body: string;
 
-              if (remainingCount > 0) {
-                toast.info(t("notifications.welcome"), {
-                  description: t("notifications.welcomeBodyMore", {
-                    channels: names,
-                    count: remainingCount,
-                  }),
-                  position: "bottom-left",
-                  duration: 10000,
-                });
-              } else {
-                toast.info(t("notifications.welcome"), {
-                  description: t("notifications.welcomeBody", { channels: names }),
-                  position: "bottom-left",
-                  duration: 10000,
-                });
-              }
-            }
-          } else {
-            // Individual notifications for small number of updates
-            for (const { fav, status } of newLiveChannels) {
-              const channelName = fav.displayName || status?.displayName || fav.channel;
-              const title = t("notifications.live", { channel: channelName });
-              let body: string;
+                if (status?.title && status?.category) {
+                  body = t("notifications.liveBody", {
+                    title: status.title,
+                    category: status.category,
+                  });
+                } else if (status?.title) {
+                  body = t("notifications.liveBodyTitleOnly", {
+                    title: status.title,
+                  });
+                } else {
+                  body = t("notifications.liveBodyFallback", {
+                    channel: channelName,
+                    platform: fav.platform,
+                  });
+                }
 
-              if (status?.title && status?.category) {
-                body = t("notifications.liveBody", {
-                  title: status.title,
-                  category: status.category,
-                });
-              } else if (status?.title) {
-                body = t("notifications.liveBodyTitleOnly", {
-                  title: status.title,
-                });
-              } else {
-                body = t("notifications.liveBodyFallback", {
-                  channel: channelName,
+                invoke("send_notification", {
+                  title,
+                  body,
+                  avatarUrl: status?.avatarUrl || null,
+                  watchText: t("notifications.actionWatch"),
+                  ignoreText: t("notifications.actionIgnore"),
+                  channel: fav.channel,
                   platform: fav.platform,
-                });
+                }).catch(() => {});
               }
-
-              invoke("send_notification", {
-                title,
-                body,
-                avatarUrl: status?.avatarUrl || null,
-                watchText: t("notifications.actionWatch"),
-                ignoreText: t("notifications.actionIgnore"),
-                channel: fav.channel,
-                platform: fav.platform,
-              }).catch(() => {});
             }
           }
         }
-      }
 
-      // Selectively update previousStatuses with fresh data. For offline results,
-      // require the channel to already be offline in statuses.value (last displayed cycle)
-      // before confirming. This prevents a single flaky API read from resetting the
-      // "was live" flag and triggering spurious "went live" notifications on recovery.
-      // New channels (not yet tracked) bypass this check and are written immediately.
-      const nextPreviousStatuses = { ...previousStatuses.value };
-      const nextStatuses = { ...newStatuses };
+        // Selectively update previousStatuses with fresh data. For offline results,
+        // require the channel to already be offline in statuses.value (last displayed cycle)
+        // before confirming. This prevents a single flaky API read from resetting the
+        // "was live" flag and triggering spurious "went live" notifications on recovery.
+        // New channels (not yet tracked) bypass this check and are written immediately.
+        const nextPreviousStatuses = { ...previousStatuses.value };
+        const nextStatuses = { ...newStatuses };
 
-      for (const key of freshKeys) {
-        const newStatus = newStatuses[key];
-        if (newStatus === undefined) continue;
+        for (const key of freshKeys) {
+          const newStatus = newStatuses[key];
+          if (newStatus === undefined) continue;
 
-        if (newStatus.isLive) {
-          offlineCounters.delete(key);
-          nextPreviousStatuses[key] = newStatus;
-        } else {
-          const isNewChannel = !(key in previousStatuses.value);
-          if (isNewChannel) {
+          if (newStatus.isLive) {
+            offlineCounters.delete(key);
             nextPreviousStatuses[key] = newStatus;
           } else {
-            if (!offlineCounters.has(key)) {
-              offlineCounters.set(key, Date.now());
-            }
-            const offlineSinceMs = Date.now() - offlineCounters.get(key)!;
-            const confirmationMs = key.startsWith("youtube:") ? 10 * 60 * 1000 : 2 * 60 * 1000;
-
-            if (key.startsWith("youtube:")) {
-              const prevLiveStatus = previousStatuses.value[key];
-              if (prevLiveStatus?.isLive && offlineSinceMs < confirmationMs) {
-                nextStatuses[key] = prevLiveStatus;
-              }
-            }
-
-            if (offlineSinceMs >= confirmationMs) {
+            const isNewChannel = !(key in previousStatuses.value);
+            if (isNewChannel) {
               nextPreviousStatuses[key] = newStatus;
-              offlineCounters.delete(key);
+            } else {
+              if (!offlineCounters.has(key)) {
+                offlineCounters.set(key, Date.now());
+              }
+              const offlineSinceMs = Date.now() - offlineCounters.get(key)!;
+              const confirmationMs = key.startsWith("youtube:") ? 10 * 60 * 1000 : 2 * 60 * 1000;
+
+              if (key.startsWith("youtube:")) {
+                const prevLiveStatus = previousStatuses.value[key];
+                if (prevLiveStatus?.isLive && offlineSinceMs < confirmationMs) {
+                  nextStatuses[key] = prevLiveStatus;
+                }
+              }
+
+              if (offlineSinceMs >= confirmationMs) {
+                nextPreviousStatuses[key] = newStatus;
+                offlineCounters.delete(key);
+              }
             }
           }
         }
+        previousStatuses.value = nextPreviousStatuses;
+        statuses.value = nextStatuses;
+        hasCompletedFirstCheck.value = true;
+      } catch (err) {
+        console.error("Failed to check live statuses:", err);
+      } finally {
+        isChecking.value = false;
+        activeCheckPromise = null;
       }
-      previousStatuses.value = nextPreviousStatuses;
-      statuses.value = nextStatuses;
-      hasCompletedFirstCheck.value = true;
-    } finally {
-      isChecking.value = false;
-    }
+    })();
+
+    return activeCheckPromise;
   };
 
   /**
