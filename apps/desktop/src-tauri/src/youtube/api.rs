@@ -17,7 +17,7 @@ const STATUS_CACHE_TTL: Duration = Duration::from_secs(45);
 
 fn get_youtube_semaphore() -> &'static Arc<Semaphore> {
     static SEMAPHORE: OnceLock<Arc<Semaphore>> = OnceLock::new();
-    SEMAPHORE.get_or_init(|| Arc::new(Semaphore::new(2)))
+    SEMAPHORE.get_or_init(|| Arc::new(Semaphore::new(4)))
 }
 
 fn get_status_cache() -> &'static RwLock<HashMap<String, (Instant, YouTubeChannelStatus)>> {
@@ -106,7 +106,7 @@ pub fn get_youtube_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(|| {
         reqwest::Client::builder()
             .use_rustls_tls()
-            .timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(6))
             .pool_idle_timeout(Duration::from_secs(90))
             .tcp_keepalive(Duration::from_secs(30))
             .build()
@@ -862,7 +862,7 @@ async fn fetch_and_parse_channel_status(
         };
 
         let mut found_in_streams = false;
-        let streams_html = tokio::time::timeout(Duration::from_secs(10), fetch_page(streams_url))
+        let streams_html = tokio::time::timeout(Duration::from_secs(4), fetch_page(streams_url))
             .await
             .ok()
             .and_then(|r| r.ok())
@@ -891,7 +891,7 @@ async fn fetch_and_parse_channel_status(
         }
 
         if !found_in_streams {
-            let home_html = tokio::time::timeout(Duration::from_secs(10), fetch_page(home_url))
+            let home_html = tokio::time::timeout(Duration::from_secs(4), fetch_page(home_url))
                 .await
                 .ok()
                 .and_then(|r| r.ok())
@@ -1060,23 +1060,35 @@ pub async fn resolve_channel_live_status(
 
     if is_video_id {
         let watch_url = format!("https://www.youtube.com/watch?v={}", trimmed);
-        if let Some(status) =
-            fetch_and_parse_channel_status(client, &watch_url, channel_or_handle, true).await
-        {
-            if status.is_live && status.video_id.is_some() {
-                store_cached_status(&status);
-                return Some(status);
-            }
-        }
-        let clean = trimmed.trim_start_matches('@');
-        let handle_url = format!("https://www.youtube.com/@{}/live", clean);
         let status =
-            fetch_and_parse_channel_status(client, &handle_url, channel_or_handle, false).await;
+            fetch_and_parse_channel_status(client, &watch_url, channel_or_handle, true).await;
         if let Some(ref st) = status {
             store_cached_status(st);
+            return status;
+        } else {
+            let fallback = YouTubeChannelStatus {
+                channel: channel_or_handle.to_string(),
+                is_live: false,
+                video_id: Some(trimmed.to_string()),
+                handle: None,
+                display_name: None,
+                viewer_count: None,
+                title: None,
+                avatar_url: None,
+                live_streams: Vec::new(),
+            };
+            store_cached_status(&fallback);
+            return Some(fallback);
         }
-        return status;
     }
+
+    let clean = if let Some(stripped) = trimmed.strip_prefix("https://www.youtube.com/@") {
+        stripped.trim_end_matches("/live")
+    } else if let Some(stripped) = trimmed.strip_prefix("http://www.youtube.com/@") {
+        stripped.trim_end_matches("/live")
+    } else {
+        trimmed.trim_start_matches('@')
+    };
 
     let url = if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
         trimmed.to_string()
@@ -1085,15 +1097,42 @@ pub async fn resolve_channel_live_status(
     } else if trimmed.starts_with("UC") && trimmed.len() == 24 {
         format!("https://www.youtube.com/channel/{}/live", trimmed)
     } else {
-        let clean = trimmed.trim_start_matches('@');
         format!("https://www.youtube.com/@{}/live", clean)
     };
 
     let status = fetch_and_parse_channel_status(client, &url, channel_or_handle, false).await;
     if let Some(ref st) = status {
         store_cached_status(st);
+        status
+    } else {
+        let is_plain_channel = !clean.is_empty()
+            && !clean.starts_with("http")
+            && !clean.starts_with("channel/")
+            && !clean.starts_with("UC");
+        let fallback_handle = if is_plain_channel {
+            Some(format!("@{}", clean))
+        } else {
+            None
+        };
+        let fallback_display = if is_plain_channel {
+            Some(clean.to_string())
+        } else {
+            None
+        };
+        let fallback = YouTubeChannelStatus {
+            channel: channel_or_handle.to_string(),
+            is_live: false,
+            video_id: None,
+            handle: fallback_handle,
+            display_name: fallback_display,
+            viewer_count: None,
+            title: None,
+            avatar_url: None,
+            live_streams: Vec::new(),
+        };
+        store_cached_status(&fallback);
+        Some(fallback)
     }
-    status
 }
 
 pub async fn check_channels_status_batch(
@@ -1136,8 +1175,9 @@ pub async fn check_channels_status_batch(
         }));
     }
 
-    for task in tasks {
-        if let Ok(Some(status)) = task.await {
+    let task_results = futures_util::future::join_all(tasks).await;
+    for res in task_results {
+        if let Ok(Some(status)) = res {
             results.push(status);
         }
     }
