@@ -52,10 +52,11 @@
     "lint-staged": "^17.0.7",
     "oxlint": "^1.68.0",
     "prettier": "^3.8.3",
+    "prettier-plugin-astro": "^1.1.0",
     "typescript-eslint": "^8.60.1"
   },
   "lint-staged": {
-    "*.{js,ts,vue}": [
+    "*.{js,ts,vue,astro}": [
       "prettier --write",
       "oxlint --fix",
       "eslint --fix"

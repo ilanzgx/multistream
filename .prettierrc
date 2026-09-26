@@ -6,5 +6,14 @@
   "printWidth": 100,
   "useTabs": false,
   "arrowParens": "always",
-  "bracketSpacing": true
+  "bracketSpacing": true,
+  "plugins": ["prettier-plugin-astro"],
+  "overrides": [
+    {
+      "files": "*.astro",
+      "options": {
+        "parser": "astro"
+      }
+    }
+  ]
 }

@@ -1,131 +1,141 @@
 ---
-import Analytics from '@vercel/analytics/astro'
-import SpeedInsights from '@vercel/speed-insights/astro'
-import { SEO } from 'astro-seo'
-import '../styles/global.css';
+import Analytics from "@vercel/analytics/astro";
+import SpeedInsights from "@vercel/speed-insights/astro";
+import { SEO } from "astro-seo";
+import "../styles/global.css";
 
 interface Props {
-	title: string;
-	description: string;
-	lang?: string;
+  title: string;
+  description: string;
+  lang?: string;
 }
 
-const { title, description, lang = 'en' } = Astro.props;
+const { title, description, lang = "en" } = Astro.props;
 
 const currentUrl = new URL(Astro.url);
 const canonicalUrl = new URL(currentUrl.pathname, Astro.site || currentUrl.origin).toString();
-const ogImageUrl = new URL('/icon.png', currentUrl.origin).toString();
-const ogLocale = lang === 'pt-br' ? 'pt_BR' : 'en_US';
+const ogImageUrl = new URL("/icon.png", currentUrl.origin).toString();
+const ogLocale = lang === "pt-br" ? "pt_BR" : "en_US";
 
 const jsonLd = {
-	'@context': 'https://schema.org',
-	'@type': 'SoftwareApplication',
-	name: 'Multistream',
-	operatingSystem: 'Windows, macOS, Linux',
-	applicationCategory: 'MultimediaApplication',
-	description: description,
-	url: canonicalUrl,
-	image: ogImageUrl,
-	offers: {
-		'@type': 'Offer',
-		price: '0',
-		priceCurrency: 'USD',
-	},
-	author: {
-		'@type': 'Person',
-		name: 'Ilan Fonseca',
-		url: 'https://github.com/ilanzgx',
-	},
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Multistream",
+  operatingSystem: "Windows, macOS, Linux",
+  applicationCategory: "MultimediaApplication",
+  description: description,
+  url: canonicalUrl,
+  image: ogImageUrl,
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+  },
+  author: {
+    "@type": "Person",
+    name: "Ilan Fonseca",
+    url: "https://github.com/ilanzgx",
+  },
 };
 ---
 
 <!doctype html>
-<html lang={lang} class="scroll-smooth bg-[#F7F6F3] text-[#111111] dark:bg-[#0f1115] dark:text-[#EAEAEA]">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" type="image/png" href="/favicon.png" />
-		<link rel="shortcut icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<meta name="theme-color" content="#0f1115" />
+<html
+  lang={lang}
+  class="scroll-smooth bg-[#F7F6F3] text-[#111111] dark:bg-[#0f1115] dark:text-[#EAEAEA]"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#0f1115" />
 
-		<SEO
-			title={title}
-			description={description}
-			canonical={canonicalUrl}
-			openGraph={{
-				basic: {
-					title: title,
-					type: 'website',
-					image: ogImageUrl,
-				},
-				optional: {
-					description: description,
-					locale: ogLocale,
-					siteName: 'Multistream',
-				},
-			}}
-			twitter={{
-				card: 'summary_large_image',
-				title: title,
-				description: description,
-				image: ogImageUrl,
-			}}
-			extend={{
-				link: [
-					{ rel: 'alternate', hreflang: 'en', href: new URL('/en/', currentUrl.origin).toString() },
-					{ rel: 'alternate', hreflang: 'pt-br', href: new URL('/pt-br/', currentUrl.origin).toString() },
-					{ rel: 'alternate', hreflang: 'x-default', href: new URL('/en/', currentUrl.origin).toString() }
-				]
-			}}
-		/>
+    <SEO
+      title={title}
+      description={description}
+      canonical={canonicalUrl}
+      openGraph={{
+        basic: {
+          title: title,
+          type: "website",
+          image: ogImageUrl,
+        },
+        optional: {
+          description: description,
+          locale: ogLocale,
+          siteName: "Multistream",
+        },
+      }}
+      twitter={{
+        card: "summary_large_image",
+        title: title,
+        description: description,
+        image: ogImageUrl,
+      }}
+      extend={{
+        link: [
+          { rel: "alternate", hreflang: "en", href: new URL("/en/", currentUrl.origin).toString() },
+          {
+            rel: "alternate",
+            hreflang: "pt-br",
+            href: new URL("/pt-br/", currentUrl.origin).toString(),
+          },
+          {
+            rel: "alternate",
+            hreflang: "x-default",
+            href: new URL("/en/", currentUrl.origin).toString(),
+          },
+        ],
+      }}
+    />
 
-		<!-- Structured Data (JSON-LD) -->
-		<script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
-
-		<!-- Theme Init (Prevent FOUC) -->
-		<script is:inline>
-			(function() {
-				const theme = localStorage.getItem('theme');
-				if (theme === 'light') {
-					document.documentElement.classList.remove('dark');
-				} else {
-					document.documentElement.classList.add('dark');
-				}
-			})();
-		</script>
-	</head>
-	<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/20">
-		<slot />
-		<Analytics />
-		<SpeedInsights />
-	</body>
+    <!-- Structured Data (JSON-LD) -->
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <!-- Theme Init (Prevent FOUC) -->
+    <script is:inline>
+      (function () {
+        const theme = localStorage.getItem("theme");
+        if (theme === "light") {
+          document.documentElement.classList.remove("dark");
+        } else {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/20">
+    <slot />
+    <Analytics />
+    <SpeedInsights />
+  </body>
 </html>
 
 <style is:global>
-	/* Minimalist custom scrollbar */
-	::-webkit-scrollbar {
-		width: 8px;
-		height: 8px;
-	}
-	::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	::-webkit-scrollbar-thumb {
-		background: rgba(120, 119, 116, 0.2);
-		border-radius: 4px;
-	}
-	::-webkit-scrollbar-thumb:hover {
-		background: rgba(120, 119, 116, 0.4);
-	}
+  /* Minimalist custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(120, 119, 116, 0.2);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(120, 119, 116, 0.4);
+  }
 
-	/* A11y: Keyboard Focus Indicator */
-	*:focus {
-		outline: none;
-	}
-	*:focus-visible {
-		outline: 2px solid currentColor;
-		outline-offset: 2px;
-	}
+  /* A11y: Keyboard Focus Indicator */
+  *:focus {
+    outline: none;
+  }
+  *:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
 </style>

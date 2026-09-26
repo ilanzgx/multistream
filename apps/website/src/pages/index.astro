@@ -1,23 +1,26 @@
 ---
 // Client-side language detection
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html>
   <head>
-    <meta charset="utf-8">
+    <meta charset="utf-8" />
     <title>Multistream - Watch Multiple Streams Locally</title>
-    <meta name="description" content="A desktop app that connects directly to Twitch and Kick. No servers in the middle, no tracking. Just the streams.">
-    <link rel="canonical" href={new URL("/en/", Astro.site)}>
+    <meta
+      name="description"
+      content="A desktop app that connects directly to Twitch and Kick. No servers in the middle, no tracking. Just the streams."
+    />
+    <link rel="canonical" href={new URL("/en/", Astro.site)} />
     <script is:inline>
       const lang = navigator.language || navigator.userLanguage;
-      if (lang && lang.toLowerCase().startsWith('pt')) {
-        window.location.replace('/pt-br/');
+      if (lang && lang.toLowerCase().startsWith("pt")) {
+        window.location.replace("/pt-br/");
       } else {
-        window.location.replace('/en/');
+        window.location.replace("/en/");
       }
     </script>
     <meta http-equiv="refresh" content="0; url=/en/" />
   </head>
-  <body style="background-color: #0f1115;">
-  </body>
+  <body style="background-color: #0f1115;"></body>
 </html>
