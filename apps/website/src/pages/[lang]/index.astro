@@ -2,7 +2,6 @@
 import Layout from "../../layouts/Layout.astro";
 import Header from "../../components/Header.astro";
 import Hero from "../../components/Hero.astro";
-import Changelog from "../../components/Changelog.astro";
 import { useTranslations } from "../../i18n/utils";
 import type { ui } from "../../i18n/ui";
 
@@ -145,7 +144,6 @@ const t = useTranslations((lang || "en") as keyof typeof ui);
         </div>
       </div>
     </section>
-    <Changelog />
   </main>
   <footer class="w-full py-8 border-t border-[rgba(0,0,0,0.06)] bg-[#F7F6F3] text-center text-gray-600 dark:border-white/5 dark:bg-[#0c0d10] dark:text-gray-400 text-sm space-y-2">
     <p set:html={t("footer.credits")} />

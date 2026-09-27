@@ -86,16 +86,18 @@ const getUrl = (ext: string, incl: string = "") =>
         </a>
       </div>
 
-      <button
-        id="btn-all-downloads"
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded="false"
-        aria-controls="downloads-modal"
-        class="mt-4 cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white transition-colors"
-      >
-        {t("hero.all_downloads")}
-      </button>
+      <div class="w-full max-w-[420px] flex justify-center">
+        <button
+          id="btn-all-downloads"
+          type="button"
+          aria-haspopup="dialog"
+          aria-expanded="false"
+          aria-controls="downloads-modal"
+          class="mt-4 cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white transition-colors"
+        >
+          {t("hero.all_downloads")}
+        </button>
+      </div>
     </div>
 
     <!-- App Preview Frame -->
