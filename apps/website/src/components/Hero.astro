@@ -13,6 +13,32 @@ const getUrl = (ext: string, incl: string = "") =>
   )?.browser_download_url || "https://github.com/ilanzgx/multistream/releases/latest";
 ---
 
+<script is:inline>
+  (() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get("action");
+    const streams = params.get("streams");
+    const code = params.get("code");
+    const oauthState = params.get("state");
+    if (action === "share" && streams) {
+      document.documentElement.classList.add("has-deeplink");
+    } else if (code && oauthState && action !== "share") {
+      document.documentElement.classList.add("has-kick-callback");
+    }
+  })();
+</script>
+
+<style>
+  :global(html.has-deeplink) #hero-content,
+  :global(html.has-kick-callback) #hero-content {
+    display: none !important;
+  }
+  :global(html.has-deeplink) #deep-link-content,
+  :global(html.has-kick-callback) #kick-callback-content {
+    display: flex !important;
+  }
+</style>
+
 <section
   class="w-full pt-12 sm:pt-16 lg:pt-20 pb-12 sm:pb-16 flex flex-col items-center justify-center"
   aria-labelledby="hero-title"
@@ -407,6 +433,8 @@ const getUrl = (ext: string, incl: string = "") =>
         const cancelBtn = document.getElementById("deep-link-cancel-btn");
 
         if (hero && deeplink && btn) {
+          document.documentElement.classList.add("has-deeplink");
+          hero.style.display = "none";
           hero.classList.add("hidden");
           deeplink.classList.remove("hidden");
           const deepLinkUrl = `multistream://share?streams=${encodeURIComponent(sanitizedStreams)}`;
@@ -417,7 +445,9 @@ const getUrl = (ext: string, incl: string = "") =>
           }, 500);
 
           const resetView = () => {
+            document.documentElement.classList.remove("has-deeplink");
             deeplink.classList.add("hidden");
+            hero.style.display = "";
             hero.classList.remove("hidden");
             window.history.replaceState({}, document.title, window.location.pathname);
           };
@@ -439,6 +469,8 @@ const getUrl = (ext: string, incl: string = "") =>
       const kickCallback = document.getElementById("kick-callback-content");
 
       if (hero && kickCallback) {
+        document.documentElement.classList.add("has-kick-callback");
+        hero.style.display = "none";
         hero.classList.add("hidden");
         kickCallback.classList.remove("hidden");
         window.history.replaceState({}, document.title, window.location.pathname);
