@@ -1,8 +1,10 @@
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: "open-in-multistream",
-    title: "Add to Multistream",
-    contexts: ["page", "link", "frame"],
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: "open-in-multistream",
+      title: "Add to Multistream",
+      contexts: ["page", "link", "frame"],
+    });
   });
 });
 
@@ -10,7 +12,7 @@ chrome.runtime.onInstalled.addListener(() => {
 function extractFromUrlString(targetUrl) {
   try {
     const url = new URL(targetUrl);
-    const host = url.hostname.replace(/^www\./, "");
+    const host = url.hostname.replace(/^(www\.|m\.)/, "");
 
     // 1. Twitch
     if (host === "twitch.tv") {
@@ -63,7 +65,11 @@ function extractFromUrlString(targetUrl) {
       }
 
       const pathParts = url.pathname.split("/").filter(Boolean);
-      if ((pathParts[0] === "live" || pathParts[0] === "embed") && pathParts[1]) {
+      if (
+        (pathParts[0] === "live" || pathParts[0] === "embed" || pathParts[0] === "shorts") &&
+        pathParts[1] &&
+        /^[a-zA-Z0-9_-]{11}$/.test(pathParts[1])
+      ) {
         return { platform: "youtube", channel: pathParts[1] };
       }
     }
@@ -90,9 +96,98 @@ function extractFromUrlString(targetUrl) {
 
 // Inspect active tab DOM for active live broadcasts or player embeds
 function inspectPageDOM() {
+  // Shadow-DOM encapsulated subtle toast notification
+  function showToast(message, isSuccess) {
+    try {
+      const containerId = "multistream-extension-root";
+      const existing = document.getElementById(containerId);
+      if (existing) existing.remove();
+
+      const host = document.createElement("div");
+      host.id = containerId;
+      Object.assign(host.style, {
+        position: "fixed",
+        bottom: "24px",
+        right: "24px",
+        zIndex: "2147483647",
+        pointerEvents: "none",
+      });
+
+      const shadow = host.attachShadow ? host.attachShadow({ mode: "closed" }) : host;
+
+      const toast = document.createElement("div");
+      Object.assign(toast.style, {
+        all: "initial",
+        display: "flex",
+        alignItems: "center",
+        padding: "10px 16px",
+        backgroundColor: "#14161a",
+        color: "#e4e4e7",
+        border: "1px solid #2a2d33",
+        borderRadius: "10px",
+        boxShadow: "0 8px 24px -4px rgba(0, 0, 0, 0.45)",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        fontSize: "12px",
+        fontWeight: "500",
+        letterSpacing: "0.2px",
+        lineHeight: "1.4",
+        boxSizing: "border-box",
+        transition: "opacity 0.25s ease, transform 0.25s ease",
+        opacity: "0",
+        transform: "translateY(8px)",
+        pointerEvents: "none",
+      });
+
+      const dot = document.createElement("span");
+      Object.assign(dot.style, {
+        all: "initial",
+        display: "inline-block",
+        width: "6px",
+        height: "6px",
+        borderRadius: "50%",
+        backgroundColor: isSuccess ? "#34d399" : "#a1a1aa",
+        marginRight: "10px",
+        flexShrink: "0",
+      });
+
+      const textNode = document.createElement("span");
+      Object.assign(textNode.style, {
+        all: "initial",
+        color: "#e4e4e7",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+        fontSize: "12px",
+        fontWeight: "500",
+        letterSpacing: "0.2px",
+        lineHeight: "1.4",
+      });
+      textNode.textContent = message;
+
+      toast.appendChild(dot);
+      toast.appendChild(textNode);
+      shadow.appendChild(toast);
+
+      const mountTarget = document.body || document.documentElement;
+      if (!mountTarget) return;
+      mountTarget.appendChild(host);
+
+      requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+      });
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(8px)";
+        setTimeout(() => host.remove(), 250);
+      }, 2500);
+    } catch {
+      // Toast injection failure should not block stream extraction
+    }
+  }
+
   const href = window.location.href;
   const url = new URL(href);
-  const host = url.hostname.replace(/^www\./, "");
+  const host = url.hostname.replace(/^(www\.|m\.)/, "");
 
   // 1. Twitch
   if (host === "twitch.tv") {
@@ -111,10 +206,10 @@ function inspectPageDOM() {
     const channel = parts[0]?.toLowerCase();
 
     if (!channel || ignored.includes(channel)) {
+      showToast("Multistream: No active live stream or player found on this page.", false);
       return null;
     }
 
-    // Verify if stream has active broadcast indicators
     const hasLiveIndicator = !!(
       document.querySelector(".tw-channel-status-text-indicator") ||
       document.querySelector('[data-a-target="animated-channel-viewers-count"]') ||
@@ -124,20 +219,22 @@ function inspectPageDOM() {
     const videoEl = document.querySelector(".video-player__container video");
     const isPlaying = videoEl && !videoEl.paused && videoEl.readyState >= 2;
 
-    // Check if page indicates offline status
     const isOffline = !!(
       document.querySelector(".channel-status-info--offline") ||
       document.querySelector('[data-a-target="player-overlay-offline"]')
     );
 
     if (isOffline && !isPlaying) {
+      showToast("Multistream: No active live stream or player found on this page.", false);
       return null;
     }
 
     if (hasLiveIndicator || isPlaying || parts.length === 1) {
+      showToast("Multistream: Adding stream to grid...", true);
       return { platform: "twitch", channel };
     }
 
+    showToast("Multistream: No active live stream or player found on this page.", false);
     return null;
   }
 
@@ -155,6 +252,7 @@ function inspectPageDOM() {
     const channel = url.pathname.split("/").find(Boolean)?.toLowerCase();
 
     if (!channel || ignored.includes(channel)) {
+      showToast("Multistream: No active live stream or player found on this page.", false);
       return null;
     }
 
@@ -163,33 +261,40 @@ function inspectPageDOM() {
     const isOffline = !!document.querySelector(".stream-offline, [data-stream-offline]");
 
     if (isOffline && !isPlaying) {
+      showToast("Multistream: No active live stream or player found on this page.", false);
       return null;
     }
 
+    showToast("Multistream: Adding stream to grid...", true);
     return { platform: "kick", channel };
   }
 
-  // 3. YouTube (only active live broadcasts or video currently being watched)
+  // 3. YouTube (only active live broadcasts, shorts, or video currently watched)
   if (host === "youtube.com" || host === "youtu.be") {
-    // 3.1 Direct video parameter in URL
     const videoIdFromParam = url.searchParams.get("v");
     if (videoIdFromParam && /^[a-zA-Z0-9_-]{11}$/.test(videoIdFromParam)) {
+      showToast("Multistream: Adding stream to grid...", true);
       return { platform: "youtube", channel: videoIdFromParam };
     }
 
     if (host === "youtu.be") {
       const vid = url.pathname.slice(1);
       if (/^[a-zA-Z0-9_-]{11}$/.test(vid)) {
+        showToast("Multistream: Adding stream to grid...", true);
         return { platform: "youtube", channel: vid };
       }
     }
 
     const pathParts = url.pathname.split("/").filter(Boolean);
-    if ((pathParts[0] === "live" || pathParts[0] === "embed") && pathParts[1]) {
+    if (
+      (pathParts[0] === "live" || pathParts[0] === "embed" || pathParts[0] === "shorts") &&
+      pathParts[1] &&
+      /^[a-zA-Z0-9_-]{11}$/.test(pathParts[1])
+    ) {
+      showToast("Multistream: Adding stream to grid...", true);
       return { platform: "youtube", channel: pathParts[1] };
     }
 
-    // 3.2 Channel page: search for active live broadcast playing in DOM
     const metaVideoId = document.querySelector('meta[itemprop="videoId"]')?.getAttribute("content");
     if (metaVideoId && /^[a-zA-Z0-9_-]{11}$/.test(metaVideoId)) {
       const isLive = !!(
@@ -199,10 +304,12 @@ function inspectPageDOM() {
         document.querySelector("ytd-watch-flexy[is-live]")
       );
       if (isLive) {
+        showToast("Multistream: Adding stream to grid...", true);
         return { platform: "youtube", channel: metaVideoId };
       }
     }
 
+    showToast("Multistream: No active live stream or player found on this page.", false);
     return null;
   }
 
@@ -216,24 +323,12 @@ function inspectPageDOM() {
           return null;
         }
 
-        // Filter out ad networks, trackers, widgets, and auth frames
         const isAdOrTracker =
           /(googleads|doubleclick|googletag|recaptcha|hcaptcha|turnstile|stripe|paypal|facebook|twitter|instagram|tiktok\.com\/embed|disqus|zendesk|intercom|crisp|trustpilot|spotify|soundcloud|hubspot|onetrust|cookie|analytics|adservice)/i.test(
             src
           );
         if (isAdOrTracker) return null;
 
-        const rect = iframe.getBoundingClientRect();
-
-        // Require minimum video player dimensions (>= 300x160 px)
-        const isPlayerDimensions = rect.width >= 300 && rect.height >= 160;
-        if (!isPlayerDimensions) return null;
-
-        // Require video-like aspect ratio (landscape)
-        const aspectRatio = rect.width / (rect.height || 1);
-        if (aspectRatio < 1.1 || aspectRatio > 2.6) return null;
-
-        // Require at least one definitive video player attribute
         const hasFullscreen =
           iframe.hasAttribute("allowfullscreen") ||
           iframe.hasAttribute("webkitallowfullscreen") ||
@@ -251,9 +346,17 @@ function inspectPageDOM() {
             src
           );
 
+        // Cheap attribute filtering before forcing layout reflow
         if (!hasFullscreen && !hasMediaPermissions && !hasVideoKeywords) {
           return null;
         }
+
+        const rect = iframe.getBoundingClientRect();
+        const isPlayerDimensions = rect.width >= 300 && rect.height >= 160;
+        if (!isPlayerDimensions) return null;
+
+        const aspectRatio = rect.width / (rect.height || 1);
+        if (aspectRatio < 1.1 || aspectRatio > 2.6) return null;
 
         let score = rect.width * rect.height;
         if (hasFullscreen) score += 50000;
@@ -269,6 +372,7 @@ function inspectPageDOM() {
       const chosen = candidates[0];
       const titleAttr = chosen.iframe.getAttribute("title") || "";
       const streamName = (titleAttr || document.title || "").trim();
+      showToast("Multistream: Adding stream to grid...", true);
       return {
         platform: "custom",
         iframeUrl: chosen.src,
@@ -282,13 +386,16 @@ function inspectPageDOM() {
   for (const v of videos) {
     if (v.autoplay && v.loop && !v.controls) continue;
 
-    const rect = v.getBoundingClientRect();
-    const isPlayerSize = rect.width >= 320 && rect.height >= 180;
     const videoSrc = v.currentSrc || v.src || v.querySelector("source")?.src;
     const isRealVideo = v.controls || !v.paused || (videoSrc && videoSrc.includes(".m3u8"));
+    if (!isRealVideo || !videoSrc || !videoSrc.startsWith("http")) continue;
 
-    if (isPlayerSize && isRealVideo && videoSrc && videoSrc.startsWith("http")) {
+    const rect = v.getBoundingClientRect();
+    const isPlayerSize = rect.width >= 320 && rect.height >= 180;
+
+    if (isPlayerSize) {
       const streamName = (v.getAttribute("title") || document.title || "").trim();
+      showToast("Multistream: Adding stream to grid...", true);
       return {
         platform: "custom",
         iframeUrl: videoSrc,
@@ -297,69 +404,8 @@ function inspectPageDOM() {
     }
   }
 
+  showToast("Multistream: No active live stream or player found on this page.", false);
   return null;
-}
-
-// Inject subtle toast notification into page
-function showPageToast(message, isSuccess) {
-  const existing = document.getElementById("multistream-extension-toast");
-  if (existing) existing.remove();
-
-  const toast = document.createElement("div");
-  toast.id = "multistream-extension-toast";
-
-  const dot = document.createElement("span");
-  Object.assign(dot.style, {
-    display: "inline-block",
-    width: "6px",
-    height: "6px",
-    borderRadius: "50%",
-    backgroundColor: isSuccess ? "#34d399" : "#a1a1aa",
-    marginRight: "10px",
-    flexShrink: "0",
-  });
-
-  const textNode = document.createElement("span");
-  textNode.textContent = message;
-
-  toast.appendChild(dot);
-  toast.appendChild(textNode);
-
-  Object.assign(toast.style, {
-    position: "fixed",
-    bottom: "24px",
-    right: "24px",
-    zIndex: "2147483647",
-    display: "flex",
-    alignItems: "center",
-    padding: "10px 16px",
-    backgroundColor: "#14161a",
-    color: "#e4e4e7",
-    border: "1px solid #2a2d33",
-    borderRadius: "10px",
-    boxShadow: "0 8px 24px -4px rgba(0, 0, 0, 0.45)",
-    fontFamily: "system-ui, -apple-system, sans-serif",
-    fontSize: "12px",
-    fontWeight: "500",
-    letterSpacing: "0.2px",
-    transition: "opacity 0.25s ease, transform 0.25s ease",
-    opacity: "0",
-    transform: "translateY(8px)",
-    pointerEvents: "none",
-  });
-
-  document.body.appendChild(toast);
-
-  requestAnimationFrame(() => {
-    toast.style.opacity = "1";
-    toast.style.transform = "translateY(0)";
-  });
-
-  setTimeout(() => {
-    toast.style.opacity = "0";
-    toast.style.transform = "translateY(8px)";
-    setTimeout(() => toast.remove(), 250);
-  }, 2500);
 }
 
 function safeBase64Encode(str) {
@@ -390,6 +436,11 @@ function buildDeepLink(result) {
   return null;
 }
 
+function setOptimisticBadge(tabId) {
+  chrome.action.setBadgeText({ tabId, text: "..." }).catch(() => {});
+  chrome.action.setBadgeBackgroundColor({ tabId, color: "#2563eb" }).catch(() => {});
+}
+
 function updateBadgeFeedback(tabId, isSuccess) {
   const text = isSuccess ? "✓" : "✕";
   const color = isSuccess ? "#059669" : "#3f3f46";
@@ -404,6 +455,8 @@ function updateBadgeFeedback(tabId, isSuccess) {
 
 async function handleStreamExtraction(tab, info) {
   if (!tab?.id) return;
+
+  setOptimisticBadge(tab.id);
 
   // 1. Direct right-click inside video iframe
   if (info?.frameUrl) {
@@ -429,7 +482,7 @@ async function handleStreamExtraction(tab, info) {
     }
   }
 
-  // 3. Active tab DOM inspection
+  // 3. Active tab DOM inspection (single pass, atomic toast feedback)
   try {
     const results = await chrome.scripting.executeScript({
       target: { tabId: tab.id },
@@ -441,19 +494,9 @@ async function handleStreamExtraction(tab, info) {
 
     if (deepLink) {
       updateBadgeFeedback(tab.id, true);
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: showPageToast,
-        args: ["Multistream: Adding stream to grid...", true],
-      });
       chrome.tabs.update(tab.id, { url: deepLink });
     } else {
       updateBadgeFeedback(tab.id, false);
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: showPageToast,
-        args: ["Multistream: No active live stream or player found on this page.", false],
-      });
     }
   } catch (err) {
     console.warn("Multistream extension execution error:", err);
