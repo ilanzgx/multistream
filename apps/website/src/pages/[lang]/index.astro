@@ -20,7 +20,7 @@ const t = useTranslations((lang || "en") as keyof typeof ui);
   <main class="flex-1 flex flex-col items-center">
     <Hero />
     <section class="w-full py-16 bg-[#F7F6F3] dark:bg-[#0f1115]">
-      <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
           <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
             <svg
@@ -120,7 +120,7 @@ const t = useTranslations((lang || "en") as keyof typeof ui);
           <p class="text-gray-600 dark:text-gray-400" set:html={t("features.recording.desc")} />
         </div>
 
-        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5 sm:col-span-2 lg:col-span-1">
+        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
           <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
             <svg
               class="w-6 h-6 text-[#111111] dark:text-gray-300"
@@ -143,6 +143,32 @@ const t = useTranslations((lang || "en") as keyof typeof ui);
             {t("features.auth")}
           </h2>
           <p class="text-gray-600 dark:text-gray-400" set:html={t("features.auth.desc")} />
+        </div>
+
+        <div class="relative p-6 rounded-xl bg-white border border-[rgba(0,0,0,0.06)] dark:bg-[#14161a] dark:border-white/5">
+          <div class="w-12 h-12 rounded-lg bg-[rgba(0,0,0,0.03)] dark:bg-white/5 flex items-center justify-center mb-4">
+            <svg
+              class="w-6 h-6 text-[#111111] dark:text-gray-300"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+              <path d="M4 15h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3" />
+              <path d="M4 12V4a2 2 0 0 1 2-2h8.5L20 7.5V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-4" />
+            </svg>
+          </div>
+          <h2 class="text-xl font-bold text-[#111111] dark:text-white mb-2">
+            {t("features.extension")}
+          </h2>
+          <p class="text-gray-600 dark:text-gray-400" set:html={t("features.extension.desc")} />
         </div>
       </div>
     </section>

@@ -53,6 +53,7 @@ Most multistream setups are just browser tabs. Multistream is a desktop app buil
 - **Smart YouTube live detection**: Follow YouTube channels without needing Google accounts or Cloud API keys. If a channel runs multiple streams at once (such as tournament coverage or multi-camera broadcasts), Multistream detects every active stream and lists them individually with real-time viewer counts.
 - **Direct from the source**: Streams load from the official players, so your views count and quality is exactly the same as on the platform itself.
 - **Custom streams**: Add any stream using its embed URL to watch it alongside official platforms.
+- **Browser extension**: Add active Twitch, Kick, YouTube broadcasts, and web video players into your desktop grid with one click, without clearing existing streams.
 - **Lightweight**: Built with [Tauri](https://v2.tauri.app/) and [Rust](https://www.rust-lang.org/), keeping memory usage much lower than browser setups.
 - **Local stream recording**: Record streams directly from the source using [Streamlink](https://streamlink.github.io/). Recordings are processed natively without heavy sidecars, keeping the app extremely lightweight, and are automatically remuxed to MP4 when finished.
 - **Available in 10 languages**: English, Portuguese, Spanish, German, Russian, Chinese, French, Turkish, Hindi, and Indonesian. _(Note: Languages other than English and Portuguese were AI-translated. Native speakers are highly welcome to open a PR to improve them!)_
@@ -80,6 +81,7 @@ Logging into Twitch or Kick is optional. You can watch any stream without an acc
 | **macOS (Intel)**         | [DMG (.dmg)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-macos-x64.dmg)                                                                                                                             |
 | **macOS (Homebrew)**      | `brew install --cask ilanzgx/multistream/multistream`                                                                                                                                                                               |
 | **Linux (x64)**           | [AppImage (.AppImage)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.AppImage) · [Debian (.deb)](https://github.com/ilanzgx/multistream/releases/latest/download/Multistream-linux-x64.deb) |
+| **Browser Extension**     | [multistream-extension.zip](https://github.com/ilanzgx/multistream/releases/latest/download/multistream-extension.zip) (Chrome, Brave, Edge, Firefox) · [Guide](./apps/extension/README.md)                                        |
 
 You can also check previous versions and signatures on the [Releases page](https://github.com/ilanzgx/multistream/releases).
 
