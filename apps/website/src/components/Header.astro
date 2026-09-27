@@ -39,6 +39,7 @@ const otherLangHref = isChangelog ? `/${otherLang}/changelog/` : `/${otherLang}/
     <nav class="hidden md:flex items-center gap-5 lg:gap-6">
       <a
         href={`/${lang}/changelog/`}
+        data-umami-event="changelog-click"
         class="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:opacity-70 transition-opacity group"
       >
         <span>{t("nav.changelog")}</span>
@@ -51,6 +52,7 @@ const otherLangHref = isChangelog ? `/${otherLang}/changelog/` : `/${otherLang}/
         href="https://ko-fi.com/ilanfonseca"
         target="_blank"
         rel="noopener noreferrer"
+        data-umami-event="donate-click"
         class="text-sm font-semibold text-gray-800 dark:text-gray-200 hover:opacity-70 transition-opacity flex items-center gap-1.5"
       >
         <svg
@@ -74,6 +76,7 @@ const otherLangHref = isChangelog ? `/${otherLang}/changelog/` : `/${otherLang}/
         href="https://github.com/ilanzgx/multistream"
         target="_blank"
         rel="noopener noreferrer"
+        data-umami-event="github-star-click"
         class="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200 hover:opacity-70 transition-opacity group"
       >
         <svg viewBox="0 0 24 24" class="w-5 h-5 fill-current" aria-hidden="true">
@@ -226,6 +229,8 @@ const otherLangHref = isChangelog ? `/${otherLang}/changelog/` : `/${otherLang}/
     <nav class="flex flex-col gap-1">
       <a
         href={`/${lang}/changelog/`}
+        data-umami-event="changelog-click"
+        data-umami-event-source="mobile-menu"
         class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-white/5 transition-colors"
       >
         <span>{t("nav.changelog")}</span>
@@ -238,6 +243,8 @@ const otherLangHref = isChangelog ? `/${otherLang}/changelog/` : `/${otherLang}/
         href="https://ko-fi.com/ilanfonseca"
         target="_blank"
         rel="noopener noreferrer"
+        data-umami-event="donate-click"
+        data-umami-event-source="mobile-menu"
         class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-white/5 transition-colors"
       >
         <svg
@@ -261,6 +268,8 @@ const otherLangHref = isChangelog ? `/${otherLang}/changelog/` : `/${otherLang}/
         href="https://github.com/ilanzgx/multistream"
         target="_blank"
         rel="noopener noreferrer"
+        data-umami-event="github-star-click"
+        data-umami-event-source="mobile-menu"
         class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-800 dark:text-gray-200 hover:bg-[rgba(0,0,0,0.04)] dark:hover:bg-white/5 transition-colors"
       >
         <div class="flex items-center gap-2.5">

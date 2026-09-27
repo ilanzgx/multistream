@@ -105,6 +105,15 @@ const jsonLd = {
         }
       })();
     </script>
+    <!-- Umami Analytics (Only in Production) -->
+    {import.meta.env.PROD && (
+      <script
+        is:inline
+        defer
+        src="https://cloud.umami.is/script.js"
+        data-website-id="d0fd532e-457c-4fad-8f2a-16fb3f857ba7"
+      />
+    )}
   </head>
   <body class="min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/20">
     <slot />

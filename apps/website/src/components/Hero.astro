@@ -66,6 +66,8 @@ const getUrl = (ext: string, incl: string = "") =>
           id="btn-win"
           href={getUrl(".exe")}
           data-os="windows"
+          data-umami-event="download-windows"
+          data-umami-event-source="hero"
           class="w-full sm:col-span-2 py-3.5 px-6 bg-[#111111] text-[#FFFFFF] hover:bg-black dark:bg-[#EAEAEA] dark:text-[#111111] dark:hover:bg-white font-semibold rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-transparent flex items-center justify-center gap-2 shadow-sm text-sm sm:text-base"
         >
           <img
@@ -82,6 +84,8 @@ const getUrl = (ext: string, incl: string = "") =>
           id="btn-linux"
           href={getUrl(".deb")}
           data-os="linux"
+          data-umami-event="download-linux"
+          data-umami-event-source="hero"
           class="w-full sm:col-span-1 py-2.5 px-3 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20 text-xs sm:text-sm"
         >
           <img
@@ -98,6 +102,8 @@ const getUrl = (ext: string, incl: string = "") =>
           id="btn-mac"
           href={getUrl(".dmg", "arm64")}
           data-os="mac"
+          data-umami-event="download-mac"
+          data-umami-event-source="hero"
           class="w-full sm:col-span-1 py-2.5 px-3 bg-white dark:bg-[#14161a] text-[#111111] dark:text-[#EAEAEA] font-medium rounded-lg transition-transform hover:scale-[0.98] active:scale-95 border border-[rgba(0,0,0,0.08)] dark:border-white/10 flex items-center justify-center gap-2 shadow-sm hover:border-[rgba(0,0,0,0.15)] dark:hover:border-white/20 text-xs sm:text-sm"
         >
           <img
@@ -119,6 +125,7 @@ const getUrl = (ext: string, incl: string = "") =>
           aria-haspopup="dialog"
           aria-expanded="false"
           aria-controls="downloads-modal"
+          data-umami-event="open-all-downloads"
           class="mt-4 cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white transition-colors"
         >
           {t("hero.all_downloads")}
@@ -290,6 +297,8 @@ const getUrl = (ext: string, incl: string = "") =>
             <a
               id="modal-win-exe"
               href={getUrl(".exe")}
+              data-umami-event="download-windows-exe"
+              data-umami-event-source="modal"
               class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white"
             >
               {t("hero.modal_win_exe")}
@@ -297,6 +306,8 @@ const getUrl = (ext: string, incl: string = "") =>
             <a
               id="modal-win-msi"
               href={getUrl(".msi")}
+              data-umami-event="download-windows-msi"
+              data-umami-event-source="modal"
               class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white"
             >
               {t("hero.modal_win_msi")}
@@ -320,6 +331,8 @@ const getUrl = (ext: string, incl: string = "") =>
             <a
               id="modal-mac-arm"
               href={getUrl(".dmg", "arm64")}
+              data-umami-event="download-mac-arm"
+              data-umami-event-source="modal"
               class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white"
             >
               {t("hero.modal_mac_arm")}
@@ -327,6 +340,8 @@ const getUrl = (ext: string, incl: string = "") =>
             <a
               id="modal-mac-x64"
               href={getUrl(".dmg", "x64")}
+              data-umami-event="download-mac-x64"
+              data-umami-event-source="modal"
               class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white"
             >
               {t("hero.modal_mac_x64")}
@@ -350,6 +365,8 @@ const getUrl = (ext: string, incl: string = "") =>
             <a
               id="modal-linux-deb"
               href={getUrl(".deb")}
+              data-umami-event="download-linux-deb"
+              data-umami-event-source="modal"
               class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white"
             >
               {t("hero.modal_linux_deb")}
@@ -357,6 +374,8 @@ const getUrl = (ext: string, incl: string = "") =>
             <a
               id="modal-linux-appimage"
               href={getUrl(".appimage")}
+              data-umami-event="download-linux-appimage"
+              data-umami-event-source="modal"
               class="text-sm text-gray-600 dark:text-gray-400 hover:text-[#111111] dark:hover:text-white"
             >
               {t("hero.modal_linux_appimage")}
