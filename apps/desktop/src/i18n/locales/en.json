@@ -147,7 +147,8 @@
       "links": "Links",
       "starGithub": "Star on GitHub",
       "feedback": "Submit Feedback",
-      "website": "Official Website"
+      "website": "Official Website",
+      "extension": "Browser Extension"
     },
     "nativePlayer": {
       "title": "Built-in Player for Twitch (Experimental)",

@@ -147,7 +147,8 @@
       "links": "Bağlantılar",
       "starGithub": "GitHub'da Yıldız Ver",
       "feedback": "Geri Bildirim Gönder",
-      "website": "Resmi Web Sitesi"
+      "website": "Resmi Web Sitesi",
+      "extension": "Tarayıcı Uzantısı"
     },
     "nativePlayer": {
       "title": "Twitch İçin Dahili Oynatıcı (Deneysel)",

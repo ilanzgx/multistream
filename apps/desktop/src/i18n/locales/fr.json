@@ -147,7 +147,8 @@
       "links": "Liens",
       "starGithub": "Mettre une étoile sur GitHub",
       "feedback": "Envoyer des commentaires",
-      "website": "Site officiel"
+      "website": "Site officiel",
+      "extension": "Extension de Navigateur"
     },
     "nativePlayer": {
       "title": "Lecteur intégré pour Twitch (Expérimental)",

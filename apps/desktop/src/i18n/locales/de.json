@@ -147,7 +147,8 @@
       "links": "Links",
       "starGithub": "Stern auf GitHub vergeben",
       "feedback": "Feedback senden",
-      "website": "Offizielle Website"
+      "website": "Offizielle Website",
+      "extension": "Browser-Erweiterung"
     },
     "nativePlayer": {
       "title": "Integrierter Player für Twitch (Experimentell)",

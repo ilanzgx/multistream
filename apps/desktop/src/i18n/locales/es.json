@@ -147,7 +147,8 @@
       "links": "Enlaces",
       "starGithub": "Dar estrella en GitHub",
       "feedback": "Enviar comentarios",
-      "website": "Sitio Oficial"
+      "website": "Sitio Oficial",
+      "extension": "Extensión del Navegador"
     },
     "nativePlayer": {
       "title": "Reproductor Integrado para Twitch (Experimental)",

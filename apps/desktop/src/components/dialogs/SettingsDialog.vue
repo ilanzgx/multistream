@@ -1309,6 +1309,13 @@ watch(
                     <Globe class="size-3.5 text-gray-400" />
                     <span>{{ $t("settings.about.website") }}</span>
                   </button>
+                  <button
+                    class="inline-flex items-center gap-1.5 text-gray-300 hover:text-white hover:underline transition-colors cursor-pointer"
+                    @click="openExternalLink(APP_LINKS.github.extensionZip)"
+                  >
+                    <Download class="size-3.5 text-gray-400" />
+                    <span>{{ $t("settings.about.extension") }}</span>
+                  </button>
                 </div>
               </div>
             </div>

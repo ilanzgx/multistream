@@ -147,7 +147,8 @@
       "links": "链接",
       "starGithub": "在 GitHub 上点赞 Star",
       "feedback": "提交反馈",
-      "website": "官方网站"
+      "website": "官方网站",
+      "extension": "浏览器扩展"
     },
     "nativePlayer": {
       "title": "Twitch 内置播放器（实验性）",

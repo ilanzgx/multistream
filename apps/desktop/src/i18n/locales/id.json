@@ -147,7 +147,8 @@
       "links": "Tautan",
       "starGithub": "Beri Bintang di GitHub",
       "feedback": "Kirim Masukan",
-      "website": "Situs Web Resmi"
+      "website": "Situs Web Resmi",
+      "extension": "Ekstensi Peramban"
     },
     "nativePlayer": {
       "title": "Pemutar Bawaan untuk Twitch (Eksperimental)",
