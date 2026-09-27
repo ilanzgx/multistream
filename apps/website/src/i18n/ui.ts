@@ -12,7 +12,9 @@ export const ui = {
     "nav.toggle_theme": "Toggle theme",
     "hero.title": "Watch multiple streams locally.",
     "hero.subtitle":
-      "A desktop app that connects directly to Twitch and Kick. No servers in the middle, no tracking. Just the streams.",
+      "A desktop app that connects directly to Twitch, Kick, and YouTube. No servers in the middle, no tracking. Just the streams.",
+    "hero.preview_alt":
+      "Multistream desktop application interface with live streams and unified chat",
     "hero.download_win": "Download for Windows",
     "hero.download_linux": "Download for Linux",
     "hero.download_mac": "Download for Mac",
@@ -58,7 +60,9 @@ export const ui = {
     "nav.toggle_theme": "Alternar tema",
     "hero.title": "Assista várias streams localmente.",
     "hero.subtitle":
-      "Um app desktop que conecta direto na Twitch e na Kick. Sem servidores no meio, sem rastreamento. Apenas as streams.",
+      "Um app desktop que conecta direto na Twitch, Kick e YouTube. Sem servidores no meio, sem rastreamento. Apenas as streams.",
+    "hero.preview_alt":
+      "Interface do aplicativo desktop Multistream com transmissões ao vivo e chat unificado",
     "hero.download_win": "Baixar para Windows",
     "hero.download_linux": "Baixar para Linux",
     "hero.download_mac": "Baixar para Mac",
