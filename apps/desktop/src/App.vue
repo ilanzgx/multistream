@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from "vue";
 import { Menu, X } from "@lucide/vue";
+import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useStreams, type Platform } from "./composables/useStreams";
 import { usePreferences } from "./composables/usePreferences";
@@ -183,6 +184,7 @@ onMounted(async () => {
   window.addEventListener("multistream-show-dialog", handleDialogShowEvent);
 
   if (isTauri()) {
+    invoke("stop_all_recordings_on_reload").catch(() => {});
     try {
       unlistenWatch = await listen<{ channel: string; platform: Platform }>(
         "notification-watch",

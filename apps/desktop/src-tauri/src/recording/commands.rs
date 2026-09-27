@@ -204,6 +204,24 @@ pub async fn start_recording(
     Ok(())
 }
 
+async fn kill_streamlink_pid(pid: u32) {
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        let _ = std::process::Command::new("taskkill")
+            .args(["/F", "/T", "/PID", &pid.to_string()])
+            .creation_flags(0x08000000)
+            .spawn()
+            .and_then(|mut c| c.wait());
+    }
+    #[cfg(unix)]
+    {
+        unsafe { libc::kill(-(pid as i32), libc::SIGTERM) };
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+        unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
+    }
+}
+
 #[tauri::command]
 pub async fn stop_recording(
     app: AppHandle,
@@ -223,21 +241,7 @@ pub async fn stop_recording(
     };
 
     if let Some(pid) = pid {
-        #[cfg(target_os = "windows")]
-        {
-            use std::os::windows::process::CommandExt;
-            let _ = std::process::Command::new("taskkill")
-                .args(["/F", "/T", "/PID", &pid.to_string()])
-                .creation_flags(0x08000000)
-                .spawn()
-                .and_then(|mut c| c.wait());
-        }
-        #[cfg(unix)]
-        {
-            unsafe { libc::kill(-(pid as i32), libc::SIGTERM) };
-            tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-            unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
-        }
+        kill_streamlink_pid(pid).await;
     }
 
     let _ = app.emit(
@@ -246,6 +250,35 @@ pub async fn stop_recording(
             stream_id: stream_id.clone(),
         },
     );
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn stop_all_recordings_on_reload(state: State<'_, RecordingManager>) -> Result<(), ()> {
+    let pids: Vec<Option<u32>> = {
+        let mut entries = state.entries.lock().await;
+        entries
+            .values_mut()
+            .filter(|e| {
+                matches!(
+                    e.status,
+                    RecordingStatus::Recording | RecordingStatus::Starting
+                )
+            })
+            .map(|e| {
+                e.stop_reason = Some(StopReason::UserRequested);
+                e.status = RecordingStatus::Stopping;
+                e.streamlink_pid
+            })
+            .collect()
+    };
+
+    tauri::async_runtime::spawn(async move {
+        for pid in pids.into_iter().flatten() {
+            kill_streamlink_pid(pid).await;
+        }
+    });
 
     Ok(())
 }
@@ -421,32 +454,14 @@ pub async fn shutdown_all_recordings(app: &AppHandle) {
         (all_active_ids, kill_ids)
     };
 
-    let mut kill_futs = Vec::new();
-    for sid in &kill_ids {
+    let kill_futs: Vec<_> = {
         let entries = state.entries.lock().await;
-        if let Some(entry) = entries.get(sid) {
-            let pid = entry.streamlink_pid;
-            kill_futs.push(async move {
-                if let Some(pid) = pid {
-                    #[cfg(target_os = "windows")]
-                    {
-                        use std::os::windows::process::CommandExt;
-                        let _ = std::process::Command::new("taskkill")
-                            .args(["/F", "/T", "/PID", &pid.to_string()])
-                            .creation_flags(0x08000000)
-                            .spawn()
-                            .and_then(|mut c| c.wait());
-                    }
-                    #[cfg(unix)]
-                    {
-                        unsafe { libc::kill(-(pid as i32), libc::SIGTERM) };
-                        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-                        unsafe { libc::kill(-(pid as i32), libc::SIGKILL) };
-                    }
-                }
-            });
-        }
-    }
+        kill_ids
+            .iter()
+            .filter_map(|sid| entries.get(sid).and_then(|e| e.streamlink_pid))
+            .map(kill_streamlink_pid)
+            .collect()
+    };
     futures_util::future::join_all(kill_futs).await;
 
     let start_time = std::time::Instant::now();

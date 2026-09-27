@@ -35,7 +35,8 @@ use youtube::commands::{
 mod recording;
 use recording::commands::{
     dismiss_orphan_recording, is_recording, is_recording_supported_cmd, list_recordings,
-    open_recording_folder, recover_orphan_recording, scan_orphans, start_recording, stop_recording,
+    open_recording_folder, recover_orphan_recording, scan_orphans, start_recording,
+    stop_all_recordings_on_reload, stop_recording,
 };
 use recording::installer::{
     recording_check_dependencies, recording_get_env_size, recording_install_dependencies,
@@ -157,6 +158,7 @@ pub fn run() {
             twitch_get_hls_url,
             start_recording,
             stop_recording,
+            stop_all_recordings_on_reload,
             is_recording,
             list_recordings,
             open_recording_folder,

@@ -43,6 +43,7 @@ commands.allow = [
     "recording_uninstall_dependencies",
     "recording_get_env_size",
     "scan_orphans",
+    "stop_all_recordings_on_reload",
     "splashscreen_ready",
     "close_splashscreen",
     "youtube_get_suggested_streams",
