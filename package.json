@@ -8,6 +8,8 @@
   ],
   "scripts": {
     "version": "bun run scripts/sync-version.ts",
+    "changelog": "git-cliff --output CHANGELOG.md",
+    "changelog:preview": "git-cliff --unreleased",
     "desktop:dev": "cd apps/desktop && bun run dev",
     "desktop:tauri:dev": "cd apps/desktop && bun run tauri:dev",
     "desktop:tauri:build": "cd apps/desktop && bun run tauri:build",
@@ -47,6 +49,7 @@
     "eslint-plugin-astro": "^3.1.0",
     "eslint-plugin-oxlint": "^1.68.0",
     "eslint-plugin-vue": "^10.10.0",
+    "git-cliff": "^2.14.2",
     "globals": "^17.6.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",

@@ -1,3 +1,4 @@
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -5,13 +6,16 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const version = process.argv[2];
+const rawVersion = process.argv[2];
 
-if (!version) {
+if (!rawVersion) {
   console.log("Use: bun run version <version>");
   console.log("Example: bun run version 0.1.3");
   process.exit(1);
 }
+
+const version = rawVersion.startsWith("v") ? rawVersion.slice(1) : rawVersion;
+const tag = `v${version}`;
 
 // Root package.json
 const rootPkgPath = path.join(__dirname, "../package.json");
@@ -51,4 +55,15 @@ if (fs.existsSync(extensionManifestPath)) {
   fs.writeFileSync(extensionManifestPath, JSON.stringify(extensionManifest, null, 2) + "\n");
 }
 
-console.log(`Version synced to ${version}`);
+console.log(`Version synced to ${version} (${tag})`);
+
+// CHANGELOG.md via git-cliff
+try {
+  console.log("Generating CHANGELOG.md...");
+  execSync(`bunx git-cliff --tag ${tag} --output CHANGELOG.md`, {
+    cwd: path.join(__dirname, ".."),
+    stdio: "inherit",
+  });
+} catch (error) {
+  console.warn("Warning: Could not update CHANGELOG.md via git-cliff", error);
+}

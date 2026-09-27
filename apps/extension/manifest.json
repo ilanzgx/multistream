@@ -3,7 +3,11 @@
   "name": "Add to Multistream",
   "version": "0.19.0",
   "description": "Add Twitch, Kick, YouTube live streams and custom video players directly to Multistream.",
-  "permissions": ["contextMenus", "scripting", "activeTab"],
+  "permissions": [
+    "contextMenus",
+    "scripting",
+    "activeTab"
+  ],
   "action": {
     "default_title": "Add to Multistream",
     "default_icon": {
@@ -14,7 +18,9 @@
     }
   },
   "background": {
-    "scripts": ["background.js"],
+    "scripts": [
+      "background.js"
+    ],
     "service_worker": "background.js"
   },
   "icons": {
