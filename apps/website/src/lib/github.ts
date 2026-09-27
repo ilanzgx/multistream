@@ -13,6 +13,7 @@ export interface GitHubRelease {
   body: string | null;
   published_at: string;
   assets: GitHubAsset[];
+  html_url?: string;
 }
 
 export interface GitHubRepo {
@@ -163,4 +164,21 @@ export async function fetchRecentReleases(limit = 3): Promise<GitHubRelease[]> {
   } catch {
     return cache?.releases?.slice(0, limit) ?? [];
   }
+}
+
+export async function fetchLatestReleaseVersion(): Promise<string> {
+  const isDev = import.meta.env.DEV;
+  const cache = readCache();
+
+  if (
+    isDev &&
+    cache?.releases &&
+    cache.releases.length > 0 &&
+    Date.now() - cache.timestamp < CACHE_TTL_MS
+  ) {
+    return cache.releases[0].tag_name;
+  }
+
+  const releases = await fetchRecentReleases(1);
+  return releases[0]?.tag_name || "v0.19.0";
 }

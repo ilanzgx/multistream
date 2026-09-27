@@ -1,0 +1,66 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Changelog from "../../components/Changelog.astro";
+import { useTranslations } from "../../i18n/utils";
+import type { ui } from "../../i18n/ui";
+
+export function getStaticPaths() {
+  return [{ params: { lang: "en" } }, { params: { lang: "pt-br" } }];
+}
+
+const { lang } = Astro.params;
+const currentLang = (lang || "en") as keyof typeof ui;
+const t = useTranslations(currentLang);
+---
+
+<Layout
+  title={`${t("changelog.page_title")} - Multistream`}
+  description={t("changelog.page_subtitle")}
+  lang={currentLang}
+>
+  <Header />
+  <main class="flex-1 w-full flex flex-col items-center">
+    <div class="w-full max-w-4xl mx-auto px-6 pt-12 sm:pt-16 pb-20">
+      <!-- Back Link -->
+      <a
+        href={`/${currentLang}/`}
+        class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-[#111111] dark:text-gray-400 dark:hover:text-white transition-colors mb-8 group"
+      >
+        <svg
+          class="w-4 h-4 transition-transform group-hover:-translate-x-1"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>{t("changelog.back_home")}</span>
+      </a>
+
+      <!-- Page Heading -->
+      <div class="mb-12 sm:mb-16">
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#111111] dark:text-[#EAEAEA] mb-3">
+          {t("changelog.page_title")}
+        </h1>
+        <p class="text-base sm:text-lg text-gray-600 dark:text-[#A0A0A0] leading-relaxed">
+          {t("changelog.page_subtitle")}
+        </p>
+      </div>
+
+      <!-- Changelog Feed -->
+      <Changelog limit={15} />
+    </div>
+  </main>
+  <footer class="w-full py-8 border-t border-[rgba(0,0,0,0.06)] bg-[#F7F6F3] text-center text-gray-600 dark:border-white/5 dark:bg-[#0c0d10] dark:text-gray-400 text-sm space-y-2">
+    <p set:html={t("footer.credits")} />
+    <p class="text-xs text-gray-500 dark:text-gray-500 max-w-2xl mx-auto px-4">
+      {t("footer.disclaimer")}
+    </p>
+  </footer>
+</Layout>
