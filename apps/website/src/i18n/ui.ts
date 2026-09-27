@@ -59,6 +59,28 @@ export const ui = {
     "features.auth": "Account Authentication",
     "features.auth.desc": "Securely log in to Twitch and Kick to interact with the chat natively.",
     "nav.donate": "Buy me a coffee",
+    "faq.title": "Frequently Asked Questions",
+    "faq.subtitle":
+      "Clear answers to common questions about safety, performance, and compatibility.",
+    "faq.q_macos": "macOS says Multistream is damaged and cannot be opened. Is it safe?",
+    "faq.a_macos":
+      "Yes. Multistream is a free open-source project and does not carry an annual paid Apple Developer license, which triggers Gatekeeper's quarantine alert by default. You can install it cleanly with Homebrew (<code>brew install --cask ilanzgx/multistream/multistream</code>) or remove the quarantine flag in your terminal: <code>xattr -dr com.apple.quarantine /Applications/Multistream.app</code>.",
+    "faq.q_security": "Is it safe to connect my Twitch and Kick accounts?",
+    "faq.a_security":
+      "Yes. Login happens through official OAuth windows hosted directly on twitch.tv and kick.com. The app never sees, stores, or handles your passwords. Tokens stay on your local disk, and all network calls are open source and verifiable on GitHub.",
+    "faq.q_performance": "Will running multiple streams lag or freeze my computer?",
+    "faq.a_performance":
+      "Multistream is built with Tauri and Rust instead of heavy Electron wrappers. It avoids running separate full browser processes for every stream and uses hardware video acceleration directly. It uses significantly less RAM and CPU than keeping multiple browser tabs open.",
+    "faq.q_free": "Is Multistream really free? Are there hidden plans or injected ads?",
+    "faq.a_free":
+      "It is completely free under the GPL-3.0 license. There are no paid tiers, subscriptions, telemetry tracking, or injected advertisements. Streams load directly from official platform sources.",
+    "faq.q_account": "Do I need to create an account to use the app?",
+    "faq.a_account":
+      "No. You can download the app, add channels, watch live streams, and customize layouts immediately without creating an account. Logging in is only required if you want to send messages in Twitch or Kick chat.",
+    "cta.title": "Ready to watch without browser clutter?",
+    "cta.subtitle": "Free, open-source, and lightweight. Available for Windows, macOS, and Linux.",
+    "cta.download": "Download Multistream",
+    "cta.github": "View on GitHub",
     "footer.credits":
       'Multistream is an open-source project developed by Ilan Fonseca aka <a href="https://github.com/ilanzgx" target="_blank" rel="noopener noreferrer" class="hover:text-[#111111] dark:hover:text-white transition-colors underline underline-offset-4 font-medium">ilanzgx</a>.',
     "footer.disclaimer":
@@ -120,6 +142,28 @@ export const ui = {
     "features.auth.desc":
       "Faça login com segurança na Twitch e Kick para interagir com o chat nativamente.",
     "nav.donate": "Pagar um café",
+    "faq.title": "Perguntas Frequentes",
+    "faq.subtitle": "Respostas diretas sobre segurança, desempenho e compatibilidade.",
+    "faq.q_macos":
+      "O macOS diz que o Multistream está danificado e não pode ser aberto. O app é confiável?",
+    "faq.a_macos":
+      "Sim. Como o Multistream é um projeto gratuito e de código aberto, ele não possui o certificado anual pago da Apple, o que faz o Gatekeeper do macOS disparar esse alerta por padrão. Você pode instalar direto pelo Homebrew (<code>brew install --cask ilanzgx/multistream/multistream</code>) ou remover a quarentena no terminal com: <code>xattr -dr com.apple.quarantine /Applications/Multistream.app</code>.",
+    "faq.q_security": "É seguro conectar minhas contas da Twitch e da Kick?",
+    "faq.a_security":
+      "Sim. A autenticação usa o OAuth oficial das plataformas diretamente em twitch.tv e kick.com. O aplicativo nunca vê nem armazena suas senhas. Seus tokens de sessão ficam salvos apenas localmente no seu computador e todo o código de rede é aberto e verificável no GitHub.",
+    "faq.q_performance": "Vai travar meu computador se eu abrir várias transmissões juntas?",
+    "faq.a_performance":
+      "O Multistream foi desenvolvido em Tauri e Rust em vez de Electron. Ele não abre navegadores inteiros para cada transmissão em segundo plano, aproveitando a aceleração da sua placa de vídeo para decodificar o vídeo. O consumo de memória e processamento é bem menor do que manter várias abas abertas no navegador.",
+    "faq.q_free": "O Multistream é realmente gratuito? Tem planos pagos ou anúncios extras?",
+    "faq.a_free":
+      "O aplicativo é 100% gratuito sob a licença GPL-3.0. Não existem planos pagos, assinaturas, rastreadores ou anúncios inseridos nas transmissões. Você assiste diretamente aos reprodutores oficiais de cada plataforma.",
+    "faq.q_account": "Preciso criar uma conta para usar o app?",
+    "faq.a_account":
+      "Não. Você pode baixar o aplicativo, adicionar canais, assistir transmissões e organizar seus layouts sem nenhum tipo de cadastro. O login só é necessário se você quiser enviar mensagens no chat da Twitch ou da Kick.",
+    "cta.title": "Pronto para assistir sem a bagunça do navegador?",
+    "cta.subtitle": "Gratuito, leve e de código aberto. Disponível para Windows, macOS e Linux.",
+    "cta.download": "Baixar Multistream",
+    "cta.github": "Ver no GitHub",
     "footer.credits":
       'Multistream é um projeto de código aberto desenvolvido por Ilan Fonseca aka <a href="https://github.com/ilanzgx" target="_blank" rel="noopener noreferrer" class="hover:text-[#111111] dark:hover:text-white transition-colors underline underline-offset-4 font-medium">ilanzgx</a>.',
     "footer.disclaimer":
