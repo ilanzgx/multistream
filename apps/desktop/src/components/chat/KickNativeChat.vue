@@ -195,7 +195,7 @@ onUnmounted(() => {
     </div>
 
     <div
-      v-else-if="connectionState === 'disconnected' && channelMessages.length === 0"
+      v-if="connectionState === 'disconnected' && channelMessages.length === 0"
       class="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center"
     >
       <WifiOff class="w-8 h-8 text-gray-600" />
