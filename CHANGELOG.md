@@ -4,18 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-## [Unreleased]
+## [0.19.1] - 2026-09-28
 
 ### Bug Fixes
 
 - **extension**: Support firefox background scripts and clarify youtube detection ([8addeb1](https://github.com/ilanzgx/multistream/commit/8addeb1f18650b605c69acbc7b99334bffd5bf87))
 - **sidebar**: Prevent twitch auth race and unblock skeleton for fast platforms ([bf03b87](https://github.com/ilanzgx/multistream/commit/bf03b87c757cfd33655b25b67a63f9b8ced6025b))
 - **live-status**: Implement single flight checkAll with progressive youtube updates ([9adb729](https://github.com/ilanzgx/multistream/commit/9adb7292670903c1ca228cffd958f76def26e5e6))
+- **website**: Center all downloads trigger and clean up landing page layout ([dcf7606](https://github.com/ilanzgx/multistream/commit/dcf7606f3b2239de74ff44546ef20b1f6350f427))
+- **website**: Hide hero container on deep link and oauth callbacks ([68e7f80](https://github.com/ilanzgx/multistream/commit/68e7f80768a6b847eddb7a610d85b2a3d1a1b533))
+- **recording**: Stop active streamlink processes on webview reload ([0ec66f3](https://github.com/ilanzgx/multistream/commit/0ec66f349fec108945ff2c006ada81aed28d6c2a))
+- **chat**: Prevent message viewport unmounting on reconnect ([153f7be](https://github.com/ilanzgx/multistream/commit/153f7be563568ff1d20604c153d82651a6b437ab))
 
 
 ### Documentation
 
 - Add system architecture map and update operational guides ([ba70318](https://github.com/ilanzgx/multistream/commit/ba70318b93e4fca928b04354bb72c539f8256e86))
+- Add browser extension to readme and website downloads ([f970604](https://github.com/ilanzgx/multistream/commit/f97060452650294c5f0d8cbbe738e276649f57fe))
 
 
 ### Features
@@ -23,11 +28,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **deeplink**: Support accumulating streams via multistream://add ([044efbc](https://github.com/ilanzgx/multistream/commit/044efbca1a9e7c73d1cdf46c813c255de7229179))
 - **extension**: Add browser extension for stream capture ([3d3e8c0](https://github.com/ilanzgx/multistream/commit/3d3e8c06c20bfd741e1b5fb0c3fa65607fff762b))
 - **website**: Add app preview hero layout and update copy with youtube ([00c1b84](https://github.com/ilanzgx/multistream/commit/00c1b848fa8ba3acedfd85bf9c8033e099636c26))
+- **website**: Add dedicated changelog page and modernize release feed ([c919bf5](https://github.com/ilanzgx/multistream/commit/c919bf577a21654848380f897f75baab7dab0de2))
+- **website**: Add version badge and mobile hamburger menu in header ([7fc9a6c](https://github.com/ilanzgx/multistream/commit/7fc9a6cdf72876683d33ba2b9cc62a3f0b02b668))
+- **website**: Add faq and bottom cta sections to landing page ([6e66d34](https://github.com/ilanzgx/multistream/commit/6e66d343af123493a7fea4ab20775da536380f32))
+- **website**: Integrate umami cloud analytics with custom event tracking ([ec7643e](https://github.com/ilanzgx/multistream/commit/ec7643e54edfd406f93482b5bd61d5646373841c))
 
 
 ### Performance
 
 - **youtube**: Increase scrape semaphore and cache offline fallbacks ([6e259df](https://github.com/ilanzgx/multistream/commit/6e259df4082b3f7006a374403d04eef22976a765))
+- **extension**: Optimize DOM inspection and add optimistic feedback ([28c4446](https://github.com/ilanzgx/multistream/commit/28c444639384aa80b042d2fce8ec6d262f688554))
 
 
 ### Refactoring
@@ -38,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Style
 
 - **website**: Align header and hero containers with main page grid ([6a7bd6a](https://github.com/ilanzgx/multistream/commit/6a7bd6a4e939fc05c84d6e15101bda4897f57af3))
+- **link**: Add browser extension download link in settings dialog ([78a3d2f](https://github.com/ilanzgx/multistream/commit/78a3d2f35c0ee8438174c3a56a54e0d203d6882b))
 
 ## [0.19.0] - 2026-09-19
 
