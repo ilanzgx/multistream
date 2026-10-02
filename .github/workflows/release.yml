@@ -65,6 +65,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev libssl-dev \
             gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl
+          mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/tauri"
+          curl -fsSL -o "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/AppRun-x86_64" https://github.com/tauri-apps/binary-releases/releases/download/apprun-old/AppRun-x86_64
+          chmod 755 "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/AppRun-x86_64"
 
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
