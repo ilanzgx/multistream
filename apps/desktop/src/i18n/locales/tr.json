@@ -272,7 +272,11 @@
       "showOverlay": "Katmanı göster",
       "copy": "Kopyala",
       "clear": "Temizle",
-      "copied": "Kopyalandı!"
+      "copied": "Kopyalandı!",
+      "metrics": {
+        "languageTooltip": "Algılanan ses dili: {lang}",
+        "inferenceTooltip": "Yapay zeka işlem süresi: {time}"
+      }
     },
     "unified": {
       "selectorLabel": "Birleşik Sohbet",

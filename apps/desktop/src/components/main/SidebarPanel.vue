@@ -209,7 +209,10 @@ onUnmounted(() => {
       }"
     >
       <!-- stream selector -->
-      <div class="p-4 border-b border-[#1f2227]">
+      <div
+        class="px-4 pt-4 border-[#1f2227]"
+        :class="sidebarMode === 'chat' ? 'pb-4 border-b' : 'pb-3'"
+      >
         <div
           class="flex items-center mb-3 px-1 transition-all duration-300"
           :class="transcriptionActive ? 'justify-between' : 'justify-center'"

@@ -272,7 +272,11 @@
       "showOverlay": "Показывать оверлей",
       "copy": "Копировать",
       "clear": "Очистить",
-      "copied": "Скопировано!"
+      "copied": "Скопировано!",
+      "metrics": {
+        "languageTooltip": "Определенный язык аудио: {lang}",
+        "inferenceTooltip": "Время обработки ИИ: {time}"
+      }
     },
     "unified": {
       "selectorLabel": "Единый чат",
