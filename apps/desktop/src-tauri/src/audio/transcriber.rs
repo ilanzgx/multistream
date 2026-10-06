@@ -100,6 +100,7 @@ fn models_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(dir)
 }
 
+/// Validates that `model_name` is non-empty and contains only alphanumeric characters, `-`, or `_`.
 pub(crate) fn validate_model_name(model_name: &str) -> Result<&str, &'static str> {
     if model_name.is_empty() {
         return Err("Model name cannot be empty");
@@ -137,11 +138,13 @@ pub const TRANSCRIPTION_SUPPORTED: bool = cfg!(target_os = "windows");
 static CANCEL_DOWNLOAD: AtomicBool = AtomicBool::new(false);
 static DOWNLOAD_IN_PROGRESS: AtomicBool = AtomicBool::new(false);
 
+/// Signals an active Whisper model download to cancel on the next stream chunk.
 #[tauri::command]
 pub fn cancel_whisper_download() {
     CANCEL_DOWNLOAD.store(true, Ordering::Relaxed);
 }
 
+/// Returns whether local live transcription is supported on the current OS.
 #[tauri::command]
 pub fn is_transcription_supported() -> bool {
     TRANSCRIPTION_SUPPORTED
@@ -382,6 +385,7 @@ pub fn start_transcription(
         let _ = std::fs::create_dir_all(&temp_dir);
 
         let mut queue: std::collections::VecDeque<Vec<f32>> = std::collections::VecDeque::new();
+        let mut last_rtf: f32 = 0.0;
 
         while running_clone.load(Ordering::SeqCst) {
             while let Ok(c) = capture.chunks.try_recv() {
@@ -409,16 +413,33 @@ pub fn start_transcription(
                 queue.push_back(c);
             }
 
-            let dropped = trim_audio_backlog(&mut queue, MAX_BACKLOG_SAMPLES);
+            let is_overloaded = last_rtf >= COALESCE_RTF_THRESHOLD;
+            let backlog_limit = if is_overloaded {
+                0
+            } else {
+                MAX_BACKLOG_SAMPLES
+            };
+            let dropped = trim_audio_backlog(&mut queue, backlog_limit);
             if dropped > 0 {
-                log::warn!("Audio backlog exceeded 60s limit, dropped {dropped} oldest chunk(s)");
+                if is_overloaded {
+                    log::warn!(
+                        "Inference running behind real-time (RTF {last_rtf:.2}), dropped {dropped} stale chunk(s) to recover"
+                    );
+                } else {
+                    log::warn!(
+                        "Audio backlog exceeded 30s limit, dropped {dropped} oldest chunk(s)"
+                    );
+                }
             }
 
-            let Some((mut chunk, merged_count)) = coalesce_next_batch(
-                &mut queue,
-                MAX_WHISPER_WINDOW_SAMPLES,
-                SILENCE_RMS_THRESHOLD,
-            ) else {
+            let window_limit = if is_overloaded {
+                0
+            } else {
+                MAX_WHISPER_WINDOW_SAMPLES
+            };
+            let Some((mut chunk, merged_count)) =
+                coalesce_next_batch(&mut queue, window_limit, SILENCE_RMS_THRESHOLD)
+            else {
                 continue;
             };
 
@@ -434,9 +455,12 @@ pub fn start_transcription(
                 temp_dir: &temp_dir,
                 sidecar_child: &sidecar_child_clone,
             };
-            if let Err(e) = transcribe_chunk(&ctx, &mut chunk) {
-                log::error!("{e}");
-                break;
+            match transcribe_chunk(&ctx, &mut chunk) {
+                Ok(rtf) => last_rtf = rtf,
+                Err(e) => {
+                    log::error!("{e}");
+                    break;
+                }
             }
         }
 
@@ -456,10 +480,12 @@ pub fn start_transcription(
 }
 
 const MAX_WHISPER_WINDOW_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 30) as usize;
-const MAX_BACKLOG_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 60) as usize;
+const MAX_BACKLOG_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 30) as usize;
+const COALESCE_RTF_THRESHOLD: f32 = 0.8;
 const SILENCE_RMS_THRESHOLD: f32 = 0.008;
+const MIN_NORMALIZATION_RMS: f32 = 0.015;
 const TARGET_PEAK: f32 = 0.85;
-const MAX_NORMALIZATION_GAIN: f32 = 10.0;
+const MAX_NORMALIZATION_GAIN: f32 = 3.0;
 
 struct InferenceContext<'a> {
     app: &'a AppHandle,
@@ -469,6 +495,7 @@ struct InferenceContext<'a> {
     sidecar_child: &'a Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
 }
 
+/// Atomically replaces the active `whisper-cli` child process handle and returns the previous one.
 fn set_sidecar_child(
     slot: &Mutex<Option<tauri_plugin_shell::process::CommandChild>>,
     child: Option<tauri_plugin_shell::process::CommandChild>,
@@ -477,6 +504,7 @@ fn set_sidecar_child(
     std::mem::replace(&mut *guard, child)
 }
 
+/// Computes the root-mean-square (RMS) amplitude of an `f32` audio slice.
 pub(crate) fn rms(samples: &[f32]) -> f32 {
     if samples.is_empty() {
         return 0.0;
@@ -491,12 +519,12 @@ pub(crate) fn compute_inference_threads(logical_threads: usize) -> usize {
     (logical_threads * 3 / 4).clamp(2, 8)
 }
 
-/// Normalizes audio samples toward `TARGET_PEAK` (0.85) with a `MAX_NORMALIZATION_GAIN` (10x) cap
-/// so low-volume streams achieve optimal dynamic range in 16-bit PCM without over-amplifying noise.
-/// Returns the applied gain factor.
+/// Normalizes audio samples toward `TARGET_PEAK` (0.85) with a `MAX_NORMALIZATION_GAIN` (3x) cap
+/// when RMS exceeds `MIN_NORMALIZATION_RMS` (0.015), preventing ambient background noise from
+/// being over-amplified. Returns the applied gain factor.
 pub(crate) fn normalize_audio_peak(samples: &mut [f32]) -> f32 {
     let peak = samples.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
-    if peak <= 1e-5 {
+    if peak <= 1e-5 || rms(samples) < MIN_NORMALIZATION_RMS {
         return 1.0;
     }
     let gain = (TARGET_PEAK / peak).min(MAX_NORMALIZATION_GAIN);
@@ -565,6 +593,7 @@ pub(crate) fn coalesce_next_batch(
     Some((base, merged_count))
 }
 
+/// Extracts the detected language code from `whisper-cli` stderr diagnostic output.
 pub(crate) fn parse_detected_language(stderr: &str) -> String {
     let mut detected_lang = String::new();
     for line in stderr.lines() {
@@ -581,8 +610,9 @@ pub(crate) fn parse_detected_language(stderr: &str) -> String {
     detected_lang
 }
 
-/// Returns `Err` only for unrecoverable failures that should end the session.
-fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), String> {
+/// Runs `whisper-cli` on `chunk` and returns the measured real-time factor (`RTF`),
+/// or `f32::INFINITY` if inference timed out. Returns `Err` only for unrecoverable session errors.
+fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<f32, String> {
     let chunk_seconds = chunk.len() as f32 / super::capture::TARGET_SAMPLE_RATE as f32;
     let chunk_rms = rms(chunk);
 
@@ -590,7 +620,7 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), Str
         log::info!(
             "Audio chunk is silent (RMS {chunk_rms:.4}). Skipping inference to prevent hallucinations."
         );
-        return Ok(());
+        return Ok(0.0);
     }
 
     let applied_gain = normalize_audio_peak(chunk);
@@ -605,7 +635,7 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), Str
         super::capture::write_wav(&wav_path, chunk, 1, super::capture::TARGET_SAMPLE_RATE)
     {
         log::error!("Failed to write WAV: {}", e);
-        return Ok(());
+        return Ok(0.0);
     }
 
     let model_path = model_path(ctx.app, ctx.model_name)?;
@@ -653,11 +683,12 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), Str
         Err(e) => {
             log::error!("Failed to spawn sidecar: {e}");
             let _ = ctx.app.emit("transcription:status", "error");
-            return Ok(());
+            return Ok(0.0);
         }
     };
     set_sidecar_child(ctx.sidecar_child, Some(child));
 
+    let mut timed_out = false;
     let (stdout, stderr) = tauri::async_runtime::block_on(async {
         let rx_task = async {
             let mut stdout_acc = String::new();
@@ -679,6 +710,7 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), Str
         match tokio::time::timeout(std::time::Duration::from_secs(45), rx_task).await {
             Ok(res) => res,
             Err(_) => {
+                timed_out = true;
                 log::warn!("Whisper inference timed out after 45 seconds");
                 if let Some(child) = set_sidecar_child(ctx.sidecar_child, None) {
                     let _ = child.kill();
@@ -691,6 +723,7 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), Str
     set_sidecar_child(ctx.sidecar_child, None);
 
     let inference_duration = start_time.elapsed();
+    let rtf = inference_duration.as_secs_f32() / chunk_seconds;
     let detected_lang = parse_detected_language(&stderr);
 
     log::info!("--- Audio Diagnostics ---");
@@ -701,10 +734,7 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), Str
         applied_gain
     );
     log::info!("Inference: {:.1}s", inference_duration.as_secs_f32());
-    log::info!(
-        "RTF: {:.2}",
-        inference_duration.as_secs_f32() / chunk_seconds
-    );
+    log::info!("RTF: {:.2}", rtf);
     if !detected_lang.is_empty() {
         log::info!("Language: {}", detected_lang);
     }
@@ -731,7 +761,7 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), Str
         );
     }
 
-    Ok(())
+    Ok(if timed_out { f32::INFINITY } else { rtf })
 }
 
 /// Stops the active transcription session, if any.
@@ -835,18 +865,21 @@ mod tests {
     #[test]
     fn should_normalize_quiet_audio_to_target_peak_with_gain_cap() {
         // Arrange
-        let mut quiet_samples = vec![-0.17_f32, 0.085, 0.17];
-        let mut ultra_quiet_samples = vec![0.01_f32, -0.02];
+        let mut quiet_samples = vec![-0.425_f32, 0.2125, 0.425];
+        let mut capped_samples = vec![0.10_f32, -0.10];
+        let mut ambient_noise_samples = vec![0.01_f32, -0.01];
 
         // Act
         let gain_quiet = normalize_audio_peak(&mut quiet_samples);
-        let gain_capped = normalize_audio_peak(&mut ultra_quiet_samples);
+        let gain_capped = normalize_audio_peak(&mut capped_samples);
+        let gain_noise = normalize_audio_peak(&mut ambient_noise_samples);
 
         // Assert
-        assert!((gain_quiet - 5.0).abs() < 1e-3);
+        assert!((gain_quiet - 2.0).abs() < 1e-3);
         assert!((quiet_samples[2] - 0.85).abs() < 1e-3);
         assert!((gain_capped - MAX_NORMALIZATION_GAIN).abs() < 1e-3);
-        assert!((ultra_quiet_samples[1] - (-0.20)).abs() < 1e-3);
+        assert!((capped_samples[1] - (-0.30)).abs() < 1e-3);
+        assert!((gain_noise - 1.0).abs() < 1e-3);
     }
 
     #[test]
@@ -920,6 +953,28 @@ mod tests {
         assert_eq!(dropped, 1);
         assert_eq!(queue.len(), 3);
         assert_eq!(queue[0][0], 0.2);
+    }
+
+    #[test]
+    fn should_drop_stale_chunks_and_process_only_newest_chunk_when_overloaded() {
+        // Arrange
+        let mut queue = VecDeque::from([
+            vec![0.1_f32; 160_000],
+            vec![0.2_f32; 160_000],
+            vec![0.3_f32; 160_000],
+        ]);
+
+        // Act
+        let dropped = trim_audio_backlog(&mut queue, 0);
+        let result = coalesce_next_batch(&mut queue, 0, 0.008);
+
+        // Assert
+        assert_eq!(dropped, 2);
+        let (batch, count) = result.expect("should keep newest chunk");
+        assert_eq!(count, 1);
+        assert_eq!(batch.len(), 160_000);
+        assert_eq!(batch[0], 0.3);
+        assert!(queue.is_empty());
     }
 
     #[test]
