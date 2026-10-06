@@ -272,7 +272,11 @@
       "showOverlay": "ओवरले दिखाएं",
       "copy": "कॉपी करें",
       "clear": "साफ़ करें",
-      "copied": "कॉपी किया गया!"
+      "copied": "कॉपी किया गया!",
+      "metrics": {
+        "languageTooltip": "पहचानी गई ऑडियो भाषा: {lang}",
+        "inferenceTooltip": "एआई प्रसंस्करण समय: {time}"
+      }
     },
     "unified": {
       "selectorLabel": "एकीकृत चैट",

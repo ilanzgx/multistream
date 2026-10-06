@@ -1,133 +1,416 @@
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use hound::{SampleFormat as HoundSampleFormat, WavSpec, WavWriter};
 use std::path::Path;
-use std::sync::mpsc;
+use std::sync::atomic::{AtomicBool, AtomicU32};
+use std::sync::{mpsc, Arc};
+use std::thread::JoinHandle;
 
-// Future: Abstract the capture mechanism into an `AudioCaptureBackend` trait
-// pub trait AudioCaptureBackend: Send { ... }
-//
-// Current backend: WasapiLoopbackCapture
-// Future backends:
-// - Linux -> PipeWire/PulseAudio backend
-// - macOS -> CoreAudio backend
+pub const TARGET_SAMPLE_RATE: u32 = 16000;
 
-pub struct CaptureSession {
-    pub _stream: cpal::Stream,
-    pub rx: mpsc::Receiver<f32>,
-    pub sample_rate: u32,
-    pub channels: u16,
+#[cfg(any(windows, test))]
+pub(crate) const DECIMATION: usize = 3;
+#[cfg(any(windows, test))]
+const FIR_TAPS: usize = 15;
+#[cfg(any(windows, test))]
+const MIN_WHISPER_SAMPLES: usize = TARGET_SAMPLE_RATE as usize;
+
+/// 15-tap Hamming-windowed sinc low-pass FIR filter (cutoff = 7.2 kHz at 48 kHz sample rate),
+/// normalized to unity DC gain. Preserves vocal formants and sibilants (0–7 kHz) while
+/// attenuating >8 kHz energy to prevent aliasing when decimating 48 kHz -> 16 kHz.
+#[cfg(any(windows, test))]
+const LOWPASS_FIR_COEFFS: [f32; FIR_TAPS] = [
+    0.0011183, -0.0038948, -0.0160349, -0.0203638, 0.0209518, 0.1244978, 0.244507, 0.2984372,
+    0.244507, 0.1244978, 0.0209518, -0.0203638, -0.0160349, -0.0038948, 0.0011183,
+];
+
+/// Stateful 3:1 FIR low-pass decimator (48 kHz -> 16 kHz) that preserves filter history
+/// across packet boundaries to prevent phase discontinuities and high-frequency aliasing.
+#[cfg(any(windows, test))]
+pub(crate) struct FirDecimator {
+    buffer: Vec<f32>,
 }
 
-/// Starts capturing audio from the default WASAPI output device (loopback).
-pub fn start_loopback() -> Result<CaptureSession, String> {
-    let host = cpal::default_host();
-    let device = host
-        .default_output_device()
-        .ok_or("No default output device available")?;
-
-    let config = device
-        .default_output_config()
-        .map_err(|e| format!("Failed to get default output config: {e}"))?;
-
-    let sample_rate = config.sample_rate().0;
-    let channels = config.channels();
-
-    let (tx, rx) = mpsc::sync_channel(48000 * 2 * 10); // 10s of bounded buffering
-
-    let err_fn = |err| log::error!("an error occurred on loopback audio stream: {}", err);
-
-    let stream = match config.sample_format() {
-        cpal::SampleFormat::F32 => device
-            .build_input_stream(
-                &config.into(),
-                move |data: &[f32], _: &_| {
-                    for &sample in data {
-                        let _ = tx.try_send(sample);
-                    }
-                },
-                err_fn,
-                None,
-            )
-            .map_err(|e| e.to_string())?,
-        cpal::SampleFormat::I16 => device
-            .build_input_stream(
-                &config.into(),
-                move |data: &[i16], _: &_| {
-                    for &sample in data {
-                        let _ = tx.try_send(sample as f32 / i16::MAX as f32);
-                    }
-                },
-                err_fn,
-                None,
-            )
-            .map_err(|e| e.to_string())?,
-        cpal::SampleFormat::U16 => device
-            .build_input_stream(
-                &config.into(),
-                move |data: &[u16], _: &_| {
-                    for &sample in data {
-                        let _ = tx.try_send(
-                            (sample as f32 - u16::MAX as f32 / 2.0) / (u16::MAX as f32 / 2.0),
-                        );
-                    }
-                },
-                err_fn,
-                None,
-            )
-            .map_err(|e| e.to_string())?,
-        _ => return Err("Unsupported sample format".into()),
-    };
-
-    stream
-        .play()
-        .map_err(|e| format!("Failed to play stream: {e}"))?;
-
-    Ok(CaptureSession {
-        _stream: stream,
-        rx,
-        sample_rate,
-        channels,
-    })
-}
-
-/// Converts interleaved multi-channel audio to mono by averaging channels.
-pub fn to_mono(input: &[f32], channels: u16) -> Vec<f32> {
-    if channels == 1 {
-        return input.to_vec();
-    }
-    let channels = channels as usize;
-    let mut mono = Vec::with_capacity(input.len() / channels);
-    for frame in input.chunks_exact(channels) {
-        let sum: f32 = frame.iter().sum();
-        mono.push(sum / channels as f32);
-    }
-    mono
-}
-
-/// Resamples mono audio using simple linear decimation.
-/// Warning: This does not apply a low-pass anti-aliasing filter.
-pub fn resample_mono(input: &[f32], in_rate: u32, out_rate: u32) -> Vec<f32> {
-    if in_rate == out_rate {
-        return input.to_vec();
-    }
-    let ratio = in_rate as f32 / out_rate as f32;
-    let out_len = (input.len() as f32 / ratio).ceil() as usize;
-    let mut output = Vec::with_capacity(out_len);
-
-    for i in 0..out_len {
-        let exact_idx = i as f32 * ratio;
-        let idx_floor = exact_idx.floor() as usize;
-        let idx_ceil = (idx_floor + 1).min(input.len().saturating_sub(1));
-        let fraction = exact_idx - idx_floor as f32;
-
-        if idx_floor < input.len() {
-            let sample_floor = input[idx_floor];
-            let sample_ceil = input[idx_ceil];
-            let interpolated = sample_floor + fraction * (sample_ceil - sample_floor);
-            output.push(interpolated);
+#[cfg(any(windows, test))]
+impl Default for FirDecimator {
+    /// Initializes the decimator with a zeroed delay line of `FIR_TAPS - 1` samples.
+    fn default() -> Self {
+        Self {
+            buffer: vec![0.0; FIR_TAPS - 1],
         }
     }
-    output
+}
+
+#[cfg(any(windows, test))]
+impl FirDecimator {
+    /// Applies the 15-tap low-pass FIR filter and 3:1 decimation to `input`, appending 16 kHz samples to `output`.
+    pub(crate) fn process(&mut self, input: &[f32], output: &mut Vec<f32>) {
+        self.buffer.extend_from_slice(input);
+        if self.buffer.len() < FIR_TAPS {
+            return;
+        }
+        let available = self.buffer.len() - (FIR_TAPS - 1);
+        let out_count = available / DECIMATION;
+        if out_count == 0 {
+            return;
+        }
+        output.reserve(out_count);
+        for i in 0..out_count {
+            let start = i * DECIMATION;
+            let window = &self.buffer[start..start + FIR_TAPS];
+            let mut acc = 0.0_f32;
+            for j in 0..FIR_TAPS {
+                acc += window[j] * LOWPASS_FIR_COEFFS[j];
+            }
+            output.push(acc);
+        }
+        let consumed = out_count * DECIMATION;
+        self.buffer.drain(..consumed);
+    }
+}
+
+/// Drains accumulated `pending` samples when capture goes idle (e.g., stream paused),
+/// zero-padding up to `MIN_WHISPER_SAMPLES` (1.0s) if needed so `whisper-cli` accepts the chunk.
+#[cfg(any(windows, test))]
+pub(crate) fn take_idle_flush_chunk(pending: &mut Vec<f32>) -> Option<Vec<f32>> {
+    if pending.is_empty() {
+        return None;
+    }
+    let mut chunk = std::mem::take(pending);
+    if chunk.len() < MIN_WHISPER_SAMPLES {
+        chunk.resize(MIN_WHISPER_SAMPLES, 0.0);
+    }
+    Some(chunk)
+}
+
+#[cfg_attr(not(windows), allow(dead_code))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CaptureSource {
+    AppProcessTree,
+    SystemLoopback,
+}
+
+/// Discrete captured audio slice along with its capture-time timestamps.
+#[derive(Clone, Debug)]
+pub struct AudioChunk {
+    pub samples: Vec<f32>,
+    pub start_timestamp: u64,
+    pub end_timestamp: u64,
+}
+
+/// Capture runs on its own thread and only hands off complete chunks, so a slow
+/// Whisper inference never stalls the WASAPI read loop (which would drop audio).
+pub struct CaptureSession {
+    pub chunks: mpsc::Receiver<AudioChunk>,
+    pub source: CaptureSource,
+    pub thread: JoinHandle<()>,
+}
+
+/// Starts the platform-specific audio loopback capture thread.
+pub fn start_capture(
+    running: Arc<AtomicBool>,
+    chunk_duration: Arc<AtomicU32>,
+) -> Result<CaptureSession, String> {
+    platform::start_capture(running, chunk_duration)
+}
+
+#[cfg(windows)]
+mod platform {
+    use super::*;
+    use std::collections::VecDeque;
+    use std::sync::atomic::Ordering;
+    use wasapi::{
+        initialize_mta, AudioClient, DeviceEnumerator, Direction, SampleType, StreamMode,
+        WaveFormat,
+    };
+
+    const NATIVE_SAMPLE_RATE: usize = 48000;
+    const NATIVE_CHANNELS: usize = 2;
+    const BYTES_PER_FRAME: usize = 4 * NATIVE_CHANNELS;
+    const EVENT_TIMEOUT_MS: u32 = 100;
+    const IDLE_FLUSH_TIMEOUTS: u32 = 10;
+
+    fn timestamp_ms() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64
+    }
+
+    /// Spawns the Windows WASAPI capture thread and returns the active `CaptureSession`.
+    pub fn start_capture(
+        running: Arc<AtomicBool>,
+        chunk_duration: Arc<AtomicU32>,
+    ) -> Result<CaptureSession, String> {
+        let (tx_chunks, rx_chunks) = mpsc::channel::<AudioChunk>();
+        let (tx_init, rx_init) = mpsc::channel::<Result<CaptureSource, String>>();
+
+        // COM objects are not Send, so the client must be created on the thread that reads it.
+        let thread = std::thread::spawn(move || {
+            let _ = initialize_mta();
+            let (client, source) = match open_client() {
+                Ok(v) => v,
+                Err(e) => {
+                    let _ = tx_init.send(Err(e));
+                    return;
+                }
+            };
+            let _ = tx_init.send(Ok(source));
+            if let Err(e) = capture_loop(client, &running, &chunk_duration, &tx_chunks) {
+                log::error!("Audio capture loop failed: {e}");
+            }
+        });
+
+        match rx_init.recv() {
+            Ok(Ok(source)) => Ok(CaptureSession {
+                chunks: rx_chunks,
+                source,
+                thread,
+            }),
+            Ok(Err(e)) => {
+                let _ = thread.join();
+                Err(e)
+            }
+            Err(_) => Err("Capture thread died unexpectedly".to_string()),
+        }
+    }
+
+    /// Returns the 48 kHz 32-bit float stereo `WaveFormat` used for WASAPI loopback capture.
+    fn capture_format() -> WaveFormat {
+        WaveFormat::new(
+            32,
+            32,
+            &SampleType::Float,
+            NATIVE_SAMPLE_RATE,
+            NATIVE_CHANNELS,
+            None,
+        )
+    }
+
+    #[derive(Default)]
+    struct PacketStats {
+        packets: u32,
+        silent_packets: u32,
+    }
+
+    /// Configures event-driven shared WASAPI mode with engine format autoconversion enabled.
+    fn shared_mode() -> StreamMode {
+        StreamMode::EventsShared {
+            autoconvert: true,
+            buffer_duration_hns: 0,
+        }
+    }
+
+    /// Attempts to open a process-scoped loopback client, falling back to system-wide loopback.
+    fn open_client() -> Result<(AudioClient, CaptureSource), String> {
+        match open_process_loopback() {
+            Ok(client) => return Ok((client, CaptureSource::AppProcessTree)),
+            Err(e) => log::warn!(
+                "Process loopback unavailable ({e}); falling back to system-wide loopback"
+            ),
+        }
+        open_system_loopback().map(|client| (client, CaptureSource::SystemLoopback))
+    }
+
+    /// Requires Windows 10 build 20348+. Measured on WebView2: the audio session is owned by the
+    /// browser process (a direct child of the app), so targeting the app PID or the AudioService
+    /// PID captures silence. Including the browser's tree covers only stream audio.
+    fn open_process_loopback() -> Result<AudioClient, String> {
+        let browser_pid = find_webview_browser_pid()
+            .ok_or("WebView2 browser process not found among app children")?;
+        log::info!("Process loopback target: WebView2 browser pid {browser_pid}");
+        let mut client = AudioClient::new_application_loopback_client(browser_pid, true)
+            .map_err(|e| e.to_string())?;
+        client
+            .initialize_client(&capture_format(), &Direction::Capture, &shared_mode())
+            .map_err(|e| e.to_string())?;
+        Ok(client)
+    }
+
+    /// Locates the direct child `msedgewebview2.exe` browser process PID for the current app process.
+    fn find_webview_browser_pid() -> Option<u32> {
+        use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
+        use windows_sys::Win32::System::Diagnostics::ToolHelp::{
+            CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+            TH32CS_SNAPPROCESS,
+        };
+
+        let app_pid = std::process::id();
+        let mut found = None;
+        unsafe {
+            let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            if snapshot == INVALID_HANDLE_VALUE {
+                return None;
+            }
+            let mut entry: PROCESSENTRY32W = std::mem::zeroed();
+            entry.dwSize = std::mem::size_of::<PROCESSENTRY32W>() as u32;
+            let mut has_entry = Process32FirstW(snapshot, &mut entry) != 0;
+            while has_entry {
+                if entry.th32ParentProcessID == app_pid {
+                    let len = entry
+                        .szExeFile
+                        .iter()
+                        .position(|&c| c == 0)
+                        .unwrap_or(entry.szExeFile.len());
+                    let name = String::from_utf16_lossy(&entry.szExeFile[..len]);
+                    if name.eq_ignore_ascii_case("msedgewebview2.exe") {
+                        found = Some(entry.th32ProcessID);
+                        break;
+                    }
+                }
+                has_entry = Process32NextW(snapshot, &mut entry) != 0;
+            }
+            CloseHandle(snapshot);
+        }
+        found
+    }
+
+    /// Opens a system-wide loopback client on the default render audio endpoint.
+    fn open_system_loopback() -> Result<AudioClient, String> {
+        let device = DeviceEnumerator::new()
+            .and_then(|en| en.get_default_device(&Direction::Render))
+            .map_err(|e| format!("No default output device available: {e}"))?;
+        let mut client = device.get_iaudioclient().map_err(|e| e.to_string())?;
+        client
+            .initialize_client(&capture_format(), &Direction::Capture, &shared_mode())
+            .map_err(|e| format!("Failed to initialize loopback client: {e}"))?;
+        Ok(client)
+    }
+
+    /// Reads WASAPI packets, downmixes and decimates to 16 kHz mono, and dispatches chunks over `tx_chunks`.
+    fn capture_loop(
+        client: AudioClient,
+        running: &AtomicBool,
+        chunk_duration: &AtomicU32,
+        tx_chunks: &mpsc::Sender<AudioChunk>,
+    ) -> Result<(), String> {
+        let event = client.set_get_eventhandle().map_err(|e| e.to_string())?;
+        let capture_client = client.get_audiocaptureclient().map_err(|e| e.to_string())?;
+        client.start_stream().map_err(|e| e.to_string())?;
+
+        let mut raw: VecDeque<u8> = VecDeque::new();
+        let mut mono_native: Vec<f32> = Vec::new();
+        let mut decimator = FirDecimator::default();
+        let mut pending: Vec<f32> = Vec::new();
+        let mut stats = PacketStats::default();
+        let mut idle_timeouts: u32 = 0;
+
+        while running.load(Ordering::SeqCst) {
+            // Process loopback emits no events while the app is silent; flush trailing speech after ~1s idle.
+            if event.wait_for_event(EVENT_TIMEOUT_MS).is_err() {
+                idle_timeouts = idle_timeouts.saturating_add(1);
+                if idle_timeouts >= IDLE_FLUSH_TIMEOUTS {
+                    idle_timeouts = 0;
+                    if let Some(samples) = take_idle_flush_chunk(&mut pending) {
+                        let peak = samples.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
+                        log::info!(
+                            "Capture idle flush: {} packets ({} flagged silent), peak {:.4}",
+                            stats.packets,
+                            stats.silent_packets,
+                            peak
+                        );
+                        stats = PacketStats::default();
+                        let end_timestamp = timestamp_ms();
+                        let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
+                        let start_timestamp = end_timestamp.saturating_sub(duration_ms);
+                        let chunk = AudioChunk {
+                            samples,
+                            start_timestamp,
+                            end_timestamp,
+                        };
+                        if tx_chunks.send(chunk).is_err() {
+                            let _ = client.stop_stream();
+                            return Ok(());
+                        }
+                    }
+                }
+                continue;
+            }
+            idle_timeouts = 0;
+
+            loop {
+                let frames = capture_client
+                    .get_next_packet_size()
+                    .map_err(|e| e.to_string())?
+                    .unwrap_or(0);
+                if frames == 0 {
+                    break;
+                }
+                let before = raw.len();
+                let info = capture_client
+                    .read_from_device_to_deque(&mut raw)
+                    .map_err(|e| e.to_string())?;
+                stats.packets += 1;
+                if info.flags.silent {
+                    stats.silent_packets += 1;
+                    raw.range_mut(before..).for_each(|b| *b = 0);
+                }
+            }
+
+            let whole = raw.len() - raw.len() % BYTES_PER_FRAME;
+            let bytes: Vec<u8> = raw.drain(..whole).collect();
+            mono_native.clear();
+            mono_native.extend(bytes.chunks_exact(BYTES_PER_FRAME).map(|frame| {
+                let l = f32::from_le_bytes([frame[0], frame[1], frame[2], frame[3]]);
+                let r = f32::from_le_bytes([frame[4], frame[5], frame[6], frame[7]]);
+                (l + r) * 0.5
+            }));
+
+            decimator.process(&mono_native, &mut pending);
+
+            let seconds = chunk_duration.load(Ordering::Relaxed).clamp(5, 30);
+            let samples_per_chunk = (TARGET_SAMPLE_RATE * seconds) as usize;
+            while pending.len() >= samples_per_chunk {
+                let samples: Vec<f32> = pending.drain(..samples_per_chunk).collect();
+                let peak = samples.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
+                log::info!(
+                    "Capture chunk: {} packets ({} flagged silent), peak {:.4}",
+                    stats.packets,
+                    stats.silent_packets,
+                    peak
+                );
+                stats = PacketStats::default();
+                let end_timestamp = timestamp_ms();
+                let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
+                let start_timestamp = end_timestamp.saturating_sub(duration_ms);
+                let chunk = AudioChunk {
+                    samples,
+                    start_timestamp,
+                    end_timestamp,
+                };
+                if tx_chunks.send(chunk).is_err() {
+                    let _ = client.stop_stream();
+                    return Ok(());
+                }
+            }
+        }
+
+        // Flush any remaining accumulated speech before tearing down the capture stream.
+        if let Some(samples) = take_idle_flush_chunk(&mut pending) {
+            let end_timestamp = timestamp_ms();
+            let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
+            let start_timestamp = end_timestamp.saturating_sub(duration_ms);
+            let _ = tx_chunks.send(AudioChunk {
+                samples,
+                start_timestamp,
+                end_timestamp,
+            });
+        }
+
+        let _ = client.stop_stream();
+        Ok(())
+    }
+}
+
+#[cfg(not(windows))]
+mod platform {
+    use super::*;
+
+    /// Stub implementation for non-Windows platforms where WASAPI capture is unsupported.
+    pub fn start_capture(
+        _running: Arc<AtomicBool>,
+        _chunk_duration: Arc<AtomicU32>,
+    ) -> Result<CaptureSession, String> {
+        Err("Audio capture is currently supported only on Windows".to_string())
+    }
 }
 
 /// Writes 16-bit PCM samples to a WAV file with dynamic channels and sample rate.
@@ -158,67 +441,91 @@ mod tests {
     use super::*;
 
     #[test]
-    fn should_convert_stereo_to_mono() {
-        // Arrange: L = 1.0, R = -1.0, L = 0.5, R = 0.5
-        let stereo = vec![1.0, -1.0, 0.5, 0.5];
+    fn should_preserve_dc_signal_and_decimate_by_three() {
+        // Arrange
+        let mut decimator = FirDecimator::default();
+        let input = vec![0.5_f32; 300];
+        let mut output = Vec::new();
 
         // Act
-        let mono = to_mono(&stereo, 2);
+        decimator.process(&input, &mut output);
 
         // Assert
-        assert_eq!(mono.len(), 2);
-        assert_eq!(mono[0], 0.0); // (1.0 + -1.0) / 2
-        assert_eq!(mono[1], 0.5); // (0.5 + 0.5) / 2
+        assert_eq!(output.len(), 100);
+        for &sample in &output[10..] {
+            assert!((sample - 0.5).abs() < 1e-3);
+        }
     }
 
     #[test]
-    fn should_return_same_if_already_mono() {
-        let mono = vec![1.0, 0.0, -1.0];
-        let result = to_mono(&mono, 1);
-        assert_eq!(result, mono);
-    }
-
-    #[test]
-    fn should_resample_mono_downsample() {
-        // Arrange
-        // Simple case: going from 48000 to 16000 (3:1 ratio)
-        // input: 9 samples, output should be 3 samples
-        let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+    fn should_attenuate_above_nyquist_high_frequency_signal() {
+        // Arrange: 16 kHz tone at 48 kHz sample rate (period = 3 samples, above 8 kHz Nyquist)
+        let mut decimator = FirDecimator::default();
+        let input: Vec<f32> = (0..600)
+            .map(|i| {
+                let phase = 2.0 * std::f32::consts::PI * 16000.0 * (i as f32) / 48000.0;
+                phase.sin()
+            })
+            .collect();
+        let mut output = Vec::new();
 
         // Act
-        let result = resample_mono(&input, 48000, 16000);
+        decimator.process(&input, &mut output);
 
-        // ratio = 3.0.
-        // i=0 -> exact_idx=0.0 -> input[0]
-        // i=1 -> exact_idx=3.0 -> input[3]
-        // i=2 -> exact_idx=6.0 -> input[6]
+        // Assert: steady-state aliased energy after filter settling should be strongly attenuated
+        let steady_peak = output[20..].iter().fold(0.0_f32, |p, s| p.max(s.abs()));
+        assert!(
+            steady_peak < 0.05,
+            "Expected high-frequency aliasing to be < 0.05, got {steady_peak}"
+        );
+    }
+
+    #[test]
+    fn should_preserve_state_across_non_multiple_packet_boundaries() {
+        // Arrange
+        let mut single_pass = FirDecimator::default();
+        let mut chunked_pass = FirDecimator::default();
+        let input: Vec<f32> = (0..300)
+            .map(|i| (2.0 * std::f32::consts::PI * 1000.0 * (i as f32) / 48000.0).sin())
+            .collect();
+        let mut out_single = Vec::new();
+        let mut out_chunked = Vec::new();
+
+        // Act: feed in non-multiple-of-3 slices (e.g. 7 samples at a time)
+        single_pass.process(&input, &mut out_single);
+        for slice in input.chunks(7) {
+            chunked_pass.process(slice, &mut out_chunked);
+        }
 
         // Assert
-        assert_eq!(result.len(), 3);
-        assert_eq!(result[0], 1.0);
-        assert_eq!(result[1], 4.0);
-        assert_eq!(result[2], 7.0);
+        assert_eq!(out_single.len(), out_chunked.len());
+        for (a, b) in out_single.iter().zip(out_chunked.iter()) {
+            assert!((a - b).abs() < 1e-6);
+        }
     }
 
     #[test]
-    fn should_resample_mono_interpolate() {
+    fn should_flush_and_pad_pending_audio_on_idle_timeout() {
         // Arrange
-        let input = vec![0.0, 10.0, 20.0];
+        let mut empty_pending: Vec<f32> = Vec::new();
+        let mut short_pending = vec![0.25_f32; 4000];
+        let mut long_pending = vec![0.25_f32; 32000];
 
-        // Act: Downsample 2:1
-        // ratio = 2.0
-        // i=0 -> exact=0 -> 0.0
-        // i=1 -> exact=2 -> 20.0
-        let result = resample_mono(&input, 2, 1);
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0], 0.0);
-        assert_eq!(result[1], 20.0);
-    }
+        // Act
+        let flushed_empty = take_idle_flush_chunk(&mut empty_pending);
+        let flushed_short = take_idle_flush_chunk(&mut short_pending);
+        let flushed_long = take_idle_flush_chunk(&mut long_pending);
 
-    #[test]
-    fn should_return_same_if_same_sample_rate() {
-        let input = vec![1.0, 0.0, -1.0];
-        let result = resample_mono(&input, 48000, 48000);
-        assert_eq!(result, input);
+        // Assert
+        assert!(flushed_empty.is_none());
+        let short_chunk = flushed_short.expect("should flush short pending buffer");
+        assert_eq!(short_chunk.len(), MIN_WHISPER_SAMPLES);
+        assert!((short_chunk[0] - 0.25).abs() < 1e-6);
+        assert!((short_chunk[MIN_WHISPER_SAMPLES - 1] - 0.0).abs() < 1e-6);
+        assert!(short_pending.is_empty());
+
+        let long_chunk = flushed_long.expect("should flush long pending buffer without truncating");
+        assert_eq!(long_chunk.len(), 32000);
+        assert!(long_pending.is_empty());
     }
 }

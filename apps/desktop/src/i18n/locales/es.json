@@ -272,7 +272,11 @@
       "showOverlay": "Mostrar superposición",
       "copy": "Copiar",
       "clear": "Limpiar",
-      "copied": "¡Copiado!"
+      "copied": "¡Copiado!",
+      "metrics": {
+        "languageTooltip": "Idioma detectado en el audio: {lang}",
+        "inferenceTooltip": "Tiempo de procesamiento de la IA: {time}"
+      }
     },
     "unified": {
       "selectorLabel": "Chat Unificado",

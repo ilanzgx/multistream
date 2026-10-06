@@ -272,7 +272,11 @@
       "showOverlay": "显示悬浮字幕",
       "copy": "复制",
       "clear": "清除",
-      "copied": "已复制！"
+      "copied": "已复制！",
+      "metrics": {
+        "languageTooltip": "检测到的音频语言：{lang}",
+        "inferenceTooltip": "AI 处理耗时：{time}"
+      }
     },
     "unified": {
       "selectorLabel": "统一聊天",

@@ -272,7 +272,11 @@
       "showOverlay": "Tampilkan hamparan",
       "copy": "Salin",
       "clear": "Bersihkan",
-      "copied": "Disalin!"
+      "copied": "Disalin!",
+      "metrics": {
+        "languageTooltip": "Bahasa audio terdeteksi: {lang}",
+        "inferenceTooltip": "Waktu pemrosesan AI: {time}"
+      }
     },
     "unified": {
       "selectorLabel": "Obrolan Terpadu",

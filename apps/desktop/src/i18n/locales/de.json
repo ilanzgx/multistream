@@ -272,7 +272,11 @@
       "showOverlay": "Overlay anzeigen",
       "copy": "Kopieren",
       "clear": "Löschen",
-      "copied": "Kopiert!"
+      "copied": "Kopiert!",
+      "metrics": {
+        "languageTooltip": "Erkannte Audiosprache: {lang}",
+        "inferenceTooltip": "KI-Verarbeitungszeit: {time}"
+      }
     },
     "unified": {
       "selectorLabel": "Einheitlicher Chat",
