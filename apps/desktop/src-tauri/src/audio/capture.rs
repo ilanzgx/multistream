@@ -10,6 +10,8 @@ pub const TARGET_SAMPLE_RATE: u32 = 16000;
 pub(crate) const DECIMATION: usize = 3;
 #[cfg(any(windows, test))]
 const FIR_TAPS: usize = 15;
+#[cfg(any(windows, test))]
+const MIN_WHISPER_SAMPLES: usize = TARGET_SAMPLE_RATE as usize;
 
 /// 15-tap Hamming-windowed sinc low-pass FIR filter (cutoff = 7.2 kHz at 48 kHz sample rate),
 /// normalized to unity DC gain. Preserves vocal formants and sibilants (0–7 kHz) while
@@ -29,6 +31,7 @@ pub(crate) struct FirDecimator {
 
 #[cfg(any(windows, test))]
 impl Default for FirDecimator {
+    /// Initializes the decimator with a zeroed delay line of `FIR_TAPS - 1` samples.
     fn default() -> Self {
         Self {
             buffer: vec![0.0; FIR_TAPS - 1],
@@ -38,6 +41,7 @@ impl Default for FirDecimator {
 
 #[cfg(any(windows, test))]
 impl FirDecimator {
+    /// Applies the 15-tap low-pass FIR filter and 3:1 decimation to `input`, appending 16 kHz samples to `output`.
     pub(crate) fn process(&mut self, input: &[f32], output: &mut Vec<f32>) {
         self.buffer.extend_from_slice(input);
         if self.buffer.len() < FIR_TAPS {
@@ -63,6 +67,20 @@ impl FirDecimator {
     }
 }
 
+/// Drains accumulated `pending` samples when capture goes idle (e.g., stream paused),
+/// zero-padding up to `MIN_WHISPER_SAMPLES` (1.0s) if needed so `whisper-cli` accepts the chunk.
+#[cfg(any(windows, test))]
+pub(crate) fn take_idle_flush_chunk(pending: &mut Vec<f32>) -> Option<Vec<f32>> {
+    if pending.is_empty() {
+        return None;
+    }
+    let mut chunk = std::mem::take(pending);
+    if chunk.len() < MIN_WHISPER_SAMPLES {
+        chunk.resize(MIN_WHISPER_SAMPLES, 0.0);
+    }
+    Some(chunk)
+}
+
 #[cfg_attr(not(windows), allow(dead_code))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CaptureSource {
@@ -78,6 +96,7 @@ pub struct CaptureSession {
     pub thread: JoinHandle<()>,
 }
 
+/// Starts the platform-specific audio loopback capture thread.
 pub fn start_capture(
     running: Arc<AtomicBool>,
     chunk_duration: Arc<AtomicU32>,
@@ -99,7 +118,9 @@ mod platform {
     const NATIVE_CHANNELS: usize = 2;
     const BYTES_PER_FRAME: usize = 4 * NATIVE_CHANNELS;
     const EVENT_TIMEOUT_MS: u32 = 100;
+    const IDLE_FLUSH_TIMEOUTS: u32 = 10;
 
+    /// Spawns the Windows WASAPI capture thread and returns the active `CaptureSession`.
     pub fn start_capture(
         running: Arc<AtomicBool>,
         chunk_duration: Arc<AtomicU32>,
@@ -137,6 +158,7 @@ mod platform {
         }
     }
 
+    /// Returns the 48 kHz 32-bit float stereo `WaveFormat` used for WASAPI loopback capture.
     fn capture_format() -> WaveFormat {
         WaveFormat::new(
             32,
@@ -154,14 +176,15 @@ mod platform {
         silent_packets: u32,
     }
 
+    /// Configures event-driven shared WASAPI mode with engine format autoconversion enabled.
     fn shared_mode() -> StreamMode {
-        // autoconvert lets the WASAPI engine resample/downmix with a proper filter.
         StreamMode::EventsShared {
             autoconvert: true,
             buffer_duration_hns: 0,
         }
     }
 
+    /// Attempts to open a process-scoped loopback client, falling back to system-wide loopback.
     fn open_client() -> Result<(AudioClient, CaptureSource), String> {
         match open_process_loopback() {
             Ok(client) => return Ok((client, CaptureSource::AppProcessTree)),
@@ -187,6 +210,7 @@ mod platform {
         Ok(client)
     }
 
+    /// Locates the direct child `msedgewebview2.exe` browser process PID for the current app process.
     fn find_webview_browser_pid() -> Option<u32> {
         use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
         use windows_sys::Win32::System::Diagnostics::ToolHelp::{
@@ -224,6 +248,7 @@ mod platform {
         found
     }
 
+    /// Opens a system-wide loopback client on the default render audio endpoint.
     fn open_system_loopback() -> Result<AudioClient, String> {
         let device = DeviceEnumerator::new()
             .and_then(|en| en.get_default_device(&Direction::Render))
@@ -235,6 +260,7 @@ mod platform {
         Ok(client)
     }
 
+    /// Reads WASAPI packets, downmixes and decimates to 16 kHz mono, and dispatches chunks over `tx_chunks`.
     fn capture_loop(
         client: AudioClient,
         running: &AtomicBool,
@@ -250,12 +276,32 @@ mod platform {
         let mut decimator = FirDecimator::default();
         let mut pending: Vec<f32> = Vec::new();
         let mut stats = PacketStats::default();
+        let mut idle_timeouts: u32 = 0;
 
         while running.load(Ordering::SeqCst) {
-            // Process loopback emits no events while the app is silent; a timeout is expected.
+            // Process loopback emits no events while the app is silent; flush trailing speech after ~1s idle.
             if event.wait_for_event(EVENT_TIMEOUT_MS).is_err() {
+                idle_timeouts = idle_timeouts.saturating_add(1);
+                if idle_timeouts >= IDLE_FLUSH_TIMEOUTS {
+                    idle_timeouts = 0;
+                    if let Some(chunk) = take_idle_flush_chunk(&mut pending) {
+                        let peak = chunk.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
+                        log::info!(
+                            "Capture idle flush: {} packets ({} flagged silent), peak {:.4}",
+                            stats.packets,
+                            stats.silent_packets,
+                            peak
+                        );
+                        stats = PacketStats::default();
+                        if tx_chunks.send(chunk).is_err() {
+                            let _ = client.stop_stream();
+                            return Ok(());
+                        }
+                    }
+                }
                 continue;
             }
+            idle_timeouts = 0;
 
             loop {
                 let frames = capture_client
@@ -315,6 +361,7 @@ mod platform {
 mod platform {
     use super::*;
 
+    /// Stub implementation for non-Windows platforms where WASAPI capture is unsupported.
     pub fn start_capture(
         _running: Arc<AtomicBool>,
         _chunk_duration: Arc<AtomicU32>,
@@ -412,5 +459,30 @@ mod tests {
         for (a, b) in out_single.iter().zip(out_chunked.iter()) {
             assert!((a - b).abs() < 1e-6);
         }
+    }
+
+    #[test]
+    fn should_flush_and_pad_pending_audio_on_idle_timeout() {
+        // Arrange
+        let mut empty_pending: Vec<f32> = Vec::new();
+        let mut short_pending = vec![0.25_f32; 4000];
+        let mut long_pending = vec![0.25_f32; 32000];
+
+        // Act
+        let flushed_empty = take_idle_flush_chunk(&mut empty_pending);
+        let flushed_short = take_idle_flush_chunk(&mut short_pending);
+        let flushed_long = take_idle_flush_chunk(&mut long_pending);
+
+        // Assert
+        assert!(flushed_empty.is_none());
+        let short_chunk = flushed_short.expect("should flush short pending buffer");
+        assert_eq!(short_chunk.len(), MIN_WHISPER_SAMPLES);
+        assert!((short_chunk[0] - 0.25).abs() < 1e-6);
+        assert!((short_chunk[MIN_WHISPER_SAMPLES - 1] - 0.0).abs() < 1e-6);
+        assert!(short_pending.is_empty());
+
+        let long_chunk = flushed_long.expect("should flush long pending buffer without truncating");
+        assert_eq!(long_chunk.len(), 32000);
+        assert!(long_pending.is_empty());
     }
 }
