@@ -28,6 +28,9 @@ export interface DownloadProgress {
 export interface TranscriptionLine {
   text: string;
   timestamp: number;
+  endTimestamp?: number;
+  detectedLanguage?: string;
+  inferenceDurationMs?: number;
 }
 
 // --- GLOBAL MODULE STATE ---

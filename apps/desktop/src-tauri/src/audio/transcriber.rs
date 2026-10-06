@@ -23,9 +23,15 @@ pub struct DownloadProgressPayload {
 
 /// Payload emitted on the `transcription:text` event.
 #[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TranscriptionTextPayload {
     pub text: String,
     pub timestamp: u64,
+    pub end_timestamp: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub detected_language: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub inference_duration_ms: Option<u64>,
 }
 
 /// Live handle to a running transcription session.
@@ -448,12 +454,21 @@ pub fn start_transcription(
                 log::info!("Coalesced {merged_count} queued chunks into {batch_secs:.1}s batch");
             }
 
+            let duration_ms =
+                (chunk.len() as u64 * 1000) / super::capture::TARGET_SAMPLE_RATE as u64;
+            let remaining_ms = (queue.iter().map(Vec::len).sum::<usize>() as u64 * 1000)
+                / super::capture::TARGET_SAMPLE_RATE as u64;
+            let end_timestamp = timestamp_ms().saturating_sub(remaining_ms);
+            let start_timestamp = end_timestamp.saturating_sub(duration_ms);
+
             let ctx = InferenceContext {
                 app: &app_clone,
                 model_name: &model_name,
                 translate,
                 temp_dir: &temp_dir,
                 sidecar_child: &sidecar_child_clone,
+                start_timestamp,
+                end_timestamp,
             };
             match transcribe_chunk(&ctx, &mut chunk) {
                 Ok(rtf) => last_rtf = rtf,
@@ -493,6 +508,8 @@ struct InferenceContext<'a> {
     translate: bool,
     temp_dir: &'a std::path::Path,
     sidecar_child: &'a Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
+    start_timestamp: u64,
+    end_timestamp: u64,
 }
 
 /// Atomically replaces the active `whisper-cli` child process handle and returns the previous one.
@@ -756,7 +773,14 @@ fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<f32, St
             "transcription:text",
             TranscriptionTextPayload {
                 text: cleaned.to_string(),
-                timestamp: timestamp_ms(),
+                timestamp: ctx.start_timestamp,
+                end_timestamp: ctx.end_timestamp,
+                detected_language: if detected_lang.is_empty() {
+                    None
+                } else {
+                    Some(detected_lang)
+                },
+                inference_duration_ms: Some(inference_duration.as_millis() as u64),
             },
         );
     }
@@ -987,5 +1011,25 @@ mod tests {
 
         // Assert
         assert_eq!(lang, "pt");
+    }
+
+    #[test]
+    fn should_serialize_transcription_text_payload_to_camel_case() {
+        // Arrange
+        let payload = TranscriptionTextPayload {
+            text: "Hello world".to_string(),
+            timestamp: 1000,
+            end_timestamp: 11000,
+            detected_language: Some("en".to_string()),
+            inference_duration_ms: Some(1250),
+        };
+
+        // Act
+        let json = serde_json::to_string(&payload).expect("should serialize");
+
+        // Assert
+        assert!(json.contains("\"endTimestamp\":11000"));
+        assert!(json.contains("\"detectedLanguage\":\"en\""));
+        assert!(json.contains("\"inferenceDurationMs\":1250"));
     }
 }
