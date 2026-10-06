@@ -390,10 +390,11 @@ pub fn start_transcription(
             .join("temp");
         let _ = std::fs::create_dir_all(&temp_dir);
 
-        let mut queue: std::collections::VecDeque<Vec<f32>> = std::collections::VecDeque::new();
+        let mut queue: std::collections::VecDeque<super::capture::AudioChunk> =
+            std::collections::VecDeque::new();
         let mut last_rtf: f32 = 0.0;
 
-        while running_clone.load(Ordering::SeqCst) {
+        while running_clone.load(Ordering::SeqCst) || !queue.is_empty() {
             while let Ok(c) = capture.chunks.try_recv() {
                 queue.push_back(c);
             }
@@ -433,7 +434,7 @@ pub fn start_transcription(
                     );
                 } else {
                     log::warn!(
-                        "Audio backlog exceeded 30s limit, dropped {dropped} oldest chunk(s)"
+                        "Audio backlog exceeded 60s limit, dropped {dropped} oldest chunk(s)"
                     );
                 }
             }
@@ -450,16 +451,10 @@ pub fn start_transcription(
             };
 
             if merged_count > 1 {
-                let batch_secs = chunk.len() as f32 / super::capture::TARGET_SAMPLE_RATE as f32;
+                let batch_secs =
+                    chunk.samples.len() as f32 / super::capture::TARGET_SAMPLE_RATE as f32;
                 log::info!("Coalesced {merged_count} queued chunks into {batch_secs:.1}s batch");
             }
-
-            let duration_ms =
-                (chunk.len() as u64 * 1000) / super::capture::TARGET_SAMPLE_RATE as u64;
-            let remaining_ms = (queue.iter().map(Vec::len).sum::<usize>() as u64 * 1000)
-                / super::capture::TARGET_SAMPLE_RATE as u64;
-            let end_timestamp = timestamp_ms().saturating_sub(remaining_ms);
-            let start_timestamp = end_timestamp.saturating_sub(duration_ms);
 
             let ctx = InferenceContext {
                 app: &app_clone,
@@ -467,10 +462,10 @@ pub fn start_transcription(
                 translate,
                 temp_dir: &temp_dir,
                 sidecar_child: &sidecar_child_clone,
-                start_timestamp,
-                end_timestamp,
+                start_timestamp: chunk.start_timestamp,
+                end_timestamp: chunk.end_timestamp,
             };
-            match transcribe_chunk(&ctx, &mut chunk) {
+            match transcribe_chunk(&ctx, &mut chunk.samples) {
                 Ok(rtf) => last_rtf = rtf,
                 Err(e) => {
                     log::error!("{e}");
@@ -495,8 +490,8 @@ pub fn start_transcription(
 }
 
 const MAX_WHISPER_WINDOW_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 30) as usize;
-const MAX_BACKLOG_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 30) as usize;
-const COALESCE_RTF_THRESHOLD: f32 = 0.8;
+const MAX_BACKLOG_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 60) as usize;
+const COALESCE_RTF_THRESHOLD: f32 = 1.0;
 const SILENCE_RMS_THRESHOLD: f32 = 0.008;
 const MIN_NORMALIZATION_RMS: f32 = 0.015;
 const TARGET_PEAK: f32 = 0.85;
@@ -555,14 +550,14 @@ pub(crate) fn normalize_audio_peak(samples: &mut [f32]) -> f32 {
 
 /// Drops the oldest chunks when total queued samples exceed `max_samples`.
 pub(crate) fn trim_audio_backlog(
-    queue: &mut std::collections::VecDeque<Vec<f32>>,
+    queue: &mut std::collections::VecDeque<super::capture::AudioChunk>,
     max_samples: usize,
 ) -> usize {
-    let mut total_samples: usize = queue.iter().map(Vec::len).sum();
+    let mut total_samples: usize = queue.iter().map(|c| c.samples.len()).sum();
     let mut dropped = 0;
     while total_samples > max_samples && queue.len() > 1 {
         if let Some(removed) = queue.pop_front() {
-            total_samples = total_samples.saturating_sub(removed.len());
+            total_samples = total_samples.saturating_sub(removed.samples.len());
             dropped += 1;
         }
     }
@@ -570,16 +565,17 @@ pub(crate) fn trim_audio_backlog(
 }
 
 /// Pops the next non-silent chunk and merges subsequent non-silent chunks up to `max_window_samples`.
+/// Preserves the earliest start_timestamp and latest end_timestamp across all merged chunks.
 /// Silent chunks encountered in the queue are discarded immediately so they neither trigger
 /// unnecessary inference nor consume space in a coalesced batch.
 pub(crate) fn coalesce_next_batch(
-    queue: &mut std::collections::VecDeque<Vec<f32>>,
+    queue: &mut std::collections::VecDeque<super::capture::AudioChunk>,
     max_window_samples: usize,
     silence_threshold: f32,
-) -> Option<(Vec<f32>, usize)> {
+) -> Option<(super::capture::AudioChunk, usize)> {
     let mut base = loop {
         let candidate = queue.pop_front()?;
-        let candidate_rms = rms(&candidate);
+        let candidate_rms = rms(&candidate.samples);
         if candidate_rms >= silence_threshold {
             break candidate;
         }
@@ -590,7 +586,7 @@ pub(crate) fn coalesce_next_batch(
 
     let mut merged_count = 1;
     while let Some(next) = queue.front() {
-        let next_rms = rms(next);
+        let next_rms = rms(&next.samples);
         if next_rms < silence_threshold {
             log::info!(
                 "Audio chunk is silent (RMS {next_rms:.4}). Skipping inference to prevent hallucinations."
@@ -598,11 +594,12 @@ pub(crate) fn coalesce_next_batch(
             queue.pop_front();
             continue;
         }
-        if base.len() + next.len() > max_window_samples {
+        if base.samples.len() + next.samples.len() > max_window_samples {
             break;
         }
         if let Some(next_chunk) = queue.pop_front() {
-            base.extend_from_slice(&next_chunk);
+            base.samples.extend_from_slice(&next_chunk.samples);
+            base.end_timestamp = next_chunk.end_timestamp;
             merged_count += 1;
         }
     }
@@ -906,14 +903,22 @@ mod tests {
         assert!((gain_noise - 1.0).abs() < 1e-3);
     }
 
+    fn test_chunk(samples: Vec<f32>, start: u64, end: u64) -> super::super::capture::AudioChunk {
+        super::super::capture::AudioChunk {
+            samples,
+            start_timestamp: start,
+            end_timestamp: end,
+        }
+    }
+
     #[test]
     fn should_coalesce_multiple_chunks_up_to_max_window() {
         // Arrange
         let mut queue = VecDeque::from([
-            vec![0.1_f32; 160_000], // 10s
-            vec![0.2_f32; 160_000], // 10s
-            vec![0.3_f32; 160_000], // 10s
-            vec![0.4_f32; 160_000], // 10s (exceeds 30s window, must stay in queue)
+            test_chunk(vec![0.1_f32; 160_000], 1_000, 11_000), // 10s
+            test_chunk(vec![0.2_f32; 160_000], 11_000, 21_000), // 10s
+            test_chunk(vec![0.3_f32; 160_000], 21_000, 31_000), // 10s
+            test_chunk(vec![0.4_f32; 160_000], 31_000, 41_000), // 10s (exceeds 30s window, must stay in queue)
         ]);
 
         // Act
@@ -922,19 +927,21 @@ mod tests {
         // Assert
         let (batch, count) = result.expect("should produce a coalesced batch");
         assert_eq!(count, 3);
-        assert_eq!(batch.len(), 480_000);
+        assert_eq!(batch.samples.len(), 480_000);
+        assert_eq!(batch.start_timestamp, 1_000);
+        assert_eq!(batch.end_timestamp, 31_000);
         assert_eq!(queue.len(), 1);
-        assert_eq!(queue[0][0], 0.4);
+        assert_eq!(queue[0].samples[0], 0.4);
     }
 
     #[test]
     fn should_skip_silent_chunks_when_coalescing() {
         // Arrange
         let mut queue = VecDeque::from([
-            vec![0.0_f32; 160_000],   // silent leading chunk
-            vec![0.1_f32; 160_000],   // speech 10s
-            vec![0.004_f32; 160_000], // background ambient noise chunk (< 0.008)
-            vec![0.2_f32; 160_000],   // speech 10s
+            test_chunk(vec![0.0_f32; 160_000], 0, 10_000), // silent leading chunk
+            test_chunk(vec![0.1_f32; 160_000], 10_000, 20_000), // speech 10s
+            test_chunk(vec![0.004_f32; 160_000], 20_000, 30_000), // background ambient noise chunk (< 0.008)
+            test_chunk(vec![0.2_f32; 160_000], 30_000, 40_000),   // speech 10s
         ]);
 
         // Act
@@ -943,14 +950,19 @@ mod tests {
         // Assert
         let (batch, count) = result.expect("should coalesce non-silent chunks");
         assert_eq!(count, 2);
-        assert_eq!(batch.len(), 320_000);
+        assert_eq!(batch.samples.len(), 320_000);
+        assert_eq!(batch.start_timestamp, 10_000);
+        assert_eq!(batch.end_timestamp, 40_000);
         assert!(queue.is_empty());
     }
 
     #[test]
     fn should_return_none_when_all_queued_chunks_are_silent() {
         // Arrange
-        let mut queue = VecDeque::from([vec![0.0_f32; 80_000], vec![0.005_f32; 80_000]]);
+        let mut queue = VecDeque::from([
+            test_chunk(vec![0.0_f32; 80_000], 0, 5_000),
+            test_chunk(vec![0.005_f32; 80_000], 5_000, 10_000),
+        ]);
 
         // Act
         let result = coalesce_next_batch(&mut queue, 480_000, 0.008);
@@ -964,10 +976,10 @@ mod tests {
     fn should_trim_oldest_chunks_when_backlog_exceeds_sample_limit() {
         // Arrange
         let mut queue = VecDeque::from([
-            vec![0.1_f32; 320_000], // 20s
-            vec![0.2_f32; 320_000], // 20s
-            vec![0.3_f32; 320_000], // 20s
-            vec![0.4_f32; 320_000], // 20s -> total 80s (1_280_000 samples)
+            test_chunk(vec![0.1_f32; 320_000], 0, 20_000), // 20s
+            test_chunk(vec![0.2_f32; 320_000], 20_000, 40_000), // 20s
+            test_chunk(vec![0.3_f32; 320_000], 40_000, 60_000), // 20s
+            test_chunk(vec![0.4_f32; 320_000], 60_000, 80_000), // 20s -> total 80s (1_280_000 samples)
         ]);
 
         // Act
@@ -976,16 +988,16 @@ mod tests {
         // Assert
         assert_eq!(dropped, 1);
         assert_eq!(queue.len(), 3);
-        assert_eq!(queue[0][0], 0.2);
+        assert_eq!(queue[0].samples[0], 0.2);
     }
 
     #[test]
     fn should_drop_stale_chunks_and_process_only_newest_chunk_when_overloaded() {
         // Arrange
         let mut queue = VecDeque::from([
-            vec![0.1_f32; 160_000],
-            vec![0.2_f32; 160_000],
-            vec![0.3_f32; 160_000],
+            test_chunk(vec![0.1_f32; 160_000], 10_000, 20_000),
+            test_chunk(vec![0.2_f32; 160_000], 20_000, 30_000),
+            test_chunk(vec![0.3_f32; 160_000], 30_000, 40_000),
         ]);
 
         // Act
@@ -996,8 +1008,10 @@ mod tests {
         assert_eq!(dropped, 2);
         let (batch, count) = result.expect("should keep newest chunk");
         assert_eq!(count, 1);
-        assert_eq!(batch.len(), 160_000);
-        assert_eq!(batch[0], 0.3);
+        assert_eq!(batch.samples.len(), 160_000);
+        assert_eq!(batch.start_timestamp, 30_000);
+        assert_eq!(batch.end_timestamp, 40_000);
+        assert_eq!(batch.samples[0], 0.3);
         assert!(queue.is_empty());
     }
 

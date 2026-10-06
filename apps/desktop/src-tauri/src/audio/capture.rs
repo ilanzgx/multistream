@@ -88,10 +88,18 @@ pub enum CaptureSource {
     SystemLoopback,
 }
 
+/// Discrete captured audio slice along with its capture-time timestamps.
+#[derive(Clone, Debug)]
+pub struct AudioChunk {
+    pub samples: Vec<f32>,
+    pub start_timestamp: u64,
+    pub end_timestamp: u64,
+}
+
 /// Capture runs on its own thread and only hands off complete chunks, so a slow
 /// Whisper inference never stalls the WASAPI read loop (which would drop audio).
 pub struct CaptureSession {
-    pub chunks: mpsc::Receiver<Vec<f32>>,
+    pub chunks: mpsc::Receiver<AudioChunk>,
     pub source: CaptureSource,
     pub thread: JoinHandle<()>,
 }
@@ -125,7 +133,7 @@ mod platform {
         running: Arc<AtomicBool>,
         chunk_duration: Arc<AtomicU32>,
     ) -> Result<CaptureSession, String> {
-        let (tx_chunks, rx_chunks) = mpsc::channel::<Vec<f32>>();
+        let (tx_chunks, rx_chunks) = mpsc::channel::<AudioChunk>();
         let (tx_init, rx_init) = mpsc::channel::<Result<CaptureSource, String>>();
 
         // COM objects are not Send, so the client must be created on the thread that reads it.
@@ -265,7 +273,7 @@ mod platform {
         client: AudioClient,
         running: &AtomicBool,
         chunk_duration: &AtomicU32,
-        tx_chunks: &mpsc::Sender<Vec<f32>>,
+        tx_chunks: &mpsc::Sender<AudioChunk>,
     ) -> Result<(), String> {
         let event = client.set_get_eventhandle().map_err(|e| e.to_string())?;
         let capture_client = client.get_audiocaptureclient().map_err(|e| e.to_string())?;
@@ -284,8 +292,8 @@ mod platform {
                 idle_timeouts = idle_timeouts.saturating_add(1);
                 if idle_timeouts >= IDLE_FLUSH_TIMEOUTS {
                     idle_timeouts = 0;
-                    if let Some(chunk) = take_idle_flush_chunk(&mut pending) {
-                        let peak = chunk.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
+                    if let Some(samples) = take_idle_flush_chunk(&mut pending) {
+                        let peak = samples.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
                         log::info!(
                             "Capture idle flush: {} packets ({} flagged silent), peak {:.4}",
                             stats.packets,
@@ -293,6 +301,14 @@ mod platform {
                             peak
                         );
                         stats = PacketStats::default();
+                        let end_timestamp = super::super::timestamp_ms();
+                        let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
+                        let start_timestamp = end_timestamp.saturating_sub(duration_ms);
+                        let chunk = AudioChunk {
+                            samples,
+                            start_timestamp,
+                            end_timestamp,
+                        };
                         if tx_chunks.send(chunk).is_err() {
                             let _ = client.stop_stream();
                             return Ok(());
@@ -336,8 +352,8 @@ mod platform {
             let seconds = chunk_duration.load(Ordering::Relaxed).clamp(5, 30);
             let samples_per_chunk = (TARGET_SAMPLE_RATE * seconds) as usize;
             while pending.len() >= samples_per_chunk {
-                let chunk: Vec<f32> = pending.drain(..samples_per_chunk).collect();
-                let peak = chunk.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
+                let samples: Vec<f32> = pending.drain(..samples_per_chunk).collect();
+                let peak = samples.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
                 log::info!(
                     "Capture chunk: {} packets ({} flagged silent), peak {:.4}",
                     stats.packets,
@@ -345,11 +361,31 @@ mod platform {
                     peak
                 );
                 stats = PacketStats::default();
+                let end_timestamp = super::super::timestamp_ms();
+                let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
+                let start_timestamp = end_timestamp.saturating_sub(duration_ms);
+                let chunk = AudioChunk {
+                    samples,
+                    start_timestamp,
+                    end_timestamp,
+                };
                 if tx_chunks.send(chunk).is_err() {
                     let _ = client.stop_stream();
                     return Ok(());
                 }
             }
+        }
+
+        // Flush any remaining accumulated speech before tearing down the capture stream.
+        if let Some(samples) = take_idle_flush_chunk(&mut pending) {
+            let end_timestamp = super::super::timestamp_ms();
+            let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
+            let start_timestamp = end_timestamp.saturating_sub(duration_ms);
+            let _ = tx_chunks.send(AudioChunk {
+                samples,
+                start_timestamp,
+                end_timestamp,
+            });
         }
 
         let _ = client.stop_stream();
