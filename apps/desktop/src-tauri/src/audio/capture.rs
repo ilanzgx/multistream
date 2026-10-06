@@ -5,12 +5,16 @@ use std::sync::{mpsc, Arc};
 use std::thread::JoinHandle;
 
 pub const TARGET_SAMPLE_RATE: u32 = 16000;
+
+#[cfg(any(windows, test))]
 pub(crate) const DECIMATION: usize = 3;
+#[cfg(any(windows, test))]
 const FIR_TAPS: usize = 15;
 
 /// 15-tap Hamming-windowed sinc low-pass FIR filter (cutoff = 7.2 kHz at 48 kHz sample rate),
 /// normalized to unity DC gain. Preserves vocal formants and sibilants (0–7 kHz) while
 /// attenuating >8 kHz energy to prevent aliasing when decimating 48 kHz -> 16 kHz.
+#[cfg(any(windows, test))]
 const LOWPASS_FIR_COEFFS: [f32; FIR_TAPS] = [
     0.0011183, -0.0038948, -0.0160349, -0.0203638, 0.0209518, 0.1244978, 0.244507, 0.2984372,
     0.244507, 0.1244978, 0.0209518, -0.0203638, -0.0160349, -0.0038948, 0.0011183,
@@ -18,10 +22,12 @@ const LOWPASS_FIR_COEFFS: [f32; FIR_TAPS] = [
 
 /// Stateful 3:1 FIR low-pass decimator (48 kHz -> 16 kHz) that preserves filter history
 /// across packet boundaries to prevent phase discontinuities and high-frequency aliasing.
+#[cfg(any(windows, test))]
 pub(crate) struct FirDecimator {
     buffer: Vec<f32>,
 }
 
+#[cfg(any(windows, test))]
 impl Default for FirDecimator {
     fn default() -> Self {
         Self {
@@ -30,6 +36,7 @@ impl Default for FirDecimator {
     }
 }
 
+#[cfg(any(windows, test))]
 impl FirDecimator {
     pub(crate) fn process(&mut self, input: &[f32], output: &mut Vec<f32>) {
         self.buffer.extend_from_slice(input);
@@ -56,6 +63,7 @@ impl FirDecimator {
     }
 }
 
+#[cfg_attr(not(windows), allow(dead_code))]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CaptureSource {
     AppProcessTree,
