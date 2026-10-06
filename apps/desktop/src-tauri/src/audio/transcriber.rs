@@ -34,7 +34,7 @@ pub struct TranscriptionTextPayload {
 pub struct TranscriptionHandle {
     pub running: Arc<AtomicBool>,
     /// Chunk duration in seconds, readable from the capture thread at each iteration
-    /// via `Ordering::Relaxed`. Valid range: 5–30 s.
+    /// via `Ordering::Relaxed`. Valid range: 5-30 s.
     pub chunk_duration: Arc<AtomicU32>,
     pub thread: Option<std::thread::JoinHandle<()>>,
     pub sidecar_child: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
@@ -183,7 +183,7 @@ pub async fn download_whisper_model(model_name: String, app: AppHandle) -> Resul
 
     let total = response.content_length().unwrap_or(0);
     let dest_path = model_path(&app, &model_name)?;
-    // Append `.tmp` to the full filename (e.g. `ggml-base.bin` → `ggml-base.bin.tmp`)
+    // Append `.tmp` to the full filename (e.g. `ggml-base.bin` -> `ggml-base.bin.tmp`)
     // so that a partial download is never mistaken for a complete model on disk.
     // Stale `.tmp` files left by crashed sessions are cleaned up in `get_transcription_status`.
     let temp_name = format!(
@@ -324,23 +324,9 @@ pub fn get_transcription_status(
 ///
 /// If a session is already active, it is stopped first (idempotent).
 ///
-/// **Current implementation:** The audio capture and Whisper inference layers
-/// are stubbed. The command spawns a background thread that emits a placeholder
-/// `transcription:text` event every 5 seconds so the full frontend pipeline
-/// (composable → overlay → event flow) can be validated end-to-end.
-///
-/// When `translate` is `true` the future real implementation will pass
-/// `--translate` to the whisper.cpp sidecar, producing English output regardless
-/// of the source language.
-///
-/// TODO(audio-capture): Replace the stub loop with:
-///   1. cpal process-scoped WASAPI loopback capture
-///   2. Resample PCM to 16 kHz mono f32
-///   3. Write 5-second WAV chunks to a temp dir
-///   4. Invoke the `whisper-main` sidecar with `--model`, `-f`, optionally
-///      `--translate`, `--language auto`, `--no-timestamps`, `--no-prints`
-///   5. Parse stdout and emit `transcription:text`
-///   6. Delete the temp WAV file
+/// Pipeline: the capture thread (WASAPI process loopback, 16 kHz mono) emits
+/// complete chunks; this worker thread coalesces queued chunks up to 30s,
+/// runs the `whisper-cli` sidecar, and emits `transcription:text`.
 #[tauri::command]
 pub fn start_transcription(
     model_name: String,
@@ -380,22 +366,13 @@ pub fn start_transcription(
         Arc::new(Mutex::new(None));
     let sidecar_child_clone = Arc::clone(&sidecar_child);
     let chunk_dur_atomic = Arc::new(AtomicU32::new(chunk_duration.clamp(5, 30)));
-    let chunk_dur_clone = Arc::clone(&chunk_dur_atomic);
 
-    let (tx_init, rx_init) = std::sync::mpsc::channel();
+    let capture =
+        super::capture::start_capture(Arc::clone(&running), Arc::clone(&chunk_dur_atomic))
+            .map_err(|e| format!("Audio capture failed: {e}"))?;
+    log::info!("Transcription capture source: {:?}", capture.source);
 
     let thread = std::thread::spawn(move || {
-        let session = match super::capture::start_loopback() {
-            Ok(s) => {
-                let _ = tx_init.send(Ok(()));
-                s
-            }
-            Err(e) => {
-                let _ = tx_init.send(Err(format!("Audio capture failed: {e}")));
-                return;
-            }
-        };
-
         let temp_dir = app_clone
             .path()
             .app_data_dir()
@@ -404,323 +381,69 @@ pub fn start_transcription(
             .join("temp");
         let _ = std::fs::create_dir_all(&temp_dir);
 
-        let target_sample_rate: u32 = 16000;
-        // Initial capacity hint; will be recomputed dynamically each iteration.
-        let mut mono_16k_buffer = Vec::with_capacity((target_sample_rate * 10) as usize);
-        let mut original_buffer = Vec::new();
+        let mut queue: std::collections::VecDeque<Vec<f32>> = std::collections::VecDeque::new();
 
         while running_clone.load(Ordering::SeqCst) {
-            // Re-read chunk duration on every iteration so that slider changes take
-            // effect immediately. If the buffer already holds more audio than the new
-            // chunk size, the `>= samples_per_chunk` guard below fires right away.
-            let chunk_duration = chunk_dur_clone.load(Ordering::Relaxed).clamp(5, 30);
-            let samples_per_chunk = target_sample_rate * chunk_duration;
-            // Backlog ceiling scales with chunk size to preserve the same relative
-            // behaviour regardless of the chosen duration.
-            let max_backlog_samples = target_sample_rate * chunk_duration * 2;
-            let mut new_samples = Vec::new();
-
-            match session
-                .rx
-                .recv_timeout(std::time::Duration::from_millis(100))
-            {
-                Ok(sample) => {
-                    new_samples.push(sample);
-                    while let Ok(s) = session.rx.try_recv() {
-                        new_samples.push(s);
-                    }
-                }
-                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
-                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                    log::error!("Audio capture channel disconnected");
-                    break;
-                }
+            while let Ok(c) = capture.chunks.try_recv() {
+                queue.push_back(c);
             }
 
-            if new_samples.is_empty() {
-                continue;
-            }
-
-            original_buffer.extend_from_slice(&new_samples);
-
-            let mono = super::capture::to_mono(&new_samples, session.channels);
-            let resampled =
-                super::capture::resample_mono(&mono, session.sample_rate, target_sample_rate);
-            mono_16k_buffer.extend(resampled);
-
-            // Backlog protection
-            if mono_16k_buffer.len() > max_backlog_samples as usize {
-                let excess = mono_16k_buffer.len() - max_backlog_samples as usize;
-                log::warn!(
-                    "Audio backlog exceeded limit, dropping oldest {:.2}s of samples",
-                    excess as f32 / target_sample_rate as f32
-                );
-                mono_16k_buffer.drain(0..excess);
-
-                let excess_orig = (excess as f32
-                    * (session.sample_rate as f32 / target_sample_rate as f32))
-                    .round() as usize
-                    * session.channels as usize;
-                if excess_orig <= original_buffer.len() {
-                    original_buffer.drain(0..excess_orig);
-                } else {
-                    original_buffer.clear();
-                }
-            }
-
-            let backlog_duration = mono_16k_buffer.len() as f32 / target_sample_rate as f32;
-
-            if mono_16k_buffer.len() >= samples_per_chunk as usize {
-                let chunk_samples = mono_16k_buffer
-                    .drain(0..samples_per_chunk as usize)
-                    .collect::<Vec<_>>();
-
-                let orig_samples_to_drain = (samples_per_chunk as f32
-                    * (session.sample_rate as f32 / target_sample_rate as f32))
-                    .round() as usize
-                    * session.channels as usize;
-                let actual_drain = orig_samples_to_drain.min(original_buffer.len());
-                let orig_chunk = original_buffer.drain(0..actual_drain).collect::<Vec<_>>();
-
-                let calc_rms_peak = |s: &[f32]| -> (f32, f32) {
-                    if s.is_empty() {
-                        return (0.0, 0.0);
-                    }
-                    let mut sq = 0.0;
-                    let mut peak = 0.0_f32;
-                    for &v in s {
-                        sq += v * v;
-                        if v.abs() > peak {
-                            peak = v.abs();
-                        }
-                    }
-                    ((sq / s.len() as f32).sqrt(), peak)
-                };
-
-                let (in_rms, in_peak) = calc_rms_peak(&orig_chunk);
-                let (out_rms, out_peak) = calc_rms_peak(&chunk_samples);
-
-                log::info!("Audio Diagnostics:");
-                log::info!(
-                    "  Input: {} Hz, {} channels | RMS: {:.4}, Peak: {:.4}",
-                    session.sample_rate,
-                    session.channels,
-                    in_rms,
-                    in_peak
-                );
-                log::info!(
-                    "  Output: 16000 Hz, 1 channel | RMS: {:.4}, Peak: {:.4}",
-                    out_rms,
-                    out_peak
-                );
-
-                // Skip transcription if audio is essentially silent.
-                // This prevents Whisper from hallucinating repeating phrases on silent loopback (e.g. 0 streams playing),
-                // which can cause the UI text to appear "frozen" because the same phrase is emitted repeatedly.
-                if out_rms < 0.001 {
-                    log::info!(
-                        "Audio chunk is silent. Skipping inference to prevent hallucinations."
-                    );
-                    continue;
-                }
-
-                let orig_wav_path = temp_dir.join(format!("chunk_{}_original.wav", timestamp_ms()));
-                let resampled_wav_path =
-                    temp_dir.join(format!("chunk_{}_resampled.wav", timestamp_ms()));
-
-                const KEEP_DEBUG_AUDIO: bool = false;
-
-                let _orig_guard = TempFileGuard {
-                    path: orig_wav_path.clone(),
-                    keep: KEEP_DEBUG_AUDIO,
-                };
-
-                let _resampled_guard = TempFileGuard {
-                    path: resampled_wav_path.clone(),
-                    keep: KEEP_DEBUG_AUDIO,
-                };
-
-                if KEEP_DEBUG_AUDIO {
-                    let _ = super::capture::write_wav(
-                        &orig_wav_path,
-                        &orig_chunk,
-                        session.channels,
-                        session.sample_rate,
-                    );
-                }
-
-                if let Err(e) =
-                    super::capture::write_wav(&resampled_wav_path, &chunk_samples, 1, 16000)
+            if queue.is_empty() {
+                match capture
+                    .chunks
+                    .recv_timeout(std::time::Duration::from_millis(100))
                 {
-                    log::error!("Failed to write WAV: {}", e);
-                    continue;
-                }
-
-                let model_path = match model_path(&app_clone, &model_name) {
-                    Ok(p) => p,
-                    Err(_) => continue,
-                };
-
-                let resource_dir = app_clone
-                    .path()
-                    .resource_dir()
-                    .unwrap_or_default()
-                    .join("binaries");
-                let current_path = std::env::var("PATH").unwrap_or_default();
-                let new_path = format!("{};{}", resource_dir.to_string_lossy(), current_path);
-
-                let mut sidecar = match app_clone.shell().sidecar("whisper-cli") {
-                    Ok(s) => s,
-                    Err(e) => {
-                        log::error!("failed to setup sidecar: {}", e);
+                    Ok(c) => queue.push_back(c),
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        if running_clone.load(Ordering::SeqCst) {
+                            log::error!("Audio capture channel disconnected");
+                            let _ = app_clone.emit("transcription:status", "error");
+                        }
                         break;
                     }
-                };
-                sidecar = sidecar.env("PATH", new_path);
-                sidecar = sidecar
-                    .arg("-m")
-                    .arg(model_path.to_string_lossy().to_string());
-                sidecar = sidecar
-                    .arg("-f")
-                    .arg(resampled_wav_path.to_string_lossy().to_string());
-                sidecar = sidecar.arg("-nt");
-                sidecar = sidecar.arg("--suppress-nst"); // Suppress non-speech tokens like (speaking in foreign language)
-
-                // Use available parallelism for threads
-                let num_threads = std::thread::available_parallelism()
-                    .map(|n| n.get())
-                    .unwrap_or(4);
-                sidecar = sidecar.arg("-t").arg(num_threads.to_string());
-
-                if translate {
-                    sidecar = sidecar.arg("-tr");
-                }
-
-                sidecar = sidecar.arg("-l").arg("auto");
-
-                let start_time = std::time::Instant::now();
-                let _ = app_clone.emit("transcription:status", "processing");
-                let (mut rx, child) = match sidecar.spawn() {
-                    Ok(res) => res,
-                    Err(e) => {
-                        log::error!("Failed to spawn sidecar: {e}");
-                        let _ = app_clone.emit("transcription:status", "error");
-                        continue;
-                    }
-                };
-
-                {
-                    let mut child_guard = sidecar_child_clone.lock().unwrap();
-                    *child_guard = Some(child);
-                }
-
-                let sidecar_child_inner = Arc::clone(&sidecar_child_clone);
-                let app_inner = app_clone.clone();
-                let output = tauri::async_runtime::block_on(async move {
-                    let rx_task = async {
-                        let mut stdout_acc = String::new();
-                        let mut stderr_acc = String::new();
-                        while let Some(event) = rx.recv().await {
-                            match event {
-                                tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
-                                    stdout_acc.push_str(&String::from_utf8_lossy(&line));
-                                }
-                                tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
-                                    stderr_acc.push_str(&String::from_utf8_lossy(&line));
-                                }
-                                _ => {}
-                            }
-                        }
-                        (stdout_acc, stderr_acc)
-                    };
-
-                    match tokio::time::timeout(std::time::Duration::from_secs(45), rx_task).await {
-                        Ok(res) => res,
-                        Err(_) => {
-                            log::warn!("Whisper inference timed out after 45 seconds");
-                            let mut child_guard = sidecar_child_inner.lock().unwrap();
-                            if let Some(child) = child_guard.take() {
-                                let _ = child.kill();
-                            }
-                            let _ = app_inner.emit("transcription:status", "error");
-                            (String::new(), String::new())
-                        }
-                    }
-                });
-
-                let inference_duration = start_time.elapsed();
-                let rtf = inference_duration.as_secs_f32() / chunk_duration as f32;
-
-                // Extract language from stderr
-                let mut detected_lang = String::new();
-                for line in output.1.lines() {
-                    let line = line.trim();
-                    if line.contains("auto-detected language:") {
-                        if let Some(idx) = line.find("auto-detected language:") {
-                            detected_lang = line[idx + "auto-detected language:".len()..]
-                                .trim()
-                                .to_string();
-                        }
-                    } else if line.contains("Detected language:") {
-                        if let Some(idx) = line.find("Detected language:") {
-                            detected_lang =
-                                line[idx + "Detected language:".len()..].trim().to_string();
-                        }
-                    }
-                }
-                // Strip out the confidence probability "(p = 0.99)" if present
-                if let Some(idx) = detected_lang.find('(') {
-                    detected_lang = detected_lang[..idx].trim().to_string();
-                }
-
-                log::info!("--- Audio Diagnostics ---");
-                log::info!("Chunk: {:.1}s", chunk_duration);
-                log::info!("Inference: {:.1}s", inference_duration.as_secs_f32());
-                log::info!("RTF: {:.2}", rtf);
-                log::info!("Backlog: {:.1}s", backlog_duration);
-                if !detected_lang.is_empty() {
-                    log::info!("Language: {}", detected_lang);
-                }
-                log::info!("-------------------------");
-
-                {
-                    let mut child_guard = sidecar_child_clone.lock().unwrap();
-                    *child_guard = None;
-                }
-
-                let _ = app_clone.emit("transcription:status", "active");
-
-                let cleaned = output.0.trim();
-                let is_pure_caption = (cleaned.starts_with('[') && cleaned.ends_with(']'))
-                    || (cleaned.starts_with('(') && cleaned.ends_with(')'));
-
-                log::info!("Transcription output: {}", cleaned);
-                if !cleaned.is_empty()
-                    && !cleaned.contains("[BLANK_AUDIO]")
-                    && !cleaned.starts_with("[_")
-                    && !is_pure_caption
-                {
-                    let _ = app_clone.emit(
-                        "transcription:text",
-                        TranscriptionTextPayload {
-                            text: cleaned.to_string(),
-                            timestamp: timestamp_ms(),
-                        },
-                    );
-                }
-
-                if KEEP_DEBUG_AUDIO {
-                    log::info!("WAV files saved for diagnostics at:");
-                    log::info!("  Original: {}", orig_wav_path.display());
-                    log::info!("  Resampled: {}", resampled_wav_path.display());
                 }
             }
-        }
-    });
 
-    rx_init
-        .recv()
-        .unwrap_or(Err("Capture thread died unexpectedly".to_string()))?;
+            while let Ok(c) = capture.chunks.try_recv() {
+                queue.push_back(c);
+            }
+
+            let dropped = trim_audio_backlog(&mut queue, MAX_BACKLOG_SAMPLES);
+            if dropped > 0 {
+                log::warn!("Audio backlog exceeded 60s limit, dropped {dropped} oldest chunk(s)");
+            }
+
+            let Some((mut chunk, merged_count)) = coalesce_next_batch(
+                &mut queue,
+                MAX_WHISPER_WINDOW_SAMPLES,
+                SILENCE_RMS_THRESHOLD,
+            ) else {
+                continue;
+            };
+
+            if merged_count > 1 {
+                let batch_secs = chunk.len() as f32 / super::capture::TARGET_SAMPLE_RATE as f32;
+                log::info!("Coalesced {merged_count} queued chunks into {batch_secs:.1}s batch");
+            }
+
+            let ctx = InferenceContext {
+                app: &app_clone,
+                model_name: &model_name,
+                translate,
+                temp_dir: &temp_dir,
+                sidecar_child: &sidecar_child_clone,
+            };
+            if let Err(e) = transcribe_chunk(&ctx, &mut chunk) {
+                log::error!("{e}");
+                break;
+            }
+        }
+
+        // Ensures the capture thread exits even when the worker stopped on its own.
+        running_clone.store(false, Ordering::SeqCst);
+        let _ = capture.thread.join();
+    });
 
     *guard = Some(TranscriptionHandle {
         running,
@@ -728,6 +451,285 @@ pub fn start_transcription(
         thread: Some(thread),
         sidecar_child,
     });
+
+    Ok(())
+}
+
+const MAX_WHISPER_WINDOW_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 30) as usize;
+const MAX_BACKLOG_SAMPLES: usize = (super::capture::TARGET_SAMPLE_RATE * 60) as usize;
+const SILENCE_RMS_THRESHOLD: f32 = 0.008;
+const TARGET_PEAK: f32 = 0.85;
+const MAX_NORMALIZATION_GAIN: f32 = 10.0;
+
+struct InferenceContext<'a> {
+    app: &'a AppHandle,
+    model_name: &'a str,
+    translate: bool,
+    temp_dir: &'a std::path::Path,
+    sidecar_child: &'a Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
+}
+
+fn set_sidecar_child(
+    slot: &Mutex<Option<tauri_plugin_shell::process::CommandChild>>,
+    child: Option<tauri_plugin_shell::process::CommandChild>,
+) -> Option<tauri_plugin_shell::process::CommandChild> {
+    let mut guard = slot.lock().unwrap_or_else(|p| p.into_inner());
+    std::mem::replace(&mut *guard, child)
+}
+
+pub(crate) fn rms(samples: &[f32]) -> f32 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    (samples.iter().map(|v| v * v).sum::<f32>() / samples.len() as f32).sqrt()
+}
+
+/// Computes the optimal thread count (`-t`) for `whisper-cli` based on logical CPU count.
+/// Uses ~75% of logical threads (clamped to `[2, 8]`) to balance low-latency inference
+/// while leaving CPU headroom for live stream playback and the OS.
+pub(crate) fn compute_inference_threads(logical_threads: usize) -> usize {
+    (logical_threads * 3 / 4).clamp(2, 8)
+}
+
+/// Normalizes audio samples toward `TARGET_PEAK` (0.85) with a `MAX_NORMALIZATION_GAIN` (10x) cap
+/// so low-volume streams achieve optimal dynamic range in 16-bit PCM without over-amplifying noise.
+/// Returns the applied gain factor.
+pub(crate) fn normalize_audio_peak(samples: &mut [f32]) -> f32 {
+    let peak = samples.iter().fold(0.0_f32, |p, s| p.max(s.abs()));
+    if peak <= 1e-5 {
+        return 1.0;
+    }
+    let gain = (TARGET_PEAK / peak).min(MAX_NORMALIZATION_GAIN);
+    if (gain - 1.0).abs() > 1e-3 {
+        for sample in samples.iter_mut() {
+            *sample = (*sample * gain).clamp(-1.0, 1.0);
+        }
+    }
+    gain
+}
+
+/// Drops the oldest chunks when total queued samples exceed `max_samples`.
+pub(crate) fn trim_audio_backlog(
+    queue: &mut std::collections::VecDeque<Vec<f32>>,
+    max_samples: usize,
+) -> usize {
+    let mut total_samples: usize = queue.iter().map(Vec::len).sum();
+    let mut dropped = 0;
+    while total_samples > max_samples && queue.len() > 1 {
+        if let Some(removed) = queue.pop_front() {
+            total_samples = total_samples.saturating_sub(removed.len());
+            dropped += 1;
+        }
+    }
+    dropped
+}
+
+/// Pops the next non-silent chunk and merges subsequent non-silent chunks up to `max_window_samples`.
+/// Silent chunks encountered in the queue are discarded immediately so they neither trigger
+/// unnecessary inference nor consume space in a coalesced batch.
+pub(crate) fn coalesce_next_batch(
+    queue: &mut std::collections::VecDeque<Vec<f32>>,
+    max_window_samples: usize,
+    silence_threshold: f32,
+) -> Option<(Vec<f32>, usize)> {
+    let mut base = loop {
+        let candidate = queue.pop_front()?;
+        let candidate_rms = rms(&candidate);
+        if candidate_rms >= silence_threshold {
+            break candidate;
+        }
+        log::info!(
+            "Audio chunk is silent (RMS {candidate_rms:.4}). Skipping inference to prevent hallucinations."
+        );
+    };
+
+    let mut merged_count = 1;
+    while let Some(next) = queue.front() {
+        let next_rms = rms(next);
+        if next_rms < silence_threshold {
+            log::info!(
+                "Audio chunk is silent (RMS {next_rms:.4}). Skipping inference to prevent hallucinations."
+            );
+            queue.pop_front();
+            continue;
+        }
+        if base.len() + next.len() > max_window_samples {
+            break;
+        }
+        if let Some(next_chunk) = queue.pop_front() {
+            base.extend_from_slice(&next_chunk);
+            merged_count += 1;
+        }
+    }
+
+    Some((base, merged_count))
+}
+
+pub(crate) fn parse_detected_language(stderr: &str) -> String {
+    let mut detected_lang = String::new();
+    for line in stderr.lines() {
+        for marker in ["auto-detected language:", "Detected language:"] {
+            if let Some(idx) = line.find(marker) {
+                detected_lang = line[idx + marker.len()..].trim().to_string();
+            }
+        }
+    }
+    // Strip out the confidence probability "(p = 0.99)" if present
+    if let Some(idx) = detected_lang.find('(') {
+        detected_lang = detected_lang[..idx].trim().to_string();
+    }
+    detected_lang
+}
+
+/// Returns `Err` only for unrecoverable failures that should end the session.
+fn transcribe_chunk(ctx: &InferenceContext, chunk: &mut [f32]) -> Result<(), String> {
+    let chunk_seconds = chunk.len() as f32 / super::capture::TARGET_SAMPLE_RATE as f32;
+    let chunk_rms = rms(chunk);
+
+    if chunk_rms < SILENCE_RMS_THRESHOLD {
+        log::info!(
+            "Audio chunk is silent (RMS {chunk_rms:.4}). Skipping inference to prevent hallucinations."
+        );
+        return Ok(());
+    }
+
+    let applied_gain = normalize_audio_peak(chunk);
+
+    let wav_path = ctx.temp_dir.join(format!("chunk_{}.wav", timestamp_ms()));
+    let _wav_guard = TempFileGuard {
+        path: wav_path.clone(),
+        keep: false,
+    };
+
+    if let Err(e) =
+        super::capture::write_wav(&wav_path, chunk, 1, super::capture::TARGET_SAMPLE_RATE)
+    {
+        log::error!("Failed to write WAV: {}", e);
+        return Ok(());
+    }
+
+    let model_path = model_path(ctx.app, ctx.model_name)?;
+
+    let resource_dir = ctx
+        .app
+        .path()
+        .resource_dir()
+        .unwrap_or_default()
+        .join("binaries");
+    let current_path = std::env::var("PATH").unwrap_or_default();
+    let new_path = format!("{};{}", resource_dir.to_string_lossy(), current_path);
+
+    let mut sidecar = ctx
+        .app
+        .shell()
+        .sidecar("whisper-cli")
+        .map_err(|e| format!("failed to setup sidecar: {e}"))?;
+    sidecar = sidecar.env("PATH", new_path);
+    sidecar = sidecar
+        .arg("-m")
+        .arg(model_path.to_string_lossy().to_string());
+    sidecar = sidecar
+        .arg("-f")
+        .arg(wav_path.to_string_lossy().to_string());
+    sidecar = sidecar.arg("-nt");
+    sidecar = sidecar.arg("--suppress-nst"); // Suppress non-speech tokens like (speaking in foreign language)
+
+    let logical_threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4);
+    let num_threads = compute_inference_threads(logical_threads);
+    sidecar = sidecar.arg("-t").arg(num_threads.to_string());
+
+    if ctx.translate {
+        sidecar = sidecar.arg("-tr");
+    }
+
+    sidecar = sidecar.arg("-l").arg("auto");
+
+    let start_time = std::time::Instant::now();
+    let _ = ctx.app.emit("transcription:status", "processing");
+    let (mut rx, child) = match sidecar.spawn() {
+        Ok(res) => res,
+        Err(e) => {
+            log::error!("Failed to spawn sidecar: {e}");
+            let _ = ctx.app.emit("transcription:status", "error");
+            return Ok(());
+        }
+    };
+    set_sidecar_child(ctx.sidecar_child, Some(child));
+
+    let (stdout, stderr) = tauri::async_runtime::block_on(async {
+        let rx_task = async {
+            let mut stdout_acc = String::new();
+            let mut stderr_acc = String::new();
+            while let Some(event) = rx.recv().await {
+                match event {
+                    tauri_plugin_shell::process::CommandEvent::Stdout(line) => {
+                        stdout_acc.push_str(&String::from_utf8_lossy(&line));
+                    }
+                    tauri_plugin_shell::process::CommandEvent::Stderr(line) => {
+                        stderr_acc.push_str(&String::from_utf8_lossy(&line));
+                    }
+                    _ => {}
+                }
+            }
+            (stdout_acc, stderr_acc)
+        };
+
+        match tokio::time::timeout(std::time::Duration::from_secs(45), rx_task).await {
+            Ok(res) => res,
+            Err(_) => {
+                log::warn!("Whisper inference timed out after 45 seconds");
+                if let Some(child) = set_sidecar_child(ctx.sidecar_child, None) {
+                    let _ = child.kill();
+                }
+                let _ = ctx.app.emit("transcription:status", "error");
+                (String::new(), String::new())
+            }
+        }
+    });
+    set_sidecar_child(ctx.sidecar_child, None);
+
+    let inference_duration = start_time.elapsed();
+    let detected_lang = parse_detected_language(&stderr);
+
+    log::info!("--- Audio Diagnostics ---");
+    log::info!(
+        "Chunk: {:.1}s | RMS: {:.4} | Gain: {:.2}x",
+        chunk_seconds,
+        chunk_rms,
+        applied_gain
+    );
+    log::info!("Inference: {:.1}s", inference_duration.as_secs_f32());
+    log::info!(
+        "RTF: {:.2}",
+        inference_duration.as_secs_f32() / chunk_seconds
+    );
+    if !detected_lang.is_empty() {
+        log::info!("Language: {}", detected_lang);
+    }
+    log::info!("-------------------------");
+
+    let _ = ctx.app.emit("transcription:status", "active");
+
+    let cleaned = stdout.trim();
+    let is_pure_caption = (cleaned.starts_with('[') && cleaned.ends_with(']'))
+        || (cleaned.starts_with('(') && cleaned.ends_with(')'));
+
+    log::info!("Transcription output: {}", cleaned);
+    if !cleaned.is_empty()
+        && !cleaned.contains("[BLANK_AUDIO]")
+        && !cleaned.starts_with("[_")
+        && !is_pure_caption
+    {
+        let _ = ctx.app.emit(
+            "transcription:text",
+            TranscriptionTextPayload {
+                text: cleaned.to_string(),
+                timestamp: timestamp_ms(),
+            },
+        );
+    }
 
     Ok(())
 }
@@ -788,23 +790,147 @@ pub fn set_chunk_duration(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::VecDeque;
 
     #[test]
     fn should_accept_valid_model_names() {
-        assert!(validate_model_name("base").is_ok());
-        assert!(validate_model_name("tiny-en").is_ok());
-        assert!(validate_model_name("small_en-v2").is_ok());
-        assert!(validate_model_name("123").is_ok());
+        // Arrange
+        let names = ["base", "tiny-en", "small_en-v2", "123"];
+
+        // Act & Assert
+        for name in names {
+            assert!(validate_model_name(name).is_ok());
+        }
     }
 
     #[test]
     fn should_reject_invalid_model_names_and_path_traversal() {
-        assert!(validate_model_name("").is_err());
-        assert!(validate_model_name("../base").is_err());
-        assert!(validate_model_name("base/../").is_err());
-        assert!(validate_model_name("base\\model").is_err());
-        assert!(validate_model_name("base model").is_err());
-        assert!(validate_model_name("base.bin").is_err());
-        assert!(validate_model_name("rm -rf").is_err());
+        // Arrange
+        let invalid_names = [
+            "",
+            "../base",
+            "base/../",
+            "base\\model",
+            "base model",
+            "base.bin",
+            "rm -rf",
+        ];
+
+        // Act & Assert
+        for name in invalid_names {
+            assert!(validate_model_name(name).is_err());
+        }
+    }
+
+    #[test]
+    fn should_compute_inference_threads_without_saturating_logical_cores() {
+        // Arrange & Act & Assert
+        assert_eq!(compute_inference_threads(2), 2);
+        assert_eq!(compute_inference_threads(4), 3);
+        assert_eq!(compute_inference_threads(8), 6);
+        assert_eq!(compute_inference_threads(12), 8);
+        assert_eq!(compute_inference_threads(16), 8);
+    }
+
+    #[test]
+    fn should_normalize_quiet_audio_to_target_peak_with_gain_cap() {
+        // Arrange
+        let mut quiet_samples = vec![-0.17_f32, 0.085, 0.17];
+        let mut ultra_quiet_samples = vec![0.01_f32, -0.02];
+
+        // Act
+        let gain_quiet = normalize_audio_peak(&mut quiet_samples);
+        let gain_capped = normalize_audio_peak(&mut ultra_quiet_samples);
+
+        // Assert
+        assert!((gain_quiet - 5.0).abs() < 1e-3);
+        assert!((quiet_samples[2] - 0.85).abs() < 1e-3);
+        assert!((gain_capped - MAX_NORMALIZATION_GAIN).abs() < 1e-3);
+        assert!((ultra_quiet_samples[1] - (-0.20)).abs() < 1e-3);
+    }
+
+    #[test]
+    fn should_coalesce_multiple_chunks_up_to_max_window() {
+        // Arrange
+        let mut queue = VecDeque::from([
+            vec![0.1_f32; 160_000], // 10s
+            vec![0.2_f32; 160_000], // 10s
+            vec![0.3_f32; 160_000], // 10s
+            vec![0.4_f32; 160_000], // 10s (exceeds 30s window, must stay in queue)
+        ]);
+
+        // Act
+        let result = coalesce_next_batch(&mut queue, 480_000, 0.008);
+
+        // Assert
+        let (batch, count) = result.expect("should produce a coalesced batch");
+        assert_eq!(count, 3);
+        assert_eq!(batch.len(), 480_000);
+        assert_eq!(queue.len(), 1);
+        assert_eq!(queue[0][0], 0.4);
+    }
+
+    #[test]
+    fn should_skip_silent_chunks_when_coalescing() {
+        // Arrange
+        let mut queue = VecDeque::from([
+            vec![0.0_f32; 160_000],   // silent leading chunk
+            vec![0.1_f32; 160_000],   // speech 10s
+            vec![0.004_f32; 160_000], // background ambient noise chunk (< 0.008)
+            vec![0.2_f32; 160_000],   // speech 10s
+        ]);
+
+        // Act
+        let result = coalesce_next_batch(&mut queue, 480_000, 0.008);
+
+        // Assert
+        let (batch, count) = result.expect("should coalesce non-silent chunks");
+        assert_eq!(count, 2);
+        assert_eq!(batch.len(), 320_000);
+        assert!(queue.is_empty());
+    }
+
+    #[test]
+    fn should_return_none_when_all_queued_chunks_are_silent() {
+        // Arrange
+        let mut queue = VecDeque::from([vec![0.0_f32; 80_000], vec![0.005_f32; 80_000]]);
+
+        // Act
+        let result = coalesce_next_batch(&mut queue, 480_000, 0.008);
+
+        // Assert
+        assert!(result.is_none());
+        assert!(queue.is_empty());
+    }
+
+    #[test]
+    fn should_trim_oldest_chunks_when_backlog_exceeds_sample_limit() {
+        // Arrange
+        let mut queue = VecDeque::from([
+            vec![0.1_f32; 320_000], // 20s
+            vec![0.2_f32; 320_000], // 20s
+            vec![0.3_f32; 320_000], // 20s
+            vec![0.4_f32; 320_000], // 20s -> total 80s (1_280_000 samples)
+        ]);
+
+        // Act
+        let dropped = trim_audio_backlog(&mut queue, 960_000); // max 60s
+
+        // Assert
+        assert_eq!(dropped, 1);
+        assert_eq!(queue.len(), 3);
+        assert_eq!(queue[0][0], 0.2);
+    }
+
+    #[test]
+    fn should_parse_detected_language_from_stderr() {
+        // Arrange
+        let stderr = "whisper_full_with_state: auto-detected language: pt (p = 0.987123)\n";
+
+        // Act
+        let lang = parse_detected_language(stderr);
+
+        // Assert
+        assert_eq!(lang, "pt");
     }
 }
