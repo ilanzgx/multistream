@@ -128,6 +128,13 @@ mod platform {
     const EVENT_TIMEOUT_MS: u32 = 100;
     const IDLE_FLUSH_TIMEOUTS: u32 = 10;
 
+    fn timestamp_ms() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64
+    }
+
     /// Spawns the Windows WASAPI capture thread and returns the active `CaptureSession`.
     pub fn start_capture(
         running: Arc<AtomicBool>,
@@ -301,7 +308,7 @@ mod platform {
                             peak
                         );
                         stats = PacketStats::default();
-                        let end_timestamp = super::super::timestamp_ms();
+                        let end_timestamp = timestamp_ms();
                         let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
                         let start_timestamp = end_timestamp.saturating_sub(duration_ms);
                         let chunk = AudioChunk {
@@ -361,7 +368,7 @@ mod platform {
                     peak
                 );
                 stats = PacketStats::default();
-                let end_timestamp = super::super::timestamp_ms();
+                let end_timestamp = timestamp_ms();
                 let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
                 let start_timestamp = end_timestamp.saturating_sub(duration_ms);
                 let chunk = AudioChunk {
@@ -378,7 +385,7 @@ mod platform {
 
         // Flush any remaining accumulated speech before tearing down the capture stream.
         if let Some(samples) = take_idle_flush_chunk(&mut pending) {
-            let end_timestamp = super::super::timestamp_ms();
+            let end_timestamp = timestamp_ms();
             let duration_ms = (samples.len() as u64 * 1000) / TARGET_SAMPLE_RATE as u64;
             let start_timestamp = end_timestamp.saturating_sub(duration_ms);
             let _ = tx_chunks.send(AudioChunk {
