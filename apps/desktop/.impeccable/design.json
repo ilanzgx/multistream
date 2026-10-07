@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-07T00:58:00Z",
+  "title": "Design System: Multistream",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Pure White",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#14161a", "#1e2127", "#3a3f4b", "#6b7280", "#9ca3af", "#d1d5db", "#f3f4f6", "#ffffff"]
+      },
+      "surface-panel": {
+        "role": "neutral",
+        "displayName": "Dark Slate Surface",
+        "canonical": "#14161a",
+        "tonalRamp": ["#0b0c0e", "#0f1115", "#14161a", "#191b1f", "#1f2227", "#2a2d33", "#3a3f4b", "#4b5563"]
+      },
+      "surface-input": {
+        "role": "neutral",
+        "displayName": "Deep Void",
+        "canonical": "#0f1115",
+        "tonalRamp": ["#050607", "#0a0b0d", "#0f1115", "#14161a", "#1a1d24", "#262930", "#353943", "#454954"]
+      },
+      "platform-twitch": {
+        "role": "accent",
+        "displayName": "Twitch Purple",
+        "canonical": "#9146ff",
+        "tonalRamp": ["#270054", "#450094", "#6d18df", "#9146ff", "#a970ff", "#bf94ff", "#d8bfff", "#f2e8ff"]
+      },
+      "platform-kick": {
+        "role": "accent",
+        "displayName": "Kick Neon Green",
+        "canonical": "#53fc18",
+        "tonalRamp": ["#0d4200", "#187a00", "#2ec400", "#53fc18", "#78fd47", "#a3fe7a", "#c9ffae", "#edffe3"]
+      },
+      "platform-youtube": {
+        "role": "accent",
+        "displayName": "YouTube Crimson",
+        "canonical": "#ff0000",
+        "tonalRamp": ["#4a0000", "#870000", "#c40000", "#ff0000", "#ff3b3b", "#ff7070", "#ffa8a8", "#ffe3e3"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Hero", "purpose": "Welcome hero and empty state headlines." },
+      "headline": { "displayName": "Headline", "purpose": "Modal dialog titles and prominent stream names." },
+      "title": { "displayName": "Section Title", "purpose": "Card titles, toast headers, and toolbars." },
+      "body": { "displayName": "Body Text", "purpose": "Chat messages, descriptions, and transcripts." },
+      "label": { "displayName": "Label / Telemetry", "purpose": "Tooltips, badges, timestamps, and viewer counters." }
+    },
+    "shadows": [
+      {
+        "name": "floating-tab",
+        "value": "0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3)",
+        "purpose": "Elevates docked collapsed sidebar button and floating indicators over video stream canvas."
+      },
+      {
+        "name": "modal",
+        "value": "0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3)",
+        "purpose": "Soft ambient elevation for dialog cards."
+      },
+      {
+        "name": "popover",
+        "value": "0 20px 25px -5px rgba(0, 0, 0, 0.5)",
+        "purpose": "High-contrast separation for hovercard tooltips and emote picker dropdowns."
+      }
+    ],
+    "motion": [
+      {
+        "name": "flip-grid",
+        "value": "cubic-bezier(0.25, 0.8, 0.25, 1)",
+        "purpose": "Smooth FLIP transitions for reordering and focusing video tiles without rendering stutter."
+      },
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Default easing curve for buttons, panels, and drawer animations."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "xl", "value": "1280px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "High-contrast confirm button used in empty state and modal footers.",
+      "html": "<button class=\"ds-btn-primary\"><span>Add Stream</span></button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; height: 44px; padding: 0 20px; background-color: #ffffff; color: #14161a; font-family: system-ui, sans-serif; font-size: 14px; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; transition: background-color 0.2s, transform 0.2s; } .ds-btn-primary:hover { background-color: #f3f4f6; transform: scale(1.03); }"
+    },
+    {
+      "name": "Panel Action Tile",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Utility icon button in sidebar actions grid.",
+      "html": "<button class=\"ds-btn-panel\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z\"></path></svg></button>",
+      "css": ".ds-btn-panel { display: flex; align-items: center; justify-content: center; width: 100%; height: 44px; background-color: #14161a; color: #ffffff; border: 1px solid #2a2d33; border-radius: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; } .ds-btn-panel:hover { background-color: #1c1f24; border-color: #3a3f4b; } .ds-btn-panel svg { transition: transform 0.3s; } .ds-btn-panel:hover svg { transform: rotate(90deg); }"
+    },
+    {
+      "name": "Stream Control Pill",
+      "kind": "button",
+      "refersTo": "button-stream-control",
+      "description": "Hover action control button overlaying a stream tile.",
+      "html": "<button class=\"ds-stream-btn\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"></line><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"></line></svg></button>",
+      "css": ".ds-stream-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: rgba(255, 255, 255, 0.8); cursor: pointer; transition: transform 0.2s, background 0.2s; } .ds-stream-btn:hover { background: rgba(239, 68, 68, 0.8); color: #ffffff; border-color: rgba(248, 113, 113, 0.5); transform: scale(1.1); }"
+    },
+    {
+      "name": "Dark Text Input",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Clean deep-void text input for channel searches and URLs.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Enter channel name...\" />",
+      "css": ".ds-input { width: 100%; height: 36px; padding: 0 12px; background-color: #0f1115; border: 1px solid #2a2d33; border-radius: 8px; color: #ffffff; font-family: system-ui, sans-serif; font-size: 14px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; } .ds-input::placeholder { color: #9ca3af; } .ds-input:hover { border-color: #3a3f4b; } .ds-input:focus { border-color: rgba(255, 255, 255, 0.3); box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2); }"
+    },
+    {
+      "name": "Switch Toggle",
+      "kind": "custom",
+      "refersTo": "switch",
+      "description": "Accessible switch toggle for hardware options and chat modes.",
+      "html": "<div class=\"ds-switch ds-switch-checked\"><div class=\"ds-switch-thumb\"></div></div>",
+      "css": ".ds-switch { display: inline-flex; width: 44px; height: 24px; border-radius: 9999px; border: 1px solid #3a3f4b; background-color: #2a2d33; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; padding: 2px; align-items: center; } .ds-switch.ds-switch-checked { background-color: #16a34a; border-color: rgba(34, 197, 94, 0.5); } .ds-switch-thumb { width: 16px; height: 16px; border-radius: 50%; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: transform 0.2s; transform: translateX(2px); } .ds-switch.ds-switch-checked .ds-switch-thumb { transform: translateX(22px); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Mission Control Studio",
+    "overview": "Multistream is designed as an ultra-focused, high-density broadcast monitoring cockpit. In a live environment where users watch multiple active streams concurrently, UI chrome must completely recede into the dark background, allowing broadcast video content and rapid real-time chat to command 100% of the user's attention. The visual language rejects decorative excess, bright saturated panels, and distracting drop shadows. Instead, it relies on disciplined tonal dark layering (#0f1115 through #1f2227), precision 1px structural borders (#2a2d33), razor-sharp micro-interactions, and instant layout adaptability through FLIP animations.",
+    "keyCharacteristics": [
+      "Zero Distraction Shell: Deep dark palette that dissolves behind video tiles and highlights only upon mouse proximity or active state.",
+      "Tonal Depth Over Drop Shadows: Surface hierarchy is communicated through subtle lightness stepping and 1px borders rather than heavy ambient blurs.",
+      "Micro-Mechanical Feedback: Hover expansions, rotation transforms, and FLIP grid animations deliver tactile confirmation with zero layout lag.",
+      "Protected Platform Sanctity: Platform brand colors (Twitch purple, Kick neon green, YouTube crimson) are strictly isolated to platform identification and never leak into generic actions."
+    ],
+    "rules": [
+      {
+        "name": "The Receding Frame Rule",
+        "body": "The UI shell (#14161a / #0f1115) must never compete with video content. Static chrome stays flat and muted; control buttons and toolbars appear only when hovered or focused.",
+        "section": "colors"
+      },
+      {
+        "name": "The Platform Sanctity Rule",
+        "body": "Platform colors (#9146ff, #53fc18, #ff0000, #6366f1) belong exclusively to platform identity. Never use Twitch purple or Kick green for generic app buttons or standard UI states.",
+        "section": "colors"
+      },
+      {
+        "name": "The Pure White Rarity Rule",
+        "body": "Pure white background fill (bg-white) is strictly rationed for primary CTA buttons and slider controls. Never use white cards or bright modal backgrounds.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Telemetry Rule",
+        "body": "Timers, viewer numbers, bitrates, and audio inference metrics must always specify tabular-nums (and font-mono when technical) to eliminate horizontal jitter during live updates.",
+        "section": "typography"
+      },
+      {
+        "name": "The Anti-Occlusion Rule",
+        "body": "To prevent catastrophic WebView2/Chromium GPU black-screen crashes over video iframes, modal dialogs must never mount full-screen dark overlay backdrops. Instead, DialogOverlay remains bg-transparent while #app is dimmed globally using filter: brightness(0.35) in CSS.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Flat Frame Rule",
+        "body": "Stream cells, sidebars, and panels rest completely flat. Elevation shadows appear only on detached floating overlays (tooltips, toasts, and the collapsed sidebar dock tab).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do preserve the dark tonal hierarchy: #0f1115 for deep inputs/video insets, #14161a for panels, #181a1f for cards, and #1f2227 for the stream grid canvas.",
+      "Do use border-[#2a2d33] for standard borders and border-[#3a3f4b] on hover interactions.",
+      "Do keep stream action controls hidden at rest, revealing on hover with smooth translation (opacity-0 translate-x-2 -> opacity-100 translate-x-0).",
+      "Do apply tabular-nums to all timers, viewer counts, and live numbers.",
+      "Do use filter: brightness(0.35) on #app to dim the interface for dialogs rather than dark overlay divs.",
+      "Do isolate platform colors (#9146ff, #53fc18, #ff0000, #6366f1) to stream badges, avatar indicators, and platform filters."
+    ],
+    "donts": [
+      "Don't introduce bright backgrounds, light mode dialogs, or saturated non-brand colors.",
+      "Don't add heavy drop shadows to regular panels, cards, or stream grid frames.",
+      "Don't use opaque or semi-transparent backdrop overlays directly over video iframes (prevents WebView2 GPU crashes).",
+      "Don't use platform brand colors for generic action buttons (e.g. green or purple 'Save' or 'Add' buttons).",
+      "Don't hardcode user-facing copy in components; always route UI text through vue-i18n keys.",
+      "Don't remove iframes abruptly from the DOM; always route stream closures through the two-phase Graveyard mechanism."
+    ]
+  }
+}
