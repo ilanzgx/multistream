@@ -34,4 +34,39 @@ test.describe("Settings & i18n Preferences E2E Test", () => {
     const storedLocale = await page.evaluate(() => localStorage.getItem("locale"));
     expect(storedLocale).toMatch(/^pt/);
   });
+
+  test("settings dialog renders tabs and switches between them correctly", async ({ page }) => {
+    // Act: open settings dialog
+    await page.getByTestId("settings-btn").click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // Assert: default tab (General) shows Language section
+    await expect(dialog.getByText("Language", { exact: false }).first()).toBeVisible();
+
+    // Act: click Data tab
+    await dialog.getByRole("tab", { name: "Data" }).click();
+
+    // Assert: Data tab content is visible (Export Data button)
+    await expect(dialog.getByRole("button", { name: "Export Data" })).toBeVisible();
+
+    // Act: click Connections tab
+    await dialog.getByRole("tab", { name: "Connections" }).click();
+
+    // Assert: Connections tab content is visible (Accounts heading)
+    await expect(dialog.getByText("Accounts").first()).toBeVisible();
+
+    // Act: click About tab
+    await dialog.getByRole("tab", { name: "About" }).click();
+
+    // Assert: About tab content is visible (Multistream heading and license)
+    await expect(dialog.getByRole("heading", { name: "Multistream" })).toBeVisible();
+    await expect(dialog.getByText("License").first()).toBeVisible();
+
+    // Act: close dialog via close button
+    await dialog.getByRole("button", { name: "Close" }).first().click();
+
+    // Assert: dialog is closed
+    await expect(dialog).not.toBeVisible();
+  });
 });
