@@ -73,135 +73,164 @@ watch(adblockEnabled, (enabled) => {
 </script>
 
 <template>
-  <TabsContent value="geral" class="space-y-8 mt-0 outline-none">
-    <!-- Language Section -->
-    <div class="space-y-2">
-      <div class="flex items-center gap-2 px-1">
-        <Globe class="size-4 text-gray-400" />
-        <div>
+  <TabsContent value="geral" class="space-y-6 mt-0 outline-none">
+    <!-- Language Selection -->
+    <section class="space-y-3">
+      <div class="flex items-center gap-2.5 px-0.5">
+        <Globe class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+        <div class="min-w-0 flex-1">
           <h3 class="text-white text-sm font-medium">
             {{ $t("settings.language.title") }}
           </h3>
-          <p class="text-gray-400 text-xs">{{ $t("settings.language.description") }}</p>
+          <p class="text-gray-400 text-xs mt-0.5">{{ $t("settings.language.description") }}</p>
         </div>
       </div>
+
       <div
-        class="border border-[#2a2d33]/60 bg-[#14161a] p-3 rounded-xl flex items-center justify-start"
+        class="border border-[#2a2d33]/60 bg-[#14161a] p-2 rounded-xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5"
       >
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 w-full">
-          <button
-            v-for="lang in languages"
-            :key="lang.code"
-            class="flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium rounded-md transition-all duration-200 cursor-pointer w-full"
-            :class="
-              locale === lang.code
-                ? 'bg-[#2a2d33] text-white border border-white/20 shadow-sm'
-                : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
-            "
-            @click="changeLanguage(lang.code)"
+        <button
+          v-for="lang in languages"
+          :key="lang.code"
+          type="button"
+          :aria-pressed="locale === lang.code"
+          class="flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-150 cursor-pointer w-full select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98]"
+          :class="
+            locale === lang.code
+              ? 'bg-white text-black shadow-xs font-semibold'
+              : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
+          "
+          @click="changeLanguage(lang.code)"
+        >
+          <component
+            :is="lang.flag"
+            :size="18"
+            class="shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,0.32)]"
+            aria-hidden="true"
+          />
+          <span class="w-16 sm:w-20 text-left truncate">{{ lang.name }}</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Desktop Preferences -->
+    <div class="space-y-6 border-t border-[#2a2d33]/50 pt-6">
+      <template v-if="isRunningInTauri">
+        <!-- Notifications -->
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5 px-0.5 min-w-0 flex-1">
+            <Bell class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+            <div class="min-w-0 flex-1">
+              <h3 class="text-white text-sm font-medium">
+                {{ $t("settings.notifications.title") }}
+              </h3>
+              <p class="text-gray-400 text-xs mt-0.5">
+                {{ $t("settings.notifications.description") }}
+              </p>
+            </div>
+          </div>
+          <div class="shrink-0">
+            <Switch
+              id="notifications-switch"
+              v-model:checked="notificationsEnabled"
+              :aria-label="$t('settings.notifications.title')"
+            />
+          </div>
+        </div>
+
+        <!-- Native Player -->
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5 px-0.5 min-w-0 flex-1">
+            <FlaskConical class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+            <div class="min-w-0 flex-1">
+              <h3 class="text-white text-sm font-medium">
+                {{ $t("settings.nativePlayer.title") }}
+              </h3>
+              <p class="text-gray-400 text-xs mt-0.5">
+                {{ $t("settings.nativePlayer.description") }}
+              </p>
+            </div>
+          </div>
+          <div class="shrink-0">
+            <Switch
+              id="native-player-switch"
+              v-model:checked="nativePlayerEnabled"
+              :aria-label="$t('settings.nativePlayer.title')"
+            />
+          </div>
+        </div>
+
+        <!-- Ad Blocker -->
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5 px-0.5 min-w-0 flex-1">
+            <ShieldCheck class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+            <div class="min-w-0 flex-1">
+              <h3 class="text-white text-sm font-medium">
+                {{ $t("settings.adblock.title") }}
+              </h3>
+              <p class="text-gray-400 text-xs mt-0.5">
+                {{ $t("settings.adblock.description") }}
+              </p>
+            </div>
+          </div>
+          <div class="shrink-0">
+            <Switch
+              id="adblock-switch"
+              v-model:checked="adblockEnabled"
+              :aria-label="$t('settings.adblock.title')"
+            />
+          </div>
+        </div>
+
+        <!-- Software Updates -->
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2.5 px-0.5 min-w-0 flex-1">
+            <Download class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+            <div class="min-w-0 flex-1">
+              <h3 class="text-white text-sm font-medium">{{ $t("settings.updates.title") }}</h3>
+              <p class="text-gray-400 text-xs mt-0.5">{{ $t("settings.updates.description") }}</p>
+            </div>
+          </div>
+          <div class="shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              class="w-44 sm:w-52 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-150 active:scale-[0.98] select-none focus-visible:ring-2 focus-visible:ring-white/20"
+              :disabled="isChecking"
+              @click="handleCheckUpdates"
+            >
+              <RefreshCw
+                class="size-4 mr-2"
+                :class="{ 'animate-spin': isChecking }"
+                aria-hidden="true"
+              />
+              {{
+                isChecking ? $t("settings.updates.checking") : $t("settings.updates.checkButton")
+              }}
+            </Button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Help / Onboarding Tour -->
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5 px-0.5 min-w-0 flex-1">
+          <HelpCircle class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+          <div class="min-w-0 flex-1">
+            <h3 class="text-white text-sm font-medium">{{ $t("settings.help.title") }}</h3>
+            <p class="text-gray-400 text-xs mt-0.5">{{ $t("settings.help.description") }}</p>
+          </div>
+        </div>
+        <div class="shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            class="w-44 sm:w-52 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-150 active:scale-[0.98] select-none focus-visible:ring-2 focus-visible:ring-white/20"
+            @click="startTour"
           >
-            <component :is="lang.flag" :size="20" class="shrink-0" />
-            <span class="w-16 sm:w-20 text-left truncate">{{ lang.name }}</span>
-          </button>
+            {{ $t("settings.help.showTourButton") }}
+          </Button>
         </div>
-      </div>
-    </div>
-
-    <!-- Notifications Section -->
-    <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-2 px-1">
-        <Bell class="size-4 text-gray-400 shrink-0" />
-        <div>
-          <h3 class="text-white text-sm font-medium">
-            {{ $t("settings.notifications.title") }}
-          </h3>
-          <p class="text-gray-400 text-xs">
-            {{ $t("settings.notifications.description") }}
-          </p>
-        </div>
-      </div>
-      <div class="shrink-0 flex items-center justify-end">
-        <Switch id="notifications-switch" v-model:checked="notificationsEnabled" />
-      </div>
-    </div>
-
-    <!-- Native Player (Experimental) Section -->
-    <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-2 px-1">
-        <FlaskConical class="size-4 text-gray-400 shrink-0" />
-        <div class="pr-8">
-          <h3 class="text-white text-sm font-medium">
-            {{ $t("settings.nativePlayer.title") }}
-          </h3>
-          <p class="text-gray-400 text-xs">
-            {{ $t("settings.nativePlayer.description") }}
-          </p>
-        </div>
-      </div>
-      <div class="shrink-0 flex items-center justify-end">
-        <Switch id="native-player-switch" v-model:checked="nativePlayerEnabled" />
-      </div>
-    </div>
-
-    <!-- Ad Blocker Section -->
-    <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-2 px-1">
-        <ShieldCheck class="size-4 text-gray-400 shrink-0" />
-        <div class="pr-8">
-          <h3 class="text-white text-sm font-medium">
-            {{ $t("settings.adblock.title") }}
-          </h3>
-          <p class="text-gray-400 text-xs">
-            {{ $t("settings.adblock.description") }}
-          </p>
-        </div>
-      </div>
-      <div class="shrink-0 flex items-center justify-end">
-        <Switch id="adblock-switch" v-model:checked="adblockEnabled" />
-      </div>
-    </div>
-
-    <!-- Updates Section -->
-    <div v-if="isRunningInTauri" class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-2 px-1">
-        <Download class="size-4 text-gray-400 shrink-0" />
-        <div>
-          <h3 class="text-white text-sm font-medium">{{ $t("settings.updates.title") }}</h3>
-          <p class="text-gray-400 text-xs">{{ $t("settings.updates.description") }}</p>
-        </div>
-      </div>
-      <div class="shrink-0 flex items-center justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          class="w-52 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
-          :disabled="isChecking"
-          @click="handleCheckUpdates"
-        >
-          <RefreshCw class="size-4 mr-2" :class="{ 'animate-spin': isChecking }" />
-          {{ isChecking ? $t("settings.updates.checking") : $t("settings.updates.checkButton") }}
-        </Button>
-      </div>
-    </div>
-
-    <!-- Help / Tour Section -->
-    <div class="flex items-center justify-between gap-4">
-      <div class="flex items-center gap-2 px-1">
-        <HelpCircle class="size-4 text-gray-400 shrink-0" />
-        <div>
-          <h3 class="text-white text-sm font-medium">{{ $t("settings.help.title") }}</h3>
-          <p class="text-gray-400 text-xs">{{ $t("settings.help.description") }}</p>
-        </div>
-      </div>
-      <div class="shrink-0 flex items-center justify-end">
-        <Button
-          variant="outline"
-          size="sm"
-          class="w-52 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all duration-200"
-          @click="startTour"
-        >
-          {{ $t("settings.help.showTourButton") }}
-        </Button>
       </div>
     </div>
   </TabsContent>

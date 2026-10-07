@@ -126,7 +126,8 @@
       "chunkDurationLabel": "Caption Responsiveness",
       "chunkDurationHintLow": "Lower values show captions faster but may use more CPU.",
       "chunkDurationHintHigh": "Higher values reduce processing pressure but increase delay.",
-      "chunkDurationHintRec": "10s is recommended for most systems."
+      "chunkDurationHintRec": "10s is recommended for most systems.",
+      "modelInUse": "In Use"
     },
     "tabs": {
       "general": "General",
@@ -331,6 +332,11 @@
       "title": "Delete Recording",
       "description": "This recording file will be permanently deleted from disk. This action cannot be undone.",
       "confirm": "Delete"
+    },
+    "deleteModel": {
+      "title": "Delete AI Model",
+      "description": "Are you sure you want to delete this transcription model? You will need to download it again to use it.",
+      "confirm": "Delete Model"
     }
   },
   "common": {

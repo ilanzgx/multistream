@@ -126,7 +126,8 @@
       "chunkDurationLabel": "Altyazı Tepki Süresi",
       "chunkDurationHintLow": "Daha düşük değerler altyazıları daha hızlı gösterir ancak daha fazla CPU kullanabilir.",
       "chunkDurationHintHigh": "Daha yüksek değerler işlem baskısını azaltır ancak gecikmeyi artırır.",
-      "chunkDurationHintRec": "Çoğu sistem için 10s önerilir."
+      "chunkDurationHintRec": "Çoğu sistem için 10s önerilir.",
+      "modelInUse": "Kullanımda"
     },
     "tabs": {
       "general": "Genel",
@@ -331,6 +332,11 @@
       "title": "Kaydı Sil",
       "description": "Bu kayıt dosyası diskten kalıcı olarak silinecektir. Bu işlem geri alınamaz.",
       "confirm": "Sil"
+    },
+    "deleteModel": {
+      "title": "Yapay Zeka Modelini Sil",
+      "description": "Bu transkripsiyon modelini silmek istediğinizden emin misiniz? Kullanmak için tekrar indirmeniz gerekecek.",
+      "confirm": "Modeli Sil"
     }
   },
   "common": {

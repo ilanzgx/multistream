@@ -121,7 +121,8 @@
       "chunkDurationLabel": "字幕响应速度",
       "chunkDurationHintLow": "较小的值能更快显示字幕，但可能占用更多 CPU。",
       "chunkDurationHintHigh": "较大的值可降低处理压力，但会增加延迟。",
-      "chunkDurationHintRec": "建议大多数系统设置为 10s。"
+      "chunkDurationHintRec": "建议大多数系统设置为 10s。",
+      "modelInUse": "使用中"
     },
     "help": {
       "title": "帮助",
@@ -331,6 +332,11 @@
       "title": "删除录制",
       "description": "此录制文件将从磁盘永久删除。此操作无法撤销。",
       "confirm": "删除"
+    },
+    "deleteModel": {
+      "title": "删除AI模型",
+      "description": "您确定要删除此转录模型吗？您需要重新下载才能使用它。",
+      "confirm": "删除模型"
     }
   },
   "common": {

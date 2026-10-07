@@ -126,7 +126,8 @@
       "chunkDurationLabel": "Responsividade das Legendas",
       "chunkDurationHintLow": "Valores menores exibem legendas mais rápido, mas podem usar mais CPU.",
       "chunkDurationHintHigh": "Valores maiores reduzem a pressão de processamento, mas aumentam o atraso.",
-      "chunkDurationHintRec": "10s é o recomendado para a maioria dos sistemas."
+      "chunkDurationHintRec": "10s é o recomendado para a maioria dos sistemas.",
+      "modelInUse": "Em Uso"
     },
     "tabs": {
       "general": "Geral",
@@ -331,6 +332,11 @@
       "title": "Excluir Gravação",
       "description": "Este arquivo de gravação será excluído permanentemente do disco. Esta ação não pode ser desfeita.",
       "confirm": "Excluir"
+    },
+    "deleteModel": {
+      "title": "Excluir Modelo de IA",
+      "description": "Tem certeza de que deseja excluir este modelo de transcrição? Você precisará baixá-lo novamente para usá-lo.",
+      "confirm": "Excluir Modelo"
     }
   },
   "common": {

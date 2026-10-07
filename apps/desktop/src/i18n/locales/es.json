@@ -121,7 +121,8 @@
       "chunkDurationLabel": "Responsividad de Subtítulos",
       "chunkDurationHintLow": "Los valores más bajos muestran subtítulos más rápido pero pueden usar más CPU.",
       "chunkDurationHintHigh": "Los valores más altos reducen la carga de procesamiento pero aumentan el retraso.",
-      "chunkDurationHintRec": "Se recomiendan 10s para la mayoría de los sistemas."
+      "chunkDurationHintRec": "Se recomiendan 10s para la mayoría de los sistemas.",
+      "modelInUse": "En Uso"
     },
     "help": {
       "title": "Ayuda",
@@ -331,6 +332,11 @@
       "title": "Eliminar Grabación",
       "description": "Este archivo de grabación se eliminará permanentemente del disco. Esta acción no se puede deshacer.",
       "confirm": "Eliminar"
+    },
+    "deleteModel": {
+      "title": "Eliminar modelo de IA",
+      "description": "¿Estás seguro de que deseas eliminar este modelo de transcripción? Deberás descargarlo nuevamente para usarlo.",
+      "confirm": "Eliminar Modelo"
     }
   },
   "common": {

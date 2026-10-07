@@ -126,7 +126,8 @@
       "chunkDurationLabel": "Daya Tanggap Takarir",
       "chunkDurationHintLow": "Nilai yang lebih rendah menampilkan takarir lebih cepat tetapi mungkin menggunakan lebih banyak CPU.",
       "chunkDurationHintHigh": "Nilai yang lebih tinggi mengurangi tekanan pemrosesan tetapi meningkatkan jeda.",
-      "chunkDurationHintRec": "10d disarankan untuk sebagian besar sistem."
+      "chunkDurationHintRec": "10d disarankan untuk sebagian besar sistem.",
+      "modelInUse": "Sedang Digunakan"
     },
     "tabs": {
       "general": "Umum",
@@ -331,6 +332,11 @@
       "title": "Hapus Rekaman",
       "description": "File rekaman ini akan dihapus secara permanen dari disk. Tindakan ini tidak dapat dibatalkan.",
       "confirm": "Hapus"
+    },
+    "deleteModel": {
+      "title": "Hapus Model AI",
+      "description": "Apakah Anda yakin ingin menghapus model transkripsi ini? Anda harus mengunduhnya lagi untuk menggunakannya.",
+      "confirm": "Hapus Model"
     }
   },
   "common": {

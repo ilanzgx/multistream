@@ -126,7 +126,8 @@
       "chunkDurationLabel": "Réactivité des sous-titres",
       "chunkDurationHintLow": "Des valeurs plus basses affichent les sous-titres plus rapidement mais peuvent utiliser plus de CPU.",
       "chunkDurationHintHigh": "Des valeurs plus élevées réduisent la pression de traitement mais augmentent le délai.",
-      "chunkDurationHintRec": "10s est recommandé pour la plupart des systèmes."
+      "chunkDurationHintRec": "10s est recommandé pour la plupart des systèmes.",
+      "modelInUse": "En cours d'utilisation"
     },
     "tabs": {
       "general": "Général",
@@ -331,6 +332,11 @@
       "title": "Supprimer l'enregistrement",
       "description": "Ce fichier d'enregistrement sera définitivement supprimé du disque. Cette action est irréversible.",
       "confirm": "Supprimer"
+    },
+    "deleteModel": {
+      "title": "Supprimer le modèle IA",
+      "description": "Êtes-vous sûr de vouloir supprimer ce modèle de transcription ? Vous devrez le télécharger à nouveau pour l'utiliser.",
+      "confirm": "Supprimer le modèle"
     }
   },
   "common": {
