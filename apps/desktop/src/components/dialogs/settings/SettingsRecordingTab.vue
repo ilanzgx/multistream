@@ -126,18 +126,16 @@ watch(
   <TabsContent
     v-if="isRunningInTauri && isRecordingSupported"
     value="gravacao"
-    class="space-y-8 mt-0 outline-none"
+    class="space-y-6 mt-0 outline-none"
   >
     <!-- Section Header (Title & Description) -->
     <div class="space-y-2">
-      <div class="flex items-center gap-2 px-1">
+      <div class="flex items-center gap-2.5 px-0.5">
         <Video class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="text-white text-sm font-medium">
-              {{ $t("settings.recording.enableTitle") }}
-            </h3>
-          </div>
+        <div class="min-w-0 flex-1">
+          <h3 class="text-white text-sm font-medium">
+            {{ $t("settings.recording.enableTitle") }}
+          </h3>
           <p class="text-gray-400 text-xs mt-0.5">
             {{ $t("settings.recording.enableDescription") }}
           </p>
@@ -151,28 +149,31 @@ watch(
       <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl space-y-6">
         <!-- 1. Enable Recording / Dependencies Section -->
         <div class="flex items-center justify-between gap-4 pb-5 border-b border-[#2a2d33]/50">
-          <div class="min-w-0 flex-1">
-            <h4 class="text-white text-xs font-medium">
-              {{ $t("settings.recording.enableTitle") }}
-            </h4>
-            <p class="text-gray-400 text-xs mt-0.5">
-              {{
-                isDependenciesInstalled
-                  ? $t("settings.recording.uninstallDependencies")
-                  : $t("settings.recording.downloadDependencies")
-              }}
-            </p>
+          <div class="flex items-center gap-2.5 px-0.5 min-w-0 flex-1">
+            <Download class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+            <div class="min-w-0 flex-1">
+              <h3 class="text-white text-sm font-medium">
+                {{ $t("settings.recording.enableFeatureToggle") }}
+              </h3>
+              <p class="text-gray-400 text-xs mt-0.5">
+                {{
+                  isDependenciesInstalled
+                    ? $t("settings.recording.installSuccess")
+                    : $t("settings.recording.downloadDependencies")
+                }}
+              </p>
+            </div>
           </div>
           <div class="shrink-0 flex items-center justify-end">
             <template v-if="isDependenciesInstalled">
               <div class="flex items-center gap-3">
-                <span class="text-xs text-gray-400">
+                <span class="text-xs text-gray-400 tabular-nums">
                   {{ (envSize / 1024 / 1024).toFixed(1) }} MB
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
-                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] text-xs h-8"
+                  class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-red-400 hover:border-red-500/30 hover:bg-[#2a2d33] text-xs h-8 transition-all duration-150 active:scale-[0.98] select-none focus-visible:ring-2 focus-visible:ring-white/20"
                   :disabled="!isRecordingSupported"
                   @click="requestUninstall"
                 >
@@ -185,7 +186,7 @@ watch(
               v-else-if="!isDownloadingDependencies"
               size="sm"
               variant="outline"
-              class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] text-xs h-8"
+              class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] text-xs h-8 transition-all duration-150 active:scale-[0.98] select-none focus-visible:ring-2 focus-visible:ring-white/20"
               :disabled="!isRecordingSupported"
               @click="installDependencies"
             >
@@ -195,11 +196,13 @@ watch(
             <div v-else class="flex flex-col items-end gap-1.5 w-44">
               <div class="flex justify-between w-full text-xs text-gray-400">
                 <span class="truncate max-w-32">{{ downloadDependenciesStep }}</span>
-                <span>{{ downloadDependenciesProgress }}%</span>
+                <span class="tabular-nums font-mono text-xs"
+                  >{{ downloadDependenciesProgress }}%</span
+                >
               </div>
               <div class="h-1.5 w-full bg-[#2a2d33] rounded-full overflow-hidden">
                 <div
-                  class="h-full bg-blue-500 transition-all duration-300"
+                  class="h-full bg-blue-500 transition-all duration-300 rounded-full"
                   :style="{ width: `${downloadDependenciesProgress}%` }"
                 ></div>
               </div>
@@ -209,7 +212,7 @@ watch(
 
         <!-- 2. Stream Quality Section -->
         <div
-          class="space-y-3 pb-5 border-b border-[#2a2d33]/50"
+          class="space-y-3 pb-5 border-b border-[#2a2d33]/50 transition-opacity duration-200"
           :class="{
             'opacity-50 pointer-events-none': !isDependenciesInstalled,
           }"
@@ -228,7 +231,7 @@ watch(
           <div
             role="radiogroup"
             :aria-label="$t('settings.recording.qualityTitle')"
-            class="bg-[#1e2127]/50 border border-[#2a2d33]/60 p-1 rounded-xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1 w-full"
+            class="bg-[#1e2127] border border-[#2a2d33]/50 p-1 rounded-xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-1.5 w-full"
           >
             <button
               v-for="quality in [
@@ -246,10 +249,11 @@ watch(
               type="button"
               role="radio"
               :aria-checked="recordingQuality === quality.id"
-              class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 cursor-pointer min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98]"
+              :disabled="!isDependenciesInstalled"
+              class="flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-150 cursor-pointer min-w-0 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98] disabled:cursor-not-allowed"
               :class="
                 recordingQuality === quality.id
-                  ? 'bg-white text-black shadow-xs font-semibold'
+                  ? 'bg-[#2a2d33] text-white border border-white/10 shadow-xs'
                   : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
               "
               @click="recordingQuality = quality.id"
@@ -257,7 +261,7 @@ watch(
               <component
                 :is="quality.icon"
                 class="size-3.5 shrink-0"
-                :class="recordingQuality === quality.id ? 'text-black' : 'text-gray-500'"
+                :class="recordingQuality === quality.id ? 'text-white' : 'text-gray-500'"
                 aria-hidden="true"
               />
               <span class="truncate text-xs font-medium">{{ quality.label }}</span>
@@ -267,7 +271,7 @@ watch(
 
         <!-- 3. Save Location Section -->
         <div
-          class="space-y-3"
+          class="space-y-3 transition-opacity duration-200"
           :class="{
             'opacity-50 pointer-events-none': !isDependenciesInstalled,
           }"
@@ -283,13 +287,12 @@ watch(
               </p>
             </div>
           </div>
-          <div
-            class="border border-[#2a2d33]/60 bg-[#1e2127]/50 p-2.5 rounded-xl flex items-center justify-between gap-2.5"
-          >
+          <div class="flex items-center gap-2 w-full">
             <div
-              class="flex items-center gap-2 text-xs text-gray-300 truncate bg-[#1e2127] border border-[#2a2d33] px-3 py-1.5 rounded-lg flex-1 min-w-0"
+              class="flex items-center gap-2 text-xs text-gray-300 truncate bg-[#1e2127] border border-[#2a2d33] px-3 py-1.5 rounded-lg flex-1 min-w-0 shadow-2xs"
             >
-              <span class="truncate">{{
+              <FolderOpen class="size-3.5 text-gray-400 shrink-0" aria-hidden="true" />
+              <span class="truncate font-mono text-xs select-all">{{
                 recordingPath || $t("settings.recording.defaultPath")
               }}</span>
             </div>
@@ -297,7 +300,8 @@ watch(
               <Button
                 variant="outline"
                 size="sm"
-                class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] text-xs h-8"
+                class="border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] text-xs h-8 select-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/20"
+                :disabled="!isDependenciesInstalled"
                 @click="handleSelectRecordingPath"
               >
                 {{ $t("settings.recording.selectFolder") }}
@@ -305,9 +309,10 @@ watch(
               <Button
                 variant="outline"
                 size="sm"
-                class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-white hover:bg-[#2a2d33] p-0 size-8 shrink-0"
+                class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-white hover:bg-[#2a2d33] p-0 size-8 shrink-0 select-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/20"
                 :title="$t('settings.recording.openFolder')"
                 :aria-label="$t('settings.recording.openFolder')"
+                :disabled="!isDependenciesInstalled"
                 @click="openFolder('')"
               >
                 <FolderOpen class="size-3.5" aria-hidden="true" />
@@ -316,9 +321,10 @@ watch(
                 v-if="recordingPath"
                 variant="outline"
                 size="sm"
-                class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-white hover:bg-[#2a2d33] p-0 size-8 shrink-0"
+                class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-white hover:bg-[#2a2d33] p-0 size-8 shrink-0 select-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/20"
                 :title="$t('settings.recording.resetFolder')"
                 :aria-label="$t('settings.recording.resetFolder')"
+                :disabled="!isDependenciesInstalled"
                 @click="recordingPath = ''"
               >
                 <RotateCcw class="size-3.5" aria-hidden="true" />
@@ -346,18 +352,18 @@ watch(
               :key="orphan.id"
               class="border border-[#2a2d33]/60 bg-[#1e2127]/50 p-3 rounded-xl flex items-center justify-between gap-3"
             >
-              <div class="min-w-0">
+              <div class="min-w-0 flex-1">
                 <p class="text-sm text-white font-medium truncate">
                   {{ orphan.channel }}
                 </p>
-                <p class="text-xs text-gray-400 truncate">
+                <p class="text-xs text-gray-400 truncate mt-0.5 font-mono">
                   {{ orphan.filename }}
                 </p>
               </div>
               <div class="flex gap-2 shrink-0">
                 <Button
                   size="sm"
-                  class="bg-white text-black hover:bg-gray-200 text-xs h-7 font-medium"
+                  class="bg-white text-black hover:bg-gray-200 text-xs h-8 font-medium select-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/20"
                   @click="recoverOrphan(orphan.id)"
                 >
                   {{ $t("settings.recording.orphanConvert") }}
@@ -365,7 +371,7 @@ watch(
                 <Button
                   size="sm"
                   variant="outline"
-                  class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 text-xs h-7"
+                  class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-red-400 hover:border-red-500/30 hover:bg-[#2a2d33]/50 text-xs h-8 select-none transition-all duration-150 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-red-400/20"
                   @click="requestDismiss(orphan.id)"
                 >
                   {{ $t("settings.recording.orphanDismiss") }}

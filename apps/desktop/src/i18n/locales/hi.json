@@ -66,7 +66,10 @@
         "sendChat": "चैट संदेश भेजें",
         "followedChannels": "अनुसरण किए गए चैनल सूची"
       },
-      "disclaimer": "Multistream एक स्वतंत्र ओपन-सोर्स क्लाइंट है और Twitch, Kick, YouTube या Amazon से संबद्ध, समर्थित या प्रायोजित नहीं है।"
+      "disclaimer": "Multistream एक स्वतंत्र ओपन-सोर्स क्लाइंट है और Twitch, Kick, YouTube या Amazon से संबद्ध, समर्थित या प्रायोजित नहीं है।",
+      "disconnectConfirmTitle": "खाता डिस्कनेक्ट करें?",
+      "disconnectConfirmDescription": "क्या आप वाकई अपना {platform} खाता डिस्कनेक्ट करना चाहते हैं? चैट का उपयोग करने और फॉलो किए गए चैनलों को सिंक करने के लिए आपको फिर से साइन इन करना होगा।",
+      "disconnectConfirmButton": "डिस्कनेक्ट करें"
     },
     "help": {
       "title": "मदद",

@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { ref, computed } from "vue";
 import { TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
 import { PLATFORMS } from "@/config/platforms";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 import { useKickAuth } from "@/composables/useKickAuth";
-import { Users, LogOut, Check } from "@lucide/vue";
+import { Users, LogOut, Check, Minus, ShieldCheck } from "@lucide/vue";
 
 const emit = defineEmits<{
   (e: "close"): void;
@@ -21,8 +24,31 @@ const {
   logout: kickLogout,
 } = useKickAuth();
 
-// all platforms except custom
+// All platforms except custom
 const authPlatforms = Object.values(PLATFORMS).filter((p) => p.id !== "custom");
+
+const showDisconnectConfirm = ref(false);
+const pendingDisconnectPlatform = ref<"twitch" | "kick" | null>(null);
+
+const requestDisconnect = (platformId: "twitch" | "kick") => {
+  pendingDisconnectPlatform.value = platformId;
+  showDisconnectConfirm.value = true;
+};
+
+const confirmDisconnect = () => {
+  if (pendingDisconnectPlatform.value === "twitch") {
+    twitchLogout();
+  } else if (pendingDisconnectPlatform.value === "kick") {
+    kickLogout();
+  }
+  pendingDisconnectPlatform.value = null;
+};
+
+const pendingPlatformName = computed(() => {
+  if (pendingDisconnectPlatform.value === "twitch") return "Twitch";
+  if (pendingDisconnectPlatform.value === "kick") return "Kick";
+  return "";
+});
 
 const openAuthModal = () => {
   window.dispatchEvent(
@@ -41,140 +67,221 @@ const openKickAuthModal = () => {
   );
   emit("close");
 };
+
+const handleConnect = (platformId: string) => {
+  if (platformId === "twitch") {
+    openAuthModal();
+  } else if (platformId === "kick") {
+    openKickAuthModal();
+  }
+};
 </script>
 
 <template>
-  <TabsContent value="conexoes" class="space-y-8 mt-0 outline-none">
-    <!-- Accounts / Platforms Section -->
-    <div class="space-y-2 relative">
-      <div class="flex items-center gap-2 px-1">
-        <Users class="size-4 text-gray-400 shrink-0" />
-        <div>
-          <div class="flex items-center gap-2">
-            <h3 class="text-white text-sm font-medium">{{ $t("settings.auth.title") }}</h3>
-          </div>
+  <TabsContent value="conexoes" class="space-y-6 mt-0 outline-none">
+    <!-- Section Header (Title & Description) -->
+    <div class="space-y-4">
+      <div class="flex items-center gap-2.5 px-0.5">
+        <Users class="size-4 text-gray-400 shrink-0" aria-hidden="true" />
+        <div class="min-w-0 flex-1">
+          <h3 class="text-white text-sm font-medium">{{ $t("settings.auth.title") }}</h3>
           <p class="text-gray-400 text-xs mt-0.5">{{ $t("settings.auth.description") }}</p>
         </div>
       </div>
-      <div class="border border-[#2a2d33]/60 bg-[#14161a] p-4 rounded-xl">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 w-full">
-          <div v-for="platform in authPlatforms" :key="platform.id" class="flex flex-col gap-2">
-            <template v-if="platform.id === 'twitch'">
+
+      <!-- Platforms Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 w-full">
+        <div
+          v-for="platform in authPlatforms"
+          :key="platform.id"
+          class="border border-[#2a2d33]/60 bg-[#14161a] hover:border-[#2a2d33] rounded-xl p-4 flex flex-col justify-between transition-all duration-150 h-full"
+        >
+          <!-- 1. Card Top: Platform Info & Status -->
+          <div class="flex items-center justify-between gap-2 pb-3 border-b border-[#2a2d33]/50">
+            <div class="flex items-center gap-2 min-w-0 shrink-0">
+              <span :style="{ color: platform.color }" class="shrink-0">
+                <component :is="platform.icon" :size="16" aria-hidden="true" />
+              </span>
+              <span class="text-white font-medium text-sm">{{ platform.name }}</span>
+            </div>
+
+            <!-- Status Pill -->
+            <span
+              v-if="
+                (platform.id === 'twitch' && twitchAuthenticated) ||
+                (platform.id === 'kick' && kickAuthenticated)
+              "
+              class="inline-flex items-center gap-1.5 text-xs text-gray-300 font-medium px-2 py-0.5 rounded-full bg-[#1e2127] border border-[#2a2d33] shrink-0 whitespace-nowrap"
+            >
+              <span class="size-1.5 rounded-full bg-emerald-400" aria-hidden="true"></span>
+              {{ $t("settings.auth.connected") }}
+            </span>
+            <span
+              v-else-if="platform.id === 'youtube'"
+              class="text-xs px-2 py-0.5 rounded-full text-gray-400 bg-[#1e2127] border border-[#2a2d33] font-medium shrink-0 whitespace-nowrap"
+            >
+              {{ $t("common.comingSoon") }}
+            </span>
+            <span
+              v-else
+              class="text-xs text-gray-400 font-medium px-2 py-0.5 rounded-full bg-[#1e2127] border border-[#2a2d33] shrink-0 whitespace-nowrap"
+            >
+              {{ $t("settings.auth.disconnected") }}
+            </span>
+          </div>
+
+          <!-- 2. Card Middle: Feature Capabilities -->
+          <div class="py-4 flex-1 flex flex-col justify-center">
+            <ul class="text-xs space-y-2">
+              <li
+                class="flex items-center gap-2"
+                :class="
+                  platform.id === 'youtube'
+                    ? 'opacity-30 text-gray-500 select-none'
+                    : 'text-gray-300'
+                "
+              >
+                <component
+                  :is="platform.id === 'youtube' ? Minus : Check"
+                  class="size-3.5 shrink-0"
+                  :class="platform.id === 'youtube' ? 'text-gray-600' : 'text-gray-400'"
+                  aria-hidden="true"
+                />
+                <span>{{ $t("settings.auth.features.readChat") }}</span>
+              </li>
+              <li
+                class="flex items-center gap-2"
+                :class="
+                  platform.id === 'youtube'
+                    ? 'opacity-30 text-gray-500 select-none'
+                    : 'text-gray-300'
+                "
+              >
+                <component
+                  :is="platform.id === 'youtube' ? Minus : Check"
+                  class="size-3.5 shrink-0"
+                  :class="platform.id === 'youtube' ? 'text-gray-600' : 'text-gray-400'"
+                  aria-hidden="true"
+                />
+                <span>{{ $t("settings.auth.features.sendChat") }}</span>
+              </li>
+              <li
+                class="flex items-center gap-2"
+                :class="
+                  platform.id === 'twitch'
+                    ? 'text-gray-300'
+                    : 'opacity-30 text-gray-500 select-none'
+                "
+              >
+                <component
+                  :is="platform.id === 'twitch' ? Check : Minus"
+                  class="size-3.5 shrink-0"
+                  :class="platform.id === 'twitch' ? 'text-gray-400' : 'text-gray-600'"
+                  aria-hidden="true"
+                />
+                <span>{{ $t("settings.auth.features.followedChannels") }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- 3. Card Bottom: Action Button / Connected User Info -->
+          <div class="pt-3 border-t border-[#2a2d33]/50">
+            <!-- Connected State: Twitch -->
+            <div
+              v-if="platform.id === 'twitch' && twitchAuthenticated"
+              class="flex items-center justify-between gap-2"
+            >
               <div
-                v-if="twitchAuthenticated"
-                class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#9146FF]/30 bg-[#9146FF]/10 text-xs font-medium transition-all duration-200"
+                class="min-w-0 flex-1 flex items-center gap-1.5 text-xs text-white bg-[#1e2127] border border-[#2a2d33] px-2.5 py-1.5 rounded-lg shadow-2xs"
               >
-                <span :style="{ color: platform.color }" class="shrink-0">
-                  <component :is="platform.icon" :size="14" />
-                </span>
-                <span class="text-white font-medium truncate max-w-25">{{ twitchUsername }}</span>
-                <button
-                  class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
-                  :title="$t('settings.auth.logout')"
-                  @click="twitchLogout"
-                >
-                  <LogOut class="w-3.5 h-3.5" />
-                </button>
+                <span class="text-gray-400 text-xs select-none">@</span>
+                <span class="font-medium truncate">{{ twitchUsername }}</span>
               </div>
-              <button
-                v-else
-                class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200 w-full"
-                @click="openAuthModal"
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-red-400 hover:border-red-500/30 hover:bg-[#2a2d33] size-8 p-0 shrink-0 transition-all duration-150 select-none active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-red-400/20"
+                :title="$t('settings.auth.logout')"
+                :aria-label="$t('settings.auth.logout')"
+                @click="requestDisconnect('twitch')"
               >
-                <span :style="{ color: platform.color }" class="shrink-0">
-                  <component :is="platform.icon" :size="14" />
-                </span>
-                <span class="text-white font-medium">{{ platform.name }}</span>
-                <span
-                  class="ml-auto text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
-                >
-                  {{ $t("chat.unified.connectButton") }}
-                </span>
-              </button>
+                <LogOut class="size-3.5" aria-hidden="true" />
+              </Button>
+            </div>
 
-              <ul class="text-[10px] text-gray-400 space-y-1 ml-1">
-                <li class="flex items-center gap-1.5">
-                  <Check class="size-3 text-gray-400" />
-                  {{ $t("settings.auth.features.readChat") }}
-                </li>
-                <li class="flex items-center gap-1.5">
-                  <Check class="size-3 text-gray-400" />
-                  {{ $t("settings.auth.features.sendChat") }}
-                </li>
-                <li class="flex items-center gap-1.5">
-                  <Check class="size-3 text-gray-400" />
-                  {{ $t("settings.auth.features.followedChannels") }}
-                </li>
-              </ul>
-            </template>
-
-            <template v-else-if="platform.id === 'kick'">
+            <!-- Connected State: Kick -->
+            <div
+              v-else-if="platform.id === 'kick' && kickAuthenticated"
+              class="flex items-center justify-between gap-2"
+            >
               <div
-                v-if="kickAuthenticated"
-                class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#53FC18]/30 bg-[#53FC18]/10 text-xs font-medium transition-all duration-200"
+                class="min-w-0 flex-1 flex items-center gap-1.5 text-xs text-white bg-[#1e2127] border border-[#2a2d33] px-2.5 py-1.5 rounded-lg shadow-2xs"
               >
-                <span :style="{ color: platform.color }" class="shrink-0">
-                  <component :is="platform.icon" :size="14" />
-                </span>
-                <span class="text-white font-medium truncate max-w-25">{{ kickUsername }}</span>
-                <button
-                  class="ml-auto text-gray-400 hover:text-red-400 p-1 rounded transition-colors"
-                  :title="$t('settings.auth.logout')"
-                  @click="kickLogout"
-                >
-                  <LogOut class="w-3.5 h-3.5" />
-                </button>
+                <span class="text-gray-400 text-xs select-none">@</span>
+                <span class="font-medium truncate">{{ kickUsername }}</span>
               </div>
-              <button
-                v-else
-                class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] text-xs font-medium text-gray-300 transition-all duration-200 w-full"
-                @click="openKickAuthModal"
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                class="border-[#2a2d33] bg-[#1e2127] text-gray-400 hover:text-red-400 hover:border-red-500/30 hover:bg-[#2a2d33] size-8 p-0 shrink-0 transition-all duration-150 select-none active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-red-400/20"
+                :title="$t('settings.auth.logout')"
+                :aria-label="$t('settings.auth.logout')"
+                @click="requestDisconnect('kick')"
               >
-                <span :style="{ color: platform.color }" class="shrink-0">
-                  <component :is="platform.icon" :size="14" />
-                </span>
-                <span class="text-white font-medium">{{ platform.name }}</span>
-                <span
-                  class="ml-auto text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-300 bg-white/10 border border-white/10"
-                >
-                  {{ $t("chat.unified.connectButton") }}
-                </span>
-              </button>
+                <LogOut class="size-3.5" aria-hidden="true" />
+              </Button>
+            </div>
 
-              <ul class="text-[10px] text-gray-400 space-y-1 ml-1">
-                <li class="flex items-center gap-1.5">
-                  <Check class="size-3 text-gray-400" />
-                  {{ $t("settings.auth.features.readChat") }}
-                </li>
-                <li class="flex items-center gap-1.5">
-                  <Check class="size-3 text-gray-400" />
-                  {{ $t("settings.auth.features.sendChat") }}
-                </li>
-              </ul>
-            </template>
+            <!-- Disconnected State: Connect Button -->
+            <Button
+              v-else-if="platform.id !== 'youtube'"
+              type="button"
+              variant="outline"
+              size="sm"
+              class="w-full border-[#2a2d33] bg-[#1e2127] text-gray-200 hover:text-white hover:bg-[#2a2d33] text-xs h-8 font-medium transition-all duration-150 select-none active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-white/20"
+              @click="handleConnect(platform.id)"
+            >
+              {{ $t("settings.auth.connect") }}
+            </Button>
 
-            <template v-else>
-              <button
-                class="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-[#2a2d33] bg-[#1e2127] text-xs font-medium text-gray-400 transition-all duration-200 cursor-not-allowed opacity-35 w-full"
-                disabled
-              >
-                <span :style="{ color: platform.color }" class="shrink-0">
-                  <component :is="platform.icon" :size="14" />
-                </span>
-                <span class="text-white font-medium">{{ platform.name }}</span>
-                <span
-                  class="ml-auto text-[8px] tracking-wider uppercase px-1.5 py-0.5 rounded text-gray-400 bg-white/5 border border-white/5"
-                >
-                  {{ $t("common.comingSoon") }}
-                </span>
-              </button>
-            </template>
+            <!-- YouTube (Coming Soon) -->
+            <Button
+              v-else
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled
+              class="w-full border-[#2a2d33]/50 bg-[#1e2127]/40 text-gray-500 text-xs h-8 font-medium cursor-not-allowed opacity-50"
+            >
+              {{ $t("common.comingSoon") }}
+            </Button>
           </div>
         </div>
       </div>
-      <p class="text-[11px] text-gray-400 px-1 pt-1 leading-relaxed">
-        {{ $t("settings.auth.disclaimer") }}
-      </p>
+
+      <!-- Legal & Privacy Disclaimer Card -->
+      <div
+        class="border border-[#2a2d33]/50 bg-[#14161a] p-3 rounded-xl flex items-start gap-2.5 text-xs text-gray-400 leading-relaxed"
+      >
+        <ShieldCheck class="size-4 text-gray-500 shrink-0 mt-0.5" aria-hidden="true" />
+        <p>{{ $t("settings.auth.disclaimer") }}</p>
+      </div>
     </div>
   </TabsContent>
+
+  <!-- Disconnect Confirmation Dialog -->
+  <ConfirmDialog
+    :open="showDisconnectConfirm"
+    :title="$t('settings.auth.disconnectConfirmTitle')"
+    :description="
+      $t('settings.auth.disconnectConfirmDescription', { platform: pendingPlatformName })
+    "
+    :confirm-text="$t('settings.auth.disconnectConfirmButton')"
+    :cancel-text="$t('common.close')"
+    variant="destructive"
+    @update:open="showDisconnectConfirm = $event"
+    @confirm="confirmDisconnect"
+  />
 </template>

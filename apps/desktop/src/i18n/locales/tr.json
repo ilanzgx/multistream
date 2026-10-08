@@ -66,7 +66,10 @@
         "sendChat": "Sohbet mesajları gönder",
         "followedChannels": "Takip edilen kanallar listesi"
       },
-      "disclaimer": "Multistream bağımsız bir açık kaynaklı istemcidir ve Twitch, Kick, YouTube veya Amazon ile bağlantılı değildir, bunlar tarafından onaylanmamış veya desteklenmemiştir."
+      "disclaimer": "Multistream bağımsız bir açık kaynaklı istemcidir ve Twitch, Kick, YouTube veya Amazon ile bağlantılı değildir, bunlar tarafından onaylanmamış veya desteklenmemiştir.",
+      "disconnectConfirmTitle": "Hesabın bağlantısını kes?",
+      "disconnectConfirmDescription": "{platform} hesabınızın bağlantısını kesmek istediğinizden emin misiniz? Sohbeti kullanmak ve takip edilen kanalları senkronize etmek için tekrar giriş yapmanız gerekecektir.",
+      "disconnectConfirmButton": "Bağlantıyı Kes"
     },
     "help": {
       "title": "Yardım",

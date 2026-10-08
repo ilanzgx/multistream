@@ -66,7 +66,10 @@
         "sendChat": "发送聊天消息",
         "followedChannels": "关注频道列表"
       },
-      "disclaimer": "Multistream 是一个独立的开源客户端，与 Twitch、Kick、YouTube 或 Amazon 均无关联，亦未获得其认可或赞助。"
+      "disclaimer": "Multistream 是一个独立的开源客户端，与 Twitch、Kick、YouTube 或 Amazon 均无关联，亦未获得其认可或赞助。",
+      "disconnectConfirmTitle": "断开账户连接？",
+      "disconnectConfirmDescription": "您确定要断开您的 {platform} 账户连接吗？您需要重新登录才能使用聊天并同步关注的频道。",
+      "disconnectConfirmButton": "断开连接"
     },
     "backup": {
       "title": "数据与备份",

@@ -66,7 +66,10 @@
         "sendChat": "Chat-Nachrichten senden",
         "followedChannels": "Liste der gefolgten Kanäle"
       },
-      "disclaimer": "Multistream ist ein unabhängiger Open-Source-Client und steht in keiner Verbindung zu Twitch, Kick, YouTube oder Amazon und wird von diesen weder unterstützt noch gesponsert."
+      "disclaimer": "Multistream ist ein unabhängiger Open-Source-Client und steht in keiner Verbindung zu Twitch, Kick, YouTube oder Amazon und wird von diesen weder unterstützt noch gesponsert.",
+      "disconnectConfirmTitle": "Konto trennen?",
+      "disconnectConfirmDescription": "Möchten Sie Ihr {platform}-Konto wirklich trennen? Sie müssen sich erneut anmelden, um den Chat zu nutzen und gefolgte Kanäle zu synchronisieren.",
+      "disconnectConfirmButton": "Trennen"
     },
     "backup": {
       "title": "Daten & Backup",

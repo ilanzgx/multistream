@@ -66,7 +66,10 @@
         "sendChat": "Отправлять сообщения в чат",
         "followedChannels": "Список отслеживаемых каналов"
       },
-      "disclaimer": "Multistream — это независимый клиент с открытым исходным кодом, который не связан, не одобрен и не спонсируется Twitch, Kick, YouTube или Amazon."
+      "disclaimer": "Multistream — это независимый клиент с открытым исходным кодом, который не связан, не одобрен и не спонсируется Twitch, Kick, YouTube или Amazon.",
+      "disconnectConfirmTitle": "Отключить аккаунт?",
+      "disconnectConfirmDescription": "Вы уверены, что хотите отключить аккаунт {platform}? Вам придется войти снова, чтобы использовать чат и синхронизировать каналы.",
+      "disconnectConfirmButton": "Отключить"
     },
     "backup": {
       "title": "Данные и бэкап",

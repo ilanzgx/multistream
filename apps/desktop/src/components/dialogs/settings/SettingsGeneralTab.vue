@@ -97,7 +97,7 @@ watch(adblockEnabled, (enabled) => {
           class="flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-lg transition-all duration-150 cursor-pointer w-full select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 active:scale-[0.98]"
           :class="
             locale === lang.code
-              ? 'bg-white text-black shadow-xs font-semibold'
+              ? 'bg-[#2a2d33] text-white border border-white/10 shadow-xs'
               : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
           "
           @click="changeLanguage(lang.code)"

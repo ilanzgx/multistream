@@ -66,7 +66,10 @@
         "sendChat": "Send chat messages",
         "followedChannels": "Followed channels list"
       },
-      "disclaimer": "Multistream is an independent open-source client and is not affiliated with, endorsed by, or sponsored by Twitch, Kick, YouTube, or Amazon."
+      "disclaimer": "Multistream is an independent open-source client and is not affiliated with, endorsed by, or sponsored by Twitch, Kick, YouTube, or Amazon.",
+      "disconnectConfirmTitle": "Disconnect account?",
+      "disconnectConfirmDescription": "Are you sure you want to disconnect your {platform} account? You will need to sign in again to use chat and sync followed channels.",
+      "disconnectConfirmButton": "Disconnect"
     },
     "help": {
       "title": "Help",
