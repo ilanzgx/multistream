@@ -4,6 +4,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -106,21 +107,23 @@ onUnmounted(() => {
 
 <template>
   <Dialog :open="open" @update:open="emit('update:open', $event)">
-    <DialogContent class="sm:max-w-md bg-[#14161a] border-[#2a2d33] text-white">
+    <DialogContent
+      class="sm:max-w-md w-full overflow-hidden bg-[#14161a] border-[#2a2d33] text-white"
+    >
       <DialogHeader>
         <DialogTitle class="flex items-center gap-2 text-white">
-          <TwitchIcon class="w-5 h-5 text-[#9146FF]" />
-          {{ t("chat.unified.connectTitle") }}
+          <TwitchIcon class="size-5 text-[#9146FF] shrink-0" />
+          <span>{{ t("chat.unified.connectTitle") }}</span>
         </DialogTitle>
-        <DialogDescription class="text-gray-400">
+        <DialogDescription class="text-xs text-gray-400">
           {{ t("settings.auth.description") }}
         </DialogDescription>
       </DialogHeader>
 
-      <div class="flex flex-col items-center justify-center py-6 space-y-6">
+      <div class="flex flex-col items-center justify-center py-5 space-y-5 w-full min-w-0">
         <template v-if="authError">
           <div
-            class="text-red-400 bg-red-400/10 p-4 rounded-lg w-full text-center text-sm border border-red-400/20"
+            class="text-red-400 bg-red-400/10 p-3.5 rounded-xl w-full text-center text-xs border border-red-400/20 leading-relaxed"
           >
             {{
               authError === "Expired"
@@ -129,7 +132,7 @@ onUnmounted(() => {
             }}
           </div>
           <Button
-            class="w-full bg-[#9146FF] hover:bg-[#2a2d33] hover:text-white text-white font-semibold transition-colors"
+            class="w-full bg-[#9146FF] hover:bg-[#7d32eb] text-white font-medium text-sm transition-colors active:scale-[0.98]"
             @click="startFlow"
           >
             {{ t("chat.unified.auth.tryAgain") }}
@@ -137,54 +140,70 @@ onUnmounted(() => {
         </template>
 
         <template v-else-if="deviceFlow">
-          <div class="text-center space-y-2 w-full">
-            <p class="text-sm text-gray-400">{{ t("chat.unified.auth.step1") }}</p>
-            <div class="flex items-center gap-2 w-full">
-              <Button
-                variant="outline"
-                class="flex-1 border-[#2a2d33] text-[#9146FF] hover:bg-[#2a2d33] hover:text-white hover:border-[#2a2d33] transition-all bg-transparent truncate"
-                @click="handleOpenLink"
-              >
-                <span class="truncate">{{ deviceFlow.verification_uri }}</span>
-                <ExternalLink class="w-4 h-4 ml-2 shrink-0" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                :aria-label="t('share.copyButton')"
-                class="border-[#2a2d33] bg-transparent hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors shrink-0"
-                @click="copyUrl(deviceFlow.verification_uri)"
-              >
-                <Check v-if="urlCopied" class="w-4 h-4 text-green-400" />
-                <Copy v-else class="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
+          <div class="space-y-4 w-full text-left min-w-0">
+            <p class="text-xs font-medium text-gray-300">
+              {{ t("settings.auth.authorizeBrowser") }}
+            </p>
 
-          <div class="text-center w-full space-y-2">
-            <p class="text-sm text-gray-400">{{ t("chat.unified.auth.step2") }}</p>
-            <div class="flex items-center justify-center gap-2 w-full">
-              <div
-                class="bg-[#1e2127] border border-[#2a2d33] rounded-lg px-6 py-3 font-mono text-2xl tracking-widest text-white select-all w-full text-center"
-              >
-                {{ deviceFlow.user_code }}
+            <div class="space-y-2 w-full min-w-0">
+              <p class="text-xs font-medium text-gray-400">{{ t("chat.unified.auth.step1") }}</p>
+              <div class="flex items-center gap-2 w-full min-w-0">
+                <Button
+                  variant="outline"
+                  class="flex-1 min-w-0 h-10 border-[#2a2d33] bg-[#0f1115] text-[#a970ff] hover:bg-[#1a1c23] hover:text-[#c499ff] hover:border-[#3a3f4b] transition-all text-xs font-mono justify-between px-3.5 overflow-hidden"
+                  :title="deviceFlow.verification_uri"
+                  @click="handleOpenLink"
+                >
+                  <span class="truncate min-w-0 flex-1 text-left">{{
+                    deviceFlow.verification_uri
+                  }}</span>
+                  <ExternalLink class="size-3.5 ml-2 shrink-0 text-gray-400" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  :aria-label="t('share.copyButton')"
+                  :title="t('share.copyButton')"
+                  class="size-10 border-[#2a2d33] bg-[#0f1115] hover:bg-[#1a1c23] hover:text-white text-gray-400 hover:border-[#3a3f4b] transition-colors shrink-0 rounded-lg"
+                  @click="copyUrl(deviceFlow.verification_uri)"
+                >
+                  <Check v-if="urlCopied" class="size-4 text-emerald-400" />
+                  <Copy v-else class="size-4" />
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="icon"
-                :aria-label="t('share.copyButton')"
-                class="border-[#2a2d33] bg-[#1e2127] hover:bg-[#2a2d33] hover:text-white text-gray-400 transition-colors shrink-0"
-                @click="copyCode(deviceFlow.user_code)"
-              >
-                <Check v-if="codeCopied" class="w-4 h-4 text-green-400" />
-                <Copy v-else class="w-4 h-4" />
-              </Button>
+            </div>
+
+            <div class="space-y-2 w-full min-w-0">
+              <p class="text-xs font-medium text-gray-400">{{ t("chat.unified.auth.step2") }}</p>
+              <div class="flex items-stretch gap-2 w-full min-w-0">
+                <button
+                  type="button"
+                  class="flex-1 min-w-0 h-12 flex items-center justify-center bg-[#0f1115] border border-[#2a2d33] hover:border-[#3a3f4b] focus-visible:border-[#9146FF]/50 focus-visible:outline-none rounded-lg px-4 font-mono text-2xl font-bold tracking-[0.25em] text-white select-all transition-all duration-150 cursor-pointer group active:scale-[0.99]"
+                  :title="t('share.copyButton')"
+                  @click="copyCode(deviceFlow.user_code)"
+                >
+                  <span class="group-hover:text-[#a970ff] transition-colors truncate">{{
+                    deviceFlow.user_code
+                  }}</span>
+                </button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  :aria-label="t('share.copyButton')"
+                  :title="t('share.copyButton')"
+                  class="h-12 w-12 border-[#2a2d33] bg-[#0f1115] hover:bg-[#1a1c23] hover:text-white text-gray-400 hover:border-[#3a3f4b] transition-colors shrink-0 rounded-lg"
+                  @click="copyCode(deviceFlow.user_code)"
+                >
+                  <Check v-if="codeCopied" class="size-4 text-emerald-400" />
+                  <Copy v-else class="size-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
-          <div class="flex items-center justify-center gap-3 pt-4 text-gray-400">
-            <Loader2 class="w-5 h-5 animate-spin text-[#9146FF]" />
-            <span class="text-sm font-medium animate-pulse">{{
+          <div class="flex items-center justify-center gap-2 pt-2 text-gray-400">
+            <Loader2 class="size-4 animate-spin text-[#9146FF]" />
+            <span class="text-xs text-gray-400 font-medium">{{
               t("chat.unified.auth.waiting")
             }}</span>
           </div>
@@ -192,20 +211,20 @@ onUnmounted(() => {
 
         <template v-else>
           <div class="flex items-center justify-center py-8 text-gray-400">
-            <Loader2 class="w-8 h-8 animate-spin text-[#9146FF]" />
+            <Loader2 class="size-7 animate-spin text-[#9146FF]" />
           </div>
         </template>
       </div>
 
-      <div class="flex justify-end pt-4">
+      <DialogFooter class="pt-4 border-t border-[#2a2d33]/50 sm:justify-end">
         <Button
           variant="outline"
-          class="border-[#2a2d33] text-gray-300 hover:text-white hover:bg-[#2a2d33] bg-transparent"
+          class="border-[#2a2d33] bg-transparent text-gray-400 hover:text-white hover:bg-white/5 hover:border-[#3a3f4b] transition-all duration-200 text-xs h-9 px-4"
           @click="handleCancel"
         >
           {{ t("chat.unified.auth.cancel") }}
         </Button>
-      </div>
+      </DialogFooter>
     </DialogContent>
   </Dialog>
 </template>
