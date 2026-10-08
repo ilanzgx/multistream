@@ -28,7 +28,7 @@ export interface FollowedChannel {
 const _useFollowedChannels = () => {
   const twitchChannels = ref<FollowedChannel[]>([]);
   const { authenticated: twitchAuthenticated } = useTwitchAuth();
-  const { statuses, isChecking, checkAll } = useLiveStatus();
+  const { statuses, isChecking, checkAll, getStatus } = useLiveStatus();
   const { favorites } = useFavorites();
   const isFetchingTwitch = ref(false);
   const platformFilter = ref<"all" | "twitch" | "kick" | "youtube">("all");
@@ -72,11 +72,17 @@ const _useFollowedChannels = () => {
     const kickFavs = favorites.value.filter((f) => f.platform === "kick");
     return kickFavs
       .map((f) => {
-        const status = statuses.value[`kick:${f.channel.toLowerCase()}`];
+        const cleanChan = f.channel.toLowerCase().trim().replace(/^@+/, "");
+        const status =
+          (typeof getStatus === "function" ? getStatus(cleanChan, "kick") : null) ||
+          statuses.value[`kick:${cleanChan}`] ||
+          (f.displayName && typeof getStatus === "function"
+            ? getStatus(f.displayName, "kick")
+            : null);
         return {
           id: f.channel,
           platform: "kick" as const,
-          displayName: f.channel,
+          displayName: status?.displayName || f.displayName || f.channel,
           avatarUrl: status?.avatarUrl ?? "",
           isLive: status?.isLive ?? false,
           viewerCount: status?.viewerCount ?? 0,
@@ -173,16 +179,22 @@ const _useFollowedChannels = () => {
 
   const twitchFavChannels = computed<FollowedChannel[]>(() => {
     const twitchFavs = favorites.value.filter((f) => f.platform === "twitch");
-    const followedIds = new Set(twitchChannels.value.map((c) => c.id.toLowerCase()));
+    const followedIds = new Set(twitchChannels.value.map((c) => c.id.toLowerCase().trim()));
 
     return twitchFavs
-      .filter((f) => !followedIds.has(f.channel.toLowerCase()))
+      .filter((f) => !followedIds.has(f.channel.toLowerCase().trim()))
       .map((f) => {
-        const status = statuses.value[`twitch:${f.channel.toLowerCase()}`];
+        const cleanChan = f.channel.toLowerCase().trim().replace(/^@+/, "");
+        const status =
+          (typeof getStatus === "function" ? getStatus(cleanChan, "twitch") : null) ||
+          statuses.value[`twitch:${cleanChan}`] ||
+          (f.displayName && typeof getStatus === "function"
+            ? getStatus(f.displayName, "twitch")
+            : null);
         return {
           id: f.channel,
           platform: "twitch" as const,
-          displayName: f.channel,
+          displayName: status?.displayName || f.displayName || f.channel,
           avatarUrl: status?.avatarUrl ?? "",
           isLive: status?.isLive ?? false,
           viewerCount: status?.viewerCount ?? 0,
@@ -198,7 +210,8 @@ const _useFollowedChannels = () => {
   const channels = computed<FollowedChannel[]>(() => {
     const twitchFollowed = twitchChannels.value.map((c) => {
       const isFav = favorites.value.some(
-        (f) => f.platform === "twitch" && f.channel.toLowerCase() === c.id.toLowerCase()
+        (f) =>
+          f.platform === "twitch" && f.channel.toLowerCase().trim() === c.id.toLowerCase().trim()
       );
       return { ...c, isFollowed: true, ...(isFav && { isFavorite: true }) };
     });
@@ -250,13 +263,13 @@ const _useFollowedChannels = () => {
   };
 
   const refresh = async () => {
-    if (!isTauri() || isManualRefreshing.value) return;
+    if (isManualRefreshing.value) return;
 
     isManualRefreshing.value = true;
     debugErrors.value = [];
     try {
       const promises: Promise<any>[] = [checkAll()];
-      if (twitchAuthenticated.value) {
+      if (isTauri() && twitchAuthenticated.value) {
         promises.push(fetchTwitchFollowed());
       } else {
         twitchChannels.value = [];
@@ -271,9 +284,11 @@ const _useFollowedChannels = () => {
   };
 
   const poll = async () => {
-    if (twitchAuthenticated.value) {
-      await fetchTwitchFollowed();
+    const promises: Promise<any>[] = [checkAll()];
+    if (isTauri() && twitchAuthenticated.value) {
+      promises.push(fetchTwitchFollowed());
     }
+    await Promise.allSettled(promises);
   };
 
   const startPolling = () => {
@@ -322,6 +337,7 @@ const _useFollowedChannels = () => {
 
   return {
     channels: filteredChannels,
+    allChannels: channels,
     isLoading,
     isInitialLoading,
     platformFilter,

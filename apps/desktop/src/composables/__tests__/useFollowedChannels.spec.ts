@@ -32,9 +32,13 @@ vi.mock("../useKickAuth", () => ({
 }));
 
 const mockLiveStatus = {
-  statuses: ref({}),
+  statuses: ref<Record<string, any>>({}),
   isChecking: ref(false),
   checkAll: vi.fn().mockResolvedValue(undefined),
+  getStatus: vi.fn((channel: string, platform: string) => {
+    const clean = channel.toLowerCase().replace(/^@+/, "");
+    return mockLiveStatus.statuses.value[`${platform}:${clean}`] || null;
+  }),
 };
 vi.mock("../useLiveStatus", () => ({
   useLiveStatus: () => mockLiveStatus,
@@ -55,6 +59,10 @@ describe("useFollowedChannels", () => {
     mockLiveStatus.statuses.value = {};
     mockLiveStatus.isChecking.value = false;
     mockLiveStatus.checkAll = vi.fn().mockResolvedValue(undefined);
+    mockLiveStatus.getStatus = vi.fn((channel: string, platform: string) => {
+      const clean = channel.toLowerCase().replace(/^@+/, "");
+      return mockLiveStatus.statuses.value[`${platform}:${clean}`] || null;
+    });
     mockFavorites.favorites.value = [];
     vi.useFakeTimers();
   });
