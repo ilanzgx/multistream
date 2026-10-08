@@ -150,6 +150,26 @@ describe("useLiveStatus composable unit tests (Critical Paths)", () => {
       expect(sut.getStatus("gaules", "youtube" as any)).toBeNull();
     });
 
+    it("should find Twitch and Kick status by displayName when query differs from channel slug", () => {
+      // Arrange
+      sut.statuses.value["twitch:gaules"] = {
+        isLive: true,
+        displayName: "Gaules",
+        viewerCount: 25000,
+      };
+      sut.statuses.value["kick:alanzoka_stream"] = {
+        isLive: true,
+        displayName: "Alanzoka",
+        viewerCount: 12000,
+      };
+
+      // Act & Assert
+      expect(sut.getStatus("Gaules", "twitch")?.viewerCount).toBe(25000);
+      expect(sut.getStatus("gaules", "twitch")?.viewerCount).toBe(25000);
+      expect(sut.getStatus("Alanzoka", "kick")?.viewerCount).toBe(12000);
+      expect(sut.getStatus("alanzoka", "kick")?.viewerCount).toBe(12000);
+    });
+
     it("should find YouTube status by videoId present in liveStreams array", () => {
       // Arrange
       sut.statuses.value["youtube:cazetv"] = {

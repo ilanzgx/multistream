@@ -48,25 +48,20 @@ export interface SuggestedStream {
 
 type StatusMap = Record<string, LiveStatus>;
 
+const TWITCH_GQL_CHUNK_SIZE = 12;
+
 /**
- * @brief Check Twitch streams
- *
- * Checks if the given channels are live on Twitch.
- * This function uses the Twitch GraphQL API to check if the given channels are live.
- * If the channel is live, it returns the viewer count, title, and category.
- *
- * @param channels The channels to check
- * @return The status of the channels
+ * @brief Check a single chunk of Twitch streams via GQL
  */
-async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null> {
+async function checkTwitchStreamsChunk(channels: string[]): Promise<StatusMap | null> {
   const result: StatusMap = {};
   if (channels.length === 0) return result;
 
-  // Build a single request with multiple queries
   const query = channels
     .map(
       (ch, i) => `
     c${i}: user(login: ${JSON.stringify(ch.toLowerCase())}) {
+      displayName
       profileImageURL(width: 70)
       stream {
         title
@@ -108,7 +103,12 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
   }
 
   try {
-    if (!response || !response.ok) return null;
+    if (!response || !response.ok) {
+      if (response && !response.ok) {
+        console.warn(`[Twitch GQL] Request failed with HTTP ${response.status}`);
+      }
+      return null;
+    }
 
     const data = await response.json();
     if (!data?.data) return null;
@@ -125,16 +125,29 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
       const userData = data.data[`c${i}`];
 
       if (userData?.stream) {
-        result[key] = {
+        const liveInfo: LiveStatus = {
           isLive: true,
+          displayName: userData.displayName,
           viewerCount: userData.stream.viewersCount,
           title: userData.stream.title,
           category: userData.stream.game?.displayName,
           avatarUrl: userData.profileImageURL,
           thumbnailUrl: CDN_CONFIG.twitch.previewThumbnail(ch),
         };
+        result[key] = liveInfo;
+        if (userData.displayName) {
+          result[`twitch:${userData.displayName.toLowerCase()}`] = liveInfo;
+        }
       } else if (userData?.profileImageURL) {
-        result[key] = { isLive: false, avatarUrl: userData.profileImageURL };
+        const offlineInfo: LiveStatus = {
+          isLive: false,
+          displayName: userData.displayName,
+          avatarUrl: userData.profileImageURL,
+        };
+        result[key] = offlineInfo;
+        if (userData.displayName) {
+          result[`twitch:${userData.displayName.toLowerCase()}`] = offlineInfo;
+        }
       }
     });
 
@@ -142,6 +155,45 @@ async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null>
   } catch {
     return null;
   }
+}
+
+/**
+ * @brief Check Twitch streams
+ *
+ * Checks if the given channels are live on Twitch.
+ * Chunks requests to stay safely under Twitch's root field alias limit of 15.
+ *
+ * @param channels The channels to check
+ * @return The status of the channels
+ */
+async function checkTwitchStreams(channels: string[]): Promise<StatusMap | null> {
+  if (channels.length === 0) return {};
+
+  const cleanChannels = [
+    ...new Set(channels.map((ch) => ch.trim().replace(/^@+/, "")).filter(Boolean)),
+  ];
+  if (cleanChannels.length === 0) return {};
+
+  const chunks: string[][] = [];
+  for (let i = 0; i < cleanChannels.length; i += TWITCH_GQL_CHUNK_SIZE) {
+    chunks.push(cleanChannels.slice(i, i + TWITCH_GQL_CHUNK_SIZE));
+  }
+
+  const chunkResults = await Promise.allSettled(
+    chunks.map((chunk) => checkTwitchStreamsChunk(chunk))
+  );
+
+  let hadAnySuccess = false;
+  const combined: StatusMap = {};
+
+  for (const res of chunkResults) {
+    if (res.status === "fulfilled" && res.value !== null) {
+      hadAnySuccess = true;
+      Object.assign(combined, res.value);
+    }
+  }
+
+  return hadAnySuccess ? combined : null;
 }
 
 const TWITCH_PAGE_SIZE = 30;
@@ -187,7 +239,10 @@ async function fetchTwitchSuggestionsPage(
       "Content-Type": "application/json",
     });
 
-    if (!response.ok) return { streams: [], nextCursor: null };
+    if (!response.ok) {
+      console.warn(`[Twitch Suggestions] Request failed with HTTP ${response.status}`);
+      return { streams: [], nextCursor: null };
+    }
     const data = await response.json();
 
     const edges = data.data?.streams?.edges ?? [];
@@ -547,9 +602,7 @@ async function fetchTwitchStreamsByCategory(
   const fetchBySelector = async (gameSelector: string): Promise<SuggestedStream[]> => {
     try {
       const isEnglish = twitchLanguage.toLowerCase() === "en";
-      const langClause = !isEnglish
-        ? `, languages: [${JSON.stringify(twitchLanguage.toLowerCase())}]`
-        : "";
+      const langClause = !isEnglish ? `, languages: [${twitchLanguage.toUpperCase()}]` : "";
 
       const makeQuery = (languages: string) => `
         query {
@@ -741,12 +794,14 @@ const _useLiveStatus = () => {
         const allChannels = [...recents.value, ...favorites.value];
 
         for (const entry of allChannels) {
+          const raw = entry.channel?.trim();
+          if (!raw) continue;
           if (entry.platform === "twitch") {
-            twitchSet.add(entry.channel);
+            twitchSet.add(raw.replace(/^@+/, ""));
           } else if (entry.platform === "kick") {
-            kickSet.add(entry.channel);
+            kickSet.add(raw.replace(/^@+/, ""));
           } else if (entry.platform === "youtube") {
-            youtubeSet.add(entry.channel);
+            youtubeSet.add(raw);
           }
         }
 
@@ -1064,6 +1119,17 @@ const _useLiveStatus = () => {
         }
         return match[1];
       }
+    }
+
+    if (platform === "twitch" || platform === "kick") {
+      const channelLower = channel.toLowerCase();
+      const match = Object.entries(statuses.value).find(
+        ([k, s]) =>
+          k.startsWith(`${platform}:`) &&
+          s.displayName &&
+          s.displayName.toLowerCase() === channelLower
+      );
+      if (match) return match[1];
     }
 
     return null;
