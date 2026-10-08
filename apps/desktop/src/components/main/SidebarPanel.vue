@@ -114,35 +114,41 @@ watch(
 );
 
 watch(
-  () => streams.value.length,
-  (len) => {
-    if (len === 0) {
+  chatableStreams,
+  (available) => {
+    if (available.length === 0) {
       if (selectedChat.value !== UNIFIED_CHAT_ID) selectedChat.value = "";
       return;
     }
 
     const current = selectedChat.value;
-    const available = chatableStreams.value;
-
     const firstAvailable = available[0];
     if (available.length === 1 && current === UNIFIED_CHAT_ID && firstAvailable) {
       selectedChat.value = `${firstAvailable.platform}:${firstAvailable.channel}`;
       return;
     }
 
-    const isValidStream = available.some((s) => `${s.platform}:${s.channel}` === current);
+    const isValidStream = available.some(
+      (s) => `${s.platform}:${s.channel}`.toLowerCase() === current.toLowerCase()
+    );
     const isUnified = current === UNIFIED_CHAT_ID;
 
     if (!isUnified && !isValidStream) {
-      const first = available[0];
-      if (first) {
-        selectedChat.value = `${first.platform}:${first.channel}`;
+      if (firstAvailable) {
+        selectedChat.value = `${firstAvailable.platform}:${firstAvailable.channel}`;
       } else {
         selectedChat.value = "";
       }
     }
-  }
+  },
+  { immediate: true }
 );
+
+function isChatSelected(stream: Stream): boolean {
+  if (!selectedChat.value) return false;
+  return `${stream.platform}:${stream.channel}`.toLowerCase() === selectedChat.value.toLowerCase();
+}
+
 const {
   isActive: transcriptionActive,
   isSupported,
@@ -150,7 +156,9 @@ const {
 } = useTranscription();
 
 const selectedStreamObj = computed(() =>
-  streams.value.find((s) => `${s.platform}:${s.channel}` === selectedChat.value)
+  streams.value.find(
+    (s) => `${s.platform}:${s.channel}`.toLowerCase() === selectedChat.value.toLowerCase()
+  )
 );
 
 const { getStatus } = useLiveStatus();
@@ -340,19 +348,19 @@ onUnmounted(() => {
         <div v-show="sidebarMode === 'chat'" class="absolute inset-0">
           <KickChat
             v-for="stream in streams.filter((s) => s.platform === 'kick')"
-            v-show="selectedChat === `${stream.platform}:${stream.channel}`"
+            v-show="isChatSelected(stream)"
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />
           <TwitchChat
             v-for="stream in streams.filter((s) => s.platform === 'twitch')"
-            v-show="selectedChat === `${stream.platform}:${stream.channel}`"
+            v-show="isChatSelected(stream)"
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />
           <YoutubeChat
             v-for="stream in streams.filter((s) => s.platform === 'youtube')"
-            v-show="selectedChat === `${stream.platform}:${stream.channel}`"
+            v-show="isChatSelected(stream)"
             :key="`chat-${stream.id}`"
             :channel="stream.channel"
           />

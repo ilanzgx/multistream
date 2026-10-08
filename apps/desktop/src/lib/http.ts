@@ -18,11 +18,15 @@ export function isTauri(): boolean {
  * @param headers The headers to send with the request
  * @return The response
  */
-export async function httpGet(url: string, headers?: Record<string, string>): Promise<Response> {
+export async function httpGet(
+  url: string,
+  headers?: Record<string, string>,
+  options?: Omit<RequestInit, "method" | "headers">
+): Promise<Response> {
   if (isTauri()) {
-    return tauriFetch(url, { method: "GET", headers });
+    return tauriFetch(url, { method: "GET", headers, ...options });
   }
-  return fetch(url, { headers });
+  return fetch(url, { headers, ...options });
 }
 
 /**

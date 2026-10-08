@@ -342,4 +342,99 @@ describe("useKickChat", () => {
     // Assert
     expect(removedText).toBeNull();
   });
+
+  it("tracks isJoining reactive state correctly during joinChannel", async () => {
+    // Arrange
+    const channelSlug = "streamer";
+    let resolveResponse: (value: unknown) => void;
+    const fetchPromise = new Promise((resolve) => {
+      resolveResponse = resolve;
+    });
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockReturnValue(fetchPromise);
+
+    const { joinChannel, isJoining } = useKickChat(channelSlug);
+
+    // Act 1: Initiate join
+    expect(isJoining.value).toBe(false);
+    const joinPromise = joinChannel();
+
+    // Assert 1: isJoining is true while pending
+    expect(isJoining.value).toBe(true);
+
+    // Act 2: Complete fetch
+    resolveResponse!({
+      ok: true,
+      json: async () => ({ chatroom: { id: 777 } }),
+    });
+    await joinPromise;
+
+    // Assert 2: isJoining resets to false
+    expect(isJoining.value).toBe(false);
+  });
+
+  it("normalizes channelSlug casing so mixed case channels match and update correctly", async () => {
+    // Arrange
+    const channelSlugUpper = "StreamerSlug";
+    const mockResponse = {
+      ok: true,
+      json: async () => ({ chatroom: { id: 54321 }, user_id: 101 }),
+    };
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
+
+    const { joinChannel, getBroadcasterUserId, leaveChannel } = useKickChat(channelSlugUpper);
+
+    // Act 1: Join with mixed case
+    await joinChannel();
+
+    // Assert 1: Channel slug is queried in lowercase and stored in lowercase
+    expect(globalThis.fetch).toHaveBeenCalledWith(
+      "https://kick.com/api/v1/channels/streamerslug",
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(invoke).toHaveBeenCalledWith("kick_set_channels", {
+      channels: [["streamerslug", 54321]],
+    });
+    expect(getBroadcasterUserId()).toBe(101);
+
+    // Act 2: Leave channel with mixed case
+    vi.mocked(invoke).mockClear();
+    await leaveChannel();
+
+    // Assert 2: Subscriptions are updated properly
+    expect(invoke).toHaveBeenCalledWith("kick_set_channels", {
+      channels: [],
+    });
+  });
+
+  it("handles timeout gracefully when join request takes too long", async () => {
+    // Arrange
+    vi.useFakeTimers();
+    const channelSlug = "slowchannel";
+    let aborted = false;
+
+    (globalThis.fetch as ReturnType<typeof vi.fn>).mockImplementation((_url, init) => {
+      init?.signal?.addEventListener("abort", () => {
+        aborted = true;
+      });
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("The operation was aborted.", "AbortError"));
+        });
+      });
+    });
+
+    const { joinChannel, isJoining } = useKickChat(channelSlug);
+
+    // Act
+    const joinPromise = joinChannel();
+    expect(isJoining.value).toBe(true);
+
+    // Fast-forward past 6000ms safety timeout
+    vi.advanceTimersByTime(6100);
+    await joinPromise;
+
+    // Assert
+    expect(aborted).toBe(true);
+    expect(isJoining.value).toBe(false);
+  });
 });

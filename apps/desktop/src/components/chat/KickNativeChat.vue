@@ -15,12 +15,14 @@ import { useI18n } from "vue-i18n";
 import { KickIcon } from "@/components/icons";
 import LoginPrompt from "./LoginPrompt.vue";
 import { API_CONFIG } from "@/config/api";
+import { httpGet } from "@/lib/http";
 
 const props = defineProps<{ channel: string }>();
 
 const {
   channelMessagesMap,
   connectionState,
+  isJoining,
   joinChannel,
   leaveChannel,
   removeLastLocalMessage,
@@ -58,7 +60,7 @@ async function sendKickMessage(channel: string, message: string) {
   try {
     let broadcaster_user_id = getBroadcasterUserId();
     if (!broadcaster_user_id) {
-      const res = await fetch(API_CONFIG.kick.apiV1Url(channel));
+      const res = await httpGet(API_CONFIG.kick.apiV1Url(channel.trim().toLowerCase()));
       if (!res.ok) throw new Error("Channel not found");
       const data = await res.json();
       broadcaster_user_id = data.user_id;
@@ -76,7 +78,6 @@ async function sendKickMessage(channel: string, message: string) {
 
 const newMessage = ref("");
 const isSending = ref(false);
-const isInitializing = ref(true);
 
 const scrollContainer = ref<HTMLElement | null>(null);
 const isScrolledUp = ref(false);
@@ -114,14 +115,13 @@ async function handleSend() {
 
 let isDisposed = false;
 let unlistenError: UnlistenFn | null = null;
-let initTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(async () => {
-  try {
-    await Promise.all([joinChannel(), loadChannelEmotes(props.channel)]);
-  } catch (e) {
-    console.error("Failed to initialize Kick channel or emotes", e);
-  }
+  joinChannel().catch((e) => console.error("Failed to join Kick channel", e));
+  loadChannelEmotes(props.channel).catch((e) =>
+    console.error("Failed to load Kick channel emotes", e)
+  );
+
   if (isDisposed) return;
 
   try {
@@ -149,19 +149,10 @@ onMounted(async () => {
   } catch (e) {
     console.error("Failed to setup kick-chat-error listener", e);
   }
-
-  if (isDisposed) return;
-  initTimer = setTimeout(() => {
-    isInitializing.value = false;
-  }, 800);
 });
 
 onUnmounted(() => {
   isDisposed = true;
-  if (initTimer) {
-    clearTimeout(initTimer);
-    initTimer = null;
-  }
   if (unlistenError) {
     unlistenError();
     unlistenError = null;
@@ -174,7 +165,7 @@ onUnmounted(() => {
   <div class="flex flex-col h-full bg-[#0f1115] relative">
     <Transition name="fade">
       <div
-        v-if="isInitializing"
+        v-if="isJoining && channelMessages.length === 0"
         class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 bg-[#0f1115] p-6"
       >
         <KickIcon :size="48" :style="{ color: '#53FC18' }" class="opacity-30" />
@@ -195,7 +186,7 @@ onUnmounted(() => {
     </div>
 
     <div
-      v-if="connectionState === 'disconnected' && channelMessages.length === 0"
+      v-if="!isJoining && connectionState === 'disconnected' && channelMessages.length === 0"
       class="flex-1 flex flex-col items-center justify-center gap-3 p-6 text-center"
     >
       <WifiOff class="w-8 h-8 text-gray-600" />

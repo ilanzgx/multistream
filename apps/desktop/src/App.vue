@@ -9,7 +9,6 @@ import { useUpdater, isTauri } from "./composables/useUpdater";
 import { useLiveStatus } from "./composables/useLiveStatus";
 import { useMediaCodecs } from "./composables/useMediaCodecs";
 import { useRecording } from "./composables/useRecording";
-import { UNIFIED_CHAT_ID } from "./composables/useUnifiedChat";
 import { useDeepLink } from "./composables/useDeepLink";
 import ToastProvider from "./components/ui/toast/ToastProvider.vue";
 import FollowedChannelsSidebar from "./components/main/FollowedChannelsSidebar.vue";
@@ -59,7 +58,7 @@ watch(
 );
 
 const { streams, addStream, clearStreams } = useStreams();
-const { selectedChat, sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } =
+const { sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } =
   usePreferences();
 const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
@@ -129,31 +128,7 @@ function handleFrameShortcuts(e: MessageEvent) {
   }
 }
 
-watch(streams, (newStreams, oldStreams) => {
-  if (
-    selectedChat.value &&
-    selectedChat.value !== UNIFIED_CHAT_ID &&
-    !newStreams.some((s) => `${s.platform}:${s.channel}` === selectedChat.value)
-  ) {
-    setSelectedChat("");
-  }
-
-  // when none streams are selected, auto load the chat of the first stream
-  // if have more than 1 stream and remove one, auto load the chat of the first stream
-  // if something wrong happens, falls on fallback
-  const prevLen = oldStreams?.length ?? 0;
-  if (
-    selectedChat.value !== UNIFIED_CHAT_ID &&
-    ((prevLen === 0 && newStreams.length === 1) || (prevLen > 1 && newStreams.length === 1))
-  ) {
-    const first = newStreams.find((s) => s.platform !== "custom");
-    if (first) {
-      setSelectedChat(`${first.platform}:${first.channel}`);
-    } else {
-      setSelectedChat("");
-    }
-  }
-
+watch(streams, (newStreams) => {
   if (newStreams.length === 0) {
     refreshSuggestions();
   }

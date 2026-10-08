@@ -2,6 +2,7 @@ import { ref, shallowRef } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { API_CONFIG } from "@/config/api";
+import { httpGet } from "@/lib/http";
 
 export interface KickChatMessage {
   id: string;
@@ -139,14 +140,19 @@ async function setupListeners() {
 export function useKickChat(channelSlug: string) {
   setupListeners();
 
-  async function joinChannel() {
-    if (activeKickChannels.has(channelSlug) || pendingJoinControllers.has(channelSlug)) return;
+  const isJoining = ref(false);
 
+  async function joinChannel() {
+    const slug = channelSlug.trim().toLowerCase();
+    if (!slug || activeKickChannels.has(slug) || pendingJoinControllers.has(slug)) return;
+
+    isJoining.value = true;
     const controller = new AbortController();
-    pendingJoinControllers.set(channelSlug, controller);
+    pendingJoinControllers.set(slug, controller);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     try {
-      const res = await fetch(API_CONFIG.kick.apiV1Url(channelSlug), {
+      const res = await httpGet(API_CONFIG.kick.apiV1Url(slug), undefined, {
         signal: controller.signal,
       });
       if (controller.signal.aborted) return;
@@ -156,9 +162,9 @@ export function useKickChat(channelSlug: string) {
       const chatroomId = data.chatroom?.id;
 
       if (chatroomId) {
-        activeKickChannels.set(channelSlug, chatroomId);
+        activeKickChannels.set(slug, chatroomId);
         if (data.user_id) {
-          activeBroadcasters.set(channelSlug, data.user_id);
+          activeBroadcasters.set(slug, data.user_id);
         }
         await updateSubscriptions();
       }
@@ -166,22 +172,25 @@ export function useKickChat(channelSlug: string) {
       if (controller.signal.aborted || (e instanceof DOMException && e.name === "AbortError")) {
         return;
       }
-      console.error("Failed to fetch Kick chatroom ID for", channelSlug, e);
+      console.error("Failed to fetch Kick chatroom ID for", slug, e);
     } finally {
-      pendingJoinControllers.delete(channelSlug);
+      clearTimeout(timeoutId);
+      pendingJoinControllers.delete(slug);
+      isJoining.value = false;
     }
   }
 
   async function leaveChannel() {
-    const pendingController = pendingJoinControllers.get(channelSlug);
+    const slug = channelSlug.trim().toLowerCase();
+    const pendingController = pendingJoinControllers.get(slug);
     if (pendingController) {
       pendingController.abort();
-      pendingJoinControllers.delete(channelSlug);
+      pendingJoinControllers.delete(slug);
     }
 
-    if (activeKickChannels.has(channelSlug)) {
-      activeKickChannels.delete(channelSlug);
-      activeBroadcasters.delete(channelSlug);
+    if (activeKickChannels.has(slug)) {
+      activeKickChannels.delete(slug);
+      activeBroadcasters.delete(slug);
       await updateSubscriptions();
     }
   }
@@ -218,7 +227,8 @@ export function useKickChat(channelSlug: string) {
   }
 
   function getBroadcasterUserId() {
-    return activeBroadcasters.get(channelSlug) ?? null;
+    const slug = channelSlug.trim().toLowerCase();
+    return activeBroadcasters.get(slug) ?? null;
   }
 
   function addLocalMessage(msg: KickChatMessage) {
@@ -234,6 +244,7 @@ export function useKickChat(channelSlug: string) {
   return {
     channelMessagesMap,
     connectionState,
+    isJoining,
     joinChannel,
     leaveChannel,
     removeLastLocalMessage,
