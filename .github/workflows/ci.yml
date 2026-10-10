@@ -97,7 +97,6 @@ jobs:
     name: Check Endpoints Health
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -108,6 +107,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Check Endpoints
+        continue-on-error: true
         run: bun run check:endpoints
 
   rust-linux:
