@@ -18,8 +18,10 @@ import {
   Users,
   VideoOff,
   Loader2,
+  RotateCw,
 } from "@lucide/vue";
 import { TwitchIcon } from "@/components/icons";
+import { useNetworkStatus } from "@/composables/useNetworkStatus";
 
 const props = defineProps<{
   channel: string;
@@ -30,6 +32,15 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+const { isOnline, onReconnect } = useNetworkStatus();
+
+function retryLoad() {
+  retryCount = 0;
+  hasError.value = false;
+  isOffline.value = false;
+  errorDetails.value = "";
+  loadStream();
+}
 
 const isCompact = computed(() => !props.isFocused && !isFullscreen.value);
 const videoRef = ref<HTMLVideoElement | null>(null);
@@ -178,6 +189,10 @@ function buildLevelLabel(level: { height: number; attrs?: Record<string, string>
 
 function scheduleRetry() {
   if (isDisposed) return;
+  if (!isOnline.value) {
+    // Avoid exhausting retry attempts while the host is disconnected; will auto-recover upon reconnect
+    return;
+  }
   if (retryTimer) {
     clearTimeout(retryTimer);
   }
@@ -266,6 +281,11 @@ async function loadStream() {
         if (!data.fatal) return;
 
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          if (!isOnline.value) {
+            isLoading.value = false;
+            return;
+          }
+
           if (data.response && data.response.code === 404) {
             isOffline.value = true;
             isLoading.value = false;
@@ -296,6 +316,11 @@ async function loadStream() {
         }
 
         // If we reach here, it's a fatal error that Hls.js can't recover from natively.
+        if (!isOnline.value) {
+          isLoading.value = false;
+          return;
+        }
+
         // Pragmatic fix: fetch a new URL instead of freezing/dying.
         if (retryCount < MAX_RETRIES) {
           scheduleRetry();
@@ -344,6 +369,11 @@ async function loadStream() {
   } catch (err) {
     if (isDisposed || currentLoadId !== loadId) return;
     console.error("[TwitchNativePlayer] Failed to load stream:", err);
+
+    if (!isOnline.value) {
+      isLoading.value = false;
+      return;
+    }
 
     const errStr = String(err).toLowerCase();
     if (errStr.includes("offline")) {
@@ -470,9 +500,22 @@ function onVideoEnded() {
   clearWatchdog();
 }
 
+function onStreamReloadEvent(e: Event) {
+  const customEvent = e as CustomEvent<{ channel?: string; channelid?: string }>;
+  if (!customEvent.detail || customEvent.detail.channel === props.channel) {
+    retryLoad();
+  }
+}
+
 onMounted(() => {
   loadStream();
   document.addEventListener("fullscreenchange", onFullscreenChange);
+  window.addEventListener("multistream-reload-stream", onStreamReloadEvent);
+});
+
+onReconnect(() => {
+  if (isDisposed) return;
+  retryLoad();
 });
 
 onBeforeUnmount(() => {
@@ -496,6 +539,7 @@ onBeforeUnmount(() => {
     hls = null;
   }
   document.removeEventListener("fullscreenchange", onFullscreenChange);
+  window.removeEventListener("multistream-reload-stream", onStreamReloadEvent);
 });
 </script>
 
@@ -510,7 +554,7 @@ onBeforeUnmount(() => {
     <Skeleton v-if="isLoading" class="absolute inset-0 bg-[#1e2127]" />
     <div
       v-if="hasError"
-      class="absolute inset-0 flex flex-col items-center justify-center bg-[#0f1115] p-4 text-center"
+      class="absolute inset-0 flex flex-col items-center justify-center bg-[#0f1115] p-4 text-center z-10"
     >
       <p class="text-red-400 font-medium text-sm mb-1">
         {{ t("settings.nativePlayer.loadError") }}
@@ -521,6 +565,13 @@ onBeforeUnmount(() => {
       >
         {{ errorDetails }}
       </p>
+      <button
+        class="mt-3 px-3 py-1.5 text-xs font-medium rounded-md bg-[#1e2127] hover:bg-[#2a2d33] border border-[#2a2d33] text-zinc-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+        @click="retryLoad"
+      >
+        <RotateCw class="size-3" />
+        {{ t("nativePlayer.retry") }}
+      </button>
     </div>
 
     <!-- Offline Overlay -->
