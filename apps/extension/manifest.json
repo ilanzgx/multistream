@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Add to Multistream",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "description": "Add Twitch, Kick, YouTube live streams and custom video players directly to Multistream.",
   "permissions": [
     "contextMenus",

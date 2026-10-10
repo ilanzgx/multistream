@@ -4,6 +4,49 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.19.2] - 2026-10-10
+
+### Bug Fixes
+
+- **ci**: Ensure valid permissions for linux appimage launcher ([e50f6f6](https://github.com/ilanzgx/multistream/commit/e50f6f6740fec618f71074f1f3d85ce544323019))
+- **transcription**: Gate windows-only fir decimator for non-windows targets ([ea05dd2](https://github.com/ilanzgx/multistream/commit/ea05dd2d159b28f3c4c688906addfbe8cfe4495e))
+- **transcription**: Flush pending audio on capture idle timeout ([f7d4c8b](https://github.com/ilanzgx/multistream/commit/f7d4c8bc1018143dc98608e1f2a8043ab1504ca3))
+- **transcription**: Prevent timeout spiral under high rtf and cap peak gain ([8d806bb](https://github.com/ilanzgx/multistream/commit/8d806bb39353fce2807a0b6541053cbba8112676))
+- **transcription**: Preserve capture timestamps and prevent premature overload drop ([d0ae038](https://github.com/ilanzgx/multistream/commit/d0ae038ad4644b860b1ca2a9bd72ad6a1c3aef31))
+- **transcription**: Localize timestamp helper to avoid dead-code warning on non-windows ([b61abdc](https://github.com/ilanzgx/multistream/commit/b61abdcea4ae36c0e8d314f8dea0b18cb3805115))
+- **chat**: Improve kick chat connection and stream chat sync ([043dcfa](https://github.com/ilanzgx/multistream/commit/043dcfa959a3193da84a3d32c4f3b5136bb54452))
+- **twitch**: Chunk graphql queries to prevent root field alias limit errors ([141ff07](https://github.com/ilanzgx/multistream/commit/141ff07505744543ea0c8c737bfde72103dd6417))
+- **network**: Resolve listener leaks, duplicate reloads, and improve test coverage ([f2944ed](https://github.com/ilanzgx/multistream/commit/f2944ed9b62b7d73ba1e75aa3f55f67f8d1d6711))
+- **network**: Prevent duplicate reconnect toasts and stale probe races ([b6f6650](https://github.com/ilanzgx/multistream/commit/b6f66508a5ab9c7bd7956295f7ef35fd3b71495d))
+
+
+### Documentation
+
+- Initialize impeccable product and design system ([28d9ccc](https://github.com/ilanzgx/multistream/commit/28d9cccc9b40c76114d9f8f2f5855cb735b9caaf))
+
+
+### Features
+
+- **transcription**: Add audio range, language, and inference time to payload ([0d47691](https://github.com/ilanzgx/multistream/commit/0d4769118dcfa101cb67146c017f05b90a4b78ee))
+- **ui**: Enhance transcript feed with metrics, smart scroll, and edge-to-edge hover ([a4e0039](https://github.com/ilanzgx/multistream/commit/a4e0039958978b50df7d21a5896859168fbc8495))
+- **sidebar**: Show both followed and favorite twitch live streams ([8175d5a](https://github.com/ilanzgx/multistream/commit/8175d5a459528adf4ea9d89f2841e7fc737c1404))
+- **backend**: Add multi-layer network connectivity probe and tauri events ([fad8791](https://github.com/ilanzgx/multistream/commit/fad879154f2ec72395e7e610e05a549957fca867))
+- **network**: Introduce reactive useNetworkStatus composable with tests ([2799002](https://github.com/ilanzgx/multistream/commit/279900231ab25272622e0fc047b4ef74a550e3b3))
+- **sync**: Add automatic re-synchronization on network reconnect ([2f941c6](https://github.com/ilanzgx/multistream/commit/2f941c66aa1242cf98a3e26390b9e0db9bf058a7))
+- **ui**: Add discreet offline indicators and update translations ([fb57bb8](https://github.com/ilanzgx/multistream/commit/fb57bb88731e9358f2abd44f8fa6e523dd8bd605))
+- **stream**: Implement stream auto-recovery, reload controls, and tests ([d8bcc04](https://github.com/ilanzgx/multistream/commit/d8bcc049bb8c166999584c044fb147ff3ea7c53f))
+- **ux**: Add post-update changelog dialog ([e7b17c6](https://github.com/ilanzgx/multistream/commit/e7b17c6231485ff4a96fa288dc117ca010ccd348))
+
+
+### Refactoring
+
+- **transcription**: Isolate app audio capture and optimize whisper pipeline ([b3d01a6](https://github.com/ilanzgx/multistream/commit/b3d01a65a859e2c95e36d820933180cfe4510a9a))
+- **settings**: Decompose tabs into modular components ([8dd953d](https://github.com/ilanzgx/multistream/commit/8dd953d2b4b1ec681e01919b8bf8f3c72e6a6016))
+- **settings**: Polish general, recording, and transcription tabs ([27eeede](https://github.com/ilanzgx/multistream/commit/27eeedea53c68d3daaad9d2fd914a56a7547635a))
+- **settings**: Polish tabs styling and add disconnect confirmation dialog ([f959b8c](https://github.com/ilanzgx/multistream/commit/f959b8c4dd9134f8e1f5e76748201f3d54f61a6b))
+- **ui**: Standardize and polish twitch and kick auth dialogs ([ae713ed](https://github.com/ilanzgx/multistream/commit/ae713edaf5d9d2626d6ce8467cc3a852b6fedcad))
+- **ui**: Redesign onboarding tour with studio diagrams and contextual tips ([207d80f](https://github.com/ilanzgx/multistream/commit/207d80ff169fbd1b2ffc8a29db03b5c5b59b022e))
+
 ## [0.19.1] - 2026-09-28
 
 ### Bug Fixes
