@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { API_CONFIG } from "@/config/api";
 import { httpGet } from "@/lib/http";
+import { useNetworkStatus } from "./useNetworkStatus";
 
 export interface KickChatMessage {
   id: string;
@@ -137,6 +138,22 @@ async function setupListeners() {
   }
 }
 
+async function updateSubscriptions() {
+  const channels = Array.from(activeKickChannels.entries()).map(([slug, id]) => [slug, id]);
+  await invoke("kick_set_channels", { channels });
+}
+
+const { onReconnect } = useNetworkStatus();
+onReconnect(async () => {
+  if (activeKickChannels.size > 0) {
+    try {
+      await updateSubscriptions();
+    } catch (e) {
+      console.error("[useKickChat] Failed to resubscribe channels on reconnect", e);
+    }
+  }
+});
+
 export function useKickChat(channelSlug: string) {
   setupListeners();
 
@@ -193,11 +210,6 @@ export function useKickChat(channelSlug: string) {
       activeBroadcasters.delete(slug);
       await updateSubscriptions();
     }
-  }
-
-  async function updateSubscriptions() {
-    const channels = Array.from(activeKickChannels.entries()).map(([slug, id]) => [slug, id]);
-    await invoke("kick_set_channels", { channels });
   }
 
   function removeLastLocalMessage(username: string): string | null {

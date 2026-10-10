@@ -7,6 +7,7 @@ import { useStreams } from "./useStreams";
 import type { Platform } from "./useStreams";
 import { toast } from "./useToast";
 import { invoke } from "@tauri-apps/api/core";
+import { useNetworkStatus } from "./useNetworkStatus";
 
 import { i18n } from "@/i18n";
 import { isTauri, httpGet, httpPost } from "@/lib/http";
@@ -745,6 +746,7 @@ const _useLiveStatus = () => {
   const { favorites } = useFavorites();
   const { notificationsEnabled } = usePreferences();
   const { addStream, streams = ref([]) } = useStreams();
+  const { isOnline, onReconnect, checkConnectivity } = useNetworkStatus();
   const visibility = useDocumentVisibility();
   const statuses = ref<StatusMap>({});
   const previousStatuses = ref<StatusMap>({});
@@ -781,6 +783,7 @@ const _useLiveStatus = () => {
     if (activeCheckPromise) {
       return activeCheckPromise;
     }
+    if (!isOnline.value) return;
     // Se o app estiver oculto/minimizado e as notificações estiverem desligadas, não há porquê gastar CPU/Rede
     if (visibility.value === "hidden" && !notificationsEnabled.value) return;
 
@@ -883,7 +886,12 @@ const _useLiveStatus = () => {
 
         // All APIs failed — skip update entirely to avoid poisoning previousStatuses
         // with stale data that would trigger false "went live" notifications on recovery
-        if (twitchData === null && kickData === null && youtubeData === null) return;
+        if (twitchData === null && kickData === null && youtubeData === null) {
+          if (twitchChannels.length > 0 || kickChannels.length > 0 || youtubeChannels.length > 0) {
+            checkConnectivity();
+          }
+          return;
+        }
 
         const newStatuses: StatusMap = { ...statuses.value };
         if (twitchData !== null) Object.assign(newStatuses, twitchData);
@@ -1232,6 +1240,16 @@ const _useLiveStatus = () => {
     }
   });
 
+  onReconnect(() => {
+    checkAll();
+    if (
+      streams.value.length === 0 &&
+      Date.now() - lastSuggestionsFetch.value >= REFRESH_CONFIG.suggestionsInterval
+    ) {
+      refreshSuggestions();
+    }
+  });
+
   /**
    * @brief Refresh suggestions with two-phase incremental loading
    *
@@ -1246,7 +1264,7 @@ const _useLiveStatus = () => {
    * @returns Promise<void>
    */
   const refreshSuggestions = async () => {
-    if (isLoadingSuggestions.value || isLoadingMoreSuggestions.value) return;
+    if (!isOnline.value || isLoadingSuggestions.value || isLoadingMoreSuggestions.value) return;
     isLoadingSuggestions.value = true;
     lastSuggestionsFetch.value = Date.now();
 
