@@ -162,23 +162,30 @@ jobs:
           fetch-depth: 0
 
       - name: Generate changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="$GITHUB_REF_NAME"
           PREV_TAG=$(git tag --sort=-v:refname | grep -A1 "^${TAG}$" | tail -1)
 
           if [ -z "$PREV_TAG" ] || [ "$PREV_TAG" = "$TAG" ]; then
             RANGE="$TAG"
+            API_URL="repos/${GITHUB_REPOSITORY}/commits?sha=${TAG}&per_page=100"
           else
             RANGE="${PREV_TAG}..${TAG}"
+            API_URL="repos/${GITHUB_REPOSITORY}/compare/${PREV_TAG}...${TAG}"
           fi
 
           echo "Generating changelog for range: $RANGE"
 
-          FEATURES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^feat(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          FIXES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^fix(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          REFACTORS=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^refactor(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          STYLES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^style(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
-          PERFS=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h))" --no-merges | grep -iE "^perf(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' || true)
+          gh api "$API_URL" --jq '(if type == "array" then . else .commits end)[] | select(.author.login != null) | "s|\\(commit/\(.sha[0:7])[0-9a-f]*\\)) by \\[[^]]*\\]([^)]*)|\\1) by [\(.author.login)](https://github.com/\(.author.login))|"' > authors.sed 2>/dev/null || : > authors.sed
+
+          FEATURES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h)) by [%an](https://github.com/%an)" --no-merges | grep -iE "^feat(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' | sed -f authors.sed || true)
+          FIXES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h)) by [%an](https://github.com/%an)" --no-merges | grep -iE "^fix(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' | sed -f authors.sed || true)
+          REFACTORS=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h)) by [%an](https://github.com/%an)" --no-merges | grep -iE "^refactor(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' | sed -f authors.sed || true)
+          STYLES=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h)) by [%an](https://github.com/%an)" --no-merges | grep -iE "^style(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' | sed -f authors.sed || true)
+          PERFS=$(git log $RANGE --pretty=format:"%s ([%h](https://github.com/ilanzgx/multistream/commit/%h)) by [%an](https://github.com/%an)" --no-merges | grep -iE "^perf(\(.*\))?:" | sed -E 's/^[a-zA-Z]+\(([^)]+)\): *(.)(.*)/**\1**: \u\2\3/; s/^[a-zA-Z]+: *(.)(.*)/\u\1\2/' | sed -f authors.sed || true)
+          rm -f authors.sed
 
           > changelog.md
 
