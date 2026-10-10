@@ -7,6 +7,7 @@ import { isTauri } from "./useUpdater";
 import { useTwitchAuth } from "./useTwitchAuth";
 import { useLiveStatus } from "./useLiveStatus";
 import { useFavorites } from "./useFavorites";
+import { useNetworkStatus } from "./useNetworkStatus";
 import { REFRESH_CONFIG } from "@/config/api";
 
 export interface FollowedChannel {
@@ -30,6 +31,7 @@ const _useFollowedChannels = () => {
   const { authenticated: twitchAuthenticated } = useTwitchAuth();
   const { statuses, isChecking, checkAll, getStatus } = useLiveStatus();
   const { favorites } = useFavorites();
+  const { isOnline, onReconnect, checkConnectivity } = useNetworkStatus();
   const isFetchingTwitch = ref(false);
   const platformFilter = ref<"all" | "twitch" | "kick" | "youtube">("all");
   const hasLoadedTwitchOnce = ref(false);
@@ -240,7 +242,7 @@ const _useFollowedChannels = () => {
   });
 
   const fetchTwitchFollowed = async () => {
-    if (!isTauri() || !twitchAuthenticated.value || isFetchingTwitch.value) {
+    if (!isTauri() || !twitchAuthenticated.value || isFetchingTwitch.value || !isOnline.value) {
       if (!twitchAuthenticated.value) {
         twitchChannels.value = [];
       }
@@ -256,6 +258,7 @@ const _useFollowedChannels = () => {
     } catch (e) {
       console.error("Failed to fetch Twitch followed streams", e);
       debugErrors.value.push(`Twitch: ${String(e)}`);
+      checkConnectivity();
     } finally {
       isFetchingTwitch.value = false;
       hasLoadedTwitchOnce.value = true;
@@ -263,7 +266,7 @@ const _useFollowedChannels = () => {
   };
 
   const refresh = async () => {
-    if (isManualRefreshing.value) return;
+    if (isManualRefreshing.value || !isOnline.value) return;
 
     isManualRefreshing.value = true;
     debugErrors.value = [];
@@ -284,6 +287,7 @@ const _useFollowedChannels = () => {
   };
 
   const poll = async () => {
+    if (!isOnline.value) return;
     const promises: Promise<any>[] = [checkAll()];
     if (isTauri() && twitchAuthenticated.value) {
       promises.push(fetchTwitchFollowed());
@@ -311,6 +315,10 @@ const _useFollowedChannels = () => {
     } else {
       twitchChannels.value = [];
     }
+  });
+
+  onReconnect(() => {
+    refresh();
   });
 
   const handleVisibilityChange = () => {

@@ -247,7 +247,8 @@
       "stopRecord": "Parar gravação",
       "focus": "Focar stream",
       "unfocus": "Desfocar stream",
-      "copyUrl": "Copiar URL da transmissão"
+      "copyUrl": "Copiar URL da transmissão",
+      "reload": "Recarregar stream"
     }
   },
   "empty": {
@@ -513,6 +514,13 @@
       "tokenExpired": "Acesso negado (403). Token da transmissão expirou.",
       "hlsError": "Erro de HLS ({type}: {details})",
       "playbackError": "Erro de reprodução nativa"
-    }
+    },
+    "retry": "Tentar novamente"
+  },
+  "network": {
+    "offline": "Sem conexão à internet",
+    "reconnecting": "Tentando reconexão...",
+    "reconnected": "Conexão à internet restabelecida",
+    "offlineTooltip": "Você está offline. Mostrando dados em cache."
   }
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from "vue";
-import { Menu, X } from "@lucide/vue";
+import { Menu, X, WifiOff } from "@lucide/vue";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useStreams, type Platform } from "./composables/useStreams";
@@ -10,6 +10,7 @@ import { useLiveStatus } from "./composables/useLiveStatus";
 import { useMediaCodecs } from "./composables/useMediaCodecs";
 import { useRecording } from "./composables/useRecording";
 import { useDeepLink } from "./composables/useDeepLink";
+import { useNetworkStatus } from "./composables/useNetworkStatus";
 import ToastProvider from "./components/ui/toast/ToastProvider.vue";
 import FollowedChannelsSidebar from "./components/main/FollowedChannelsSidebar.vue";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
@@ -65,6 +66,11 @@ const { refreshSuggestions, startPolling } = useLiveStatus();
 const { checkVideoCodecs } = useMediaCodecs();
 const { checkDependencies } = useRecording();
 const { locale, t } = useI18n();
+const { isOnline, onReconnect } = useNetworkStatus();
+
+onReconnect(() => {
+  toast.success(t("network.reconnected"), { id: "network-reconnected", duration: 3000 });
+});
 
 useDeepLink();
 
@@ -243,6 +249,26 @@ onUnmounted(() => {
 
 <template>
   <div class="flex h-screen overflow-hidden bg-[#191b1f]">
+    <!-- offline banner -->
+    <Transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 -translate-y-2 scale-95"
+      enter-to-class="opacity-100 translate-y-0 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 translate-y-0 scale-100"
+      leave-to-class="opacity-0 -translate-y-2 scale-95"
+    >
+      <div
+        v-if="!isOnline"
+        data-testid="network-offline-banner"
+        class="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#14161a]/95 border border-[#2a2d33] text-xs shadow-xl shadow-black/50 backdrop-blur-md select-none"
+      >
+        <WifiOff class="size-3.5 text-zinc-400 shrink-0" />
+        <span class="text-zinc-200 font-medium">{{ $t("network.offline") }}</span>
+        <span class="text-zinc-500 font-normal">({{ $t("network.reconnecting") }})</span>
+      </div>
+    </Transition>
+
     <!-- left sidebar -->
     <FollowedChannelsSidebar />
 

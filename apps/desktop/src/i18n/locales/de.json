@@ -247,7 +247,8 @@
       "stopRecord": "Aufnahme stoppen",
       "focus": "Stream fokussieren",
       "unfocus": "Fokus aufheben",
-      "copyUrl": "Stream-URL kopieren"
+      "copyUrl": "Stream-URL kopieren",
+      "reload": "Stream neu laden"
     }
   },
   "empty": {
@@ -513,6 +514,13 @@
       "tokenExpired": "Zugriff verweigert (403). Stream-Token abgelaufen.",
       "hlsError": "HLS-Fehler ({type}: {details})",
       "playbackError": "Nativer Wiedergabefehler"
-    }
+    },
+    "retry": "Wiederholen"
+  },
+  "network": {
+    "offline": "Keine Internetverbindung",
+    "reconnecting": "Wiederverbindung wird versucht...",
+    "reconnected": "Internetverbindung wiederhergestellt",
+    "offlineTooltip": "Sie sind offline. Zwischengespeicherte Daten werden angezeigt."
   }
 }

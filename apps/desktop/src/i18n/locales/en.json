@@ -247,7 +247,8 @@
       "stopRecord": "Stop recording",
       "focus": "Focus stream",
       "unfocus": "Unfocus stream",
-      "copyUrl": "Copy stream URL"
+      "copyUrl": "Copy stream URL",
+      "reload": "Reload stream"
     }
   },
   "empty": {
@@ -513,6 +514,13 @@
       "tokenExpired": "Access Denied (403). Stream token expired.",
       "hlsError": "HLS Error ({type}: {details})",
       "playbackError": "Native playback error"
-    }
+    },
+    "retry": "Retry"
+  },
+  "network": {
+    "offline": "No internet connection",
+    "reconnecting": "Attempting to reconnect...",
+    "reconnected": "Internet connection restored",
+    "offlineTooltip": "You are offline. Showing cached data."
   }
 }

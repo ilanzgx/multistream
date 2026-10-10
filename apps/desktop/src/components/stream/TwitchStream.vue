@@ -30,6 +30,7 @@ const embedUrl = computed(() => {
       v-if="nativePlayerEnabled"
       :key="channel"
       :channel="channel"
+      :channelid="channelid"
       :title="liveStatus?.title"
       :viewer-count="liveStatus?.viewerCount"
       :avatar-url="profilePicture"

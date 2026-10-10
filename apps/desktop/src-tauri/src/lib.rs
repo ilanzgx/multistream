@@ -44,6 +44,9 @@ use recording::installer::{
 };
 use recording::RecordingManager;
 
+mod network;
+use network::check_network_connectivity;
+
 // fixed port
 const LOCALHOST_PORT: u16 = 14831;
 
@@ -176,8 +179,10 @@ pub fn run() {
             youtube_resolve_live_id,
             youtube_check_channels_status,
             youtube_search_channels,
+            check_network_connectivity,
         ])
         .setup(move |app| {
+            network::start_network_monitor(app.handle().clone());
             app.manage(TranscriptionState(std::sync::Mutex::new(None)));
             app.manage(RecordingManager::new());
 

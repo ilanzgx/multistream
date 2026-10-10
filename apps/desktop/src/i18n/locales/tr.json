@@ -247,7 +247,8 @@
       "stopRecord": "Kaydı durdur",
       "focus": "Yayına odaklan",
       "unfocus": "Odaklanmayı kaldır",
-      "copyUrl": "Yayın URL'sini kopyala"
+      "copyUrl": "Yayın URL'sini kopyala",
+      "reload": "Yayını yeniden yükle"
     }
   },
   "empty": {
@@ -513,6 +514,13 @@
       "tokenExpired": "Erişim Reddedildi (403). Yayın belirtecinin süresi doldu.",
       "hlsError": "HLS Hatası ({type}: {details})",
       "playbackError": "Yerel oynatma hatası"
-    }
+    },
+    "retry": "Yeniden dene"
+  },
+  "network": {
+    "offline": "İnternet bağlantısı yok",
+    "reconnecting": "Yeniden bağlanmaya çalışılıyor...",
+    "reconnected": "İnternet bağlantısı geri geldi",
+    "offlineTooltip": "Çevrimdışısınız. Önbelleğe alınmış veriler gösteriliyor."
   }
 }

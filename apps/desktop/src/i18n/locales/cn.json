@@ -247,7 +247,8 @@
       "stopRecord": "停止录制",
       "focus": "聚焦直播",
       "unfocus": "取消聚焦",
-      "copyUrl": "复制直播URL"
+      "copyUrl": "复制直播URL",
+      "reload": "重新加载直播"
     }
   },
   "empty": {
@@ -513,6 +514,13 @@
       "tokenExpired": "访问被拒绝 (403)。直播令牌已过期。",
       "hlsError": "HLS 错误 ({type}: {details})",
       "playbackError": "原生播放错误"
-    }
+    },
+    "retry": "重试"
+  },
+  "network": {
+    "offline": "无网络连接",
+    "reconnecting": "正在尝试重新连接...",
+    "reconnected": "网络连接已恢复",
+    "offlineTooltip": "您处于离线状态。显示缓存数据。"
   }
 }

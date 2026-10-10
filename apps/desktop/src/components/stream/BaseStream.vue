@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { useStreams, type Platform } from "@/composables/useStreams";
 import { useFocusedStream } from "@/composables/useFocusedStream";
-import { X, Heart, Maximize2, Camera, Circle, CircleStop, Clock, Link } from "@lucide/vue";
+import {
+  X,
+  Heart,
+  Maximize2,
+  Camera,
+  Circle,
+  CircleStop,
+  Clock,
+  Link,
+  RotateCw,
+  WifiOff,
+} from "@lucide/vue";
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 import { useFavorites } from "@/composables/useFavorites";
 import { useScreenshot } from "@/composables/useScreenshot";
@@ -14,6 +25,7 @@ import { useElementSize } from "@vueuse/core";
 import { useProfilePicture } from "@/composables/useProfilePicture";
 import { useRecording } from "@/composables/useRecording";
 import { usePreferences } from "@/composables/usePreferences";
+import { useNetworkStatus } from "@/composables/useNetworkStatus";
 
 const { requestRemoveStream, sessionStartTimes, now } = useStreams();
 const { addFavorite, removeFavorite, favorites } = useFavorites();
@@ -23,6 +35,7 @@ const { t } = useI18n();
 const { recordingQuality, nativePlayerEnabled, adblockEnabled } = usePreferences();
 const { startRecording, stopRecording, isRecording, getState, isDependenciesInstalled } =
   useRecording();
+const { isOnline, onReconnect } = useNetworkStatus();
 
 const formatWatchTime = (ms: number): string => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -307,6 +320,47 @@ const triggerReloadTransition = () => {
   }, 4000);
 };
 
+const reloadStream = () => {
+  triggerReloadTransition();
+
+  const iframe = containerRef.value?.querySelector("iframe");
+  if (iframe) {
+    try {
+      iframe.contentWindow?.postMessage({ type: "MULTISTREAM_GRAVEYARD_SUSPEND" }, "*");
+    } catch {
+      // ignore
+    }
+
+    try {
+      const parsed = new URL(iframe.src);
+      parsed.searchParams.set("_ms_reload", Date.now().toString());
+      iframe.src = parsed.toString();
+    } catch {
+      const current = iframe.getAttribute("src") || "";
+      if (current) {
+        iframe.setAttribute("src", current);
+      }
+    }
+  }
+
+  window.dispatchEvent(
+    new CustomEvent("multistream-reload-stream", {
+      detail: { channel: props.channel, channelid: props.channelid },
+    })
+  );
+};
+
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+const unsubscribeReconnect = onReconnect(() => {
+  const jitter = 50 + Math.floor(Math.random() * 250);
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+  }
+  reconnectTimer = setTimeout(() => {
+    reloadStream();
+  }, jitter);
+});
+
 watch(nativePlayerEnabled, () => {
   if (props.platform === "twitch") {
     triggerReloadTransition();
@@ -374,6 +428,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  unsubscribeReconnect();
   if (reloadFallbackTimer) clearTimeout(reloadFallbackTimer);
   if (reloadHandshakeTimer) clearTimeout(reloadHandshakeTimer);
   if (reloadCheckTimer) clearTimeout(reloadCheckTimer);
@@ -498,6 +554,22 @@ const handleCopyUrl = async () => {
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
+    <!-- offline connection veil -->
+    <Transition name="fade">
+      <div
+        v-if="!isOnline"
+        data-testid="stream-offline-veil"
+        class="absolute inset-0 z-30 flex items-center justify-center bg-black/60 backdrop-blur-[2px] pointer-events-none select-none transition-opacity duration-300"
+      >
+        <div
+          class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#14161a]/95 border border-[#2a2d33] text-xs shadow-xl text-zinc-300 pointer-events-auto"
+        >
+          <WifiOff class="size-3.5 text-zinc-400 shrink-0" />
+          <span class="font-medium text-zinc-300">{{ $t("network.reconnecting") }}</span>
+        </div>
+      </div>
+    </Transition>
+
     <!-- skeleton loader with smooth fade-out -->
     <Transition name="fade">
       <div
@@ -688,6 +760,18 @@ const handleCopyUrl = async () => {
           :class="[isMiniaturized ? 'size-3' : 'size-4', 'transition-colors']"
           :fill="isFavorite ? 'currentColor' : 'none'"
         />
+      </button>
+      <!-- reload stream button -->
+      <button
+        :data-testid="`reload-stream-${channel}`"
+        :aria-label="$t('stream.actions.reload')"
+        :class="[
+          'pointer-events-auto flex items-center justify-center rounded-lg bg-black/60 backdrop-blur-sm border border-white/10 text-white/80 hover:bg-zinc-700/80 hover:text-white hover:border-white/20 transition-all duration-200 hover:scale-110 cursor-pointer',
+          isMiniaturized ? 'size-5' : 'size-8',
+        ]"
+        @click="reloadStream"
+      >
+        <RotateCw :class="isMiniaturized ? 'size-3' : 'size-4'" />
       </button>
       <!-- screenshot button -->
       <button

@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { API_CONFIG } from "@/config/api";
 import { httpGet } from "@/lib/http";
+import { useNetworkStatus } from "./useNetworkStatus";
 
 export interface KickChatMessage {
   id: string;
@@ -137,8 +138,29 @@ async function setupListeners() {
   }
 }
 
+async function updateSubscriptions() {
+  const channels = Array.from(activeKickChannels.entries()).map(([slug, id]) => [slug, id]);
+  await invoke("kick_set_channels", { channels });
+}
+
+let isReconnectingSubscriptions = false;
+
 export function useKickChat(channelSlug: string) {
   setupListeners();
+
+  const { onReconnect } = useNetworkStatus();
+  onReconnect(async () => {
+    const slug = channelSlug.trim().toLowerCase();
+    if (!activeKickChannels.has(slug) || isReconnectingSubscriptions) return;
+    isReconnectingSubscriptions = true;
+    try {
+      await updateSubscriptions();
+    } catch (e) {
+      console.error("[useKickChat] Failed to resubscribe channels on reconnect", e);
+    } finally {
+      isReconnectingSubscriptions = false;
+    }
+  });
 
   const isJoining = ref(false);
 
@@ -193,11 +215,6 @@ export function useKickChat(channelSlug: string) {
       activeBroadcasters.delete(slug);
       await updateSubscriptions();
     }
-  }
-
-  async function updateSubscriptions() {
-    const channels = Array.from(activeKickChannels.entries()).map(([slug, id]) => [slug, id]);
-    await invoke("kick_set_channels", { channels });
   }
 
   function removeLastLocalMessage(username: string): string | null {

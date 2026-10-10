@@ -12,6 +12,7 @@ import { toast } from "@/composables/useToast";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
 import { useI18n } from "vue-i18n";
 import { TwitchIcon } from "@/components/icons";
+import { useNetworkStatus } from "@/composables/useNetworkStatus";
 
 const props = defineProps<{ channel: string }>();
 
@@ -26,6 +27,7 @@ const {
 const { username } = useTwitchAuth();
 const { t } = useI18n();
 const { getEmoteDictionary, loadChannelEmotes } = useEmotes();
+const { isOnline } = useNetworkStatus();
 
 const channelMessages = computed(() => channelMessagesMap.value[props.channel.toLowerCase()] || []);
 
@@ -140,7 +142,15 @@ onUnmounted(() => {
     </Transition>
 
     <div
-      v-if="connectionState === 'reconnecting'"
+      v-if="!isOnline"
+      class="flex items-center gap-2 px-3 py-1.5 bg-[#14161a] border-b border-[#2a2d33] text-zinc-400 text-[11px] font-medium shrink-0"
+    >
+      <WifiOff class="w-3 h-3 text-zinc-500" />
+      <span>{{ t("network.offline") }}</span>
+    </div>
+
+    <div
+      v-else-if="connectionState === 'reconnecting'"
       class="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-[11px] font-medium shrink-0"
     >
       <RefreshCw class="w-3 h-3 animate-spin" />
@@ -193,8 +203,8 @@ onUnmounted(() => {
         <ChatRichInput
           v-model="newMessage"
           :emotes="channelEmotes"
-          :placeholder="t('chat.sendPlaceholder')"
-          :disabled="connectionState !== 'connected' || isSending"
+          :placeholder="!isOnline ? t('network.offline') : t('chat.sendPlaceholder')"
+          :disabled="!isOnline || connectionState !== 'connected' || isSending"
           class="focus:ring-[#9146FF]"
           @submit="handleSend"
         />
@@ -203,7 +213,9 @@ onUnmounted(() => {
           size="icon"
           :aria-label="t('chat.sendPlaceholder')"
           class="shrink-0 h-9.5 w-9.5 bg-[#9146FF] hover:bg-[#a970ff] text-white disabled:opacity-50"
-          :disabled="!newMessage.trim() || connectionState !== 'connected' || isSending"
+          :disabled="
+            !isOnline || !newMessage.trim() || connectionState !== 'connected' || isSending
+          "
         >
           <Send class="w-4 h-4" />
         </Button>
