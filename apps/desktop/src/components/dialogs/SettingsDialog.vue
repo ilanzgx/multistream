@@ -117,7 +117,7 @@ onMounted(() => {
             :open="open"
             :is-recording-supported="isRecordingSupported"
           />
-          <SettingsAboutTab />
+          <SettingsAboutTab @close="emit('update:open', false)" />
         </div>
       </Tabs>
 

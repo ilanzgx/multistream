@@ -506,5 +506,17 @@
     "reconnecting": "Wiederverbindung wird versucht...",
     "reconnected": "Internetverbindung wiederhergestellt",
     "offlineTooltip": "Sie sind offline. Zwischengespeicherte Daten werden angezeigt."
+  },
+  "changelog": {
+    "title": "Was ist neu",
+    "description": "Sieh dir an, was sich in diesem Multistream-Update geändert hat.",
+    "viewButton": "Neuigkeiten",
+    "viewOnGithub": "Release auf GitHub ansehen",
+    "gotIt": "Verstanden",
+    "loading": "Versionshinweise werden geladen...",
+    "maintenance": "Dieses Update enthält interne Stabilitäts- und Leistungsverbesserungen.",
+    "errorTitle": "Versionshinweise konnten nicht geladen werden",
+    "errorDescription": "Überprüfe deine Verbindung oder sieh dir das Release direkt auf GitHub an.",
+    "retry": "Erneut versuchen"
   }
 }

@@ -19,6 +19,7 @@ import EmptyState from "./components/main/EmptyState.vue";
 import OnboardingTour from "./components/dialogs/OnboardingTour.vue";
 import TwitchAuthDialog from "./components/dialogs/TwitchAuthDialog.vue";
 import KickAuthDialog from "./components/dialogs/KickAuthDialog.vue";
+import ChangelogDialog from "./components/dialogs/ChangelogDialog.vue";
 
 import { toast } from "@/composables/useToast";
 import { useI18n } from "vue-i18n";
@@ -31,10 +32,12 @@ const showOnboarding = ref(false);
 const dismissedWebBanner = ref(false);
 const showTwitchAuth = ref(false);
 const showKickAuth = ref(false);
+const showChangelog = ref(false);
 
 const hasOpenedOnboarding = ref(false);
 const hasOpenedTwitchAuth = ref(false);
 const hasOpenedKickAuth = ref(false);
+const hasOpenedChangelog = ref(false);
 
 watch(
   showOnboarding,
@@ -57,10 +60,23 @@ watch(
   },
   { immediate: true }
 );
+watch(
+  showChangelog,
+  (val) => {
+    if (val) hasOpenedChangelog.value = true;
+  },
+  { immediate: true }
+);
 
 const { streams, addStream, clearStreams } = useStreams();
-const { sidebarOpen, setSelectedChat, onboardingCompleted, setOnboardingCompleted } =
-  usePreferences();
+const {
+  sidebarOpen,
+  setSelectedChat,
+  onboardingCompleted,
+  setOnboardingCompleted,
+  pendingChangelogVersion,
+  setPendingChangelogVersion,
+} = usePreferences();
 const { checkForUpdates } = useUpdater();
 const { refreshSuggestions, startPolling } = useLiveStatus();
 const { checkVideoCodecs } = useMediaCodecs();
@@ -156,6 +172,8 @@ function handleDialogShowEvent(e: Event) {
     showTwitchAuth.value = true;
   } else if (evt.detail === "kick-auth") {
     showKickAuth.value = true;
+  } else if (evt.detail === "changelog") {
+    showChangelog.value = true;
   }
 }
 
@@ -195,7 +213,13 @@ onMounted(async () => {
   }
 
   if (!onboardingCompleted.value) {
+    if (pendingChangelogVersion.value) {
+      setPendingChangelogVersion("");
+    }
     showOnboarding.value = true;
+  } else if (pendingChangelogVersion.value) {
+    setPendingChangelogVersion("");
+    showChangelog.value = true;
   }
 
   // check for updates on startup
@@ -333,5 +357,6 @@ onUnmounted(() => {
 
     <TwitchAuthDialog v-if="hasOpenedTwitchAuth" v-model:open="showTwitchAuth" />
     <KickAuthDialog v-if="hasOpenedKickAuth" v-model:open="showKickAuth" />
+    <ChangelogDialog v-if="hasOpenedChangelog" v-model:open="showChangelog" />
   </div>
 </template>

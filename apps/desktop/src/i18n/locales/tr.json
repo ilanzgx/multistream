@@ -506,5 +506,17 @@
     "reconnecting": "Yeniden bağlanmaya çalışılıyor...",
     "reconnected": "İnternet bağlantısı geri geldi",
     "offlineTooltip": "Çevrimdışısınız. Önbelleğe alınmış veriler gösteriliyor."
+  },
+  "changelog": {
+    "title": "Yenilikler",
+    "description": "Bu Multistream güncellemesinde nelerin değiştiğini görün.",
+    "viewButton": "Yenilikler",
+    "viewOnGithub": "Sürümü GitHub'da görüntüle",
+    "gotIt": "Anladım",
+    "loading": "Sürüm notları yükleniyor...",
+    "maintenance": "Bu güncelleme dahili kararlılık ve performans iyileştirmeleri içerir.",
+    "errorTitle": "Sürüm notları yüklenemedi",
+    "errorDescription": "Bağlantınızı kontrol edin veya sürümü doğrudan GitHub'da görüntüleyin.",
+    "retry": "Tekrar dene"
   }
 }

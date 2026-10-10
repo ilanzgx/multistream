@@ -506,5 +506,17 @@
     "reconnecting": "Mencoba menghubungkan kembali...",
     "reconnected": "Koneksi internet pulih",
     "offlineTooltip": "Anda sedang offline. Menampilkan data tersimpan."
+  },
+  "changelog": {
+    "title": "Apa yang Baru",
+    "description": "Lihat apa saja yang berubah pada pembaruan Multistream ini.",
+    "viewButton": "Catatan Rilis",
+    "viewOnGithub": "Lihat rilis di GitHub",
+    "gotIt": "Mengerti",
+    "loading": "Memuat catatan rilis...",
+    "maintenance": "Pembaruan ini mencakup peningkatan stabilitas dan performa internal.",
+    "errorTitle": "Tidak dapat memuat catatan rilis",
+    "errorDescription": "Periksa koneksi Anda atau lihat rilis langsung di GitHub.",
+    "retry": "Coba lagi"
   }
 }

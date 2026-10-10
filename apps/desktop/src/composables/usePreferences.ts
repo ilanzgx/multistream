@@ -6,6 +6,7 @@ export interface Preferences {
   followedSidebarOpen: boolean;
   notificationsEnabled: boolean;
   onboardingCompleted: boolean;
+  pendingChangelogVersion: string;
 
   recordingQuality: string;
   recordingPath: string;
@@ -19,6 +20,7 @@ const defaultPreferences: Preferences = {
   followedSidebarOpen: false,
   notificationsEnabled: true,
   onboardingCompleted: false,
+  pendingChangelogVersion: "",
 
   recordingQuality: "best",
   recordingPath: "",
@@ -65,6 +67,11 @@ const _usePreferences = () => {
   const onboardingCompleted = useStorage<boolean>(
     "preferences.onboardingCompleted",
     defaultPreferences.onboardingCompleted
+  );
+
+  const pendingChangelogVersion = useStorage<string>(
+    "preferences.pendingChangelogVersion",
+    defaultPreferences.pendingChangelogVersion
   );
 
   const recordingQuality = useStorage<string>(
@@ -157,6 +164,10 @@ const _usePreferences = () => {
     onboardingCompleted.value = completed;
   };
 
+  const setPendingChangelogVersion = (version: string) => {
+    pendingChangelogVersion.value = version;
+  };
+
   /**
    * @brief Reset the preferences to default
    *
@@ -168,6 +179,7 @@ const _usePreferences = () => {
     followedSidebarOpen.value = defaultPreferences.followedSidebarOpen;
     notificationsEnabled.value = defaultPreferences.notificationsEnabled;
     onboardingCompleted.value = defaultPreferences.onboardingCompleted;
+    pendingChangelogVersion.value = defaultPreferences.pendingChangelogVersion;
 
     recordingQuality.value = defaultPreferences.recordingQuality;
     recordingPath.value = defaultPreferences.recordingPath;
@@ -182,6 +194,7 @@ const _usePreferences = () => {
     followedSidebarOpen,
     notificationsEnabled,
     onboardingCompleted,
+    pendingChangelogVersion,
 
     recordingQuality,
     recordingPath,
@@ -195,6 +208,7 @@ const _usePreferences = () => {
     toggleFollowedSidebar,
     setFollowedSidebarOpen,
     setOnboardingCompleted,
+    setPendingChangelogVersion,
     setRecordingQuality,
     setRecordingPath,
     setAdblockEnabled,

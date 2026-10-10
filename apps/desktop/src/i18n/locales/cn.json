@@ -506,5 +506,17 @@
     "reconnecting": "正在尝试重新连接...",
     "reconnected": "网络连接已恢复",
     "offlineTooltip": "您处于离线状态。显示缓存数据。"
+  },
+  "changelog": {
+    "title": "版本更新内容",
+    "description": "查看本次 Multistream 更新的变更内容。",
+    "viewButton": "更新日志",
+    "viewOnGithub": "在 GitHub 上查看发布",
+    "gotIt": "知道了",
+    "loading": "正在加载更新日志...",
+    "maintenance": "本次更新包含内部稳定性与性能优化。",
+    "errorTitle": "无法加载更新日志",
+    "errorDescription": "请检查您的网络连接，或直接在 GitHub 上查看发布内容。",
+    "retry": "重试"
   }
 }

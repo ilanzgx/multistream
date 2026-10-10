@@ -4,9 +4,19 @@ import { toast } from "@/composables/useToast";
 import * as tauriUpdater from "@tauri-apps/plugin-updater";
 import * as tauriProcess from "@tauri-apps/plugin-process";
 
+const { mockSetPendingChangelogVersion } = vi.hoisted(() => ({
+  mockSetPendingChangelogVersion: vi.fn(),
+}));
+
 vi.mock("vue-i18n", () => ({
   useI18n: () => ({
     t: (key: string) => key,
+  }),
+}));
+
+vi.mock("@/composables/usePreferences", () => ({
+  usePreferences: () => ({
+    setPendingChangelogVersion: mockSetPendingChangelogVersion,
   }),
 }));
 
@@ -276,6 +286,7 @@ describe("useUpdater composable unit tests", () => {
 
       // Assert (Progress math added chunkLength)
       expect(sut.downloadProgress.value).toBe(100);
+      expect(mockSetPendingChangelogVersion).toHaveBeenCalledWith("2.0.0");
 
       // Assert (Final success and timeout delay)
       expect(toast.success).toHaveBeenCalledWith("toasts.update.success", {

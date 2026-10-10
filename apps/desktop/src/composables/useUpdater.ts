@@ -3,6 +3,7 @@ import { isTauri as _isTauri } from "@tauri-apps/api/core";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { toast } from "@/composables/useToast";
+import { usePreferences } from "@/composables/usePreferences";
 import { useI18n } from "vue-i18n";
 import UpdateProgress from "@/components/ui/toast/UpdateProgress.vue";
 
@@ -27,6 +28,7 @@ export function isTauri(): boolean {
 
 export function useUpdater() {
   const { t } = useI18n();
+  const { setPendingChangelogVersion } = usePreferences();
 
   /**
    * @brief Check for updates
@@ -135,6 +137,8 @@ export function useUpdater() {
           );
         }
       });
+
+      setPendingChangelogVersion(currentUpdate.version);
 
       toast.success(`${t("toasts.update.success")}`, {
         id: "update-download",

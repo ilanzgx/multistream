@@ -506,5 +506,17 @@
     "reconnecting": "Attempting to reconnect...",
     "reconnected": "Internet connection restored",
     "offlineTooltip": "You are offline. Showing cached data."
+  },
+  "changelog": {
+    "title": "What's New",
+    "description": "See what changed in this Multistream update.",
+    "viewButton": "What's New",
+    "viewOnGithub": "View release on GitHub",
+    "gotIt": "Got it",
+    "loading": "Loading release notes...",
+    "maintenance": "This update includes internal stability and performance improvements.",
+    "errorTitle": "Could not load release notes",
+    "errorDescription": "Check your internet connection or view the release directly on GitHub.",
+    "retry": "Try again"
   }
 }

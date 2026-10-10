@@ -164,6 +164,18 @@ describe("usePreferences composable unit tests", () => {
     expect(adblockEnabled.value).toBe(true);
   });
 
+  it("should set pending changelog version correctly", () => {
+    // Arrange
+    const { setPendingChangelogVersion, pendingChangelogVersion } = sut;
+    expect(pendingChangelogVersion.value).toBe("");
+
+    // Act
+    setPendingChangelogVersion("0.19.0");
+
+    // Assert
+    expect(pendingChangelogVersion.value).toBe("0.19.0");
+  });
+
   it("should reset all preferences to default values", () => {
     // Arrange
     const {
@@ -177,6 +189,8 @@ describe("usePreferences composable unit tests", () => {
       notificationsEnabled,
       setOnboardingCompleted,
       onboardingCompleted,
+      setPendingChangelogVersion,
+      pendingChangelogVersion,
       nativePlayerEnabled,
       adblockEnabled,
       setAdblockEnabled,
@@ -192,6 +206,7 @@ describe("usePreferences composable unit tests", () => {
     setFollowedSidebarOpen(true);
     notificationsEnabled.value = false;
     setOnboardingCompleted(true);
+    setPendingChangelogVersion("0.19.0");
     nativePlayerEnabled.value = true;
     setAdblockEnabled(false);
     setRecordingQuality("480p");
@@ -202,6 +217,7 @@ describe("usePreferences composable unit tests", () => {
     expect(followedSidebarOpen.value).toBe(true);
     expect(notificationsEnabled.value).toBe(false);
     expect(onboardingCompleted.value).toBe(true);
+    expect(pendingChangelogVersion.value).toBe("0.19.0");
     expect(nativePlayerEnabled.value).toBe(true);
     expect(adblockEnabled.value).toBe(false);
     expect(recordingQuality.value).toBe("480p");
@@ -216,6 +232,7 @@ describe("usePreferences composable unit tests", () => {
     expect(followedSidebarOpen.value).toBe(false);
     expect(notificationsEnabled.value).toBe(true);
     expect(onboardingCompleted.value).toBe(false);
+    expect(pendingChangelogVersion.value).toBe("");
     expect(nativePlayerEnabled.value).toBe(false);
     expect(adblockEnabled.value).toBe(true);
     expect(recordingQuality.value).toBe("best");

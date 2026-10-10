@@ -7,6 +7,10 @@ import { useUpdater, isTauri } from "@/composables/useUpdater";
 import { APP_LINKS } from "@/config/links";
 import { RefreshCw, Star, MessageSquare, Globe, Download } from "@lucide/vue";
 
+const emit = defineEmits<{
+  (e: "close"): void;
+}>();
+
 const { checkForUpdates, isChecking } = useUpdater();
 const { locale } = useI18n();
 
@@ -32,6 +36,15 @@ const formattedBuildDate = computed(() => {
 
 const handleCheckUpdates = () => {
   checkForUpdates(true);
+};
+
+const handleOpenChangelog = () => {
+  window.dispatchEvent(
+    new CustomEvent("multistream-show-dialog", {
+      detail: "changelog",
+    })
+  );
+  emit("close");
 };
 
 const openExternalLink = async (url: string) => {
@@ -70,13 +83,23 @@ const openExternalLink = async (url: string) => {
       <!-- Version & Check Updates -->
       <div class="flex items-center gap-6">
         <span class="w-28 text-gray-400 shrink-0">{{ $t("settings.about.version") }}</span>
-        <div class="flex items-center gap-2.5">
-          <span class="text-gray-300">{{ appVersion }}</span>
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            data-testid="open-changelog-btn"
+            :title="$t('changelog.viewButton')"
+            :aria-label="`${appVersion} - ${$t('changelog.viewButton')}`"
+            class="h-6 text-xs px-2.5 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all tabular-nums"
+            @click="handleOpenChangelog"
+          >
+            {{ appVersion }}
+          </Button>
           <Button
             v-if="isRunningInTauri"
             variant="outline"
             size="sm"
-            class="h-6 text-[11px] px-2.5 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all"
+            class="h-6 text-xs px-2.5 border-[#2a2d33] bg-[#1e2127] text-gray-300 hover:text-white hover:bg-[#2a2d33] transition-all"
             :disabled="isChecking"
             @click="handleCheckUpdates"
           >

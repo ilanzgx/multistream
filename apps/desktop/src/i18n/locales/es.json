@@ -506,5 +506,17 @@
     "reconnecting": "Intentando reconectar...",
     "reconnected": "Conexión a internet restablecida",
     "offlineTooltip": "Estás sin conexión. Mostrando datos en caché."
+  },
+  "changelog": {
+    "title": "Novedades de la versión",
+    "description": "Descubre qué cambió en esta actualización de Multistream.",
+    "viewButton": "Novedades",
+    "viewOnGithub": "Ver versión en GitHub",
+    "gotIt": "Entendido",
+    "loading": "Cargando notas de la versión...",
+    "maintenance": "Esta actualización incluye mejoras internas de estabilidad y rendimiento.",
+    "errorTitle": "No se pudieron cargar las notas de la versión",
+    "errorDescription": "Comprueba tu conexión o consulta la versión directamente en GitHub.",
+    "retry": "Intentar de nuevo"
   }
 }
