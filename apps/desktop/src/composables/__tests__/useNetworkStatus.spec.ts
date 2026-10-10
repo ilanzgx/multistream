@@ -1,12 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { _useNetworkStatus } from "../useNetworkStatus";
+import { _useNetworkStatus, __setTestProbeOverride } from "../useNetworkStatus";
 
 describe("useNetworkStatus composable", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.useFakeTimers();
   });
 
   afterEach(() => {
+    __setTestProbeOverride(null);
     vi.restoreAllMocks();
     vi.useRealTimers();
   });
@@ -100,11 +102,35 @@ describe("useNetworkStatus composable", () => {
     // Arrange
     const network = _useNetworkStatus();
     expect(network.isOnline.value).toBe(true);
+    __setTestProbeOverride(async () => false);
 
     // Act
     const result = await network.checkConnectivity();
 
     // Assert
-    expect(typeof result).toBe("boolean");
+    expect(result).toBe(false);
+    expect(network.isOnline.value).toBe(false);
+    expect(network.wasOffline.value).toBe(true);
+  });
+
+  it("should trigger online transition when checkConnectivity resolves to true after offline", async () => {
+    // Arrange
+    const network = _useNetworkStatus();
+    const reconnectCallback = vi.fn();
+    network.onReconnect(reconnectCallback);
+    network.__test_triggerOffline();
+    expect(network.isOnline.value).toBe(false);
+    expect(network.wasOffline.value).toBe(true);
+    __setTestProbeOverride(async () => true);
+
+    // Act
+    const result = await network.checkConnectivity();
+    vi.advanceTimersByTime(1200);
+
+    // Assert
+    expect(result).toBe(true);
+    expect(network.isOnline.value).toBe(true);
+    expect(network.wasOffline.value).toBe(false);
+    expect(reconnectCallback).toHaveBeenCalledTimes(1);
   });
 });

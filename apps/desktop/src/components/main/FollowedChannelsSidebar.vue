@@ -89,9 +89,10 @@ const getThumbnailUrl = (url?: string) => {
               <span
                 data-testid="sidebar-offline-indicator"
                 class="flex items-center text-zinc-500 hover:text-zinc-400 cursor-help shrink-0 ml-auto"
+                :aria-label="t('network.offlineTooltip')"
                 :title="t('network.offlineTooltip')"
               >
-                <WifiOff class="w-3.5 h-3.5" />
+                <WifiOff aria-hidden="true" class="w-3.5 h-3.5" />
               </span>
             </TooltipTrigger>
             <TooltipContent
@@ -110,9 +111,10 @@ const getThumbnailUrl = (url?: string) => {
             <span
               data-testid="sidebar-offline-indicator"
               class="absolute top-1.5 right-1.5 flex items-center text-zinc-500 cursor-help"
+              :aria-label="t('network.offlineTooltip')"
               :title="t('network.offlineTooltip')"
             >
-              <WifiOff class="w-3 h-3" />
+              <WifiOff aria-hidden="true" class="w-3 h-3" />
             </span>
           </TooltipTrigger>
           <TooltipContent side="right" class="bg-[#1f2227] text-gray-200 border-[#2a2d33] text-xs">

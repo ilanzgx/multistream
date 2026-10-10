@@ -94,4 +94,49 @@ describe("Stream resilience and reload coordination", () => {
     // Assert
     expect(reloadHandler).not.toHaveBeenCalled();
   });
+
+  it("should match by channelid when provided, even if channel name is identical", () => {
+    // Arrange
+    const bus = new EventTarget();
+    const myChannel = "gaules";
+    const myChannelId = "stream-1";
+    const otherChannelId = "stream-2";
+    const reloadHandler1 = vi.fn();
+    const reloadHandler2 = vi.fn();
+
+    const createHandler = (channel: string, channelid: string, cb: () => void) => (e: Event) => {
+      const customEvent = e as CustomEvent<{ channel?: string; channelid?: string }>;
+      if (!customEvent.detail) {
+        cb();
+        return;
+      }
+      if (customEvent.detail.channelid && channelid) {
+        if (customEvent.detail.channelid === channelid) {
+          cb();
+        }
+      } else if (customEvent.detail.channel === channel) {
+        cb();
+      }
+    };
+
+    bus.addEventListener(
+      "multistream-reload-stream",
+      createHandler(myChannel, myChannelId, reloadHandler1)
+    );
+    bus.addEventListener(
+      "multistream-reload-stream",
+      createHandler(myChannel, otherChannelId, reloadHandler2)
+    );
+
+    // Act - target only stream-2
+    bus.dispatchEvent(
+      new CustomEvent("multistream-reload-stream", {
+        detail: { channel: myChannel, channelid: otherChannelId },
+      })
+    );
+
+    // Assert
+    expect(reloadHandler1).not.toHaveBeenCalled();
+    expect(reloadHandler2).toHaveBeenCalledTimes(1);
+  });
 });

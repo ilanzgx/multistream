@@ -350,9 +350,13 @@ const reloadStream = () => {
   );
 };
 
-onReconnect(() => {
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+const unsubscribeReconnect = onReconnect(() => {
   const jitter = 50 + Math.floor(Math.random() * 250);
-  setTimeout(() => {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+  }
+  reconnectTimer = setTimeout(() => {
     reloadStream();
   }, jitter);
 });
@@ -424,6 +428,8 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  unsubscribeReconnect();
   if (reloadFallbackTimer) clearTimeout(reloadFallbackTimer);
   if (reloadHandshakeTimer) clearTimeout(reloadHandshakeTimer);
   if (reloadCheckTimer) clearTimeout(reloadCheckTimer);

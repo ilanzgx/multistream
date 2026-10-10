@@ -9,6 +9,11 @@ const ONLINE_PROBE_INTERVAL_MS = 4000;
 const OFFLINE_PROBE_INTERVAL_MS = 2000;
 
 const isTestEnv = import.meta.env?.MODE === "test";
+let testProbeOverride: (() => Promise<boolean>) | null = null;
+
+export function __setTestProbeOverride(override: (() => Promise<boolean>) | null) {
+  testProbeOverride = override;
+}
 
 /**
  * @brief Performs an active network probe.
@@ -25,6 +30,9 @@ export async function probeConnectivity(): Promise<boolean> {
   }
 
   if (isTestEnv) {
+    if (testProbeOverride) {
+      return await testProbeOverride();
+    }
     return true;
   }
 
@@ -37,18 +45,19 @@ export async function probeConnectivity(): Promise<boolean> {
     return true;
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
     await fetch("https://clients3.google.com/generate_204", {
       mode: "no-cors",
       cache: "no-store",
       signal: controller.signal,
     });
-    clearTimeout(timeout);
     return true;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
@@ -129,13 +138,16 @@ export function _useNetworkStatus() {
   };
 
   if (typeof window !== "undefined") {
-    window.addEventListener("online", () => {
+    const onWindowOnline = () => {
       checkConnectivity();
-    });
+    };
+    const onWindowFocus = () => {
+      checkConnectivity();
+    };
+
+    window.addEventListener("online", onWindowOnline);
     window.addEventListener("offline", handleOffline);
-    window.addEventListener("focus", () => {
-      checkConnectivity();
-    });
+    window.addEventListener("focus", onWindowFocus);
 
     if (isTauri()) {
       listen<boolean>("network-status-changed", (event) => {
@@ -164,8 +176,9 @@ export function _useNetworkStatus() {
 
     onScopeDispose(() => {
       isDisposed = true;
-      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("online", onWindowOnline);
       window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("focus", onWindowFocus);
       if (debounceTimer) {
         clearTimeout(debounceTimer);
         debounceTimer = null;

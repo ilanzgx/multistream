@@ -25,6 +25,7 @@ import { useNetworkStatus } from "@/composables/useNetworkStatus";
 
 const props = defineProps<{
   channel: string;
+  channelid?: string;
   title?: string;
   viewerCount?: number;
   avatarUrl?: string | null;
@@ -32,15 +33,7 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
-const { isOnline, onReconnect } = useNetworkStatus();
-
-function retryLoad() {
-  retryCount = 0;
-  hasError.value = false;
-  isOffline.value = false;
-  errorDetails.value = "";
-  loadStream();
-}
+const { isOnline } = useNetworkStatus();
 
 const isCompact = computed(() => !props.isFocused && !isFullscreen.value);
 const videoRef = ref<HTMLVideoElement | null>(null);
@@ -55,6 +48,14 @@ let retryCount = 0;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let isDisposed = false;
 const MAX_RETRIES = 3;
+
+function retryLoad() {
+  retryCount = 0;
+  hasError.value = false;
+  isOffline.value = false;
+  errorDetails.value = "";
+  loadStream();
+}
 
 const isPlaying = ref(true);
 const isMuted = ref(true);
@@ -502,7 +503,15 @@ function onVideoEnded() {
 
 function onStreamReloadEvent(e: Event) {
   const customEvent = e as CustomEvent<{ channel?: string; channelid?: string }>;
-  if (!customEvent.detail || customEvent.detail.channel === props.channel) {
+  if (!customEvent.detail) {
+    retryLoad();
+    return;
+  }
+  if (customEvent.detail.channelid && props.channelid) {
+    if (customEvent.detail.channelid === props.channelid) {
+      retryLoad();
+    }
+  } else if (customEvent.detail.channel === props.channel) {
     retryLoad();
   }
 }
@@ -511,11 +520,6 @@ onMounted(() => {
   loadStream();
   document.addEventListener("fullscreenchange", onFullscreenChange);
   window.addEventListener("multistream-reload-stream", onStreamReloadEvent);
-});
-
-onReconnect(() => {
-  if (isDisposed) return;
-  retryLoad();
 });
 
 onBeforeUnmount(() => {
