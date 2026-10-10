@@ -416,76 +416,60 @@
     "finish": "Başlayın",
     "step1": {
       "title": "Yayın Ekle",
-      "description": "Twitch, Kick, YouTube ve özel kanallardan birden fazla canlı yayını tek bir ekranda, gerçek zamanlı sohbet ve tam gizlilikle aynı anda izleyin.",
-      "favoriteBadge": "CANLI",
+      "description": "Twitch, Kick, YouTube veya özel yerleştirme bağlantılarından gelen canlı yayınları doğrudan platform bağlantılarıyla tek bir ekranda birleştirin.",
       "customPlatform": "Özel",
-      "pilar1Title": "Çoklu Yayın Izgarası",
-      "pilar1Desc": "Twitch, Kick ve YouTube yayınlarını yan yana kesintisiz izleyin.",
-      "pilar2Title": "Entegre Sohbet ve İfadeler",
-      "pilar2Desc": "7TV ve BTTV ifadeleri desteğiyle doğrudan sohbete katılın.",
-      "pilar3Title": "%100 Yerel ve Gizli",
-      "pilar3Desc": "Doğrudan bağlantılar, çevrimdışı transkripsiyon ve yerel kayıt.",
-      "quickTip": "Yayın eklemek için istediğiniz zaman {key} tuşuna basın",
-      "tagPrivate": "%100 Özel ve Yerel",
-      "tagLightweight": "Hızlı ve Hafif",
-      "tagMultiplatform": "10+ Dil Desteği",
-      "tagLanguages": "10+ Dil Desteği",
-      "howToAdd": "İlk yayınınızı eklemek için {key} tuşuna basın veya kenar çubuğundaki '+' simgesine tıklayın."
+      "hint": "Kanal eklemek için {key} tuşuna basın veya sağ kenar çubuğundaki '+' düğmesine tıklayın. Birden fazla yayın açıkken kareleri sürükleyerek sıralamayı değiştirebilir veya bir yayının üzerine gelip F tuşuna basarak onu büyütebilirsiniz."
     },
     "step2": {
-      "title": "Sohbet Seç",
-      "description": "Kenar çubuğunda gösterilecek sohbeti seçin veya anında geçiş yapmak için {keys} tuşlarına basın.",
-      "pressKeys": "Tuşlara basın",
-      "switchImmediately": "sohbete geçmek için",
-      "chatActive": "Aktif Sohbet"
+      "title": "Sohbet Kontrolü",
+      "description": "Pencere değiştirmeden tüm açık yayınlarınızın canlı sohbet mesajlarını sağ kenar çubuğundan takip edin.",
+      "chatActive": "Aktif Sohbet",
+      "hint": "Izgaranızdaki tüm yayınları tek bir okuma akışında birleştiren Birleşik Sohbet'i seçmek için sohbet panelinin üstündeki seçiciyi kullanın veya tek bir kanalın sohbetine geçip mesaj göndermek için klavyede {keys} tuşlarına basın."
     },
     "step3": {
-      "title": "Hesapları Bağla",
-      "description": "Canlı sohbette etkileşim kurmak, takip edilen kanalları eşitlemek ve 7TV ile BTTV özel ifadelerini kullanmak için Twitch ve Kick hesaplarınızı bağlayın.",
-      "feature1": "Canlı sohbette mesaj gönderin",
-      "feature2": "7TV ve BTTV ifadeleri için tam destek",
-      "feature3": "Takip edilen kanalları eşitleyin",
-      "badgeAuth": "Bağlandı",
+      "title": "Twitch ve Kick Hesapları",
+      "description": "Favori ifadelerinizle canlı sohbete katılmak ve sevdiğiniz kanalları doğrudan kenar çubuğundan takip etmek için hesaplarınızı bağlayın.",
+      "feature1": "Canlı sohbet",
+      "feature3": "Takip edilenler",
       "badgeEmotes": "7TV ve BTTV İfadeleri",
-      "twitchSub": "Canlı sohbet ve takip edilenler",
-      "kickSub": "Canlı sohbet ve takip edilenler"
+      "twitchSub": "Canlı sohbet, ifadeler ve takip edilen kanallar",
+      "kickSub": "Canlı sohbet ve özel ifadeler",
+      "hint": "Twitch veya Kick ile giriş yapmak için Ayarlar → Bağlantılar'ı açın. Twitch'i bağladığınızda sol kenar çubuğu o anda yayında olan takip ettiğiniz kanalları otomatik olarak listeler ve sohbette 7TV, BTTV ile FFZ ifadelerini açar."
     },
     "step4": {
       "title": "Kategoriye Göre Göz At",
-      "description": "Otomatik önbelleğe alma ile Twitch ve Kick yayınlarını kategorilere göre filtreleyin.",
-      "caption": "Yayınlar arka planda yüklenir ve kategoriler arasında gezinirken önbellekte kalır."
+      "description": "Bağlantı aramak için tarayıcı açmaya gerek kalmadan, oyuna veya kategoriye göre filtreleyerek Twitch ve Kick'te şu anda kimlerin yayında olduğunu görün.",
+      "hint": "Canlı öneriler, ızgaranız boşken ana ekranda ve Yayın Ekle penceresinde ({key} tuşu) görünür. Herhangi bir kategori seçin ve doğrudan ızgaranıza eklemek için bir canlı yayın kartına tıklayın."
     },
     "step5": {
       "title": "Canlı Altyazı ve Çeviri",
-      "description": "Whisper ile doğrudan işlemcinizde gerçek zamanlı altyazılar ve isteğe bağlı İngilizce çeviri oluşturun.",
+      "description": "Whisper modelini doğrudan işlemciniz üzerinde kullanarak %100 çevrimdışı şekilde gerçek zamanlı altyazılar ve isteğe bağlı İngilizce çeviri oluşturun.",
       "captionOriginal": "Orijinal: Bonjour tout le monde.",
       "captionTranslation": "İngilizce: Hello everyone.",
-      "feature1": "Oynatıcı üzerinde gerçek zamanlı altyazılar",
-      "feature2": "İsteğe bağlı İngilizce çeviri",
-      "feature3": "İşlemcinizde %100 çevrimdışı çalışır",
       "badgeWhisper": "Whisper CPU",
       "badgeLocal": "%100 Yerel",
-      "note": "Hiçbir veri harici sunuculara gönderilmez. Performans işlemcinize bağlıdır."
+      "hint": "Kurulum için Ayarlar → Transkripsiyon'u açın ve yerel bir model indirin (Base modeli çoğu bilgisayar için en dengelisidir). Ardından videonun üzerinde altyazıları göstermek ve Transkript sekmesinde geçmişi görmek için sağ kenar çubuğundaki mikrofon simgesine tıklayın."
     },
     "step6": {
       "title": "Yerel Kayıt",
-      "description": "Canlı yayınları doğrudan kaynaktan orijinal kalitede ve MP4 formatında kaydedin.",
-      "feature1": "Kalite kaybı olmadan doğrudan yayın yakalama",
-      "feature2": "Otomatik MP4 paketleme",
-      "feature3": "Özelleştirilebilir kayıt klasörü",
+      "description": "Twitch, Kick veya YouTube'daki herhangi bir canlı yayını orijinal kaynak kalitesinde kaydedin ve doğrudan bilgisayarınıza MP4 dosyası olarak saklayın.",
       "badgeRec": "REC",
       "badgeFormat": "MP4 Source",
-      "note": "Kayıtlar doğrudan yerel sürücünüze kaydedilir."
+      "hint": "İlk kullanımda kaydediciyi kurmak için Ayarlar → Kayıt bölümünden özelliği etkinleştirin. Ardından aktif bir yayının üzerine gelip oynatıcının üst araç çubuğundaki kayıt düğmesine tıklayın. Kayıt klasörünü Ayarlar'dan değiştirebilirsiniz."
     },
     "step7": {
       "title": "Klavye Kısayolları",
-      "description": "Yayınlarınızı ve gezinmeyi hızlı klavye kısayollarıyla kontrol edin:",
+      "description": "Uygulamanın genel klavye kısayollarını kullanarak ızgaranızı yönetin, sohbetler arasında geçiş yapın ve yayınları hızla öne çıkarın.",
       "add": "Yayın ekleme penceresini aç",
       "screenshot": "Odaklanılan yayının ekran görüntüsünü al",
       "chat": "{keys} yayın sohbetine geç",
-      "screenshotTitle": "Ekran Görüntüsü"
+      "screenshotTitle": "Ekran Görüntüsü",
+      "focusTitle": "Yayına Odaklan",
+      "focus": "Üzerine gelinen yayını ana görünüm yap",
+      "hint": "Kısayollar, imleciniz video oynatıcının üzerinde olsa bile metin kutuları dışında her zaman çalışır. Bu rehberi istediğiniz zaman Ayarlar → Genel → Tanıtım Turunu Göster altından yeniden açabilirsiniz."
     },
-    "goToStep": "Adıma git: {step}"
+    "goToStep": "Adıma git: {step}",
+    "hintLabel": "İpucu"
   },
   "webBanner": {
     "title": "Multistream masaüstü uygulamasında daha iyi çalışır.",

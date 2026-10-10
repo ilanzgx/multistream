@@ -416,76 +416,60 @@
     "finish": "Começar",
     "step1": {
       "title": "Adicionar Streams",
-      "description": "Assista a múltiplas transmissões da Twitch, Kick, YouTube e canais personalizados ao mesmo tempo em uma única tela, com chat em tempo real e privacidade total.",
-      "favoriteBadge": "AO VIVO",
+      "description": "Monte sua grade com transmissões ao vivo da Twitch, Kick, YouTube ou links de embed personalizados, tudo na mesma tela e com conexões diretas às plataformas.",
       "customPlatform": "Custom",
-      "pilar1Title": "Grid Multi-Stream",
-      "pilar1Desc": "Assista a transmissões da Twitch, Kick e YouTube lado a lado.",
-      "pilar2Title": "Chat Integrado & Emotes",
-      "pilar2Desc": "Converse ao vivo com suporte completo a emotes da 7TV e BTTV.",
-      "pilar3Title": "100% Local & Privado",
-      "pilar3Desc": "Conexões diretas, transcrição offline e gravação no seu disco.",
-      "quickTip": "Pressione {key} a qualquer momento para adicionar uma stream",
-      "tagPrivate": "100% Privado e Local",
-      "tagLightweight": "Leve e Sem Travamentos",
-      "tagMultiplatform": "Disponível em 10+ Idiomas",
-      "tagLanguages": "Disponível em 10+ Idiomas",
-      "howToAdd": "Para adicionar sua primeira stream, pressione a tecla {key} ou clique no '+' na barra lateral."
+      "hint": "Aperte {key} ou clique no botão '+' na barra lateral direita para adicionar canais. Com várias lives abertas, você pode arrastar os quadros para reordenar a grade ou apertar F sobre uma transmissão para destacá-la."
     },
     "step2": {
-      "title": "Selecionar Chat",
-      "description": "Escolha qual chat exibir na barra lateral ou pressione as teclas {keys} para alternar instantaneamente.",
-      "pressKeys": "Pressione",
-      "switchImmediately": "para trocar de chat",
-      "chatActive": "Chat Ativo"
+      "title": "Controle de Chat",
+      "description": "Acompanhe as mensagens de todas as transmissões abertas em tempo real na barra lateral direita, sem precisar trocar de janela.",
+      "chatActive": "Chat Ativo",
+      "hint": "Use o seletor no topo do painel de chat para escolher o Chat Unificado (que junta todas as lives da grade em um só feed de leitura) ou aperte de {keys} no teclado para pular direto para o chat individual de um canal e enviar mensagens."
     },
     "step3": {
-      "title": "Conectar Contas",
-      "description": "Conecte suas contas da Twitch e do Kick para interagir no chat ao vivo, sincronizar seus canais seguidos e usar emotes personalizados da 7TV e BTTV.",
-      "feature1": "Envio de mensagens no chat",
-      "feature2": "Suporte completo a emotes 7TV e BTTV",
-      "feature3": "Canais favoritos sincronizados",
-      "badgeAuth": "Conectado",
+      "title": "Contas da Twitch e Kick",
+      "description": "Vincule suas contas para participar do chat ao vivo com seus emotes favoritos e acompanhar seus canais favoritos direto pela barra lateral.",
+      "feature1": "Chat ao vivo",
+      "feature3": "Canais seguidos",
       "badgeEmotes": "Emotes 7TV & BTTV",
-      "twitchSub": "Chat ao vivo e canais seguidos",
-      "kickSub": "Chat ao vivo e canais seguidos"
+      "twitchSub": "Chat ao vivo, emotes e canais seguidos",
+      "kickSub": "Chat ao vivo e emotes personalizados",
+      "hint": "Vá em Configurações → Conexões para entrar com a Twitch ou Kick. Ao conectar a Twitch, a barra lateral esquerda passa a listar automaticamente os canais seguidos que estão ao vivo, além de liberar emotes da 7TV, BTTV e FFZ no chat."
     },
     "step4": {
       "title": "Explorar por Categoria",
-      "description": "Filtre transmissões por categoria para descobrir lives na Twitch e no Kick com cache automático.",
-      "caption": "As transmissões carregam em segundo plano e permanecem em cache durante a navegação."
+      "description": "Descubra quem está transmitindo agora na Twitch e na Kick filtrando por jogo ou categoria, sem precisar abrir o navegador para procurar links.",
+      "hint": "As sugestões aparecem na tela inicial quando a grade está vazia e também dentro da janela de Adicionar Stream (tecla {key}). Basta escolher uma categoria e clicar em qualquer card ao vivo para adicioná-lo imediatamente à grade."
     },
     "step5": {
       "title": "Transcrição ao Vivo",
-      "description": "Gere legendas em tempo real e tradução para o inglês diretamente na sua CPU com Whisper.",
+      "description": "Gere legendas em tempo real e tradução opcional para o inglês usando o modelo Whisper direto no seu processador, 100% offline.",
       "captionOriginal": "Original: Bonjour tout le monde.",
       "captionTranslation": "Inglês: Hello everyone.",
-      "feature1": "Legendas em tempo real no player",
-      "feature2": "Tradução opcional para o inglês",
-      "feature3": "Execução 100% offline na CPU",
       "badgeWhisper": "Whisper CPU",
       "badgeLocal": "100% Local",
-      "note": "Nenhum dado é enviado para servidores externos. O desempenho varia conforme sua CPU."
+      "hint": "Para configurar, abra Configurações → Transcrição e baixe um modelo local (o modelo Base é o mais indicado para a maioria dos PCs). Depois, clique no ícone de microfone na barra lateral direita para exibir as legendas sobre o vídeo e o histórico na aba Transcrição."
     },
     "step6": {
       "title": "Gravação Local",
-      "description": "Grave transmissões ao vivo diretamente da fonte em qualidade original com empacotamento MP4.",
-      "feature1": "Captura direta da fonte sem perda de qualidade",
-      "feature2": "Conversão e empacotamento automático para MP4",
-      "feature3": "Pasta de salvamento configurável nas opções",
+      "description": "Grave qualquer transmissão ao vivo da Twitch, Kick ou YouTube na qualidade original da fonte, salvando direto em arquivos MP4 no seu computador.",
       "badgeRec": "REC",
       "badgeFormat": "MP4 Source",
-      "note": "Os arquivos são salvos diretamente no seu disco local."
+      "hint": "Ative o recurso em Configurações → Gravação para instalar o gravador na primeira vez. Depois, passe o mouse sobre a transmissão que deseja gravar e clique no botão de gravação na barra superior do player. Você também pode escolher a pasta de destino nas configurações."
     },
     "step7": {
       "title": "Atalhos de Teclado",
-      "description": "Controle suas transmissões e navegação com atalhos rápidos:",
+      "description": "Gerencie sua grade, alterne entre conversas e destaque transmissões rapidamente usando os atalhos globais do aplicativo.",
       "add": "Abrir janela de adicionar stream",
       "screenshot": "Capturar tela da transmissão focada",
       "chat": "Alternar para o chat {keys}",
-      "screenshotTitle": "Captura de Tela"
+      "screenshotTitle": "Captura de Tela",
+      "focusTitle": "Focar Transmissão",
+      "focus": "Expandir a transmissão sob o cursor",
+      "hint": "Os atalhos funcionam a qualquer momento fora dos campos de digitação, inclusive quando o cursor está sobre o player de vídeo. Você pode rever este guia sempre que quiser em Configurações → Geral → Mostrar Tour de Integração."
     },
-    "goToStep": "Ir para a etapa {step}"
+    "goToStep": "Ir para a etapa {step}",
+    "hintLabel": "Dica"
   },
   "webBanner": {
     "title": "O Multistream roda melhor no app desktop.",

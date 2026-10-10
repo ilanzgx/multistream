@@ -416,76 +416,60 @@
     "finish": "Loslegen",
     "step1": {
       "title": "Streams hinzufügen",
-      "description": "Schaue mehrere Live-Streams von Twitch, Kick, YouTube und benutzerdefinierten Kanälen gleichzeitig auf einem Bildschirm, mit Echtzeit-Chat und voller Privatsphäre.",
-      "favoriteBadge": "LIVE",
+      "description": "Stelle dein Raster mit Live-Streams von Twitch, Kick, YouTube oder eigenen Embed-Links auf einem einzigen Bildschirm zusammen, mit direkter Verbindung zu jeder Plattform.",
       "customPlatform": "Eigener",
-      "pilar1Title": "Multi-Stream-Raster",
-      "pilar1Desc": "Schaue Twitch-, Kick- und YouTube-Streams nahtlos nebeneinander.",
-      "pilar2Title": "Integrierter Chat & Emotes",
-      "pilar2Desc": "Direktes Chatten mit voller Unterstützung für 7TV- und BTTV-Emotes.",
-      "pilar3Title": "100% Lokal & Privat",
-      "pilar3Desc": "Direkte Verbindungen, Offline-Transkription und verlustfreie Aufnahme.",
-      "quickTip": "Drücke jederzeit {key}, um einen Stream hinzuzufügen",
-      "tagPrivate": "100% Privat & Lokal",
-      "tagLightweight": "Schnell & Ressourcenschonend",
-      "tagMultiplatform": "In 10+ Sprachen verfügbar",
-      "tagLanguages": "In 10+ Sprachen verfügbar",
-      "howToAdd": "Um deinen ersten Stream hinzuzufügen, drücke die Taste {key} oder klicke auf '+' in der Seitenleiste."
+      "hint": "Drücke {key} oder klicke rechts in der Seitenleiste auf '+', um Kanäle hinzuzufügen. Bei mehreren geöffneten Streams kannst du Kacheln per Drag-and-Drop neu anordnen oder F über einem Stream drücken, um ihn hervorzuheben."
     },
     "step2": {
-      "title": "Chat auswählen",
-      "description": "Wähle den aktiven Chat in der Seitenleiste aus oder drücke die Tasten {keys}, um sofort umzuschalten.",
-      "pressKeys": "Drücke",
-      "switchImmediately": "zum Umschalten",
-      "chatActive": "Aktiver Chat"
+      "title": "Chat-Steuerung",
+      "description": "Verfolge Live-Nachrichten aller geöffneten Streams direkt in der rechten Seitenleiste, ohne das Fenster zu wechseln.",
+      "chatActive": "Aktiver Chat",
+      "hint": "Wähle oben im Chat-Panel den Vereinten Chat (der alle Streams deines Rasters in einem Lese-Feed bündelt) oder drücke {keys} auf der Tastatur, um direkt zum Chat eines einzelnen Kanals zu wechseln und Nachrichten zu senden."
     },
     "step3": {
-      "title": "Konten verbinden",
-      "description": "Verbinde deine Twitch- und Kick-Konten, um live zu chatten, gefolgte Kanäle zu synchronisieren und benutzerdefinierte Emotes von 7TV und BTTV zu nutzen.",
-      "feature1": "Nachrichten im Live-Chat senden",
-      "feature2": "Unterstützung für 7TV- und BTTV-Emotes",
-      "feature3": "Gefolgte Kanäle synchronisiert",
-      "badgeAuth": "Verbunden",
+      "title": "Twitch- & Kick-Konten",
+      "description": "Verknüpfe deine Konten, um mit deinen Lieblings-Emotes im Live-Chat mitzuschreiben und deine Kanäle direkt in der Seitenleiste im Blick zu behalten.",
+      "feature1": "Live-Chat",
+      "feature3": "Gefolgte Kanäle",
       "badgeEmotes": "7TV & BTTV Emotes",
-      "twitchSub": "Live-Chat & gefolgte Kanäle",
-      "kickSub": "Live-Chat & gefolgte Kanäle"
+      "twitchSub": "Live-Chat, Emotes & gefolgte Kanäle",
+      "kickSub": "Live-Chat & eigene Emotes",
+      "hint": "Öffne Einstellungen → Verbindungen, um dich bei Twitch oder Kick anzumelden. Nach der Verbindung mit Twitch zeigt die linke Seitenleiste automatisch deine aktuell live gestreamten Kanäle an und schaltet 7TV-, BTTV- und FFZ-Emotes im Chat frei."
     },
     "step4": {
       "title": "Nach Kategorie durchsuchen",
-      "description": "Filtere Streams nach Kategorien und entdecke Live-Übertragungen von Twitch und Kick mit automatischem Caching.",
-      "caption": "Streams laden im Hintergrund und bleiben beim Kategoriewechsel zwischengespeichert."
+      "description": "Sieh sofort, wer gerade auf Twitch und Kick live ist, indem du nach Spiel oder Kategorie filterst, ganz ohne im Browser nach Links zu suchen.",
+      "hint": "Live-Vorschläge erscheinen auf dem Startbildschirm bei leerem Raster sowie im Dialog „Stream hinzufügen“ (Taste {key}). Wähle einfach eine Kategorie und klicke auf eine Live-Karte, um sie direkt in dein Raster aufzunehmen."
     },
     "step5": {
       "title": "Live-Transkription",
-      "description": "Erstelle Echtzeit-Untertitel und optionale englische Übersetzungen direkt auf deiner CPU mit Whisper.",
+      "description": "Erzeuge Echtzeit-Untertitel und optionale englische Übersetzungen mit dem Whisper-Modell direkt auf deinem Prozessor, zu 100 % offline.",
       "captionOriginal": "Original: Bonjour tout le monde.",
       "captionTranslation": "Englisch: Hello everyone.",
-      "feature1": "Echtzeit-Untertitel im Player",
-      "feature2": "Optionale englische Übersetzung",
-      "feature3": "Läuft 100% offline auf deiner CPU",
       "badgeWhisper": "Whisper CPU",
       "badgeLocal": "100% Lokal",
-      "note": "Keine Daten werden an externe Server gesendet. Die Leistung hängt von deiner CPU ab."
+      "hint": "Öffne zur Einrichtung Einstellungen → Transkription und lade ein lokales Modell herunter (das Base-Modell eignet sich für die meisten PCs am besten). Klicke danach rechts in der Seitenleiste auf das Mikrofon-Symbol, um Untertitel über dem Video und den Verlauf im Tab „Transkript“ anzuzeigen."
     },
     "step6": {
       "title": "Lokale Aufnahme",
-      "description": "Nimm Live-Streams direkt von der Quelle in Originalqualität und als saubere MP4-Datei auf.",
-      "feature1": "Direkte Quellenerfassung ohne Qualitätsverlust",
-      "feature2": "Automatische MP4-Konvertierung",
-      "feature3": "Konfigurierbarer Speicherordner",
+      "description": "Nimm jeden Live-Stream von Twitch, Kick oder YouTube in der Originalqualität der Quelle auf und speichere ihn direkt als MP4-Datei auf deinem Computer.",
       "badgeRec": "REC",
       "badgeFormat": "MP4 Source",
-      "note": "Aufnahmen werden direkt auf deinem lokalen Laufwerk gespeichert."
+      "hint": "Aktiviere die Funktion unter Einstellungen → Aufnahme, um den Recorder beim ersten Mal einzurichten. Fahre dann mit der Maus über einen aktiven Stream und klicke in der oberen Player-Leiste auf die Aufnahmetaste. Den Speicherordner kannst du ebenfalls in den Einstellungen anpassen."
     },
     "step7": {
       "title": "Tastenkombinationen",
-      "description": "Steuere deine Streams und Navigation mit schnellen Tastatur-Shortcuts:",
+      "description": "Verwalte dein Raster, wechsle zwischen Chats und hebe Streams schnell über die globalen Tastenkürzel der App hervor.",
       "add": "Stream-Hinzufügen-Dialog öffnen",
       "screenshot": "Screenshot des fokussierten Streams erstellen",
       "chat": "Zu Stream-Chat {keys} wechseln",
-      "screenshotTitle": "Screenshot"
+      "screenshotTitle": "Screenshot",
+      "focusTitle": "Stream fokussieren",
+      "focus": "Stream unter dem Mauszeiger vergrößern",
+      "hint": "Die Tastenkürzel funktionieren jederzeit außerhalb von Textfeldern, selbst wenn sich der Mauszeiger über einem Video-Player befindet. Du kannst diese Einführung jederzeit unter Einstellungen → Allgemein → Einführungstour anzeigen erneut öffnen."
     },
-    "goToStep": "Zu Schritt {step}"
+    "goToStep": "Zu Schritt {step}",
+    "hintLabel": "Tipp"
   },
   "webBanner": {
     "title": "Multistream läuft besser als Desktop-App.",

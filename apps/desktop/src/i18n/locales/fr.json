@@ -416,76 +416,60 @@
     "finish": "Commencer",
     "step1": {
       "title": "Ajouter des Streams",
-      "description": "Regardez plusieurs streams en direct depuis Twitch, Kick, YouTube et des chaînes personnalisées sur un seul écran, avec chat en direct et confidentialité totale.",
-      "favoriteBadge": "EN DIRECT",
+      "description": "Composez votre grille avec des streams en direct de Twitch, Kick, YouTube ou des liens intégrés personnalisés sur un seul écran, en connexion directe avec chaque plateforme.",
       "customPlatform": "Personnalisé",
-      "pilar1Title": "Grille Multi-Stream",
-      "pilar1Desc": "Regardez les flux Twitch, Kick et YouTube côte à côte en toute fluidité.",
-      "pilar2Title": "Chat Intégré & Emotes",
-      "pilar2Desc": "Discutez en direct avec le support complet des emotes 7TV et BTTV.",
-      "pilar3Title": "100% Local & Privé",
-      "pilar3Desc": "Connexions directes, transcription hors-ligne et enregistrement disque.",
-      "quickTip": "Appuyez sur {key} à tout moment pour ajouter un flux",
-      "tagPrivate": "100% Privé & Local",
-      "tagLightweight": "Fluide & Léger",
-      "tagMultiplatform": "Disponible en 10+ langues",
-      "tagLanguages": "Disponible en 10+ langues",
-      "howToAdd": "Pour ajouter votre premier stream, appuyez sur la touche {key} ou cliquez sur '+' dans la barre latérale."
+      "hint": "Appuyez sur {key} ou cliquez sur « + » dans la barre latérale droite pour ajouter des chaînes. Avec plusieurs streams ouverts, glissez les tuiles pour les réorganiser ou appuyez sur F en survolant un stream pour l'agrandir."
     },
     "step2": {
-      "title": "Sélectionner le Chat",
-      "description": "Choisissez le chat à afficher dans la barre latérale ou appuyez sur les touches {keys} pour changer instantanément.",
-      "pressKeys": "Appuyez sur",
-      "switchImmediately": "pour changer de chat",
-      "chatActive": "Chat Actif"
+      "title": "Contrôle du chat",
+      "description": "Suivez les messages en direct de tous vos streams ouverts dans la barre latérale droite sans changer de fenêtre.",
+      "chatActive": "Chat Actif",
+      "hint": "Utilisez le sélecteur en haut du panneau de chat pour choisir le Chat Unifié (qui regroupe tous vos streams en un seul fil de lecture), ou appuyez sur {keys} au clavier pour accéder au chat d'une chaîne et envoyer des messages."
     },
     "step3": {
-      "title": "Connecter des Comptes",
-      "description": "Connectez vos comptes Twitch et Kick pour discuter en direct, synchroniser vos chaînes suivies et utiliser des emotes personnalisées de 7TV et BTTV.",
-      "feature1": "Envoi de messages dans le chat",
-      "feature2": "Support des emotes 7TV et BTTV",
-      "feature3": "Chaînes suivies synchronisées",
-      "badgeAuth": "Connecté",
+      "title": "Comptes Twitch et Kick",
+      "description": "Associez vos comptes pour participer au chat en direct avec vos emotes préférées et suivre vos chaînes directement depuis la barre latérale.",
+      "feature1": "Chat en direct",
+      "feature3": "Chaînes suivies",
       "badgeEmotes": "Emotes 7TV & BTTV",
-      "twitchSub": "Chat en direct & chaînes suivies",
-      "kickSub": "Chat en direct & chaînes suivies"
+      "twitchSub": "Chat en direct, emotes et chaînes suivies",
+      "kickSub": "Chat en direct et emotes personnalisées",
+      "hint": "Ouvrez Paramètres → Connexions pour vous connecter à Twitch ou Kick. La connexion à Twitch affiche automatiquement vos chaînes suivies en direct dans la barre latérale gauche et débloque les emotes 7TV, BTTV et FFZ dans le chat."
     },
     "step4": {
       "title": "Parcourir par Catégorie",
-      "description": "Filtrez les streams par catégorie sur Twitch et Kick avec mise en cache automatique.",
-      "caption": "Les streams se chargent en arrière-plan et restent en cache pendant la navigation."
+      "description": "Découvrez qui diffuse en ce moment sur Twitch et Kick en filtrant par jeu ou catégorie, sans ouvrir de navigateur pour chercher des liens.",
+      "hint": "Les suggestions en direct s'affichent sur l'écran d'accueil lorsque votre grille est vide ainsi que dans la fenêtre Ajouter un stream (touche {key}). Choisissez une catégorie et cliquez sur une carte pour l'ajouter directement."
     },
     "step5": {
       "title": "Transcription en Direct",
-      "description": "Générez des sous-titres en temps réel et une traduction en anglais directement sur votre processeur via Whisper.",
+      "description": "Générez des sous-titres en temps réel et une traduction optionnelle en anglais avec le modèle Whisper directement sur votre processeur, 100 % hors ligne.",
       "captionOriginal": "Original: Bonjour tout le monde.",
       "captionTranslation": "Anglais: Hello everyone.",
-      "feature1": "Sous-titres en direct dans le lecteur",
-      "feature2": "Traduction optionnelle vers l'anglais",
-      "feature3": "100% hors-ligne sur votre processeur",
       "badgeWhisper": "Whisper CPU",
       "badgeLocal": "100% Local",
-      "note": "Aucune donnée n'est transmise à des serveurs tiers. Les performances dépendent de votre CPU."
+      "hint": "Pour la configurer, ouvrez Paramètres → Transcription et téléchargez un modèle local (le modèle Base est recommandé pour la plupart des PC). Cliquez ensuite sur l'icône de microphone dans la barre latérale droite pour afficher les sous-titres sur la vidéo et l'historique dans l'onglet Transcription."
     },
     "step6": {
       "title": "Enregistrement Local",
-      "description": "Enregistrez les flux en direct depuis la source en qualité originale avec empaquetage MP4.",
-      "feature1": "Capture directe sans perte de qualité",
-      "feature2": "Conversion automatique en MP4",
-      "feature3": "Dossier de destination configurable",
+      "description": "Enregistrez n'importe quel stream en direct de Twitch, Kick ou YouTube dans sa qualité source d'origine, directement en fichier MP4 sur votre ordinateur.",
       "badgeRec": "REC",
       "badgeFormat": "MP4 Source",
-      "note": "Les enregistrements sont stockés directement sur votre disque local."
+      "hint": "Activez la fonction dans Paramètres → Enregistrement pour installer l'enregistreur lors de la première utilisation. Survolez ensuite un stream actif et cliquez sur le bouton d'enregistrement dans la barre supérieure du lecteur. Le dossier de destination est également personnalisable."
     },
     "step7": {
       "title": "Raccourcis Clavier",
-      "description": "Contrôlez vos streams et votre navigation grâce à des raccourcis rapides :",
+      "description": "Gérez votre grille, passez d'un chat à l'autre et mettez vos streams en avant rapidement grâce aux raccourcis clavier globaux.",
       "add": "Ouvrir la fenêtre d'ajout de stream",
       "screenshot": "Capturer l'écran du stream actif",
       "chat": "Basculer vers le chat {keys}",
-      "screenshotTitle": "Capture d'écran"
+      "screenshotTitle": "Capture d'écran",
+      "focusTitle": "Mode Focus",
+      "focus": "Agrandir le stream survolé en vue principale",
+      "hint": "Les raccourcis fonctionnent à tout moment hors des champs de saisie, même lorsque le curseur survole un lecteur vidéo. Vous pouvez rouvrir ce guide à tout moment dans Paramètres → Général → Afficher la visite guidée."
     },
-    "goToStep": "Aller à l'étape {step}"
+    "goToStep": "Aller à l'étape {step}",
+    "hintLabel": "Astuce"
   },
   "webBanner": {
     "title": "Multistream fonctionne mieux sur l'application de bureau.",

@@ -416,76 +416,60 @@
     "finish": "Get Started",
     "step1": {
       "title": "Add Streams",
-      "description": "Watch multiple live streams from Twitch, Kick, YouTube, and custom channels simultaneously on a single screen, with real-time chat and total privacy.",
-      "favoriteBadge": "LIVE",
+      "description": "Build your grid with live streams from Twitch, Kick, YouTube, or custom embed links on a single screen with direct connections to each platform.",
       "customPlatform": "Custom",
-      "pilar1Title": "Multi-Stream Grid",
-      "pilar1Desc": "Watch Twitch, Kick, and YouTube streams side-by-side with zero clutter.",
-      "pilar2Title": "Integrated Chat & Emotes",
-      "pilar2Desc": "Chat directly with full support for 7TV and BTTV emotes.",
-      "pilar3Title": "100% Local & Private",
-      "pilar3Desc": "Direct connections, offline transcription, and lossless recording.",
-      "quickTip": "Press {key} anytime to add a stream",
-      "tagPrivate": "100% Private & Local",
-      "tagLightweight": "Fast & Lightweight",
-      "tagMultiplatform": "Available in 10+ Languages",
-      "tagLanguages": "Available in 10+ Languages",
-      "howToAdd": "To add your first stream, press the {key} key or click '+' in the sidebar."
+      "hint": "Press {key} or click '+' in the right sidebar to add channels. Once multiple streams are open, drag tiles to reorder your grid or press F while hovering a stream to expand it."
     },
     "step2": {
-      "title": "Select Chat",
-      "description": "Pick which stream chat to display in the sidebar, or press keys {keys} to switch active chat instantly.",
-      "pressKeys": "Press keys",
-      "switchImmediately": "to switch chat",
-      "chatActive": "Active Chat"
+      "title": "Chat Control",
+      "description": "Follow live messages from all your open streams in the right sidebar without switching windows.",
+      "chatActive": "Active Chat",
+      "hint": "Use the selector at the top of the chat panel to pick Unified Chat (which merges every stream in your grid into one reading feed), or press {keys} on your keyboard to jump to a single channel's chat and send messages."
     },
     "step3": {
-      "title": "Connect Accounts",
-      "description": "Connect your Twitch and Kick accounts to chat live, sync your followed channels, and use custom emotes from 7TV and BTTV.",
-      "feature1": "Send messages in live chat",
-      "feature2": "Support for 7TV & BTTV emotes",
-      "feature3": "Sync followed channels",
-      "badgeAuth": "Connected",
+      "title": "Twitch & Kick Accounts",
+      "description": "Link your accounts to participate in live chat with your favorite emotes and track your favorite channels right from the sidebar.",
+      "feature1": "Live chat",
+      "feature3": "Followed channels",
       "badgeEmotes": "7TV & BTTV Emotes",
-      "twitchSub": "Live chat & followed channels",
-      "kickSub": "Live chat & followed channels"
+      "twitchSub": "Live chat, custom emotes & followed channels",
+      "kickSub": "Live chat & custom emotes",
+      "hint": "Open Settings → Connections to sign in with Twitch or Kick. Connecting Twitch automatically populates the left sidebar with your followed channels that are currently live and unlocks 7TV, BTTV, and FFZ emotes in chat."
     },
     "step4": {
       "title": "Browse by Category",
-      "description": "Filter streams by category to discover live broadcasts from Twitch and Kick with automatic caching.",
-      "caption": "Streams load in the background and stay cached as you switch categories."
+      "description": "See who is broadcasting right now on Twitch and Kick by filtering by game or category, without opening a browser to hunt for links.",
+      "hint": "Live suggestions appear on the home screen when your grid is empty and inside the Add Stream dialog ({key} key). Pick any category and click a live card to drop it straight into your grid."
     },
     "step5": {
       "title": "Live Transcription",
-      "description": "Generate real-time captions and optional English translation directly on your CPU using Whisper.",
+      "description": "Generate live captions and optional English translation using Whisper directly on your CPU, 100% offline.",
       "captionOriginal": "Original: Bonjour tout le monde.",
       "captionTranslation": "English: Hello everyone.",
-      "feature1": "Real-time captions on video",
-      "feature2": "Optional English translation",
-      "feature3": "Runs 100% offline on your CPU",
       "badgeWhisper": "Whisper CPU",
       "badgeLocal": "100% Local",
-      "note": "No data is sent to external servers. Performance depends on your CPU model."
+      "hint": "To set it up, open Settings → Transcription and download a local model (the Base model is best for most PCs). Then click the microphone icon in the right sidebar to show captions over the video and view the log in the Transcript tab."
     },
     "step6": {
       "title": "Local Recording",
-      "description": "Record live streams directly from the source stream without quality loss into clean MP4 files.",
-      "feature1": "Direct stream capture in source quality",
-      "feature2": "Automatic MP4 packaging",
-      "feature3": "Custom folder selection in settings",
+      "description": "Record any live broadcast from Twitch, Kick, or YouTube at original source quality, saved straight as MP4 files on your computer.",
       "badgeRec": "REC",
       "badgeFormat": "MP4 Source",
-      "note": "Recordings are saved directly to your local drive."
+      "hint": "Enable the feature in Settings → Recording to install the recorder on first use. Then hover over any active stream and click the record button in the top player toolbar. You can also customize the output folder in Settings."
     },
     "step7": {
       "title": "Keyboard Shortcuts",
-      "description": "Control your streams and navigation with fast keyboard shortcuts:",
+      "description": "Manage your grid, jump between chats, and highlight streams quickly using the app's global keyboard shortcuts.",
       "add": "Open add stream dialog",
       "screenshot": "Capture screenshot of focused stream",
       "chat": "Switch to stream chat {keys}",
-      "screenshotTitle": "Screenshot"
+      "screenshotTitle": "Screenshot",
+      "focusTitle": "Focus Stream",
+      "focus": "Expand hovered stream as main view",
+      "hint": "Shortcuts work anytime outside text inputs, even when your cursor is over a video player. You can reopen this guide whenever you need it under Settings → General → Show Onboarding Tour."
     },
-    "goToStep": "Go to step {step}"
+    "goToStep": "Go to step {step}",
+    "hintLabel": "Tip"
   },
   "webBanner": {
     "title": "Multistream runs better on the desktop app.",

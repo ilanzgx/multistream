@@ -416,76 +416,60 @@
     "finish": "开始使用",
     "step1": {
       "title": "添加直播流",
-      "description": "在单个屏幕上同时观看来自 Twitch、Kick、YouTube 和自定义频道的多个直播，享受实时聊天与全面的本地隐私保护。",
-      "favoriteBadge": "直播中",
+      "description": "在同一屏幕上组合来自 Twitch、Kick、YouTube 或自定义嵌入链接的直播画面，并与各平台建立直接连接。",
       "customPlatform": "自定义",
-      "pilar1Title": "多路直播网格",
-      "pilar1Desc": "并排同时观看 Twitch、Kick 和 YouTube 直播，清爽无干扰。",
-      "pilar2Title": "集成聊天与丰富表情",
-      "pilar2Desc": "实时参与聊天互动，完整支持 7TV 与 BTTV 第三方表情。",
-      "pilar3Title": "100% 本地离线与隐私保护",
-      "pilar3Desc": "直连官方协议，支持本地离线语音转录与无损流录制。",
-      "quickTip": "随时按 {key} 键即可添加直播流",
-      "tagPrivate": "100% 本地隐私安全",
-      "tagLightweight": "轻量流畅无卡顿",
-      "tagMultiplatform": "支持 10+ 种多语言",
-      "tagLanguages": "支持 10+ 种多语言",
-      "howToAdd": "按下 {key} 键或点击侧边栏 '+' 即可添加您的第一个直播。"
+      "hint": "按 {key} 键或点击右侧边栏的“+”添加频道。打开多个直播后，可拖动画面调整顺序，或将鼠标悬停在某个直播上按 F 键将其放大为主视图。"
     },
     "step2": {
-      "title": "选择聊天室",
-      "description": "在侧边栏中选择要显示的聊天室，或按数字键 {keys} 即可快速切换。",
-      "pressKeys": "按键",
-      "switchImmediately": "快速切换聊天室",
-      "chatActive": "当前聊天室"
+      "title": "聊天控制",
+      "description": "在右侧边栏实时查看所有已打开直播间的聊天消息，无需来回切换窗口。",
+      "chatActive": "当前聊天室",
+      "hint": "使用聊天面板顶部的选择器切换到“统一聊天”（将网格中所有直播合并为单一阅读流），或按键盘上的 {keys} 键跳转到单个频道的聊天并发送消息。"
     },
     "step3": {
-      "title": "连接账号",
-      "description": "连接您的 Twitch 和 Kick 账号，即可在直播聊天室互动、同步关注的频道，并使用 7TV 和 BTTV 自定义表情。",
-      "feature1": "发送实时聊天消息",
-      "feature2": "全面支持 7TV 和 BTTV 表情",
-      "feature3": "同步已关注频道",
-      "badgeAuth": "已连接",
+      "title": "Twitch 与 Kick 账号",
+      "description": "关联您的账号，即可使用喜爱的表情参与实时聊天，并在侧边栏直接追踪关注的频道动态。",
+      "feature1": "实时聊天",
+      "feature3": "已关注频道",
       "badgeEmotes": "7TV & BTTV 表情支持",
-      "twitchSub": "实时聊天与关注频道",
-      "kickSub": "实时聊天与关注频道"
+      "twitchSub": "实时聊天、自定义表情与已关注频道",
+      "kickSub": "实时聊天与自定义表情",
+      "hint": "前往“设置 → 连接”登录 Twitch 或 Kick。连接 Twitch 后，左侧边栏会自动列出当前正在直播的已关注频道，并在聊天中解锁 7TV、BTTV 和 FFZ 表情。"
     },
     "step4": {
       "title": "按分类浏览",
-      "description": "按游戏分类筛选 Twitch 和 Kick 的实时直播，支持后台预载与自动缓存。",
-      "caption": "直播数据在后台加载并在切换分类时保留在本地缓存中。"
+      "description": "按游戏或分类筛选，直接查看 Twitch 和 Kick 上当前正在直播的频道，无需打开浏览器查找链接。",
+      "hint": "当网格为空时，直播推荐会显示在主屏幕上，同时也会出现在“添加直播”窗口（快捷键 {key}）中。选择任意分类并点击直播卡片即可直接添加到网格。"
     },
     "step5": {
       "title": "实时语音转录",
-      "description": "利用本地 Whisper 模型在 CPU 上实时生成字幕与英文翻译。",
+      "description": "直接在您的处理器上使用 Whisper 模型生成实时字幕和可选的英文翻译，100% 离线运行。",
       "captionOriginal": "原文: Bonjour tout le monde.",
       "captionTranslation": "英文: Hello everyone.",
-      "feature1": "播放器画面实时生成字幕",
-      "feature2": "可选实时英文翻译",
-      "feature3": "100% 在本地 CPU 上离线运行",
       "badgeWhisper": "Whisper CPU",
       "badgeLocal": "100% 本地离线",
-      "note": "无任何数据上传至外部云端服务器。运行性能取决于您的 CPU 性能。"
+      "hint": "配置方法：打开“设置 → 转录”并下载本地模型（大多数电脑推荐使用 Base 模型）。随后点击右侧边栏的麦克风图标，即可在视频上方显示实时字幕，并在“转录”标签页查看历史记录。"
     },
     "step6": {
       "title": "本地直播录制",
-      "description": "直接抓取原始直播流源，无损打包保存为标准的 MP4 视频文件。",
-      "feature1": "原画无损直接采集",
-      "feature2": "自动打包为 MP4 格式",
-      "feature3": "可在设置中自定义保存目录",
+      "description": "以源流原始画质录制 Twitch、Kick 或 YouTube 上的任何直播，并直接保存为电脑上的 MP4 文件。",
       "badgeRec": "REC",
       "badgeFormat": "MP4 Source",
-      "note": "视频录制文件直接保存在本地硬盘中。"
+      "hint": "首次使用时，请在“设置 → 录制”中开启该功能并安装录制组件。之后只需将鼠标悬停在任意活动直播上，点击播放器顶部工具栏的录制按钮即可开始，保存目录也可在设置中自定义。"
     },
     "step7": {
       "title": "快捷键操作",
-      "description": "使用键盘快捷键高效控制直播和切换视图：",
+      "description": "使用应用的全局键盘快捷键，快速管理直播网格、切换聊天并突出显示焦点画面。",
       "add": "打开添加直播窗口",
       "screenshot": "截取当前聚焦的直播画面",
       "chat": "切换至对应直播聊天室 {keys}",
-      "screenshotTitle": "截图"
+      "screenshotTitle": "截图",
+      "focusTitle": "聚焦直播",
+      "focus": "将鼠标悬停的直播展开为主视图",
+      "hint": "只要不在文本输入框内，快捷键随时可用，即使鼠标位于视频播放器上方也能生效。您可以随时在“设置 → 常规 → 显示新手引导”中重新打开本指南。"
     },
-    "goToStep": "前往第 {step} 步"
+    "goToStep": "前往第 {step} 步",
+    "hintLabel": "提示"
   },
   "webBanner": {
     "title": "Multistream 在桌面应用上运行得更好。",

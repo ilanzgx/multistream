@@ -416,76 +416,60 @@
     "finish": "Mulai",
     "step1": {
       "title": "Tambah Stream",
-      "description": "Tonton beberapa siaran langsung dari Twitch, Kick, YouTube, dan saluran khusus sekaligus di satu layar, dengan obrolan langsung dan privasi penuh.",
-      "favoriteBadge": "LIVE",
+      "description": "Susun grid Anda dengan siaran langsung dari Twitch, Kick, YouTube, atau tautan sematan khusus dalam satu layar dengan koneksi langsung ke setiap platform.",
       "customPlatform": "Kustom",
-      "pilar1Title": "Grid Multi-Stream",
-      "pilar1Desc": "Tonton siaran Twitch, Kick, dan YouTube berdampingan dengan lancar.",
-      "pilar2Title": "Obrolan Terintegrasi & Emotikon",
-      "pilar2Desc": "Obrolan langsung dengan dukungan penuh untuk emotikon 7TV dan BTTV.",
-      "pilar3Title": "100% Lokal & Pribadi",
-      "pilar3Desc": "Koneksi langsung, transkripsi offline, dan perekaman lokal.",
-      "quickTip": "Tekan {key} kapan saja untuk menambahkan stream",
-      "tagPrivate": "100% Privat & Lokal",
-      "tagLightweight": "Ringan & Cepat",
-      "tagMultiplatform": "Tersedia dalam 10+ Bahasa",
-      "tagLanguages": "Tersedia dalam 10+ Bahasa",
-      "howToAdd": "Untuk menambahkan stream pertama Anda, tekan tombol {key} atau klik '+' di bilah sisi."
+      "hint": "Tekan {key} atau klik '+' di bilah sisi kanan untuk menambahkan saluran. Saat beberapa siaran terbuka, seret ubin untuk mengatur ulang urutan grid atau tekan F saat mengarahkan kursor ke siaran untuk memperbesarnya."
     },
     "step2": {
-      "title": "Pilih Obrolan",
-      "description": "Pilih obrolan stream yang ingin ditampilkan di bilah sisi, atau tekan tombol {keys} untuk beralih instan.",
-      "pressKeys": "Tekan tombol",
-      "switchImmediately": "untuk beralih obrolan",
-      "chatActive": "Obrolan Aktif"
+      "title": "Kontrol Obrolan",
+      "description": "Ikuti pesan langsung dari semua siaran yang terbuka di bilah sisi kanan tanpa perlu berpindah jendela.",
+      "chatActive": "Obrolan Aktif",
+      "hint": "Gunakan pemilih di bagian atas panel obrolan untuk memilih Obrolan Terpadu (yang menggabungkan semua siaran di grid Anda menjadi satu umpan bacaan), atau tekan {keys} di keyboard untuk berpindah ke obrolan satu saluran dan mengirim pesan."
     },
     "step3": {
-      "title": "Hubungkan Akun",
-      "description": "Hubungkan akun Twitch dan Kick Anda untuk mengobrol secara langsung, menyinkronkan saluran yang diikuti, dan menggunakan emotikon khusus dari 7TV dan BTTV.",
-      "feature1": "Kirim pesan di obrolan langsung",
-      "feature2": "Dukungan penuh untuk emotikon 7TV & BTTV",
-      "feature3": "Sinkronisasi saluran diikuti",
-      "badgeAuth": "Terhubung",
+      "title": "Akun Twitch & Kick",
+      "description": "Tautkan akun Anda untuk berpartisipasi dalam obrolan langsung dengan emote favorit serta memantau saluran favorit langsung dari bilah sisi.",
+      "feature1": "Obrolan langsung",
+      "feature3": "Saluran diikuti",
       "badgeEmotes": "Emotikon 7TV & BTTV",
-      "twitchSub": "Obrolan langsung & saluran diikuti",
-      "kickSub": "Obrolan langsung & saluran diikuti"
+      "twitchSub": "Obrolan langsung, emote & saluran yang diikuti",
+      "kickSub": "Obrolan langsung & emote kustom",
+      "hint": "Buka Pengaturan → Koneksi untuk masuk dengan Twitch atau Kick. Menghubungkan Twitch akan otomatis menampilkan saluran yang Anda ikuti yang sedang siaran langsung di bilah sisi kiri serta membuka emote 7TV, BTTV, dan FFZ di obrolan."
     },
     "step4": {
       "title": "Jelajahi Berdasarkan Kategori",
-      "description": "Filter siaran langsung berdasarkan kategori di Twitch dan Kick dengan caching otomatis.",
-      "caption": "Stream dimuat di latar belakang dan tetap tersimpan dalam cache saat Anda menjelajah."
+      "description": "Lihat siapa yang sedang siaran langsung saat ini di Twitch dan Kick dengan memfilter berdasarkan game atau kategori, tanpa perlu membuka browser untuk mencari tautan.",
+      "hint": "Saran siaran langsung muncul di layar utama saat grid Anda kosong dan di dalam jendela Tambah Siaran (tombol {key}). Pilih kategori mana saja lalu klik kartu siaran langsung untuk langsung memasukkannya ke grid Anda."
     },
     "step5": {
       "title": "Transkripsi Langsung",
-      "description": "Buat teks terjemahan waktu nyata dan terjemahan bahasa Inggris langsung di CPU Anda menggunakan Whisper.",
+      "description": "Hasilkan teks otomatis waktu nyata dan terjemahan bahasa Inggris opsional menggunakan model Whisper langsung di prosesor Anda, 100% offline.",
       "captionOriginal": "Asli: Bonjour tout le monde.",
       "captionTranslation": "Inggris: Hello everyone.",
-      "feature1": "Teks terjemahan waktu nyata di pemutar",
-      "feature2": "Terjemahan bahasa Inggris opsional",
-      "feature3": "Berjalan 100% offline di CPU Anda",
       "badgeWhisper": "Whisper CPU",
       "badgeLocal": "100% Lokal",
-      "note": "Tidak ada data yang dikirim ke server eksternal. Kinerja tergantung pada CPU Anda."
+      "hint": "Untuk mengaturnya, buka Pengaturan → Transkripsi dan unduh model lokal (model Base paling cocok untuk sebagian besar PC). Setelah itu, klik ikon mikrofon di bilah sisi kanan untuk menampilkan teks di atas video dan melihat riwayatnya di tab Transkrip."
     },
     "step6": {
       "title": "Perekaman Lokal",
-      "description": "Rekam siaran langsung langsung dari sumber tanpa penurunan kualitas dalam format MP4.",
-      "feature1": "Perekaman langsung dari sumber tanpa hilang kualitas",
-      "feature2": "Pengemasan otomatis ke format MP4",
-      "feature3": "Folder penyimpanan dapat disesuaikan",
+      "description": "Rekam siaran langsung mana pun dari Twitch, Kick, atau YouTube dengan kualitas sumber asli, tersimpan langsung sebagai file MP4 di komputer Anda.",
       "badgeRec": "REC",
       "badgeFormat": "MP4 Source",
-      "note": "Rekaman disimpan langsung ke drive lokal Anda."
+      "hint": "Aktifkan fitur ini di Pengaturan → Perekaman untuk memasang perekam saat pertama kali digunakan. Lalu arahkan kursor ke siaran aktif mana pun dan klik tombol rekam di bilah alat atas pemutar. Anda juga dapat mengubah folder penyimpanan di Pengaturan."
     },
     "step7": {
       "title": "Pintasan Papan Ketik",
-      "description": "Kontrol siaran dan navigasi Anda dengan pintasan papan ketik cepat:",
+      "description": "Kelola grid Anda, berpindah antar obrolan, dan sorot siaran dengan cepat menggunakan pintasan keyboard global aplikasi.",
       "add": "Buka dialog tambah stream",
       "screenshot": "Ambil tangkapan layar stream aktif",
       "chat": "Beralih ke obrolan stream {keys}",
-      "screenshotTitle": "Tangkapan Layar"
+      "screenshotTitle": "Tangkapan Layar",
+      "focusTitle": "Fokus Siaran",
+      "focus": "Perbesar siaran di bawah kursor sebagai tampilan utama",
+      "hint": "Pintasan berfungsi kapan saja di luar kolom input teks, bahkan saat kursor Anda berada di atas pemutar video. Anda dapat membuka kembali panduan ini kapan saja melalui Pengaturan → Umum → Tampilkan Tur Pengenalan."
     },
-    "goToStep": "Buka langkah {step}"
+    "goToStep": "Buka langkah {step}",
+    "hintLabel": "Tips"
   },
   "webBanner": {
     "title": "Multistream berjalan lebih baik di aplikasi desktop.",

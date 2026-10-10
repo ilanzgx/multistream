@@ -75,6 +75,8 @@ onReconnect(() => {
 useDeepLink();
 
 function handleGlobalKeyDown(e: KeyboardEvent) {
+  if (showOnboarding.value) return;
+
   const target = e.target as HTMLElement;
   if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
     return;
@@ -106,7 +108,7 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
 }
 
 function handleFrameShortcuts(e: MessageEvent) {
-  if (e.data?.type !== "SHORTCUT") return;
+  if (e.data?.type !== "SHORTCUT" || showOnboarding.value) return;
 
   // 1-9: quick select chat
   const num = parseInt(e.data.key, 10);
