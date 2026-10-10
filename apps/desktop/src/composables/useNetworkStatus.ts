@@ -1,4 +1,4 @@
-import { ref, onScopeDispose } from "vue";
+import { ref, getCurrentScope, onScopeDispose } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -74,16 +74,22 @@ export function _useNetworkStatus() {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let probeTimer: ReturnType<typeof setTimeout> | null = null;
   let isProbing = false;
+  let connectivityGeneration = 0;
   let isDisposed = false;
   let unlistenTauriEvent: UnlistenFn | null = null;
 
   const handleOnline = () => {
+    connectivityGeneration++;
+    if (isOnline.value && !wasOffline.value && !debounceTimer) {
+      return;
+    }
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
     }
 
     debounceTimer = setTimeout(() => {
+      debounceTimer = null;
       isOnline.value = true;
       if (wasOffline.value) {
         wasOffline.value = false;
@@ -100,6 +106,7 @@ export function _useNetworkStatus() {
   };
 
   const handleOffline = () => {
+    connectivityGeneration++;
     if (debounceTimer) {
       clearTimeout(debounceTimer);
       debounceTimer = null;
@@ -111,8 +118,12 @@ export function _useNetworkStatus() {
   const checkConnectivity = async (): Promise<boolean> => {
     if (isProbing || isDisposed) return isOnline.value;
     isProbing = true;
+    const generation = connectivityGeneration;
     try {
       const online = await probeConnectivity();
+      if (generation !== connectivityGeneration || isDisposed) {
+        return isOnline.value;
+      }
       if (!online) {
         handleOffline();
       } else if (!isOnline.value) {
@@ -125,7 +136,7 @@ export function _useNetworkStatus() {
   };
 
   const scheduleNextProbe = () => {
-    if (isDisposed || typeof window === "undefined" || isTestEnv) return;
+    if (isDisposed || typeof window === "undefined" || isTestEnv || isTauri()) return;
     if (probeTimer) {
       clearTimeout(probeTimer);
       probeTimer = null;
@@ -137,16 +148,44 @@ export function _useNetworkStatus() {
     }, delay);
   };
 
-  if (typeof window !== "undefined") {
-    const onWindowOnline = () => {
+  const onWindowOnline = () => {
+    checkConnectivity();
+  };
+  const onWindowOffline = () => {
+    if (isTauri()) {
       checkConnectivity();
-    };
-    const onWindowFocus = () => {
-      checkConnectivity();
-    };
+    } else {
+      handleOffline();
+    }
+  };
+  const onWindowFocus = () => {
+    checkConnectivity();
+  };
 
+  const cleanup = () => {
+    isDisposed = true;
+    if (typeof window !== "undefined") {
+      window.removeEventListener("online", onWindowOnline);
+      window.removeEventListener("offline", onWindowOffline);
+      window.removeEventListener("focus", onWindowFocus);
+    }
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    if (probeTimer) {
+      clearTimeout(probeTimer);
+      probeTimer = null;
+    }
+    if (unlistenTauriEvent) {
+      unlistenTauriEvent();
+      unlistenTauriEvent = null;
+    }
+  };
+
+  if (typeof window !== "undefined") {
     window.addEventListener("online", onWindowOnline);
-    window.addEventListener("offline", handleOffline);
+    window.addEventListener("offline", onWindowOffline);
     window.addEventListener("focus", onWindowFocus);
 
     if (isTauri()) {
@@ -174,31 +213,18 @@ export function _useNetworkStatus() {
       });
     }
 
-    onScopeDispose(() => {
-      isDisposed = true;
-      window.removeEventListener("online", onWindowOnline);
-      window.removeEventListener("offline", handleOffline);
-      window.removeEventListener("focus", onWindowFocus);
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
-      }
-      if (probeTimer) {
-        clearTimeout(probeTimer);
-        probeTimer = null;
-      }
-      if (unlistenTauriEvent) {
-        unlistenTauriEvent();
-        unlistenTauriEvent = null;
-      }
-    });
+    onScopeDispose(cleanup);
   }
 
   function onReconnect(callback: () => void): () => void {
     reconnectCallbacks.add(callback);
-    return () => {
+    const off = () => {
       reconnectCallbacks.delete(callback);
     };
+    if (getCurrentScope()) {
+      onScopeDispose(off);
+    }
+    return off;
   }
 
   function __test_triggerOnline() {
@@ -210,19 +236,7 @@ export function _useNetworkStatus() {
   }
 
   function __test_reset() {
-    isDisposed = true;
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-      debounceTimer = null;
-    }
-    if (probeTimer) {
-      clearTimeout(probeTimer);
-      probeTimer = null;
-    }
-    if (unlistenTauriEvent) {
-      unlistenTauriEvent();
-      unlistenTauriEvent = null;
-    }
+    cleanup();
     isOnline.value = true;
     wasOffline.value = false;
     reconnectCount.value = 0;

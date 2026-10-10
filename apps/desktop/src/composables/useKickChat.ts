@@ -143,19 +143,24 @@ async function updateSubscriptions() {
   await invoke("kick_set_channels", { channels });
 }
 
-const { onReconnect } = useNetworkStatus();
-onReconnect(async () => {
-  if (activeKickChannels.size > 0) {
+let isReconnectingSubscriptions = false;
+
+export function useKickChat(channelSlug: string) {
+  setupListeners();
+
+  const { onReconnect } = useNetworkStatus();
+  onReconnect(async () => {
+    const slug = channelSlug.trim().toLowerCase();
+    if (!activeKickChannels.has(slug) || isReconnectingSubscriptions) return;
+    isReconnectingSubscriptions = true;
     try {
       await updateSubscriptions();
     } catch (e) {
       console.error("[useKickChat] Failed to resubscribe channels on reconnect", e);
+    } finally {
+      isReconnectingSubscriptions = false;
     }
-  }
-});
-
-export function useKickChat(channelSlug: string) {
-  setupListeners();
+  });
 
   const isJoining = ref(false);
 

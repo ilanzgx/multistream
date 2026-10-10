@@ -69,7 +69,7 @@ const { locale, t } = useI18n();
 const { isOnline, onReconnect } = useNetworkStatus();
 
 onReconnect(() => {
-  toast.success(t("network.reconnected"), { duration: 3000 });
+  toast.success(t("network.reconnected"), { id: "network-reconnected", duration: 3000 });
 });
 
 useDeepLink();
