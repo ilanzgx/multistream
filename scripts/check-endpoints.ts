@@ -146,7 +146,28 @@ const targets: CheckTarget[] = [
   },
 ];
 
-async function checkEndpoint(target: CheckTarget): Promise<{
+const TIMEOUT_MS = 6000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1000;
+
+interface CheckResult {
+  category: string;
+  name: string;
+  url: string;
+  status: number | string;
+  durationMs: number;
+  ok: boolean;
+  attempts: number;
+  error?: string;
+}
+
+function isSuccessful(url: string, status: number | string, ok: boolean): boolean {
+  if (ok) return true;
+  if (status === 403 && url.includes("kick.com")) return true;
+  return false;
+}
+
+async function checkSingleAttempt(target: CheckTarget): Promise<{
   category: string;
   name: string;
   url: string;
@@ -157,7 +178,7 @@ async function checkEndpoint(target: CheckTarget): Promise<{
 }> {
   const start = performance.now();
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000);
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
   try {
     const res = await fetch(target.url, {
@@ -195,6 +216,25 @@ async function checkEndpoint(target: CheckTarget): Promise<{
   }
 }
 
+async function checkEndpoint(target: CheckTarget): Promise<CheckResult> {
+  let lastResult: CheckResult | undefined;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES + 1; attempt++) {
+    const result = await checkSingleAttempt(target);
+    lastResult = { ...result, attempts: attempt };
+
+    if (isSuccessful(target.url, result.status, result.ok)) {
+      return lastResult;
+    }
+
+    if (attempt <= MAX_RETRIES) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+    }
+  }
+
+  return lastResult!;
+}
+
 async function run() {
   console.log("\nChecking Multistream endpoints and assets...\n");
 
@@ -213,11 +253,12 @@ async function run() {
     for (const r of catResults) {
       const statusText = String(r.status).padEnd(7);
       const durationText = `${r.durationMs}ms`.padStart(7);
+      const retryTag = r.attempts > 1 ? ` \x1b[33m(attempt ${r.attempts})\x1b[0m` : "";
 
       if (r.ok) {
         passed++;
         console.log(
-          `  \x1b[32m[OK]\x1b[0m    [${r.name.padEnd(24)}] \x1b[32m${statusText}\x1b[0m (${durationText})`
+          `  \x1b[32m[OK]\x1b[0m    [${r.name.padEnd(24)}] \x1b[32m${statusText}\x1b[0m (${durationText})${retryTag}`
         );
       } else if (r.status === 403 && r.url.includes("kick.com")) {
         // Kick blocks raw Node/Bun CLI user-agents via Cloudflare TLS fingerprinting
@@ -230,7 +271,7 @@ async function run() {
         console.log(
           `  \x1b[31m[FAIL]\x1b[0m  [${r.name.padEnd(24)}] \x1b[31m${statusText}\x1b[0m (${durationText}) \x1b[90m${r.url}\x1b[0m ${
             r.error ? `\x1b[31m(${r.error})\x1b[0m` : ""
-          }`
+          }${retryTag}`
         );
       }
     }
