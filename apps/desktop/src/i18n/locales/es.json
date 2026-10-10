@@ -247,7 +247,8 @@
       "stopRecord": "Detener grabación",
       "focus": "Enfocar stream",
       "unfocus": "Desenfocar stream",
-      "copyUrl": "Copiar URL de la transmisión"
+      "copyUrl": "Copiar URL de la transmisión",
+      "reload": "Recargar stream"
     }
   },
   "empty": {
@@ -513,6 +514,13 @@
       "tokenExpired": "Acceso denegado (403). El token de transmisión ha caducado.",
       "hlsError": "Error de HLS ({type}: {details})",
       "playbackError": "Error de reproducción nativa"
-    }
+    },
+    "retry": "Reintentar"
+  },
+  "network": {
+    "offline": "Sin conexión a internet",
+    "reconnecting": "Intentando reconectar...",
+    "reconnected": "Conexión a internet restablecida",
+    "offlineTooltip": "Estás sin conexión. Mostrando datos en caché."
   }
 }

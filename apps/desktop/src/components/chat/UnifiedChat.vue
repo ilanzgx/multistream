@@ -12,6 +12,8 @@ import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { useI18n } from "vue-i18n";
 import { TwitchIcon, KickIcon } from "../icons";
 import LoginPrompt from "./LoginPrompt.vue";
+import { useNetworkStatus } from "@/composables/useNetworkStatus";
+
 const { messages, connectionState, channelColor, channelAvatars, twitchChannels } =
   useUnifiedChat();
 const { streams } = useStreams();
@@ -19,6 +21,7 @@ const { loading: authLoading } = useTwitchAuth();
 const { t } = useI18n();
 const { loadChannelEmotes } = useEmotes();
 const { unifiedChatState } = useUnifiedChatState();
+const { isOnline } = useNetworkStatus();
 
 const chatMessages = computed(() => messages.value);
 function openAuthModal() {
@@ -106,7 +109,15 @@ onMounted(() => {
     </Transition>
 
     <div
-      v-if="connectionState === 'reconnecting'"
+      v-if="!isOnline"
+      class="flex items-center gap-2 px-3 py-1.5 bg-[#14161a] border-b border-[#2a2d33] text-zinc-400 text-[11px] font-medium shrink-0"
+    >
+      <WifiOff class="w-3 h-3 text-zinc-500" />
+      <span>{{ t("network.offline") }}</span>
+    </div>
+
+    <div
+      v-else-if="connectionState === 'reconnecting'"
       class="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-[11px] font-medium shrink-0"
     >
       <RefreshCw class="w-3 h-3 animate-spin" />

@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "../../components/ui/tooltip";
 import { Skeleton } from "../../components/ui/skeleton";
-import { Radio, ChevronLeft, ChevronRight, RefreshCw } from "@lucide/vue";
+import { Radio, ChevronLeft, ChevronRight, RefreshCw, WifiOff } from "@lucide/vue";
 import TwitchIcon from "../../components/icons/TwitchIcon.vue";
 import KickIcon from "../../components/icons/KickIcon.vue";
 import YoutubeIcon from "../../components/icons/YoutubeIcon.vue";
@@ -17,9 +17,11 @@ import { useFollowedChannels, type FollowedChannel } from "../../composables/use
 import { useTwitchAuth } from "../../composables/useTwitchAuth";
 import { useStreams } from "../../composables/useStreams";
 import { usePreferences } from "../../composables/usePreferences";
+import { useNetworkStatus } from "../../composables/useNetworkStatus";
 import { CDN_CONFIG } from "@/config/cdn";
 
 const { channels, isLoading, isInitialLoading, platformFilter, refresh } = useFollowedChannels();
+const { isOnline } = useNetworkStatus();
 const { addStream } = useStreams();
 const { t, locale } = useI18n();
 const { authenticated: isTwitchAuth } = useTwitchAuth();
@@ -76,12 +78,48 @@ const getThumbnailUrl = (url?: string) => {
       class="h-12 flex items-center px-2 border-b border-[#1f2227] shrink-0"
       :class="isOpen ? 'justify-between' : 'justify-center'"
     >
-      <div v-if="isOpen" class="flex items-center gap-2">
-        <Radio class="w-4 h-4 text-gray-400" />
-        <span class="text-[10px] font-semibold tracking-widest uppercase text-gray-400">{{
+      <div v-if="isOpen" class="flex items-center gap-2 min-w-0">
+        <Radio class="w-4 h-4 text-gray-400 shrink-0" />
+        <span class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 truncate">{{
           t("sidebar.followedChannels")
         }}</span>
+        <TooltipProvider v-if="!isOnline" :delay-duration="0">
+          <Tooltip>
+            <TooltipTrigger as-child>
+              <span
+                data-testid="sidebar-offline-indicator"
+                class="flex items-center text-zinc-500 hover:text-zinc-400 cursor-help shrink-0 ml-auto"
+                :title="t('network.offlineTooltip')"
+              >
+                <WifiOff class="w-3.5 h-3.5" />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent
+              side="bottom"
+              class="bg-[#1f2227] text-gray-200 border-[#2a2d33] text-xs"
+            >
+              {{ t("network.offlineTooltip") }}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
+
+      <TooltipProvider v-if="!isOpen && !isOnline" :delay-duration="0">
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <span
+              data-testid="sidebar-offline-indicator"
+              class="absolute top-1.5 right-1.5 flex items-center text-zinc-500 cursor-help"
+              :title="t('network.offlineTooltip')"
+            >
+              <WifiOff class="w-3 h-3" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="right" class="bg-[#1f2227] text-gray-200 border-[#2a2d33] text-xs">
+            {{ t("network.offlineTooltip") }}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <button
         class="p-1.5 rounded-md text-gray-400 hover:text-white hover:bg-[#1f2227] transition-colors"
@@ -148,7 +186,9 @@ const getThumbnailUrl = (url?: string) => {
       </div>
       <button
         class="text-gray-500 hover:text-gray-300 transition-colors p-1 -mr-1 rounded-md"
-        :class="{ 'pointer-events-none': isLoading }"
+        :class="{ 'pointer-events-none opacity-40': isLoading || !isOnline }"
+        :disabled="isLoading || !isOnline"
+        :title="!isOnline ? t('network.offlineTooltip') : undefined"
         @click="refresh"
       >
         <RefreshCw class="w-3.5 h-3.5" :class="{ 'animate-spin text-gray-400': isLoading }" />

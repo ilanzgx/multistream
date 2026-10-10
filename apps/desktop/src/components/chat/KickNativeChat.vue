@@ -13,6 +13,7 @@ import { toast } from "@/composables/useToast";
 import { useKickAuth } from "@/composables/useKickAuth";
 import { useI18n } from "vue-i18n";
 import { KickIcon } from "@/components/icons";
+import { useNetworkStatus } from "@/composables/useNetworkStatus";
 import LoginPrompt from "./LoginPrompt.vue";
 import { API_CONFIG } from "@/config/api";
 import { httpGet } from "@/lib/http";
@@ -32,6 +33,7 @@ const {
 const { username, authenticated, loading: authLoading } = useKickAuth();
 const { encodeKickMessage, getEmoteDictionary, loadChannelEmotes } = useEmotes();
 const { t } = useI18n();
+const { isOnline } = useNetworkStatus();
 
 function openAuthModal() {
   window.dispatchEvent(new CustomEvent("multistream-show-dialog", { detail: "kick-auth" }));
@@ -178,7 +180,15 @@ onUnmounted(() => {
     </Transition>
 
     <div
-      v-if="connectionState === 'reconnecting'"
+      v-if="!isOnline"
+      class="flex items-center gap-2 px-3 py-1.5 bg-[#14161a] border-b border-[#2a2d33] text-zinc-400 text-[11px] font-medium shrink-0"
+    >
+      <WifiOff class="w-3 h-3 text-zinc-500" />
+      <span>{{ t("network.offline") }}</span>
+    </div>
+
+    <div
+      v-else-if="connectionState === 'reconnecting'"
       class="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border-b border-yellow-500/20 text-yellow-400 text-[11px] font-medium shrink-0"
     >
       <RefreshCw class="w-3 h-3 animate-spin" />
@@ -237,8 +247,8 @@ onUnmounted(() => {
         <ChatRichInput
           v-model="newMessage"
           :emotes="channelEmotes"
-          :placeholder="t('chat.sendPlaceholder')"
-          :disabled="connectionState !== 'connected' || isSending"
+          :placeholder="!isOnline ? t('network.offline') : t('chat.sendPlaceholder')"
+          :disabled="!isOnline || connectionState !== 'connected' || isSending"
           class="focus:ring-[#53fc18]"
           @submit="handleSend"
         />
@@ -247,7 +257,9 @@ onUnmounted(() => {
           size="icon"
           :aria-label="t('chat.sendPlaceholder')"
           class="shrink-0 h-9.5 w-9.5 bg-[#53fc18] hover:bg-[#6afc35] text-[#0f1115] disabled:opacity-50"
-          :disabled="!newMessage.trim() || connectionState !== 'connected' || isSending"
+          :disabled="
+            !isOnline || !newMessage.trim() || connectionState !== 'connected' || isSending
+          "
         >
           <Send class="w-4 h-4" />
         </Button>
