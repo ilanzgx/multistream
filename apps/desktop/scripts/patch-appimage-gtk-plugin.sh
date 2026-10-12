@@ -28,3 +28,22 @@ EOF
 
 chmod +x "$PLUGIN"
 echo "Patched $PLUGIN"
+
+# Because bundleMediaFramework=true runs linuxdeploy-plugin-gstreamer.sh AFTER linuxdeploy-plugin-gtk.sh,
+# its internal `"$LINUXDEPLOY" --appdir "$APPDIR"` call copies libwayland-* back into usr/lib.
+GST_COMMIT="2a2e67491c32995a3f279ad0ecbe77abd512b42a"
+GST_URL="https://raw.githubusercontent.com/tauri-apps/linuxdeploy-plugin-gstreamer/${GST_COMMIT}/linuxdeploy-plugin-gstreamer.sh"
+GST_PLUGIN="${XDG_CACHE_HOME:-$HOME/.cache}/tauri/linuxdeploy-plugin-gstreamer.sh"
+
+curl -fsSL "$GST_URL" -o "$GST_PLUGIN"
+
+cat >> "$GST_PLUGIN" <<'EOF'
+
+echo "Removing bundled libwayland (re-added by GStreamer linuxdeploy pass)"
+find "$APPDIR"/usr/lib* \( -type f -o -type l \) \
+    \( -name 'libwayland-client.so*' -o -name 'libwayland-cursor.so*' -o -name 'libwayland-egl.so*' -o -name 'libwayland-server.so*' \) \
+    -print -delete
+EOF
+
+chmod +x "$GST_PLUGIN"
+echo "Patched $GST_PLUGIN"
