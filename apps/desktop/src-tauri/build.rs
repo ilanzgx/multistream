@@ -24,12 +24,11 @@ fn main() {
 
     let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap_or_default();
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap_or_default();
-    let target = env::var("TARGET").unwrap_or_default();
-
-    let out_dir = Path::new("binaries");
-    let _ = fs::create_dir_all(out_dir);
 
     if target_os == "windows" && target_arch == "x86_64" {
+        let out_dir = Path::new("binaries");
+        let _ = fs::create_dir_all(out_dir);
+
         // ----- whisper-cli -----
         let bin_name = "whisper-cli-x86_64-pc-windows-msvc.exe";
         let bin_path = out_dir.join(bin_name);
@@ -87,28 +86,6 @@ fn main() {
             } else {
                 panic!("Failed to download whisper.cpp archive");
             }
-        }
-    } else {
-        // Create dummy files for unsupported platforms so tauri_build doesn't fail
-        for name in [
-            format!("whisper-cli-{target}"),
-            format!("streamlink-{target}"),
-            format!("ffmpeg-{target}"),
-        ] {
-            let path = out_dir.join(if target_os == "windows" {
-                format!("{name}.exe")
-            } else {
-                name
-            });
-            if !path.exists() {
-                let _ = fs::File::create(&path);
-            }
-        }
-
-        // Create a dummy DLL so that `binaries/*.dll` resource glob doesn't fail
-        let dummy_dll = out_dir.join("dummy.dll");
-        if !dummy_dll.exists() {
-            let _ = fs::File::create(dummy_dll);
         }
     }
 

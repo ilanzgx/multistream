@@ -1,6 +1,7 @@
 name: "Release"
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -69,6 +70,10 @@ jobs:
           curl -fsSL -o "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/AppRun-x86_64" https://github.com/tauri-apps/binary-releases/releases/download/apprun-old/AppRun-x86_64
           chmod 755 "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/AppRun-x86_64"
 
+      - name: Patch AppImage GTK plugin (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: bash apps/desktop/scripts/patch-appimage-gtk-plugin.sh
+
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
 
@@ -104,6 +109,27 @@ jobs:
           tauriScript: "bunx tauri"
           args: --target ${{ matrix.target }}
 
+      - name: Verify AppImage (Ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          set -euo pipefail
+          BUNDLE_PATH="apps/desktop/src-tauri/target/${{ matrix.target }}/release/bundle"
+          [ -d "$BUNDLE_PATH" ] || BUNDLE_PATH="target/${{ matrix.target }}/release/bundle"
+          APPIMAGE=$(find "$PWD/$BUNDLE_PATH/appimage" -name '*.AppImage' | head -n1)
+          test -n "$APPIMAGE"
+          cd "$(mktemp -d)"
+          "$APPIMAGE" --appimage-extract >/dev/null
+          if find squashfs-root \( -name 'libwayland-*.so*' -o -name 'im-uim.so' \) | grep .; then
+            echo "Bundled libwayland or im-uim found"
+            exit 1
+          fi
+          if grep -rq 'im-uim\.so' --include=immodules.cache squashfs-root; then
+            echo "im-uim still listed in immodules.cache"
+            exit 1
+          fi
+          grep -q 'GDK_BACKEND="${GDK_BACKEND:-x11}"' squashfs-root/apprun-hooks/linuxdeploy-plugin-gtk.sh
+
       - name: Debug - List bundle directory
         shell: bash
         run: |
@@ -136,6 +162,10 @@ jobs:
           elif [ "${{ matrix.platform }}" = "ubuntu-22.04" ]; then
             find "$BUNDLE_PATH" -name "*.AppImage" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage \; 2>/dev/null || true
             find "$BUNDLE_PATH" -name "*.deb" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.deb \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.deb.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.deb.sig \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.rpm" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.rpm \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.rpm.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.rpm.sig \; 2>/dev/null || true
+            find "$BUNDLE_PATH" -name "*.AppImage.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.sig \; 2>/dev/null || true
             find "$BUNDLE_PATH" -name "*.AppImage.tar.gz" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.tar.gz \; 2>/dev/null || true
             find "$BUNDLE_PATH" -name "*.AppImage.tar.gz.sig" -exec cp {} renamed-artifacts/Multistream-${{ matrix.name }}.AppImage.tar.gz.sig \; 2>/dev/null || true
           fi
@@ -151,6 +181,7 @@ jobs:
           if-no-files-found: warn
 
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build-tauri
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -246,6 +277,7 @@ jobs:
           printf '| macOS (Intel) | [`Multistream-macos-x64.dmg`](%s/Multistream-macos-x64.dmg) |\n' "$BASE" >> changelog.md
           printf '| Linux (AppImage) | [`Multistream-linux-x64.AppImage`](%s/Multistream-linux-x64.AppImage) |\n' "$BASE" >> changelog.md
           printf '| Linux (Debian) | [`Multistream-linux-x64.deb`](%s/Multistream-linux-x64.deb) |\n' "$BASE" >> changelog.md
+          printf '| Linux (RPM) | [`Multistream-linux-x64.rpm`](%s/Multistream-linux-x64.rpm) |\n' "$BASE" >> changelog.md
           printf '| Browser Extension | [`multistream-extension.zip`](%s/multistream-extension.zip) · [Guide](https://github.com/ilanzgx/multistream/tree/main/apps/extension#readme) |\n' "$BASE" >> changelog.md
 
           printf '\n### macOS (Homebrew)\n\n' >> changelog.md
@@ -269,7 +301,7 @@ jobs:
       - name: Flatten artifacts
         run: |
           mkdir -p release-files
-          find artifacts -type f \( -name "*.tar.gz" -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.sig" \) -exec cp {} release-files/ \; 2>/dev/null || true
+          find artifacts -type f \( -name "*.tar.gz" -o -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.sig" \) -exec cp {} release-files/ \; 2>/dev/null || true
           echo "=== Release files ==="
           ls -la release-files/
 
@@ -322,6 +354,16 @@ jobs:
             }
           };
 
+          for (const ext of ["deb", "rpm"]) {
+            const file = `Multistream-linux-x64.${ext}`;
+            if (fs.existsSync(`${file}.sig`)) {
+              manifest.platforms[`linux-x86_64-${ext}`] = {
+                url: `${baseUrl}/${file}`,
+                signature: readSig(`${file}.sig`)
+              };
+            }
+          }
+
           fs.writeFileSync("latest.json", JSON.stringify(manifest, null, 2) + "\n");
           console.log("Generated latest.json:");
           console.log(fs.readFileSync("latest.json", "utf8"));
@@ -365,7 +407,7 @@ jobs:
           git config user.name "multistream-bot"
           git config user.email "bot@multistream.app"
           git add Casks/multistream.rb
-          
+
           # Only commit and push if there are changes
           git diff --quiet --staged || {
             git commit -m "chore(homebrew): update cask to ${VERSION}"
