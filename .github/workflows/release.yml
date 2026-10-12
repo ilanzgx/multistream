@@ -65,7 +65,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev libssl-dev \
-            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl
+            webp-pixbuf-loader gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-gl
           mkdir -p "${XDG_CACHE_HOME:-$HOME/.cache}/tauri"
           curl -fsSL -o "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/AppRun-x86_64" https://github.com/tauri-apps/binary-releases/releases/download/apprun-old/AppRun-x86_64
           chmod 755 "${XDG_CACHE_HOME:-$HOME/.cache}/tauri/AppRun-x86_64"
@@ -120,14 +120,15 @@ jobs:
           test -n "$APPIMAGE"
           cd "$(mktemp -d)"
           "$APPIMAGE" --appimage-extract >/dev/null
-          if find squashfs-root \( -name 'libwayland-*.so*' -o -name 'im-uim.so' \) | grep .; then
-            echo "Bundled libwayland or im-uim found"
+          if find squashfs-root \( -name 'libwayland-*.so*' -o -name 'libgnutls.so*' -o -name 'libhogweed.so*' -o -name 'libnettle.so*' -o -name 'libp11-kit.so*' -o -name 'libssh.so*' -o -name 'im-uim.so' \) | grep .; then
+            echo "Conflicting bundled libraries or im-uim found"
             exit 1
           fi
           if grep -rq 'im-uim\.so' --include=immodules.cache squashfs-root; then
             echo "im-uim still listed in immodules.cache"
             exit 1
           fi
+          test -f squashfs-root/etc/fonts/fonts.conf
           grep -q 'GDK_BACKEND="${GDK_BACKEND:-x11}"' squashfs-root/apprun-hooks/linuxdeploy-plugin-gtk.sh
 
       - name: Debug - List bundle directory
