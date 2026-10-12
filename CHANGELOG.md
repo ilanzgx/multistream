@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.19.3] - 2026-10-12
+
+### Bug Fixes
+
+- **linux**: Strip conflicting wayland libs from appimage and publish rpm (#47) ([5c7c682](https://github.com/ilanzgx/multistream/commit/5c7c6824746f2c45698dce3f4e501dd0863e499d))
+- **linux**: Strip wayland libs re-added by gstreamer appimage plugin (#47) ([a752c43](https://github.com/ilanzgx/multistream/commit/a752c43cddd9b1d718b04ba86948cce807587884))
+
 ## [0.19.2] - 2026-10-10
 
 ### Bug Fixes

@@ -2587,7 +2587,7 @@ dependencies = [
 
 [[package]]
 name = "multistream"
-version = "0.19.2"
+version = "0.19.3"
 dependencies = [
  "base64 0.22.1",
  "chrono",
