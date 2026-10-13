@@ -1,5 +1,5 @@
 import { ref, computed, onScopeDispose } from "vue";
-import { createSharedComposable } from "@vueuse/core";
+import { createSharedComposable, useStorage } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { isTauri } from "./useUpdater";
@@ -26,18 +26,12 @@ async function cancelLogin() {
   }
 }
 
-async function logout() {
-  if (!isTauri()) return;
-  try {
-    await invoke("twitch_logout");
-  } catch (e) {
-    console.error("Failed to logout", e);
-  }
-}
 const _useTwitchAuth = () => {
-  const authenticated = ref(false);
-  const username = ref<string | null>(null);
+  const storage = typeof localStorage !== "undefined" ? localStorage : undefined;
+  const authenticated = useStorage<boolean>("twitch-authenticated", false, storage);
+  const username = useStorage<string | null>("twitch-username", null, storage);
   const loading = ref(false);
+  const isReady = ref(!isTauri());
 
   const isAuthenticated = computed(() => authenticated.value);
 
@@ -45,7 +39,10 @@ const _useTwitchAuth = () => {
   let unlistenAuthError: UnlistenFn | null = null;
 
   async function init() {
-    if (!isTauri()) return;
+    if (!isTauri()) {
+      isReady.value = true;
+      return;
+    }
 
     try {
       const state = await invoke<AuthState>("twitch_get_auth_state");
@@ -54,12 +51,15 @@ const _useTwitchAuth = () => {
     } catch {
       authenticated.value = false;
       username.value = null;
+    } finally {
+      isReady.value = true;
     }
 
     if (!unlistenAuthChanged) {
       unlistenAuthChanged = await listen<AuthState>("twitch-auth-changed", (event) => {
         authenticated.value = event.payload.authenticated;
         username.value = event.payload.username;
+        isReady.value = true;
       });
     }
 
@@ -84,6 +84,21 @@ const _useTwitchAuth = () => {
     }
   }
 
+  async function logout() {
+    if (!isTauri()) {
+      authenticated.value = false;
+      username.value = null;
+      return;
+    }
+    try {
+      await invoke("twitch_logout");
+      authenticated.value = false;
+      username.value = null;
+    } catch (e) {
+      console.error("Failed to logout", e);
+    }
+  }
+
   onScopeDispose(() => {
     if (unlistenAuthChanged) unlistenAuthChanged();
     if (unlistenAuthError) unlistenAuthError();
@@ -97,6 +112,7 @@ const _useTwitchAuth = () => {
     authenticated: isAuthenticated,
     username,
     loading,
+    isReady: computed(() => isReady.value),
     startLogin,
     cancelLogin,
     logout,

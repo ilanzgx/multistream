@@ -24,7 +24,7 @@ const { channels, isLoading, isInitialLoading, platformFilter, refresh } = useFo
 const { isOnline } = useNetworkStatus();
 const { addStream } = useStreams();
 const { t, locale } = useI18n();
-const { authenticated: isTwitchAuth } = useTwitchAuth();
+const { authenticated: isTwitchAuth, isReady: isTwitchAuthReady } = useTwitchAuth();
 const { followedSidebarOpen: isOpen, toggleFollowedSidebar } = usePreferences();
 
 const liveChannels = computed(() => channels.value.filter((c) => c.isLive));
@@ -66,6 +66,13 @@ const getThumbnailUrl = (url?: string) => {
   const separator = url.includes("?") ? "&" : "?";
   const cacheBuster = Math.floor(Date.now() / 300000); // 5 min cache
   return `${url}${separator}t=${cacheBuster}`;
+};
+
+const handleAvatarError = (event: Event, displayName: string) => {
+  const target = event.target as HTMLImageElement | null;
+  if (target) {
+    target.src = CDN_CONFIG.avatarFallback(displayName);
+  }
 };
 </script>
 
@@ -237,12 +244,7 @@ const getThumbnailUrl = (url?: string) => {
                       loading="lazy"
                       :src="channel.avatarUrl || CDN_CONFIG.avatarFallback(channel.displayName)"
                       class="w-7 h-7 rounded-full block object-cover"
-                      @error="
-                        (e: any) =>
-                          ((e.target as HTMLImageElement).src = CDN_CONFIG.avatarFallback(
-                            channel.displayName
-                          ))
-                      "
+                      @error="handleAvatarError($event, channel.displayName)"
                     />
                   </div>
                   <div
@@ -334,15 +336,17 @@ const getThumbnailUrl = (url?: string) => {
       </div>
     </TooltipProvider>
 
-    <LoginPrompt
-      v-if="isOpen && !isTwitchAuth"
-      platform="twitch"
-      position="top"
-      title-key="sidebar.loginTitle"
-      subtitle-key="sidebar.loginSubtitle"
-      compact
-      @connect="openTwitchAuthDialog"
-    />
+    <Transition name="fade">
+      <LoginPrompt
+        v-if="isOpen && isTwitchAuthReady && !isTwitchAuth"
+        platform="twitch"
+        position="top"
+        title-key="sidebar.loginTitle"
+        subtitle-key="sidebar.loginSubtitle"
+        compact
+        @connect="openTwitchAuthDialog"
+      />
+    </Transition>
   </div>
 </template>
 
@@ -368,5 +372,15 @@ const getThumbnailUrl = (url?: string) => {
 
 .avatar-border.followed {
   background: #9146ff;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

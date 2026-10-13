@@ -21,7 +21,7 @@ vi.mock("../useUpdater", () => ({
 }));
 
 // Mock composables dependencies
-const mockTwitchAuth = { authenticated: ref(false) };
+const mockTwitchAuth = { authenticated: ref(false), isReady: ref(true) };
 vi.mock("../useTwitchAuth", () => ({
   useTwitchAuth: () => mockTwitchAuth,
 }));
@@ -55,6 +55,7 @@ describe("useFollowedChannels", () => {
     vi.mocked(invoke).mockResolvedValue([]);
     mockIsTauri.mockReturnValue(true);
     mockTwitchAuth.authenticated = ref(false);
+    mockTwitchAuth.isReady = ref(true);
     mockKickAuth.authenticated = ref(false);
     mockLiveStatus.statuses.value = {};
     mockLiveStatus.isChecking.value = false;
