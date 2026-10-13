@@ -58,12 +58,6 @@ const targets: CheckTarget[] = [
   },
   {
     category: "APIs & Metadata",
-    name: "Adamcy Twitch Emotes",
-    url: API_CONFIG.adamcy.twitchGlobalEmotesUrl,
-    method: "GET",
-  },
-  {
-    category: "APIs & Metadata",
     name: "DecAPI Twitch ID",
     url: API_CONFIG.decapi.twitchIdUrl("gaules"),
     method: "GET",

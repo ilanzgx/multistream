@@ -39,6 +39,7 @@ interface BttvChannelResponse {
 
 import { API_CONFIG } from "@/config/api";
 import { CDN_CONFIG } from "@/config/cdn";
+import { TWITCH_GLOBAL_EMOTES } from "@/config/twitchGlobalEmotes";
 
 type RawToken =
   | { type: "text"; content: string }
@@ -87,18 +88,9 @@ const _useEmotes = () => {
   const kickGlobalEmotes = shallowRef<Map<string, string>>(new Map());
   const kickGlobalEmotesLoaded = ref(false);
 
-  const fetchTwitchGlobal = async (): Promise<void> => {
-    try {
-      const res = await fetch(API_CONFIG.adamcy.twitchGlobalEmotesUrl);
-      if (!res.ok) return;
-      const data = await res.json();
-      data.forEach((e: any) => {
-        if (e.urls && e.urls.length > 0) {
-          globalEmotes.value.set(e.code, e.urls[0].url);
-        }
-      });
-    } catch (e) {
-      console.error("Failed to load Twitch global emotes", e);
+  const loadTwitchGlobal = (): void => {
+    for (const [code, id] of Object.entries(TWITCH_GLOBAL_EMOTES)) {
+      globalEmotes.value.set(code, CDN_CONFIG.twitch.emote(id));
     }
   };
 
@@ -130,7 +122,8 @@ const _useEmotes = () => {
 
   const loadGlobalEmotes = async (): Promise<void> => {
     if (globalEmotesLoaded.value) return;
-    await Promise.allSettled([fetchTwitchGlobal(), fetch7TVGlobal(), fetchBTTVGlobal()]);
+    loadTwitchGlobal();
+    await Promise.allSettled([fetch7TVGlobal(), fetchBTTVGlobal()]);
     globalEmotesLoaded.value = true;
     globalVersion++;
     tokenCache.clear();

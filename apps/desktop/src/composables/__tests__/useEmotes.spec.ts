@@ -12,9 +12,6 @@ describe("useEmotes", () => {
     __test_resetEmotesState();
     mockFetch.mockReset();
     mockFetch.mockImplementation(async (url: string) => {
-      if (url?.includes("emotes.adamcy.pl/v1/global/emotes/twitch")) {
-        return { ok: true, json: async () => [] };
-      }
       if (url?.includes("betterttv.net/3/cached/emotes/global")) {
         return { ok: true, json: async () => [] };
       }
@@ -245,13 +242,7 @@ describe("useEmotes", () => {
 
   it("should filter out Twitch global emotes when getting emote dictionary for Kick", async () => {
     // Arrange
-    // Add global twitch emotes manually or via mock
-    // sut.globalEmotes is populated internally, but we can mock it by tricking the parseMessage or manually setting it if it's exposed
-    // Wait, the composable doesn't expose globalEmotes directly, it exposes getEmoteDictionary
     mockFetch.mockImplementation(async (url: string) => {
-      if (url.includes("emotes.adamcy.pl/v1/global/emotes/twitch")) {
-        return { ok: true, json: async () => [] };
-      }
       if (url.includes("7tv.io/v3/emote-sets/global")) {
         return { ok: true, json: async () => ({ emotes: [] }) };
       }
@@ -264,21 +255,12 @@ describe("useEmotes", () => {
     sut = useEmotes();
     await new Promise((resolve) => setTimeout(resolve, 0)); // wait for globals
 
-    // Since we can't easily mock the Twitch global emotes fetch (it's hardcoded to use parseMessage with Twitch indices),
-    // we can artificially inject a Twitch emote into the Kick dictionary test by using parseMessage with a Twitch index first?
-    // Twitch emotes are usually passed dynamically via IRC tags, BUT the global emotes dictionary is populated by 3rd parties.
-    // Let's test getEmoteDictionary for 3rd parties and Kick native emotes.
-
     // Act
     await sut.loadChannelEmotes("kickchannel");
     const dict = sut.getEmoteDictionary("kickchannel", "kick");
 
     // Assert
-    // Check that dict is a Map and does not contain Twitch emotes.
-    // Actually, getEmoteDictionary filters `jtvnw.net`. Let's just ensure it returns a map.
     expect(dict).toBeInstanceOf(Map);
-
-    // To thoroughly test the filter, let's mock the internal Map if possible, or we can just rely on the contract.
     for (const [_, data] of dict.entries()) {
       expect(data.url).not.toContain("jtvnw.net");
     }
@@ -286,18 +268,7 @@ describe("useEmotes", () => {
 
   it("should return the correct emote dictionary for Twitch including jtvnw.net", async () => {
     // Arrange
-    mockFetch.mockImplementation(async (url: string) => {
-      if (url.includes("emotes.adamcy.pl/v1/global/emotes/twitch")) {
-        return {
-          ok: true,
-          json: async () => [
-            {
-              code: "Kappa",
-              urls: [{ url: "https://static-cdn.jtvnw.net/emoticons/v2/25/default/dark/1.0" }],
-            },
-          ],
-        };
-      }
+    mockFetch.mockImplementation(async () => {
       return { ok: true, json: async () => ({}), text: async () => "" };
     });
 
@@ -332,7 +303,7 @@ describe("useEmotes", () => {
 
   it("should evict channel token cache when loadChannelEmotes updates the channel", async () => {
     // Arrange
-    const text = "LUL hello world";
+    const text = "streamerLUL hello world";
     const channel = "streamer";
     mockFetch.mockImplementation(async (url: string) => {
       if (url?.includes("7tv.io/v3/users/kick/streamer")) {
@@ -340,7 +311,7 @@ describe("useEmotes", () => {
           ok: true,
           json: async () => ({
             emote_set: {
-              emotes: [{ id: "7tv-lul", name: "LUL" }],
+              emotes: [{ id: "7tv-lul", name: "streamerLUL" }],
             },
           }),
         };

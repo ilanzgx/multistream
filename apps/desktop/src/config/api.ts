@@ -31,9 +31,6 @@ export const API_CONFIG = {
     twitchAvatarUrl: (username: string) =>
       `https://decapi.me/twitch/avatar/${encodeURIComponent(username)}`,
   },
-  adamcy: {
-    twitchGlobalEmotesUrl: "https://emotes.adamcy.pl/v1/global/emotes/twitch",
-  },
 };
 
 export const REFRESH_CONFIG = {
