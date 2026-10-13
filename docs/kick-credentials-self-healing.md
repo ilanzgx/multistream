@@ -182,11 +182,15 @@ By default, Kick responds with Centrifugo connection parameters. To receive Push
 ```json
 {
   "data": {
-    "provider": "pusher",
-    "pusher": {
-      "key": "34bf7a0ff419a2a775b9",
-      "cluster": "us2"
-    }
+    "connections": [
+      {
+        "provider": "pusher",
+        "credentials": {
+          "app_key": "34bf7a0ff419a2a775b9",
+          "cluster": "us2"
+        }
+      }
+    ]
   }
 }
 ```
@@ -381,9 +385,9 @@ Kick frequently modifies Cloudflare WAF rules:
 
 | Component | File Path | Responsibility |
 | :--- | :--- | :--- |
-| **Error Definitions** | [`apps/desktop/src-tauri/src/kick/error.rs`](file:///d:/Estudos/Projetos/multistream/apps/desktop/src-tauri/src/kick/error.rs) | `KickError::InvalidPusherKey` enum variant |
-| **State & Models** | [`apps/desktop/src-tauri/src/kick/state.rs`](file:///d:/Estudos/Projetos/multistream/apps/desktop/src-tauri/src/kick/state.rs) | `KickPusherConfig` struct and `KickState` thread-safe fields |
-| **Discovery API** | [`apps/desktop/src-tauri/src/kick/api.rs`](file:///d:/Estudos/Projetos/multistream/apps/desktop/src-tauri/src/kick/api.rs) | `fetch_realtime_pusher_config` & response parser |
-| **WebSocket Loop** | [`apps/desktop/src-tauri/src/kick/pusher.rs`](file:///d:/Estudos/Projetos/multistream/apps/desktop/src-tauri/src/kick/pusher.rs) | Handshake error inspection, self-healing loop, disk caching |
-| **Developer CLI** | [`scripts/check-kick-keys.ts`](file:///d:/Estudos/Projetos/multistream/scripts/check-kick-keys.ts) | Upstream audit, WebSocket handshake verification, `--fix` cache sync |
-| **Documentation** | [`docs/kick-credentials-self-healing.md`](file:///d:/Estudos/Projetos/multistream/docs/kick-credentials-self-healing.md) | Full architectural specification |
+| **Error Definitions** | [`apps/desktop/src-tauri/src/kick/error.rs`](../apps/desktop/src-tauri/src/kick/error.rs) | `KickError::InvalidPusherKey` enum variant |
+| **State & Models** | [`apps/desktop/src-tauri/src/kick/state.rs`](../apps/desktop/src-tauri/src/kick/state.rs) | `KickPusherConfig` struct and `KickState` thread-safe fields |
+| **Discovery API** | [`apps/desktop/src-tauri/src/kick/api.rs`](../apps/desktop/src-tauri/src/kick/api.rs) | `fetch_realtime_pusher_config` & response parser |
+| **WebSocket Loop** | [`apps/desktop/src-tauri/src/kick/pusher.rs`](../apps/desktop/src-tauri/src/kick/pusher.rs) | Handshake error inspection, self-healing loop, disk caching |
+| **Developer CLI** | [`scripts/check-kick-keys.ts`](../scripts/check-kick-keys.ts) | Upstream audit, WebSocket handshake verification, `--fix` cache sync |
+| **Documentation** | [`docs/kick-credentials-self-healing.md`](kick-credentials-self-healing.md) | Full architectural specification |

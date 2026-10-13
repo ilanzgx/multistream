@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 interface PusherCredentials {
@@ -272,6 +274,16 @@ async function main() {
   }
 
   const livePusher = discovered.pusher;
+  if (
+    typeof livePusher.app_key !== "string" ||
+    !/^[a-f0-9]+$/.test(livePusher.app_key) ||
+    typeof livePusher.cluster !== "string" ||
+    !/^[a-z0-9]+$/.test(livePusher.cluster)
+  ) {
+    console.error("[ERROR] Discovered Pusher credentials have an invalid shape.");
+    process.exit(1);
+  }
+
   console.log(`[INFO] Live credentials retrieved via ${source}:`);
   console.log(`  Pusher Cluster:     ${livePusher.cluster}`);
   console.log(`  Pusher App Key:     ${livePusher.app_key}`);
@@ -314,6 +326,27 @@ async function main() {
         );
       await Bun.write(PUSHER_RS_PATH, updatedContent);
       console.log("[INFO] pusher.rs successfully updated!");
+
+      const configDir =
+        process.platform === "win32"
+          ? process.env.APPDATA
+          : process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config");
+      if (configDir) {
+        const cachePaths = [
+          path.join(configDir, "multistream", "kick_pusher_config.json"),
+          path.join(configDir, "multistream", "kick_pusher_config_dev.json"),
+        ];
+        for (const cPath of cachePaths) {
+          try {
+            if (fs.existsSync(cPath)) {
+              await Bun.write(cPath, JSON.stringify(livePusher, null, 2));
+              console.log(`[INFO] Synchronized runtime disk cache at: ${cPath}`);
+            }
+          } catch (err) {
+            console.warn(`[WARN] Could not update disk cache at ${cPath}:`, err);
+          }
+        }
+      }
     } else {
       console.log("\n[TIP] To automatically update pusher.rs with the active key, run:");
       console.log("  bun run kick:check --fix\n");
