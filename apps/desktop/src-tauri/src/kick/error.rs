@@ -17,6 +17,9 @@ pub enum KickError {
     #[error("WebSocket error: {0}")]
     WebSocket(String),
 
+    #[error("Invalid Pusher key: {0}")]
+    InvalidPusherKey(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }
