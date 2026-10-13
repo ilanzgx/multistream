@@ -11,7 +11,7 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 use super::error::KickError;
 use super::state::{KickPusherConfig, KickState};
 
-pub const DEFAULT_PUSHER_APP_KEY: &str = "34bf7a0ff419a2a775b9";
+pub const DEFAULT_PUSHER_APP_KEY: &str = "32cbd69e4b950bf97679";
 pub const DEFAULT_PUSHER_CLUSTER: &str = "us2";
 const PUSHER_CONFIG_KEY: &str = "kick_pusher_config";
 const JOIN_DELAY_MS: u64 = 150;
@@ -160,8 +160,10 @@ async fn heal_pusher_config(app: &AppHandle, failed_config: &KickPusherConfig) -
         }
     };
 
-    let resolved = match super::api::fetch_realtime_pusher_config(&http).await {
-        Ok(new_config) => Some(new_config),
+    let (new_config, is_live_discovery) = match super::api::fetch_realtime_pusher_config(&http)
+        .await
+    {
+        Ok(new_config) => (Some(new_config), true),
         Err(e) => {
             let cooldown = state
                 .pusher_heal_backoff
@@ -176,14 +178,14 @@ async fn heal_pusher_config(app: &AppHandle, failed_config: &KickPusherConfig) -
             let default_config = KickPusherConfig::default();
             if failed_config != &default_config {
                 clear_pusher_config();
-                Some(default_config)
+                (Some(default_config), false)
             } else {
-                None
+                (None, false)
             }
         }
     };
 
-    let Some(new_config) = resolved else {
+    let Some(new_config) = new_config else {
         return false;
     };
 
@@ -201,7 +203,9 @@ async fn heal_pusher_config(app: &AppHandle, failed_config: &KickPusherConfig) -
         return false;
     }
 
-    state.pusher_heal_backoff.lock().await.record_success();
+    if is_live_discovery {
+        state.pusher_heal_backoff.lock().await.record_success();
+    }
 
     log::info!(
         "[kick-pusher] self-healed Pusher config: key={} cluster={}",
@@ -215,6 +219,8 @@ async fn heal_pusher_config(app: &AppHandle, failed_config: &KickPusherConfig) -
         if let Err(e) = store_pusher_config(&new_config) {
             log::warn!("[kick-pusher] failed to persist new Pusher config: {}", e);
         }
+    } else {
+        clear_pusher_config();
     }
 
     true
@@ -252,7 +258,15 @@ pub async fn run_pusher_loop(
                 if let Err(e) = res {
                     log::warn!("[kick-pusher] connection error: {}", e);
                     if matches!(e, KickError::InvalidPusherKey(_)) {
-                        healed = heal_pusher_config(&app, &current_config).await;
+                        tokio::select! {
+                            h = heal_pusher_config(&app, &current_config) => {
+                                healed = h;
+                            }
+                            _ = &mut shutdown_rx => {
+                                log::info!("[kick-pusher] shutdown requested during healing, exiting loop");
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -666,5 +680,27 @@ mod tests {
         // Assert
         assert_eq!(backoff.failures, 0);
         assert!(backoff.can_attempt(t2));
+    }
+
+    #[test]
+    fn should_store_load_and_clear_pusher_config() {
+        // Arrange
+        let custom_config = KickPusherConfig {
+            app_key: "abcdef1234567890test".to_string(),
+            cluster: "eu".to_string(),
+        };
+
+        // Act & Assert 1: Store custom config
+        let res = store_pusher_config(&custom_config);
+        assert!(res.is_ok());
+
+        // Act & Assert 2: Load should return custom config
+        let loaded = load_pusher_config();
+        assert_eq!(loaded, custom_config);
+
+        // Act & Assert 3: Clear should remove file and fallback to default
+        clear_pusher_config();
+        let fallback = load_pusher_config();
+        assert_eq!(fallback, KickPusherConfig::default());
     }
 }
