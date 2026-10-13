@@ -48,7 +48,10 @@ pub struct PusherHealBackoff {
 
 impl PusherHealBackoff {
     pub fn can_attempt(&self, now: tokio::time::Instant) -> bool {
-        self.next_retry_at.is_none_or(|next| now >= next)
+        match self.next_retry_at {
+            Some(next) => now >= next,
+            None => true,
+        }
     }
 
     pub fn record_success(&mut self) {
