@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.19.4] - 2026-10-13
+
+### Bug Fixes
+
+- **kick**: Add reactive pusher key self-healing and disk cache ([261d63b](https://github.com/ilanzgx/multistream/commit/261d63bfa03dab0fca670380319ee43316890747))
+- **kick**: Ensure msrv 1.77.2 compatibility in heal backoff ([e72f678](https://github.com/ilanzgx/multistream/commit/e72f678a958f1ceb46239538741a2000e543fc26))
+- **kick**: Harden pusher heal cancellation, cooldown backoff, and cache persistence ([e8205cc](https://github.com/ilanzgx/multistream/commit/e8205cc66f5f671228322fc15a2d59036f081358))
+- **ui**: Prevent twitch login prompt flicker in sidebar ([d9536ed](https://github.com/ilanzgx/multistream/commit/d9536ed59954b8c3ea6a8f18d10df12e506a22c7))
+- **chat**: Replace defunct adamcy api with static twitch global emotes ([d7170aa](https://github.com/ilanzgx/multistream/commit/d7170aac82fcb6dc3d25b34fcf947d61269b55c2))
+
+
+### Documentation
+
+- **kick**: Document pusher credentials self-healing architecture ([135ffa6](https://github.com/ilanzgx/multistream/commit/135ffa64132f02a5ef808c4b94fa1fd27eae3a1c))
+
 ## [0.19.3] - 2026-10-12
 
 ### Bug Fixes
