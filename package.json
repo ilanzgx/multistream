@@ -32,6 +32,7 @@
     "lint:staged": "lint-staged",
     "check:i18n": "cd apps/desktop && bun run test -- keys.spec.ts",
     "check:endpoints": "bun run scripts/check-endpoints.ts",
+    "kick:check": "bun run scripts/check-kick-keys.ts",
     "i18n": "bun run scripts/i18n.ts",
     "i18n:check": "bun run scripts/i18n.ts check",
     "i18n:test": "cd apps/desktop && bun run test -- i18n-script.spec.ts",

@@ -124,6 +124,14 @@ After authenticating, `kick_set_channels` connects to Kick's Pusher WebSocket en
 
 `App\Events\ChatMessageEvent` events arrive with `data` as a **JSON string inside the outer Pusher JSON** (double-encoded). The backend parses it and emits `kick-chat-message`.
 
+#### Pusher Key Self-Healing & Disk Cache
+Kick occasionally rotates its public Pusher credentials or migrates clusters (as part of its gradual transition to Centrifugo). The backend handles this autonomously via a multi-tier self-healing mechanism:
+- **Zero-Latency Boot:** `KickState::new()` loads the cached configuration from `%APPDATA%\multistream\kick_pusher_config.json` (or `kick_pusher_config_dev.json` in debug builds). If absent or invalid, it falls back to the compiled default (`34bf7a0ff419a2a775b9` on cluster `us2`).
+- **Handshake Error 4001/4003 Detection:** `check_handshake_message` inspects incoming `pusher:error` text frames and WebSocket close codes during connection establishment. If Pusher rejects the key (`4001` / `4003` / `"not in this cluster"`), it returns `KickError::InvalidPusherKey`.
+- **Dynamic Realtime Negotiation:** Upon receiving `InvalidPusherKey`, `heal_pusher_config` queries Kick's internal realtime negotiation endpoint (`POST https://web.kick.com/api/v1/realtime/connection`) with `capabilities: { accepted_providers: [{ provider: "pusher" }] }` using `reqwest` (`rustls-tls` + Chrome User-Agent).
+- **Persistent Disk Caching:** The discovered `app_key` and `cluster` are validated for alphanumeric safety, updated in memory inside `KickState.pusher_config`, and written to the JSON file on disk. The connection loop resets `attempt = 0` and reconnects immediately. All subsequent application launches read the new key from disk, completely avoiding failed handshakes or boot latency.
+- **Developer CLI Auditor:** Run `bun run kick:check` (or `bun run kick:check --fix`) to audit and synchronize the compiled fallback constants against Kick's live infrastructure.
+
 ### Sending messages
 
 `kick_send_message` performs `POST https://api.kick.com/public/v1/chat`. On `401`/`403`, it automatically refreshes the token and retries — transparently to the frontend.

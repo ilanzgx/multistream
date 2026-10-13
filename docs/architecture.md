@@ -894,8 +894,14 @@ When a new version tag is pushed, the `release.yml` pipeline triggers:
 | `bun run extension:check` | Statically validate browser extension background syntax |
 | `bun run extension:pack` | Package browser extension into distribution zip archive |
 | `bun run i18n:check` | Verify key parity across all 10 localization files |
+| `bun run kick:check` | Audit Kick Pusher credentials and verify live WebSocket connection |
 | `bun run check:endpoints` | Probe health of external Twitch, Kick, and YouTube endpoints |
 | `bun run version <version>` | Synchronize semantic version across all 6 configuration files |
+
+### 8.2 Architecture Deep Dives
+
+- **YouTube Scraping & Detection Pipeline:** [`docs/youtube-live-architecture.md`](youtube-live-architecture.md)
+- **Kick Credentials & WebSocket Self-Healing:** [`docs/kick-credentials-self-healing.md`](kick-credentials-self-healing.md)
 
 ---
 

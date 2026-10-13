@@ -10,6 +10,7 @@ All scripts run with [Bun](https://bun.sh).
 | :--- | :--- | :--- |
 | `i18n.ts` | `bun run i18n <cmd>` | Manage translations across all 10 locale files |
 | `check-endpoints.ts` | `bun run check:endpoints` | Validate external streaming APIs, embeds, and CDNs |
+| `check-kick-keys.ts` | `bun run kick:check [--fix]` | Audit and auto-update the Kick Pusher fallback key and cluster |
 | `sync-version.ts` | `bun run version <version>` | Bump version across root, desktop, website, and Tauri |
 
 ---
