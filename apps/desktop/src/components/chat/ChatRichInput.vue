@@ -39,7 +39,7 @@ function extractPlainText(node: Node): string {
       }
     }
   }
-  return text.replace(/\r?\n+/g, " ");
+  return text.replace(/\n+$/, "").replace(/\r?\n+/g, " ");
 }
 
 function getSelectionOffsetsWithin(element: HTMLElement) {
@@ -144,10 +144,16 @@ function onInput() {
   const plainText = extractPlainText(editorRef.value);
   emit("update:modelValue", plainText);
 
-  const expectedHtml = toHtml(plainText);
-  if (editorRef.value.innerHTML !== expectedHtml) {
+  const domEmotes = Array.from(
+    editorRef.value.querySelectorAll<HTMLImageElement>("img[data-emote-name]")
+  ).map((img) => img.dataset.emoteName || "");
+  const textEmotes = plainText.split(/\s+/).filter((word) => word && props.emotes.get(word)?.url);
+  const emotesChanged =
+    domEmotes.length !== textEmotes.length || domEmotes.some((name, i) => name !== textEmotes[i]);
+
+  if (emotesChanged) {
     const offsets = getSelectionOffsetsWithin(editorRef.value);
-    editorRef.value.innerHTML = expectedHtml;
+    editorRef.value.innerHTML = toHtml(plainText);
     setCaretPosition(editorRef.value, offsets.end);
     selectionOffsets.value = offsets;
   } else {
@@ -157,15 +163,38 @@ function onInput() {
 }
 
 function onKeyDown(e: KeyboardEvent) {
-  if (e.key === "Enter" && !e.shiftKey) {
+  if (e.key === "Enter") {
     e.preventDefault();
-    emit("submit");
+    if (!e.shiftKey) {
+      emit("submit");
+    }
+    return;
+  }
+
+  if (e.key === " " && (!editorRef.value || !extractPlainText(editorRef.value).trim())) {
+    e.preventDefault();
+  }
+}
+
+function onBlur() {
+  if (!editorRef.value) return;
+  const plainText = extractPlainText(editorRef.value);
+  if (!plainText.trim()) {
+    editorRef.value.innerHTML = "";
+    emit("update:modelValue", "");
+    selectionOffsets.value = { start: 0, end: 0 };
+    hasUserInteracted.value = false;
   }
 }
 
 function onPaste(e: ClipboardEvent) {
   e.preventDefault();
-  const text = e.clipboardData?.getData("text/plain") || "";
+  const rawText = e.clipboardData?.getData("text/plain") || "";
+  const currentText = editorRef.value ? extractPlainText(editorRef.value) : "";
+  const sanitizedText = !currentText.trim() ? rawText.trimStart() : rawText;
+  const text = sanitizedText.replace(/\r?\n+/g, " ");
+  if (!text) return;
+
   const selection = window.getSelection();
   if (selection && selection.rangeCount > 0) {
     const range = selection.getRangeAt(0);
@@ -216,9 +245,13 @@ watch(
     if (!newVal) {
       selectionOffsets.value = { start: 0, end: 0 };
       hasUserInteracted.value = false;
+      if (editorRef.value) {
+        editorRef.value.innerHTML = "";
+      }
+      return;
     }
     if (editorRef.value && extractPlainText(editorRef.value) !== newVal) {
-      editorRef.value.innerHTML = toHtml(newVal || "");
+      editorRef.value.innerHTML = toHtml(newVal);
     }
   }
 );
@@ -299,7 +332,7 @@ export default {
 <template>
   <div class="relative flex items-center w-full min-w-0">
     <div
-      v-if="!modelValue && placeholder"
+      v-if="!modelValue?.trim() && placeholder"
       class="absolute left-[13px] top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none select-none"
     >
       {{ placeholder }}
@@ -316,6 +349,7 @@ export default {
       @keydown="onKeyDown"
       @keyup="handleSelectionChange"
       @pointerup="handleSelectionChange"
+      @blur="onBlur"
       @paste="onPaste"
       @copy="onCopy"
       @cut="onCut"
