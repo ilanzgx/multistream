@@ -301,7 +301,28 @@ describe("useUpdater composable unit tests", () => {
       expect(tauriProcess.relaunch).toHaveBeenCalled();
     });
 
-    it("should handle exceptions internally during installation and throw error toast", async () => {
+    it("should persist pending changelog version before downloadAndInstall resolves (Windows process exit)", async () => {
+      // Arrange
+      let persistedBeforeInstallExit = false;
+      const mockUpdate = {
+        version: "2.0.0",
+        downloadAndInstall: vi.fn().mockImplementation(async () => {
+          persistedBeforeInstallExit =
+            mockSetPendingChangelogVersion.mock.calls.length === 1 &&
+            mockSetPendingChangelogVersion.mock.calls[0]?.[0] === "2.0.0";
+        }),
+      };
+      vi.mocked(tauriUpdater.check).mockResolvedValueOnce(mockUpdate as any);
+      await sut.checkForUpdates();
+
+      // Act
+      await sut.installUpdate();
+
+      // Assert
+      expect(persistedBeforeInstallExit).toBe(true);
+    });
+
+    it("should handle exceptions internally during installation, clear pending changelog version, and throw error toast", async () => {
       // Arrange
       const mockUpdate = {
         version: "2.1.0",
@@ -314,6 +335,8 @@ describe("useUpdater composable unit tests", () => {
       await sut.installUpdate();
 
       // Assert
+      expect(mockSetPendingChangelogVersion).toHaveBeenNthCalledWith(1, "2.1.0");
+      expect(mockSetPendingChangelogVersion).toHaveBeenNthCalledWith(2, "");
       expect(consoleErrorSpy).toHaveBeenCalledWith("Failed to install update:", expect.any(Error));
       expect(toast.error).toHaveBeenCalledWith("toasts.update.failedUpdate", {
         id: "update-download",

@@ -140,5 +140,49 @@ describe("changelogParser unit tests", () => {
       expect(result.sections[0]?.items).toHaveLength(1);
       expect(result.sections[1]?.items).toHaveLength(1);
     });
+
+    it("should parse introductory paragraphs and blockquote notes within a section", () => {
+      // Arrange (matching v0.19.4 real release structure)
+      const rawMarkdown = [
+        "## Emergency Fix for Kick Chat & Built-in Twitch Emotes",
+        "",
+        "This is an urgent release addressing broken Kick chat connections caused by Kick suddenly retiring its 3-year-old public connection key, alongside a permanent fix for Twitch global emotes.",
+        "",
+        "- **Self-healing Kick chat connection:** Restores real-time Kick chat.",
+        "",
+        "> **Note**: If your Kick chat was disconnected, updating brings your chat back online.",
+        "",
+        "## Downloads",
+        "| Platform | Download |",
+      ].join("\n");
+
+      // Act
+      const result = parseReleaseNotes(rawMarkdown);
+
+      // Assert
+      expect(result.isMaintenance).toBe(false);
+      expect(result.sections).toHaveLength(1);
+      const section = result.sections[0]!;
+      expect(section.title).toBe("Emergency Fix for Kick Chat & Built-in Twitch Emotes");
+      expect(section.paragraphs).toBeDefined();
+      expect(section.paragraphs).toHaveLength(1);
+      expect(section.paragraphs![0]).toEqual([
+        {
+          type: "text",
+          content:
+            "This is an urgent release addressing broken Kick chat connections caused by Kick suddenly retiring its 3-year-old public connection key, alongside a permanent fix for Twitch global emotes.",
+        },
+      ]);
+      expect(section.items).toHaveLength(1);
+      expect(section.notes).toBeDefined();
+      expect(section.notes).toHaveLength(1);
+      expect(section.notes![0]).toEqual([
+        { type: "bold", content: "Note" },
+        {
+          type: "text",
+          content: ": If your Kick chat was disconnected, updating brings your chat back online.",
+        },
+      ]);
+    });
   });
 });

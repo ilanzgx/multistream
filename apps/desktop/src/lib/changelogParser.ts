@@ -6,7 +6,9 @@ export type InlineSegment =
 
 export interface ChangelogSection {
   title: string;
+  paragraphs?: InlineSegment[][];
   items: InlineSegment[][];
+  notes?: InlineSegment[][];
 }
 
 export interface ParsedChangelog {
@@ -68,36 +70,95 @@ export function parseReleaseNotes(rawBody: string): ParsedChangelog {
 
   const sections: ChangelogSection[] = [];
   let currentSection: ChangelogSection | null = null;
+  let currentParagraphLines: string[] = [];
+  let currentNoteLines: string[] = [];
+
+  const flushParagraph = () => {
+    if (currentParagraphLines.length > 0) {
+      if (!currentSection) {
+        currentSection = { title: "", paragraphs: [], items: [], notes: [] };
+        sections.push(currentSection);
+      }
+      currentSection.paragraphs ??= [];
+      currentSection.paragraphs.push(parseInlineSegments(currentParagraphLines.join(" ")));
+      currentParagraphLines = [];
+    }
+  };
+
+  const flushNote = () => {
+    if (currentNoteLines.length > 0) {
+      if (!currentSection) {
+        currentSection = { title: "", paragraphs: [], items: [], notes: [] };
+        sections.push(currentSection);
+      }
+      currentSection.notes ??= [];
+      currentSection.notes.push(parseInlineSegments(currentNoteLines.join(" ")));
+      currentNoteLines = [];
+    }
+  };
+
+  const flushAll = () => {
+    flushParagraph();
+    flushNote();
+  };
 
   for (const rawLine of cleanBody.split("\n")) {
     const line = rawLine.trim();
-    if (!line) continue;
+
+    if (!line) {
+      flushAll();
+      continue;
+    }
 
     const headingMatch = /^#{2,3}\s+(.+)$/.exec(line);
     if (headingMatch?.[1]) {
+      flushAll();
       currentSection = {
         title: headingMatch[1].trim(),
+        paragraphs: [],
         items: [],
+        notes: [],
       };
       sections.push(currentSection);
       continue;
     }
 
     if (/^(?:[-*_]\s*){3,}$/.test(line)) {
+      flushAll();
       continue;
     }
 
     const bulletMatch = /^[-*]\s+(.+)$/.exec(line);
     if (bulletMatch?.[1]) {
+      flushAll();
       if (!currentSection) {
-        currentSection = { title: "", items: [] };
+        currentSection = { title: "", paragraphs: [], items: [], notes: [] };
         sections.push(currentSection);
       }
       currentSection.items.push(parseInlineSegments(bulletMatch[1].trim()));
+      continue;
     }
+
+    const noteMatch = /^>\s*(.+)$/.exec(line);
+    if (noteMatch?.[1]) {
+      flushParagraph();
+      currentNoteLines.push(noteMatch[1].trim());
+      continue;
+    }
+
+    flushNote();
+    currentParagraphLines.push(line);
   }
 
-  const populatedSections = sections.filter((section) => section.items.length > 0);
+  flushAll();
+
+  const populatedSections = sections.filter(
+    (section) =>
+      section.items.length > 0 ||
+      (section.paragraphs && section.paragraphs.length > 0) ||
+      (section.notes && section.notes.length > 0)
+  );
+
   if (populatedSections.length === 0) {
     return { sections: [], isMaintenance: true };
   }

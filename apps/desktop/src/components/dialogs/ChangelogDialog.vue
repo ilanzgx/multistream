@@ -251,7 +251,38 @@ watch(
             >
               {{ section.title }}
             </h3>
-            <ul class="space-y-2">
+
+            <!-- Section Paragraphs / Overview -->
+            <div v-if="section.paragraphs?.length" class="space-y-2">
+              <p
+                v-for="(segments, pIdx) in section.paragraphs"
+                :key="pIdx"
+                class="text-xs sm:text-sm text-gray-300 leading-relaxed break-words"
+              >
+                <template v-for="(seg, segIdx) in segments" :key="segIdx">
+                  <strong v-if="seg.type === 'bold'" class="font-semibold text-white">{{
+                    seg.content
+                  }}</strong>
+                  <code
+                    v-else-if="seg.type === 'code'"
+                    class="px-1.5 py-0.5 rounded bg-[#1f2227] border border-[#2a2d33] text-gray-200 font-mono text-xs"
+                    >{{ seg.content }}</code
+                  >
+                  <button
+                    v-else-if="seg.type === 'link'"
+                    type="button"
+                    class="inline font-mono text-xs text-gray-200 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded-xs"
+                    @click="openExternalLink(seg.url)"
+                  >
+                    {{ seg.text }}
+                  </button>
+                  <span v-else>{{ seg.content }}</span>
+                </template>
+              </p>
+            </div>
+
+            <!-- Bullet Items -->
+            <ul v-if="section.items?.length" class="space-y-2">
               <li
                 v-for="(segments, iIdx) in section.items"
                 :key="iIdx"
@@ -281,6 +312,35 @@ watch(
                 </div>
               </li>
             </ul>
+
+            <!-- Notes / Blockquotes -->
+            <div v-if="section.notes?.length" class="space-y-2 pt-1">
+              <div
+                v-for="(segments, nIdx) in section.notes"
+                :key="nIdx"
+                class="py-2.5 px-3 rounded-lg bg-[#181a1f] border border-[#2a2d33]/80 text-xs text-gray-300 leading-relaxed break-words"
+              >
+                <template v-for="(seg, segIdx) in segments" :key="segIdx">
+                  <strong v-if="seg.type === 'bold'" class="font-semibold text-white">{{
+                    seg.content
+                  }}</strong>
+                  <code
+                    v-else-if="seg.type === 'code'"
+                    class="px-1.5 py-0.5 rounded bg-[#1f2227] border border-[#2a2d33] text-gray-200 font-mono text-xs"
+                    >{{ seg.content }}</code
+                  >
+                  <button
+                    v-else-if="seg.type === 'link'"
+                    type="button"
+                    class="inline font-mono text-xs text-gray-200 underline decoration-white/30 underline-offset-2 hover:text-white hover:decoration-white transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 rounded-xs"
+                    @click="openExternalLink(seg.url)"
+                  >
+                    {{ seg.text }}
+                  </button>
+                  <span v-else>{{ seg.content }}</span>
+                </template>
+              </div>
+            </div>
           </section>
         </div>
       </div>

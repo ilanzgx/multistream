@@ -218,8 +218,12 @@ onMounted(async () => {
     }
     showOnboarding.value = true;
   } else if (pendingChangelogVersion.value) {
+    const normalizedPending = pendingChangelogVersion.value.replace(/^v/, "").trim();
+    const normalizedCurrent = (import.meta.env.VITE_APP_VERSION || "").replace(/^v/, "").trim();
     setPendingChangelogVersion("");
-    showChangelog.value = true;
+    if (!normalizedCurrent || normalizedPending === normalizedCurrent) {
+      showChangelog.value = true;
+    }
   }
 
   // check for updates on startup

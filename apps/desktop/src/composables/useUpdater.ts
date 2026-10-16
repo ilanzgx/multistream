@@ -88,6 +88,8 @@ export function useUpdater() {
     let lastToastUpdate = 0;
 
     try {
+      setPendingChangelogVersion(currentUpdate.version);
+
       toast.custom(
         h(UpdateProgress, {
           downloaded: downloadProgress.value,
@@ -138,8 +140,6 @@ export function useUpdater() {
         }
       });
 
-      setPendingChangelogVersion(currentUpdate.version);
-
       toast.success(`${t("toasts.update.success")}`, {
         id: "update-download",
         description: "",
@@ -149,6 +149,7 @@ export function useUpdater() {
         await relaunch();
       }, 1500);
     } catch (error) {
+      setPendingChangelogVersion("");
       console.error("Failed to install update:", error);
       toast.error(`${t("toasts.update.failedUpdate")}`, {
         id: "update-download",
