@@ -11,6 +11,7 @@ import { useMediaCodecs } from "./composables/useMediaCodecs";
 import { useRecording } from "./composables/useRecording";
 import { useDeepLink } from "./composables/useDeepLink";
 import { useNetworkStatus } from "./composables/useNetworkStatus";
+import { useImmersiveMode } from "./composables/useImmersiveMode";
 import ToastProvider from "./components/ui/toast/ToastProvider.vue";
 import FollowedChannelsSidebar from "./components/main/FollowedChannelsSidebar.vue";
 import SidebarPanel from "./components/main/SidebarPanel.vue";
@@ -83,6 +84,25 @@ const { checkVideoCodecs } = useMediaCodecs();
 const { checkDependencies } = useRecording();
 const { locale, t } = useI18n();
 const { isOnline, onReconnect } = useNetworkStatus();
+const {
+  immersiveModeEnabled,
+  isLeftPanelRevealed,
+  isRightPanelRevealed,
+  revealLeftPanel,
+  revealRightPanel,
+  toggleFullscreen,
+  handleEscape,
+} = useImmersiveMode();
+
+function isModalDialogOpen(): boolean {
+  return (
+    showOnboarding.value ||
+    showTwitchAuth.value ||
+    showKickAuth.value ||
+    showChangelog.value ||
+    Boolean(document.querySelector('[role="dialog"]'))
+  );
+}
 
 onReconnect(() => {
   toast.success(t("network.reconnected"), { id: "network-reconnected", duration: 3000 });
@@ -96,6 +116,21 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
   const target = e.target as HTMLElement;
   if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
     return;
+  }
+
+  // F11: toggle fullscreen
+  if (e.key === "F11") {
+    e.preventDefault();
+    toggleFullscreen();
+    return;
+  }
+
+  // Escape: exit immersive mode / auto-hide revealed panels if no modal dialog is open
+  if (e.key === "Escape") {
+    if (!isModalDialogOpen()) {
+      handleEscape();
+      return;
+    }
   }
 
   const num = parseInt(e.key, 10);
@@ -126,6 +161,18 @@ function handleGlobalKeyDown(e: KeyboardEvent) {
 function handleFrameShortcuts(e: MessageEvent) {
   if (e.data?.type !== "SHORTCUT" || showOnboarding.value) return;
 
+  if (e.data?.key === "F11") {
+    toggleFullscreen();
+    return;
+  }
+
+  if (e.data?.key === "Escape") {
+    if (!isModalDialogOpen()) {
+      handleEscape();
+      return;
+    }
+  }
+
   // 1-9: quick select chat
   const num = parseInt(e.data.key, 10);
   if (num >= 1 && num <= 9) {
@@ -151,6 +198,15 @@ function handleFrameShortcuts(e: MessageEvent) {
     );
   }
 }
+
+watch(immersiveModeEnabled, (enabled) => {
+  if (enabled) {
+    toast.info(t("settings.immersive.toastEnabled"), {
+      id: "immersive-mode-toast",
+      duration: 3500,
+    });
+  }
+});
 
 watch(streams, (newStreams) => {
   if (newStreams.length === 0) {
@@ -339,9 +395,23 @@ onUnmounted(() => {
     <!-- sidebar -->
     <SidebarPanel ref="sidebarRef" />
 
+    <!-- edge hover trigger zones for immersive mode -->
+    <div
+      v-if="immersiveModeEnabled && !isLeftPanelRevealed"
+      data-testid="immersive-left-trigger"
+      class="fixed inset-y-0 left-0 w-3.5 z-40 pointer-events-auto"
+      @mouseenter="revealLeftPanel"
+    />
+    <div
+      v-if="immersiveModeEnabled && !isRightPanelRevealed"
+      data-testid="immersive-right-trigger"
+      class="fixed inset-y-0 right-0 w-3.5 z-40 pointer-events-auto"
+      @mouseenter="revealRightPanel"
+    />
+
     <!-- toggle button -->
     <button
-      v-if="!sidebarOpen"
+      v-if="!sidebarOpen && !immersiveModeEnabled"
       :aria-label="$t('sidebar.openSidebar')"
       class="fixed right-0 top-5/12 -translate-y-1/2 flex items-center justify-center w-8 py-6 bg-[#14161a] border border-r-0 border-[#2a2d33] rounded-l-lg shadow-xl shadow-black/30 cursor-pointer transition-all duration-300 hover:w-8 hover:bg-[#1c1f24] hover:border-[#3a3f4b] hover:shadow-black/50 group animate-in fade-in slide-in-from-right-2"
       @click="sidebarOpen = true"

@@ -5,6 +5,7 @@ import { useStreams, type Stream } from "@/composables/useStreams";
 import { useLiveStatus } from "@/composables/useLiveStatus";
 import { useTranscription } from "@/composables/useTranscription";
 import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
+import { useImmersiveMode } from "@/composables/useImmersiveMode";
 import { isTauri } from "@/composables/useUpdater";
 import { Button } from "@/components/ui/button";
 const KickChat = defineAsyncComponent(() => import("@/components/chat/KickChat.vue"));
@@ -37,6 +38,8 @@ import {
   ImportIcon as Import,
   PanelRightClose,
   Loader2,
+  Maximize2,
+  Minimize2,
 } from "@lucide/vue";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
@@ -97,6 +100,28 @@ const { streams } = useStreams();
 const chatableStreams = computed(() => streams.value.filter((s) => s.platform !== "custom"));
 const { unifiedChatState } = useUnifiedChatState();
 const { selectedChat, sidebarOpen } = usePreferences();
+
+const {
+  immersiveModeEnabled,
+  isRightPanelRevealed,
+  revealRightPanel,
+  scheduleHideRightPanel,
+  toggleImmersiveMode,
+} = useImmersiveMode();
+
+const isSelectOpen = ref(false);
+
+const onPanelMouseEnter = () => {
+  if (immersiveModeEnabled.value) {
+    revealRightPanel();
+  }
+};
+
+const onPanelMouseLeave = () => {
+  if (immersiveModeEnabled.value && !isSelectOpen.value) {
+    scheduleHideRightPanel();
+  }
+};
 
 watch(
   selectedChat,
@@ -205,31 +230,40 @@ onUnmounted(() => {
 
 <template>
   <aside
-    class="shadow-lg transition-all duration-200 flex flex-col overflow-hidden border-l border-[#2a2d33]"
-    :class="sidebarOpen ? 'w-80' : 'w-0'"
+    :class="[
+      immersiveModeEnabled
+        ? [
+            'fixed inset-y-0 right-0 z-50 w-80 bg-[#14161a] border-l border-[#2a2d33] shadow-2xl shadow-black/80 transition-transform duration-250 ease-out',
+            isRightPanelRevealed ? 'translate-x-0' : 'translate-x-full pointer-events-none',
+          ]
+        : [
+            'shadow-lg transition-all duration-200 flex flex-col overflow-hidden border-l border-[#2a2d33] bg-[#14161a]',
+            sidebarOpen ? 'w-80' : 'w-0',
+          ],
+    ]"
+    @mouseenter="onPanelMouseEnter"
+    @mouseleave="onPanelMouseLeave"
   >
     <div
-      :key="sidebarOpen ? 'open' : 'closed'"
       class="flex flex-col h-full min-w-80"
       :style="{
-        opacity: sidebarOpen ? 1 : 0,
-        transition: sidebarOpen ? 'opacity 150ms' : 'opacity 50ms',
+        opacity: immersiveModeEnabled || sidebarOpen ? 1 : 0,
+        transition: immersiveModeEnabled || sidebarOpen ? 'opacity 150ms' : 'opacity 50ms',
       }"
     >
       <!-- stream selector -->
       <div
-        class="px-4 pt-4 border-[#1f2227]"
-        :class="sidebarMode === 'chat' ? 'pb-4 border-b' : 'pb-3'"
+        class="px-4 pt-3.5 border-[#1f2227]"
+        :class="sidebarMode === 'chat' ? 'pb-3.5 border-b' : 'pb-3'"
       >
         <div
-          class="flex items-center mb-3 px-1 transition-all duration-300"
-          :class="transcriptionActive ? 'justify-between' : 'justify-center'"
+          v-if="transcriptionActive"
+          class="flex items-center justify-between mb-3 px-1 transition-all duration-300"
         >
           <p class="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
             {{ $t("chat.controlTitle") }}
           </p>
           <div
-            v-if="transcriptionActive"
             class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono tracking-wider uppercase transition-all duration-300 border"
             :class="{
               'bg-green-500/10 border-green-500/20 text-green-400':
@@ -255,7 +289,7 @@ onUnmounted(() => {
         </div>
 
         <Tabs v-if="isTauri() && isSupported" v-model="sidebarMode" class="w-full">
-          <TabsList class="grid w-full grid-cols-2 bg-[#1e2127]">
+          <TabsList class="grid w-full grid-cols-2 bg-[#1f2227]">
             <TabsTrigger
               value="chat"
               class="data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white text-gray-400"
@@ -272,8 +306,18 @@ onUnmounted(() => {
           </TabsList>
         </Tabs>
 
-        <div v-show="sidebarMode === 'chat'" class="mt-3">
-          <Select v-model="selectedChat">
+        <div v-show="sidebarMode === 'chat'" :class="isTauri() && isSupported ? 'mt-2.5' : ''">
+          <Select
+            v-model="selectedChat"
+            @update:open="
+              (val: boolean) => {
+                isSelectOpen = val;
+                if (!val && immersiveModeEnabled) {
+                  scheduleHideRightPanel();
+                }
+              }
+            "
+          >
             <SelectTrigger
               class="w-full bg-[#14161a] text-white border-[#2a2d33] hover:border-[#3a3f4b]"
             >
@@ -392,20 +436,20 @@ onUnmounted(() => {
       </div>
 
       <!-- action buttons -->
-      <div class="p-5 border-t border-[#1f2227]">
+      <div class="px-4 py-3.5 border-t border-[#1f2227]">
         <TooltipProvider>
-          <div class="grid grid-cols-5 gap-3">
+          <div class="grid grid-cols-6 gap-2">
             <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
                   data-testid="add-stream-btn"
                   :aria-label="$t('add.tooltip')"
-                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
+                  class="group aspect-square h-auto w-full p-0 flex items-center justify-center rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="addDialogOpen = true"
                 >
                   <UserPlus2
-                    class="size-5 text-white transition-transform duration-300 group-hover:scale-110"
+                    class="size-4.5 text-white transition-transform duration-300 group-hover:scale-110"
                   />
                 </Button>
               </TooltipTrigger>
@@ -417,14 +461,14 @@ onUnmounted(() => {
             <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
-                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
+                  class="group aspect-square h-auto w-full p-0 flex items-center justify-center rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   data-testid="settings-btn"
                   :aria-label="$t('settings.title')"
                   @click="settingsDialogOpen = true"
                 >
                   <Settings
-                    class="size-5 text-white transition-transform duration-300 group-hover:rotate-90"
+                    class="size-4.5 text-white transition-transform duration-300 group-hover:rotate-90"
                   />
                 </Button>
               </TooltipTrigger>
@@ -438,12 +482,12 @@ onUnmounted(() => {
                 <Button
                   data-testid="share-dialog-btn"
                   :aria-label="$t('share.tooltip')"
-                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
+                  class="group aspect-square h-auto w-full p-0 flex items-center justify-center rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="shareDialogOpen = true"
                 >
                   <Share2
-                    class="size-5 text-white transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110"
+                    class="size-4.5 text-white transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110"
                   />
                 </Button>
               </TooltipTrigger>
@@ -457,12 +501,12 @@ onUnmounted(() => {
                 <Button
                   data-testid="import-dialog-btn"
                   :aria-label="$t('import.tooltip')"
-                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
+                  class="group aspect-square h-auto w-full p-0 flex items-center justify-center rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   @click="importDialogOpen = true"
                 >
                   <Import
-                    class="size-5 text-white transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110"
+                    class="size-4.5 text-white transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:scale-110"
                   />
                 </Button>
               </TooltipTrigger>
@@ -474,13 +518,37 @@ onUnmounted(() => {
             <Tooltip :disable-hoverable-content="true">
               <TooltipTrigger as-child>
                 <Button
-                  class="group h-11 w-full rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
+                  data-testid="immersive-mode-btn"
+                  :aria-label="
+                    immersiveModeEnabled ? $t('immersive.exitTooltip') : $t('immersive.tooltip')
+                  "
+                  class="group aspect-square h-auto w-full p-0 flex items-center justify-center rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
+                  variant="outline"
+                  @click="toggleImmersiveMode"
+                >
+                  <component
+                    :is="immersiveModeEnabled ? Minimize2 : Maximize2"
+                    class="size-4.5 text-white transition-transform duration-300 group-hover:scale-110"
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {{ immersiveModeEnabled ? $t("immersive.exitTooltip") : $t("immersive.tooltip") }}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip :disable-hoverable-content="true">
+              <TooltipTrigger as-child>
+                <Button
+                  class="group aspect-square h-auto w-full p-0 flex items-center justify-center rounded-xl border-[#2a2d33] bg-[#14161a] hover:bg-[#1c1f24] hover:border-[#3a3f4b] transition-all duration-200"
                   variant="outline"
                   :aria-label="$t('hide.tooltip')"
                   @click="sidebarOpen = !sidebarOpen"
                 >
                   <PanelRightClose
-                    class="size-5 text-white transition-transform duration-300 group-hover:translate-x-0.5 group-hover:scale-110"
+                    class="size-4.5 text-white transition-transform duration-300 group-hover:translate-x-0.5 group-hover:scale-110"
                   />
                 </Button>
               </TooltipTrigger>
@@ -492,7 +560,7 @@ onUnmounted(() => {
         </TooltipProvider>
 
         <!-- version -->
-        <div v-if="appVersion" class="mt-5 flex items-center justify-center gap-3">
+        <div v-if="appVersion" class="mt-3.5 flex items-center justify-center gap-3">
           <div class="h-px flex-1 bg-linear-to-r from-transparent to-[#2a2d33]" />
           <span
             class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 select-none"

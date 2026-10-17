@@ -18,6 +18,7 @@ import { useTwitchAuth } from "../../composables/useTwitchAuth";
 import { useStreams } from "../../composables/useStreams";
 import { usePreferences } from "../../composables/usePreferences";
 import { useNetworkStatus } from "../../composables/useNetworkStatus";
+import { useImmersiveMode } from "@/composables/useImmersiveMode";
 import { CDN_CONFIG } from "@/config/cdn";
 
 const { channels, isLoading, isInitialLoading, platformFilter, refresh } = useFollowedChannels();
@@ -26,6 +27,20 @@ const { addStream } = useStreams();
 const { t, locale } = useI18n();
 const { authenticated: isTwitchAuth, isReady: isTwitchAuthReady } = useTwitchAuth();
 const { followedSidebarOpen: isOpen, toggleFollowedSidebar } = usePreferences();
+const { immersiveModeEnabled, isLeftPanelRevealed, revealLeftPanel, scheduleHideLeftPanel } =
+  useImmersiveMode();
+
+const onPanelMouseEnter = () => {
+  if (immersiveModeEnabled.value) {
+    revealLeftPanel();
+  }
+};
+
+const onPanelMouseLeave = () => {
+  if (immersiveModeEnabled.value) {
+    scheduleHideLeftPanel();
+  }
+};
 
 const liveChannels = computed(() => channels.value.filter((c) => c.isLive));
 
@@ -78,15 +93,27 @@ const handleAvatarError = (event: Event, displayName: string) => {
 
 <template>
   <div
-    class="shrink-0 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative transition-all duration-300"
-    :class="isOpen ? 'w-56' : 'w-14'"
+    :class="[
+      immersiveModeEnabled
+        ? [
+            'fixed inset-y-0 left-0 z-50 flex flex-col bg-[#14161a] border-r border-[#2a2d33] shadow-2xl shadow-black/80 transition-transform duration-250 ease-out',
+            isOpen ? 'w-56' : 'w-14',
+            isLeftPanelRevealed ? 'translate-x-0' : '-translate-x-full pointer-events-none',
+          ]
+        : [
+            'shrink-0 ease-in-out border-r border-[#2a2d33] bg-[#14161a] h-full flex flex-col z-20 relative transition-all duration-300',
+            isOpen ? 'w-56' : 'w-14',
+          ],
+    ]"
+    @mouseenter="onPanelMouseEnter"
+    @mouseleave="onPanelMouseLeave"
   >
     <div
       class="h-12 flex items-center px-2 border-b border-[#1f2227] shrink-0"
       :class="isOpen ? 'justify-between' : 'justify-center'"
     >
       <div v-if="isOpen" class="flex items-center gap-2 min-w-0">
-        <Radio class="w-4 h-4 text-gray-400 shrink-0" />
+        <Radio class="w-3.5 h-3.5 text-gray-400 shrink-0" />
         <span class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 truncate">{{
           t("sidebar.followedChannels")
         }}</span>
