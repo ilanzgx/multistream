@@ -201,7 +201,7 @@ function handleFrameShortcuts(e: MessageEvent) {
 
 watch(immersiveModeEnabled, (enabled) => {
   if (enabled) {
-    toast.info(t("settings.immersive.toastEnabled"), {
+    toast.info(t("preferences.immersive.toastEnabled"), {
       id: "immersive-mode-toast",
       duration: 3500,
     });

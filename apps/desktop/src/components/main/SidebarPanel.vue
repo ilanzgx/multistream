@@ -230,6 +230,7 @@ onUnmounted(() => {
 
 <template>
   <aside
+    :inert="immersiveModeEnabled && !isRightPanelRevealed"
     :class="[
       immersiveModeEnabled
         ? [

@@ -210,12 +210,6 @@
       "streamError": "Kayıt hatası: {error}",
       "customNotSupported": "Özel yayınlar için kayıt desteklenmez.",
       "orphanFound": "{count} eksik kayıt bulundu"
-    },
-    "immersive": {
-      "title": "Sürükleyici Mod",
-      "description": "Yayın alanını en üst düzeye çıkarmak için kenar çubuklarını otomatik gizle. Panelleri görmek için kenarlara gelin",
-      "toastEnabled": "Sürükleyici mod etkinleştirildi — kenarlara gelin veya çıkmak için F11 / Esc tuşuna basın",
-      "toastDisabled": "Sürükleyici mod devre dışı bırakıldı"
     }
   },
   "share": {

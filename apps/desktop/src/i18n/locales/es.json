@@ -210,12 +210,6 @@
       "streamError": "Error de grabación: {error}",
       "customNotSupported": "La grabación no es compatible con streams personalizados.",
       "orphanFound": "Se encontró(aron) {count} grabación(es) incompleta(s)"
-    },
-    "immersive": {
-      "title": "Modo Inmersivo",
-      "description": "Oculta automáticamente las barras laterales para maximizar las transmisiones. Pasa el cursor por los bordes para mostrarlas",
-      "toastEnabled": "Modo inmersivo activado — acerca el cursor a los bordes o presiona F11 / Esc para salir",
-      "toastDisabled": "Modo inmersivo desactivado"
     }
   },
   "share": {

@@ -96,7 +96,7 @@ const _useImmersiveMode = () => {
         } else if (document.fullscreenElement) {
           await document.exitFullscreen?.();
         }
-        isFullscreen.value = nextState;
+        isFullscreen.value = Boolean(document.fullscreenElement);
       } catch (err) {
         console.warn("Failed to toggle browser fullscreen:", err);
       }

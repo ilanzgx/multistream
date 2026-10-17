@@ -210,12 +210,6 @@
       "streamError": "Aufnahmefehler: {error}",
       "customNotSupported": "Aufnahme wird für benutzerdefinierte Streams nicht unterstützt.",
       "orphanFound": "{count} unvollständige Aufnahme(n) gefunden"
-    },
-    "immersive": {
-      "title": "Immersiver Modus",
-      "description": "Seitenleisten automatisch ausblenden, um den Stream-Bereich zu maximieren. Ränder berühren, um Leisten anzuzeigen",
-      "toastEnabled": "Immersiver Modus aktiviert — Bildschirmränder berühren oder F11 / Esc zum Beenden drücken",
-      "toastDisabled": "Immersiver Modus deaktiviert"
     }
   },
   "share": {

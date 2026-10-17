@@ -93,6 +93,7 @@ const handleAvatarError = (event: Event, displayName: string) => {
 
 <template>
   <div
+    :inert="immersiveModeEnabled && !isLeftPanelRevealed"
     :class="[
       immersiveModeEnabled
         ? [

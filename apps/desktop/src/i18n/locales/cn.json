@@ -210,12 +210,6 @@
       "streamError": "录制错误：{error}",
       "customNotSupported": "自定义流不支持录制。",
       "orphanFound": "发现 {count} 个不完整的录制"
-    },
-    "immersive": {
-      "title": "沉浸模式",
-      "description": "自动隐藏侧边栏以最大化直播画面。将鼠标悬停在边缘即可显示面板",
-      "toastEnabled": "沉浸模式已启用 — 将鼠标悬停在屏幕边缘或按 F11 / Esc 退出",
-      "toastDisabled": "沉浸模式已禁用"
     }
   },
   "share": {

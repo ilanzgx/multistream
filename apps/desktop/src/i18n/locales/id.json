@@ -210,12 +210,6 @@
       "streamError": "Kesalahan perekaman: {error}",
       "customNotSupported": "Perekaman tidak didukung untuk stream kustom.",
       "orphanFound": "Ditemukan {count} rekaman tidak lengkap"
-    },
-    "immersive": {
-      "title": "Mode Imersif",
-      "description": "Sembunyikan bilah sisi secara otomatis untuk memaksimalkan kanvas streaming. Arahkan kursor ke tepi untuk menampilkan panel",
-      "toastEnabled": "Mode imersif diaktifkan — arahkan kursor ke tepi layar atau tekan F11 / Esc untuk keluar",
-      "toastDisabled": "Mode imersif dinonaktifkan"
     }
   },
   "share": {

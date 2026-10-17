@@ -210,12 +210,6 @@
       "streamError": "Erreur d'enregistrement : {error}",
       "customNotSupported": "L'enregistrement n'est pas pris en charge pour les flux personnalisés.",
       "orphanFound": "{count} enregistrement(s) incomplet(s) trouvé(s)"
-    },
-    "immersive": {
-      "title": "Mode immersif",
-      "description": "Masquez automatiquement les barres latérales pour maximiser le flux. Survolez les bords pour afficher les panneaux",
-      "toastEnabled": "Mode immersif activé — survolez les bords de l'écran ou appuyez sur F11 / Échap pour quitter",
-      "toastDisabled": "Mode immersif désactivé"
     }
   },
   "share": {

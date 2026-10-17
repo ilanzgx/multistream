@@ -210,12 +210,6 @@
       "streamError": "Recording error: {error}",
       "customNotSupported": "Recording is not supported for custom streams.",
       "orphanFound": "Found {count} incomplete recording(s)"
-    },
-    "immersive": {
-      "title": "Immersive Mode",
-      "description": "Auto-hide sidebars to maximize stream canvas. Hover edges to reveal panels",
-      "toastEnabled": "Immersive mode enabled — hover screen edges or press F11 / Esc to exit",
-      "toastDisabled": "Immersive mode disabled"
     }
   },
   "share": {
