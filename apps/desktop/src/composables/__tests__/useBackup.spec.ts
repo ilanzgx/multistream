@@ -112,9 +112,15 @@ describe("useBackup composable unit tests", () => {
         watchHistory: [] as any, // should be object
       };
 
+      const invalidImmersiveMode = {
+        ...validBackup,
+        preferences: { ...validBackup.preferences, immersiveModeEnabled: "not-a-bool" } as any,
+      };
+
       // Act & Assert
       expect(validateBackupData(invalidHistory)).toBe(false);
       expect(validateBackupData(invalidHistoryArray)).toBe(false);
+      expect(validateBackupData(invalidImmersiveMode)).toBe(false);
     });
 
     it("should reject backup with invalid favorite or recent structure", () => {
