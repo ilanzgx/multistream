@@ -210,6 +210,12 @@
       "streamError": "Recording error: {error}",
       "customNotSupported": "Recording is not supported for custom streams.",
       "orphanFound": "Found {count} incomplete recording(s)"
+    },
+    "immersive": {
+      "title": "Immersive Mode",
+      "description": "Auto-hide sidebars to maximize stream canvas. Hover edges to reveal panels",
+      "toastEnabled": "Immersive mode enabled — hover screen edges or press F11 / Esc to exit",
+      "toastDisabled": "Immersive mode disabled"
     }
   },
   "share": {
@@ -260,7 +266,7 @@
     "loading": "Loading..."
   },
   "chat": {
-    "controlTitle": "Chat Control",
+    "controlTitle": "Controls",
     "selectPlaceholder": "Select stream chat",
     "selectPrompt": "Select a stream to view chat.",
     "noStreams": "No streams available.",
@@ -466,7 +472,11 @@
       "screenshotTitle": "Screenshot",
       "focusTitle": "Focus Stream",
       "focus": "Expand hovered stream as main view",
-      "hint": "Shortcuts work anytime outside text inputs, even when your cursor is over a video player. You can reopen this guide whenever you need it under Settings → General → Show Onboarding Tour."
+      "hint": "Shortcuts work anytime outside text inputs, even when your cursor is over a video player. You can reopen this guide whenever you need it under Settings → General → Show Onboarding Tour.",
+      "escTitle": "Exit & Dismiss",
+      "esc": "Exit fullscreen, immersive view, or dismiss sidebars",
+      "fullscreenTitle": "Fullscreen",
+      "fullscreen": "Toggle application fullscreen"
     },
     "goToStep": "Go to step {step}",
     "hintLabel": "Tip"
@@ -477,7 +487,7 @@
   },
   "sidebar": {
     "openSidebar": "Open sidebar",
-    "followedChannels": "Followed Channels",
+    "followedChannels": "Channels",
     "all": "All",
     "loginTitle": "Connect your account",
     "loginSubtitle": "See the channels you follow",
@@ -518,5 +528,14 @@
     "errorTitle": "Could not load release notes",
     "errorDescription": "Check your internet connection or view the release directly on GitHub.",
     "retry": "Try again"
+  },
+  "immersive": {
+    "tooltip": "Immersive Mode",
+    "exitTooltip": "Exit Immersive Mode (Esc)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "Immersive mode enabled — hover screen edges or press Esc to exit (F11 for Fullscreen)"
+    }
   }
 }

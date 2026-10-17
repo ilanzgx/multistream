@@ -210,6 +210,12 @@
       "streamError": "录制错误：{error}",
       "customNotSupported": "自定义流不支持录制。",
       "orphanFound": "发现 {count} 个不完整的录制"
+    },
+    "immersive": {
+      "title": "沉浸模式",
+      "description": "自动隐藏侧边栏以最大化直播画面。将鼠标悬停在边缘即可显示面板",
+      "toastEnabled": "沉浸模式已启用 — 将鼠标悬停在屏幕边缘或按 F11 / Esc 退出",
+      "toastDisabled": "沉浸模式已禁用"
     }
   },
   "share": {
@@ -260,7 +266,7 @@
     "loading": "加载中..."
   },
   "chat": {
-    "controlTitle": "聊天控制",
+    "controlTitle": "控制",
     "selectPlaceholder": "选择直播聊天",
     "selectPrompt": "选择一个直播以查看聊天。",
     "noStreams": "没有可用的直播。",
@@ -466,7 +472,11 @@
       "screenshotTitle": "截图",
       "focusTitle": "聚焦直播",
       "focus": "将鼠标悬停的直播展开为主视图",
-      "hint": "只要不在文本输入框内，快捷键随时可用，即使鼠标位于视频播放器上方也能生效。您可以随时在“设置 → 常规 → 显示新手引导”中重新打开本指南。"
+      "hint": "只要不在文本输入框内，快捷键随时可用，即使鼠标位于视频播放器上方也能生效。您可以随时在“设置 → 常规 → 显示新手引导”中重新打开本指南。",
+      "escTitle": "退出并隐藏",
+      "esc": "退出全屏、沉浸模式或关闭面板",
+      "fullscreenTitle": "全屏",
+      "fullscreen": "切换应用程序全屏模式"
     },
     "goToStep": "前往第 {step} 步",
     "hintLabel": "提示"
@@ -477,7 +487,7 @@
   },
   "sidebar": {
     "openSidebar": "打开侧边栏",
-    "followedChannels": "已关注频道",
+    "followedChannels": "频道",
     "all": "全部",
     "loginTitle": "连接您的账户",
     "loginSubtitle": "查看您关注的频道",
@@ -518,5 +528,14 @@
     "errorTitle": "无法加载更新日志",
     "errorDescription": "请检查您的网络连接，或直接在 GitHub 上查看发布内容。",
     "retry": "重试"
+  },
+  "immersive": {
+    "tooltip": "沉浸模式",
+    "exitTooltip": "退出沉浸模式 (Esc)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "沉浸模式已启用 — 将鼠标悬停在屏幕边缘或按 Esc 退出（按 F11 进入全屏）"
+    }
   }
 }

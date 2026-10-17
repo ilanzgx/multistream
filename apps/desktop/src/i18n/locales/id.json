@@ -210,6 +210,12 @@
       "streamError": "Kesalahan perekaman: {error}",
       "customNotSupported": "Perekaman tidak didukung untuk stream kustom.",
       "orphanFound": "Ditemukan {count} rekaman tidak lengkap"
+    },
+    "immersive": {
+      "title": "Mode Imersif",
+      "description": "Sembunyikan bilah sisi secara otomatis untuk memaksimalkan kanvas streaming. Arahkan kursor ke tepi untuk menampilkan panel",
+      "toastEnabled": "Mode imersif diaktifkan — arahkan kursor ke tepi layar atau tekan F11 / Esc untuk keluar",
+      "toastDisabled": "Mode imersif dinonaktifkan"
     }
   },
   "share": {
@@ -260,7 +266,7 @@
     "loading": "Memuat..."
   },
   "chat": {
-    "controlTitle": "Kontrol Obrolan",
+    "controlTitle": "Kontrol",
     "selectPlaceholder": "Pilih obrolan stream",
     "selectPrompt": "Pilih stream untuk melihat obrolan.",
     "noStreams": "Tidak ada stream yang tersedia.",
@@ -466,7 +472,11 @@
       "screenshotTitle": "Tangkapan Layar",
       "focusTitle": "Fokus Siaran",
       "focus": "Perbesar siaran di bawah kursor sebagai tampilan utama",
-      "hint": "Pintasan berfungsi kapan saja di luar kolom input teks, bahkan saat kursor Anda berada di atas pemutar video. Anda dapat membuka kembali panduan ini kapan saja melalui Pengaturan → Umum → Tampilkan Tur Pengenalan."
+      "hint": "Pintasan berfungsi kapan saja di luar kolom input teks, bahkan saat kursor Anda berada di atas pemutar video. Anda dapat membuka kembali panduan ini kapan saja melalui Pengaturan → Umum → Tampilkan Tur Pengenalan.",
+      "escTitle": "Keluar & Sembunyikan",
+      "esc": "Keluar dari layar penuh, mode imersif, atau tutup panel",
+      "fullscreenTitle": "Layar Penuh",
+      "fullscreen": "Alihkan mode layar penuh aplikasi"
     },
     "goToStep": "Buka langkah {step}",
     "hintLabel": "Tips"
@@ -477,7 +487,7 @@
   },
   "sidebar": {
     "openSidebar": "Buka bilah sisi",
-    "followedChannels": "Saluran yang Diikuti",
+    "followedChannels": "Saluran",
     "all": "Semua",
     "loginTitle": "Hubungkan akun Anda",
     "loginSubtitle": "Lihat saluran yang Anda ikuti",
@@ -518,5 +528,14 @@
     "errorTitle": "Tidak dapat memuat catatan rilis",
     "errorDescription": "Periksa koneksi Anda atau lihat rilis langsung di GitHub.",
     "retry": "Coba lagi"
+  },
+  "immersive": {
+    "tooltip": "Mode Imersif",
+    "exitTooltip": "Keluar dari Mode Imersif (Esc)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "Mode imersif diaktifkan — arahkan kursor ke tepi layar atau tekan Esc untuk keluar (F11 untuk Layar Penuh)"
+    }
   }
 }

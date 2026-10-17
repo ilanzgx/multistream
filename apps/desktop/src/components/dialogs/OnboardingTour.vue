@@ -695,6 +695,42 @@ onUnmounted(() => {
                     }}</span>
                   </div>
                 </div>
+
+                <!-- F11 Key (Fullscreen) -->
+                <div
+                  class="flex items-center gap-3 p-3 bg-[#14161a] border border-[#262930] rounded-lg"
+                >
+                  <kbd
+                    class="flex items-center justify-center min-w-8 px-1.5 h-8 text-xs font-semibold text-white bg-[#1e2127] border border-[#3a3f4b] rounded-lg shadow-xs shrink-0"
+                    >F11</kbd
+                  >
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-semibold text-white truncate">{{
+                      $t("onboarding.step7.fullscreenTitle")
+                    }}</span>
+                    <span class="text-xs text-gray-400 truncate">{{
+                      $t("onboarding.step7.fullscreen")
+                    }}</span>
+                  </div>
+                </div>
+
+                <!-- Esc Key (Exit Immersive / Dismiss) -->
+                <div
+                  class="flex items-center gap-3 p-3 bg-[#14161a] border border-[#262930] rounded-lg"
+                >
+                  <kbd
+                    class="flex items-center justify-center min-w-8 px-1.5 h-8 text-xs font-semibold text-white bg-[#1e2127] border border-[#3a3f4b] rounded-lg shadow-xs shrink-0"
+                    >Esc</kbd
+                  >
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-semibold text-white truncate">{{
+                      $t("onboarding.step7.escTitle")
+                    }}</span>
+                    <span class="text-xs text-gray-400 truncate">{{
+                      $t("onboarding.step7.esc")
+                    }}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
