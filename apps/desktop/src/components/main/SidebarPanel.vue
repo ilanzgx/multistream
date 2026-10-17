@@ -137,6 +137,13 @@ watch(
   },
   { immediate: true }
 );
+const handleOpenChangelog = () => {
+  window.dispatchEvent(
+    new CustomEvent("multistream-show-dialog", {
+      detail: "changelog",
+    })
+  );
+};
 
 watch(
   chatableStreams,
@@ -253,42 +260,7 @@ onUnmounted(() => {
       }"
     >
       <!-- stream selector -->
-      <div
-        class="px-4 pt-3.5 border-[#1f2227]"
-        :class="sidebarMode === 'chat' ? 'pb-3.5 border-b' : 'pb-3'"
-      >
-        <div
-          v-if="transcriptionActive"
-          class="flex items-center justify-between mb-3 px-1 transition-all duration-300"
-        >
-          <p class="text-[10px] font-semibold tracking-widest uppercase text-gray-400">
-            {{ $t("chat.controlTitle") }}
-          </p>
-          <div
-            class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[9px] font-mono tracking-wider uppercase transition-all duration-300 border"
-            :class="{
-              'bg-green-500/10 border-green-500/20 text-green-400':
-                transcriptionStatus === 'active' || transcriptionStatus === 'processing',
-              'bg-red-500/10 border-red-500/20 text-red-400': transcriptionStatus === 'error',
-            }"
-          >
-            <Loader2 v-if="transcriptionStatus === 'processing'" class="h-2.5 w-2.5 animate-spin" />
-            <div
-              v-else
-              class="h-1.5 w-1.5 rounded-full"
-              :class="{
-                'bg-green-500/80': transcriptionStatus === 'active',
-                'bg-red-500/80': transcriptionStatus === 'error',
-              }"
-            ></div>
-            {{
-              transcriptionStatus === "error"
-                ? $t("settings.transcription.errorIndicator")
-                : $t("settings.transcription.activeIndicator")
-            }}
-          </div>
-        </div>
-
+      <div class="px-4 pt-3.5 pb-3.5 border-b border-[#1f2227]">
         <Tabs v-if="isTauri() && isSupported" v-model="sidebarMode" class="w-full">
           <TabsList class="grid w-full grid-cols-2 bg-[#1f2227]">
             <TabsTrigger
@@ -300,9 +272,26 @@ onUnmounted(() => {
             <TabsTrigger
               v-if="isSupported"
               value="transcript"
-              class="data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white text-gray-400"
+              class="data-[state=active]:bg-[#2a2d33] data-[state=active]:text-white text-gray-400 flex items-center justify-center gap-1.5"
             >
-              {{ $t("chat.tabs.transcript") }}
+              <span>{{ $t("chat.tabs.transcript") }}</span>
+              <span
+                v-if="transcriptionActive"
+                class="w-3 h-3 flex items-center justify-center shrink-0"
+              >
+                <Loader2
+                  v-if="transcriptionStatus === 'processing'"
+                  class="h-3 w-3 animate-spin text-green-500"
+                />
+                <span
+                  v-else
+                  class="h-1.5 w-1.5 rounded-full"
+                  :class="{
+                    'bg-green-500': transcriptionStatus === 'active',
+                    'bg-red-400': transcriptionStatus === 'error',
+                  }"
+                />
+              </span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -563,11 +552,13 @@ onUnmounted(() => {
         <!-- version -->
         <div v-if="appVersion" class="mt-3.5 flex items-center justify-center gap-3">
           <div class="h-px flex-1 bg-linear-to-r from-transparent to-[#2a2d33]" />
-          <span
-            class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 select-none"
+          <button
+            type="button"
+            class="text-[10px] font-semibold tracking-widest uppercase text-gray-400 hover:text-gray-200 transition-colors duration-200 select-none cursor-default"
+            @click="handleOpenChangelog"
           >
             v{{ appVersion }}
-          </span>
+          </button>
           <div class="h-px flex-1 bg-linear-to-l from-transparent to-[#2a2d33]" />
         </div>
       </div>

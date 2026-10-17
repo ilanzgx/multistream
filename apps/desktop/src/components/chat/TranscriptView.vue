@@ -145,23 +145,23 @@ async function copyTranscript() {
     <div class="flex flex-col h-full bg-[#0f1115]">
       <!-- Toolbar -->
       <div
-        class="flex items-center justify-between gap-2 px-4 pb-3 pt-0 border-b border-[#1f2227] bg-[#191b1f]"
+        class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-[#1f2227] bg-[#14161a]"
       >
         <!-- Status Block -->
         <div class="flex flex-col gap-0.5 min-w-0">
           <span class="text-[10px] text-gray-400 truncate leading-tight">
             {{ $t("settings.transcription.modelLabel") }}:
-            <span class="text-gray-300">{{ formattedModelName }}</span>
+            <span class="font-medium text-gray-200">{{ formattedModelName }}</span>
           </span>
           <button
             type="button"
-            class="text-left text-[10px] text-gray-400 truncate leading-tight hover:text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            class="group text-left text-[10px] text-gray-400 truncate leading-tight hover:text-white transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
             :disabled="isDownloading"
             :title="$t('settings.transcription.captionModeLabel')"
             @click="toggleCaptionMode"
           >
-            {{ $t("settings.transcription.modeLabel") }}:
-            <span class="text-gray-300 underline decoration-gray-600 underline-offset-2">{{
+            <span>{{ $t("settings.transcription.modeLabel") }}:</span>
+            <span class="font-medium text-gray-300 group-hover:text-white transition-colors">{{
               $t(captionModeTranslationKey)
             }}</span>
           </button>
