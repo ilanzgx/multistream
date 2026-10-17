@@ -260,7 +260,7 @@
     "loading": "Yükleniyor..."
   },
   "chat": {
-    "controlTitle": "Sohbet Kontrolü",
+    "controlTitle": "Kontroller",
     "selectPlaceholder": "Yayın sohbetini seçin",
     "selectPrompt": "Sohbeti görüntülemek için bir yayın seçin.",
     "noStreams": "Mevcut yayın yok.",
@@ -466,7 +466,11 @@
       "screenshotTitle": "Ekran Görüntüsü",
       "focusTitle": "Yayına Odaklan",
       "focus": "Üzerine gelinen yayını ana görünüm yap",
-      "hint": "Kısayollar, imleciniz video oynatıcının üzerinde olsa bile metin kutuları dışında her zaman çalışır. Bu rehberi istediğiniz zaman Ayarlar → Genel → Tanıtım Turunu Göster altından yeniden açabilirsiniz."
+      "hint": "Kısayollar, imleciniz video oynatıcının üzerinde olsa bile metin kutuları dışında her zaman çalışır. Bu rehberi istediğiniz zaman Ayarlar → Genel → Tanıtım Turunu Göster altından yeniden açabilirsiniz.",
+      "escTitle": "Çık ve Gizle",
+      "esc": "Tam ekrandan, sürükleyici moddan çıkın veya panelleri kapatın",
+      "fullscreenTitle": "Tam Ekran",
+      "fullscreen": "Uygulama tam ekran modunu aç/kapat"
     },
     "goToStep": "Adıma git: {step}",
     "hintLabel": "İpucu"
@@ -477,7 +481,7 @@
   },
   "sidebar": {
     "openSidebar": "Kenar çubuğunu aç",
-    "followedChannels": "Takip Edilen Kanallar",
+    "followedChannels": "Kanallar",
     "all": "Tümü",
     "loginTitle": "Hesabınızı bağlayın",
     "loginSubtitle": "Takip ettiğiniz kanalları görün",
@@ -518,5 +522,14 @@
     "errorTitle": "Sürüm notları yüklenemedi",
     "errorDescription": "Bağlantınızı kontrol edin veya sürümü doğrudan GitHub'da görüntüleyin.",
     "retry": "Tekrar dene"
+  },
+  "immersive": {
+    "tooltip": "Sürükleyici Mod",
+    "exitTooltip": "Sürükleyici Moddan Çık (Esc)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "Sürükleyici mod etkinleştirildi — kenarlara gelin veya çıkmak için Esc tuşuna basın (Tam ekran için F11)"
+    }
   }
 }

@@ -260,7 +260,7 @@
     "loading": "Chargement..."
   },
   "chat": {
-    "controlTitle": "Contrôle du chat",
+    "controlTitle": "Contrôles",
     "selectPlaceholder": "Sélectionner le chat du flux",
     "selectPrompt": "Sélectionnez un flux pour voir le chat.",
     "noStreams": "Aucun flux disponible.",
@@ -466,7 +466,11 @@
       "screenshotTitle": "Capture d'écran",
       "focusTitle": "Mode Focus",
       "focus": "Agrandir le stream survolé en vue principale",
-      "hint": "Les raccourcis fonctionnent à tout moment hors des champs de saisie, même lorsque le curseur survole un lecteur vidéo. Vous pouvez rouvrir ce guide à tout moment dans Paramètres → Général → Afficher la visite guidée."
+      "hint": "Les raccourcis fonctionnent à tout moment hors des champs de saisie, même lorsque le curseur survole un lecteur vidéo. Vous pouvez rouvrir ce guide à tout moment dans Paramètres → Général → Afficher la visite guidée.",
+      "escTitle": "Quitter et masquer",
+      "esc": "Quitter le plein écran, le mode immersif ou fermer les panneaux",
+      "fullscreenTitle": "Plein écran",
+      "fullscreen": "Basculer l'application en plein écran"
     },
     "goToStep": "Aller à l'étape {step}",
     "hintLabel": "Astuce"
@@ -477,7 +481,7 @@
   },
   "sidebar": {
     "openSidebar": "Ouvrir la barre latérale",
-    "followedChannels": "Chaînes suivies",
+    "followedChannels": "Chaînes",
     "all": "Tout",
     "loginTitle": "Connectez votre compte",
     "loginSubtitle": "Voir les chaînes que vous suivez",
@@ -518,5 +522,14 @@
     "errorTitle": "Impossible de charger les notes de version",
     "errorDescription": "Vérifiez votre connexion ou consultez la version directement sur GitHub.",
     "retry": "Réessayer"
+  },
+  "immersive": {
+    "tooltip": "Mode immersif",
+    "exitTooltip": "Quitter le mode immersif (Échap)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "Mode immersif activé — survolez les bords de l'écran ou appuyez sur Échap pour quitter (F11 pour Plein écran)"
+    }
   }
 }

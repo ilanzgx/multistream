@@ -260,7 +260,7 @@
     "loading": "Carregando..."
   },
   "chat": {
-    "controlTitle": "Controle de Chat",
+    "controlTitle": "Controles",
     "selectPlaceholder": "Selecione o chat da stream",
     "selectPrompt": "Selecione uma stream para ver o chat.",
     "noStreams": "Nenhuma stream disponível.",
@@ -466,7 +466,11 @@
       "screenshotTitle": "Captura de Tela",
       "focusTitle": "Focar Transmissão",
       "focus": "Expandir a transmissão sob o cursor",
-      "hint": "Os atalhos funcionam a qualquer momento fora dos campos de digitação, inclusive quando o cursor está sobre o player de vídeo. Você pode rever este guia sempre que quiser em Configurações → Geral → Mostrar Tour de Integração."
+      "hint": "Os atalhos funcionam a qualquer momento fora dos campos de digitação, inclusive quando o cursor está sobre o player de vídeo. Você pode rever este guia sempre que quiser em Configurações → Geral → Mostrar Tour de Integração.",
+      "escTitle": "Sair e Ocultar",
+      "esc": "Sair da tela cheia, modo imersivo ou fechar painéis",
+      "fullscreenTitle": "Tela Cheia",
+      "fullscreen": "Alternar tela cheia da aplicação"
     },
     "goToStep": "Ir para a etapa {step}",
     "hintLabel": "Dica"
@@ -477,7 +481,7 @@
   },
   "sidebar": {
     "openSidebar": "Abrir menu lateral",
-    "followedChannels": "Canais seguidos",
+    "followedChannels": "Canais",
     "all": "Todos",
     "loginTitle": "Conecte sua conta",
     "loginSubtitle": "Veja os canais que você segue",
@@ -518,5 +522,14 @@
     "errorTitle": "Não foi possível carregar as notas da versão",
     "errorDescription": "Verifique sua conexão ou confira a release completa diretamente no GitHub.",
     "retry": "Tentar novamente"
+  },
+  "immersive": {
+    "tooltip": "Modo Imersivo",
+    "exitTooltip": "Sair do Modo Imersivo (Esc)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "Modo imersivo ativado — encoste o mouse nas bordas ou pressione Esc para sair (F11 para Tela Cheia)"
+    }
   }
 }

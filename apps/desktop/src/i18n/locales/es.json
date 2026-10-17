@@ -260,7 +260,7 @@
     "loading": "Cargando..."
   },
   "chat": {
-    "controlTitle": "Control de Chat",
+    "controlTitle": "Controles",
     "selectPlaceholder": "Seleccione el chat de la stream",
     "selectPrompt": "Seleccione una stream para ver el chat.",
     "noStreams": "No hay streams disponibles.",
@@ -466,7 +466,11 @@
       "screenshotTitle": "Captura de Pantalla",
       "focusTitle": "Enfocar Transmisión",
       "focus": "Expandir la transmisión bajo el cursor",
-      "hint": "Los atajos funcionan en cualquier momento fuera de los campos de texto, incluso cuando el cursor está sobre el reproductor de video. Puedes volver a abrir esta guía cuando quieras en Ajustes → General → Mostrar Tour de Integración."
+      "hint": "Los atajos funcionan en cualquier momento fuera de los campos de texto, incluso cuando el cursor está sobre el reproductor de video. Puedes volver a abrir esta guía cuando quieras en Ajustes → General → Mostrar Tour de Integración.",
+      "escTitle": "Salir y Ocultar",
+      "esc": "Salir de pantalla completa, modo inmersivo o cerrar paneles",
+      "fullscreenTitle": "Pantalla Completa",
+      "fullscreen": "Alternar pantalla completa de la aplicación"
     },
     "goToStep": "Ir al paso {step}",
     "hintLabel": "Consejo"
@@ -477,7 +481,7 @@
   },
   "sidebar": {
     "openSidebar": "Abrir barra lateral",
-    "followedChannels": "Canales seguidos",
+    "followedChannels": "Canales",
     "all": "Todos",
     "loginTitle": "Conecta tu cuenta",
     "loginSubtitle": "Ver los canales que sigues",
@@ -518,5 +522,14 @@
     "errorTitle": "No se pudieron cargar las notas de la versión",
     "errorDescription": "Comprueba tu conexión o consulta la versión directamente en GitHub.",
     "retry": "Intentar de nuevo"
+  },
+  "immersive": {
+    "tooltip": "Modo Inmersivo",
+    "exitTooltip": "Salir del Modo Inmersivo (Esc)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "Modo inmersivo activado — acerca el cursor a los bordes o presiona Esc para salir (F11 para Pantalla Completa)"
+    }
   }
 }

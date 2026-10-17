@@ -260,7 +260,7 @@
     "loading": "Wird geladen..."
   },
   "chat": {
-    "controlTitle": "Chat-Steuerung",
+    "controlTitle": "Steuerung",
     "selectPlaceholder": "Stream-Chat auswählen",
     "selectPrompt": "Wählen Sie einen Stream, um den Chat anzuzeigen.",
     "noStreams": "Keine Streams verfügbar.",
@@ -466,7 +466,11 @@
       "screenshotTitle": "Screenshot",
       "focusTitle": "Stream fokussieren",
       "focus": "Stream unter dem Mauszeiger vergrößern",
-      "hint": "Die Tastenkürzel funktionieren jederzeit außerhalb von Textfeldern, selbst wenn sich der Mauszeiger über einem Video-Player befindet. Du kannst diese Einführung jederzeit unter Einstellungen → Allgemein → Einführungstour anzeigen erneut öffnen."
+      "hint": "Die Tastenkürzel funktionieren jederzeit außerhalb von Textfeldern, selbst wenn sich der Mauszeiger über einem Video-Player befindet. Du kannst diese Einführung jederzeit unter Einstellungen → Allgemein → Einführungstour anzeigen erneut öffnen.",
+      "escTitle": "Beenden & Schließen",
+      "esc": "Vollbild, immersiven Modus verlassen oder Bedienfelder schließen",
+      "fullscreenTitle": "Vollbild",
+      "fullscreen": "Vollbildmodus der Anwendung umschalten"
     },
     "goToStep": "Zu Schritt {step}",
     "hintLabel": "Tipp"
@@ -477,7 +481,7 @@
   },
   "sidebar": {
     "openSidebar": "Seitenleiste öffnen",
-    "followedChannels": "Gefolgte Kanäle",
+    "followedChannels": "Kanäle",
     "all": "Alle",
     "loginTitle": "Konto verbinden",
     "loginSubtitle": "Sehen Sie die Kanäle, denen Sie folgen",
@@ -518,5 +522,14 @@
     "errorTitle": "Versionshinweise konnten nicht geladen werden",
     "errorDescription": "Überprüfe deine Verbindung oder sieh dir das Release direkt auf GitHub an.",
     "retry": "Erneut versuchen"
+  },
+  "immersive": {
+    "tooltip": "Immersiver Modus",
+    "exitTooltip": "Immersiven Modus verlassen (Esc)"
+  },
+  "preferences": {
+    "immersive": {
+      "toastEnabled": "Immersiver Modus aktiviert — Bildschirmränder berühren oder Esc zum Beenden drücken (F11 für Vollbild)"
+    }
   }
 }

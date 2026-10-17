@@ -24,6 +24,7 @@ export interface BackupData {
     recordingQuality?: string;
     recordingPath?: string;
     nativePlayerEnabled?: boolean;
+    immersiveModeEnabled?: boolean;
   };
   watchHistory?: Record<string, number>;
 }
@@ -85,6 +86,8 @@ export const validateBackupData = (data: any): data is BackupData => {
   if (prefs.recordingPath !== undefined && typeof prefs.recordingPath !== "string") return false;
   if (prefs.nativePlayerEnabled !== undefined && typeof prefs.nativePlayerEnabled !== "boolean")
     return false;
+  if (prefs.immersiveModeEnabled !== undefined && typeof prefs.immersiveModeEnabled !== "boolean")
+    return false;
 
   // Validate watchHistory
   if (data.watchHistory !== undefined) {
@@ -139,6 +142,7 @@ const _useBackup = () => {
     recordingQuality,
     recordingPath,
     nativePlayerEnabled,
+    immersiveModeEnabled,
   } = usePreferences();
 
   // Retrieve locale from vue-i18n. If called outside standard Vue setup, fallback gracefully.
@@ -251,6 +255,7 @@ const _useBackup = () => {
         recordingQuality: recordingQuality.value,
         recordingPath: recordingPath.value,
         nativePlayerEnabled: nativePlayerEnabled.value,
+        immersiveModeEnabled: immersiveModeEnabled.value,
         ...(locale && { locale: locale.value }),
       },
       watchHistory: watchHistory.value,
@@ -333,6 +338,8 @@ const _useBackup = () => {
     if (prefs.recordingPath !== undefined) recordingPath.value = prefs.recordingPath;
     if (prefs.nativePlayerEnabled !== undefined)
       nativePlayerEnabled.value = prefs.nativePlayerEnabled;
+    if (prefs.immersiveModeEnabled !== undefined)
+      immersiveModeEnabled.value = prefs.immersiveModeEnabled;
 
     if (prefs.locale) {
       if (locale) locale.value = prefs.locale;

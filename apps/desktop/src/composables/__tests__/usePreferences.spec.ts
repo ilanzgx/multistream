@@ -21,6 +21,7 @@ describe("usePreferences composable unit tests", () => {
       onboardingCompleted,
       nativePlayerEnabled,
       adblockEnabled,
+      immersiveModeEnabled,
     } = sut;
 
     // Assert
@@ -30,6 +31,7 @@ describe("usePreferences composable unit tests", () => {
     expect(onboardingCompleted.value).toBe(false);
     expect(nativePlayerEnabled.value).toBe(false);
     expect(adblockEnabled.value).toBe(true);
+    expect(immersiveModeEnabled.value).toBe(false);
   });
 
   it("should set selected chat correctly", () => {
@@ -176,6 +178,24 @@ describe("usePreferences composable unit tests", () => {
     expect(pendingChangelogVersion.value).toBe("0.19.0");
   });
 
+  it("should set and toggle immersive mode correctly", () => {
+    // Arrange
+    const { setImmersiveModeEnabled, toggleImmersiveMode, immersiveModeEnabled } = sut;
+    expect(immersiveModeEnabled.value).toBe(false);
+
+    // Act
+    setImmersiveModeEnabled(true);
+
+    // Assert
+    expect(immersiveModeEnabled.value).toBe(true);
+
+    // Act
+    toggleImmersiveMode();
+
+    // Assert
+    expect(immersiveModeEnabled.value).toBe(false);
+  });
+
   it("should reset all preferences to default values", () => {
     // Arrange
     const {
@@ -198,6 +218,8 @@ describe("usePreferences composable unit tests", () => {
       recordingQuality,
       setRecordingPath,
       recordingPath,
+      setImmersiveModeEnabled,
+      immersiveModeEnabled,
     } = sut;
 
     // Tweak properties
@@ -211,6 +233,7 @@ describe("usePreferences composable unit tests", () => {
     setAdblockEnabled(false);
     setRecordingQuality("480p");
     setRecordingPath("C:/test");
+    setImmersiveModeEnabled(true);
 
     expect(selectedChat.value).toBe("alanzoka_twitch");
     expect(sidebarOpen.value).toBe(false);
@@ -222,6 +245,7 @@ describe("usePreferences composable unit tests", () => {
     expect(adblockEnabled.value).toBe(false);
     expect(recordingQuality.value).toBe("480p");
     expect(recordingPath.value).toBe("C:/test");
+    expect(immersiveModeEnabled.value).toBe(true);
 
     // Act
     resetPreferences();
@@ -237,5 +261,6 @@ describe("usePreferences composable unit tests", () => {
     expect(adblockEnabled.value).toBe(true);
     expect(recordingQuality.value).toBe("best");
     expect(recordingPath.value).toBe("");
+    expect(immersiveModeEnabled.value).toBe(false);
   });
 });

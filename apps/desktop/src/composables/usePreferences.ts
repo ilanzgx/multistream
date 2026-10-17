@@ -12,6 +12,7 @@ export interface Preferences {
   recordingPath: string;
   nativePlayerEnabled: boolean;
   adblockEnabled: boolean;
+  immersiveModeEnabled: boolean;
 }
 
 const defaultPreferences: Preferences = {
@@ -26,6 +27,7 @@ const defaultPreferences: Preferences = {
   recordingPath: "",
   nativePlayerEnabled: false,
   adblockEnabled: true,
+  immersiveModeEnabled: false,
 };
 
 const _usePreferences = () => {
@@ -94,6 +96,11 @@ const _usePreferences = () => {
     defaultPreferences.adblockEnabled
   );
 
+  const immersiveModeEnabled = useStorage<boolean>(
+    "preferences.immersiveModeEnabled",
+    defaultPreferences.immersiveModeEnabled
+  );
+
   /**
    * @brief Set the selected chat
    *
@@ -114,6 +121,14 @@ const _usePreferences = () => {
 
   const setAdblockEnabled = (enabled: boolean) => {
     adblockEnabled.value = enabled;
+  };
+
+  const setImmersiveModeEnabled = (enabled: boolean) => {
+    immersiveModeEnabled.value = enabled;
+  };
+
+  const toggleImmersiveMode = () => {
+    immersiveModeEnabled.value = !immersiveModeEnabled.value;
   };
 
   /**
@@ -185,6 +200,7 @@ const _usePreferences = () => {
     recordingPath.value = defaultPreferences.recordingPath;
     nativePlayerEnabled.value = defaultPreferences.nativePlayerEnabled;
     adblockEnabled.value = defaultPreferences.adblockEnabled;
+    immersiveModeEnabled.value = defaultPreferences.immersiveModeEnabled;
   };
 
   return {
@@ -200,6 +216,7 @@ const _usePreferences = () => {
     recordingPath,
     nativePlayerEnabled,
     adblockEnabled,
+    immersiveModeEnabled,
 
     // actions
     setSelectedChat,
@@ -212,6 +229,8 @@ const _usePreferences = () => {
     setRecordingQuality,
     setRecordingPath,
     setAdblockEnabled,
+    setImmersiveModeEnabled,
+    toggleImmersiveMode,
     resetPreferences,
   };
 };
