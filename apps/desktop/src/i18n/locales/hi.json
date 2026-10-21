@@ -333,7 +333,9 @@
     "reply": "जवाब दें",
     "replyingTo": "{name} को जवाब",
     "cancelReply": "जवाब रद्द करें",
-    "mention": "उल्लेख करें"
+    "mention": "उल्लेख करें",
+    "reward": "चैनल पॉइंट्स रिवॉर्ड",
+    "highlightedMessage": "हाइलाइट किया गया संदेश"
   },
   "confirm": {
     "deleteOrphan": {

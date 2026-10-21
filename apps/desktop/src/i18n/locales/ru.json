@@ -333,7 +333,9 @@
     "reply": "Ответить",
     "replyingTo": "Ответ для {name}",
     "cancelReply": "Отменить ответ",
-    "mention": "Упомянуть"
+    "mention": "Упомянуть",
+    "reward": "Награда за баллы канала",
+    "highlightedMessage": "Выделенное сообщение"
   },
   "confirm": {
     "deleteOrphan": {

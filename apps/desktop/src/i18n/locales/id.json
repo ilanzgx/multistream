@@ -333,7 +333,9 @@
     "reply": "Balas",
     "replyingTo": "Membalas {name}",
     "cancelReply": "Batalkan balasan",
-    "mention": "Sebutkan"
+    "mention": "Sebutkan",
+    "reward": "Hadiah Poin Saluran",
+    "highlightedMessage": "Pesan yang disorot"
   },
   "confirm": {
     "deleteOrphan": {

@@ -333,7 +333,9 @@
     "reply": "Yanıtla",
     "replyingTo": "{name} kullanıcısına yanıt",
     "cancelReply": "Yanıtı iptal et",
-    "mention": "Bahset"
+    "mention": "Bahset",
+    "reward": "Kanal Puanı Ödülü",
+    "highlightedMessage": "Öne Çıkarılan Mesaj"
   },
   "confirm": {
     "deleteOrphan": {

@@ -333,7 +333,9 @@
     "reply": "回复",
     "replyingTo": "回复 {name}",
     "cancelReply": "取消回复",
-    "mention": "提及"
+    "mention": "提及",
+    "reward": "频道积分奖励",
+    "highlightedMessage": "突出显示的消息"
   },
   "confirm": {
     "deleteOrphan": {

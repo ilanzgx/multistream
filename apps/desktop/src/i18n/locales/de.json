@@ -333,7 +333,9 @@
     "reply": "Antworten",
     "replyingTo": "Antwort an {name}",
     "cancelReply": "Antwort abbrechen",
-    "mention": "Erwähnen"
+    "mention": "Erwähnen",
+    "reward": "Kanalpunkte-Belohnung",
+    "highlightedMessage": "Hervorgehobene Nachricht"
   },
   "confirm": {
     "deleteOrphan": {

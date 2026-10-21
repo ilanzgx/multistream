@@ -333,7 +333,9 @@
     "reply": "Responder",
     "replyingTo": "Respondiendo a {name}",
     "cancelReply": "Cancelar respuesta",
-    "mention": "Mencionar"
+    "mention": "Mencionar",
+    "reward": "Recompensa de Puntos de Canal",
+    "highlightedMessage": "Mensaje destacado"
   },
   "confirm": {
     "deleteOrphan": {
