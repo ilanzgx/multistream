@@ -257,6 +257,24 @@ describe("useUnifiedChat", () => {
     });
   });
 
+  it("sendMessage forwards replyParentMsgId when replying", async () => {
+    // Arrange
+    let chat!: ReturnType<typeof useUnifiedChat>;
+    scope.run(() => {
+      chat = useUnifiedChat();
+    });
+
+    // Act
+    await chat.sendMessage("gaules", "Hello", "885196de-cb67-427a-baa8-82f9b0fcd05f");
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("twitch_send_message", {
+      channel: "gaules",
+      text: "Hello",
+      replyParentMsgId: "885196de-cb67-427a-baa8-82f9b0fcd05f",
+    });
+  });
+
   it("sendMessage re-throws error on invoke failure", async () => {
     // Arrange
     (invoke as ReturnType<typeof vi.fn>).mockImplementation((cmd: string) => {
@@ -304,6 +322,25 @@ describe("useUnifiedChat", () => {
     expect(invoke).toHaveBeenCalledWith("kick_send_message", {
       broadcasterUserId: 12345,
       message: "Hello Kick",
+      replyToMessageId: null,
+    });
+  });
+
+  it("sendKickMessage forwards replyToMessageId when replying", async () => {
+    // Arrange
+    let chat!: ReturnType<typeof useUnifiedChat>;
+    scope.run(() => {
+      chat = useUnifiedChat();
+    });
+
+    // Act
+    await chat.sendKickMessage("somekick", "Hello Kick", "828f83bb-e391-4c78-9e91-af35a172840e");
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("kick_send_message", {
+      broadcasterUserId: 12345,
+      message: "Hello Kick",
+      replyToMessageId: "828f83bb-e391-4c78-9e91-af35a172840e",
     });
   });
 

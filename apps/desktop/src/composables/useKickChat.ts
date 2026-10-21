@@ -15,6 +15,12 @@ export interface KickChatMessage {
   color?: string | null;
   badges: string[];
   emotes?: string | null;
+  reply?: {
+    parent_msg_id: string;
+    parent_username: string;
+    parent_display_name: string;
+    parent_message: string;
+  };
   isPending?: boolean;
   platform?: "kick";
 }

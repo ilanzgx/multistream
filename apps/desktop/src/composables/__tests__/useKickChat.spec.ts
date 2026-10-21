@@ -205,6 +205,52 @@ describe("useKickChat", () => {
     expect(channelMessagesMap.value["streamer"]?.[0]?.message).toBe("Synchronous flush test");
   });
 
+  it("batches incoming messages with reply metadata correctly", async () => {
+    // Arrange
+    let messageCallback: ((event: { payload: KickChatMessage }) => void) | undefined;
+    (listen as ReturnType<typeof vi.fn>).mockImplementation((event, cb) => {
+      if (event === "kick-chat-message") {
+        messageCallback = cb;
+      }
+      return Promise.resolve(vi.fn());
+    });
+
+    const { channelMessagesMap } = useKickChat("streamer");
+    await Promise.resolve();
+    await Promise.resolve();
+
+    messageCallback!({
+      payload: {
+        id: "reply-msg-1",
+        channel: "streamer",
+        username: "replyViewer",
+        display_name: "ReplyViewer",
+        message: "This is a reply",
+        timestamp_ms: Date.now(),
+        badges: [],
+        reply: {
+          parent_msg_id: "parent-msg-0",
+          parent_username: "originalViewer",
+          parent_display_name: "OriginalViewer",
+          parent_message: "Original text",
+        },
+      },
+    });
+
+    // Act
+    flushPendingKickMessages();
+
+    // Assert
+    const msg = channelMessagesMap.value["streamer"]?.[0];
+    expect(msg).toBeDefined();
+    expect(msg?.reply).toEqual({
+      parent_msg_id: "parent-msg-0",
+      parent_username: "originalViewer",
+      parent_display_name: "OriginalViewer",
+      parent_message: "Original text",
+    });
+  });
+
   it("reconciles optimistic pending message with incoming server message in batch", async () => {
     // Arrange
     vi.useFakeTimers();
