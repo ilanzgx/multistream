@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.19.5] - 2026-10-21
+
+### Bug Fixes
+
+- **chat**: Prevent trailing whitespace insertion and placeholder glitches ([5b937b3](https://github.com/ilanzgx/multistream/commit/5b937b30cd67007a86b83afbf157c5e8f737264f))
+- **updater**: Persist changelog flag before install and support release paragraphs ([ddb31d6](https://github.com/ilanzgx/multistream/commit/ddb31d6808ec176d0e1bf978b6ba2ed52427ebba))
+- **i18n**: Clarify fullscreen versus immersive mode in onboarding and tooltips ([14f8729](https://github.com/ilanzgx/multistream/commit/14f8729e109a56d558693ecd8955ae4f86753e1a))
+- **ux**: Add inert to hidden sidebars and correct immersive toast key ([2c1caaa](https://github.com/ilanzgx/multistream/commit/2c1caaa044fe680bdf377e7702816097805d4ff8))
+- **chat**: Use username for mentions and preserve active reply state (#50) ([2b84d5b](https://github.com/ilanzgx/multistream/commit/2b84d5bad35ee8e72f27915d1051e2a571ddbb33))
+
+
+### Features
+
+- **desktop**: Add immersive mode preference, backup validation, and tauri permissions ([fd55677](https://github.com/ilanzgx/multistream/commit/fd55677ee8b6266c150a12a0129c0210428e12f4))
+- **desktop**: Implement useImmersiveMode composable with edge reveal logic ([1f3be14](https://github.com/ilanzgx/multistream/commit/1f3be14ba7c9a3533ccacb12630a6f020ef39ffb))
+- **ui**: Integrate immersive mode edge triggers, sidebar button, and layout transitions ([bafb245](https://github.com/ilanzgx/multistream/commit/bafb24538d6a932c1ef3595020af1d69c92a544b))
+- **backend/twitch**: Add reply message support via irc tags and ipc (#50) ([545778d](https://github.com/ilanzgx/multistream/commit/545778d03cdd65f45f6c18de41c554389f9a3900))
+- **backend/kick**: Add reply message support via pusher metadata and api (#50) ([fc5d056](https://github.com/ilanzgx/multistream/commit/fc5d0569b24814928b8821d9561d45830769c8af))
+- **i18n**: Add chat reply translations across all 10 locales (#50) ([ddc8109](https://github.com/ilanzgx/multistream/commit/ddc81097731b1e306ffdf9b560a35f9718c08b6d))
+- **chat**: Add click-to-mention interaction on user nicknames (#50) ([ba4ecb9](https://github.com/ilanzgx/multistream/commit/ba4ecb966344892b830e1eaaba9efdc0b862754f))
+- **chat**: Render reply context and mention highlights in message feed (#50) ([d373985](https://github.com/ilanzgx/multistream/commit/d373985a90d6a979a40780938d43ec36643a4746))
+- **composables**: Handle replies and optimistic updates in chat composables (#50) ([d8ed65b](https://github.com/ilanzgx/multistream/commit/d8ed65b1d2eadb6fb29a404841dc6b2f59672e8b))
+- **chat**: Standardize reply preview banner and update documentation (#50) ([08a9203](https://github.com/ilanzgx/multistream/commit/08a92037fd28a1432c75083a91a019ae7accdf2f))
+- **twitch**: Parse highlighted messages and custom rewards in irc ([e43ec26](https://github.com/ilanzgx/multistream/commit/e43ec268b47d200b9c3a396ecc5411f66b4c2749))
+- **chat**: Extend unified chat types and tests for message highlights ([039574c](https://github.com/ilanzgx/multistream/commit/039574c38a1acccc46d5455e4c6bc031f7967f03))
+- **ui**: Display highlighted messages and reward badges in chat ([32fd60e](https://github.com/ilanzgx/multistream/commit/32fd60e6e6c436157c2c046ad454771eb8b52788))
+
+
+### Style
+
+- Refine transcript tab status indicator and make version trigger changelog ([8b56e9d](https://github.com/ilanzgx/multistream/commit/8b56e9dfc7ea3d48fbd42c504fb86e85636c0946))
+- **chat**: Refine reply snippet contrast and update kick ipc docs (#50) ([1e83b90](https://github.com/ilanzgx/multistream/commit/1e83b902a0fc17b83b4570b0d19c690d3c64e0b1))
+
 ## [0.19.4] - 2026-10-13
 
 ### Bug Fixes
