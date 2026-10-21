@@ -26,6 +26,8 @@ export interface UnifiedChatMessage {
     parent_display_name: string;
     parent_message: string;
   };
+  custom_reward_id?: string;
+  msg_id?: string;
   platform?: "twitch" | "kick";
   isPending?: boolean;
 }
