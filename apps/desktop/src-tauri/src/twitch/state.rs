@@ -27,6 +27,10 @@ pub struct UnifiedChatMessage {
     pub emotes: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reply: Option<ReplyInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_reward_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub msg_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -175,6 +179,8 @@ mod tests {
             badges: vec!["moderator/1".to_string(), "subscriber/12".to_string()],
             emotes: Some("123:0-4".to_string()),
             reply: None,
+            custom_reward_id: Some("custom-reward-123".to_string()),
+            msg_id: Some("highlighted-message".to_string()),
         };
 
         let json = serde_json::to_string(&msg).unwrap();
@@ -189,6 +195,8 @@ mod tests {
         assert_eq!(deserialized.color, msg.color);
         assert_eq!(deserialized.badges, msg.badges);
         assert_eq!(deserialized.emotes, msg.emotes);
+        assert_eq!(deserialized.custom_reward_id, msg.custom_reward_id);
+        assert_eq!(deserialized.msg_id, msg.msg_id);
     }
 
     #[test]
@@ -204,6 +212,8 @@ mod tests {
             badges: vec![],
             emotes: None,
             reply: None,
+            custom_reward_id: None,
+            msg_id: None,
         };
 
         let json = serde_json::to_string(&msg).unwrap();

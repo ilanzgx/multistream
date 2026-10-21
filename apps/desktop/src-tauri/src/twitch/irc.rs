@@ -121,6 +121,11 @@ pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
         .unwrap_or_default();
 
     let reply = parse_reply(&tags);
+    let custom_reward_id = tags
+        .get("custom-reward-id")
+        .filter(|s| !s.is_empty())
+        .cloned();
+    let msg_id = tags.get("msg-id").filter(|s| !s.is_empty()).cloned();
 
     Some(UnifiedChatMessage {
         id,
@@ -133,6 +138,8 @@ pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
         badges,
         emotes,
         reply,
+        custom_reward_id,
+        msg_id,
     })
 }
 
@@ -670,6 +677,43 @@ mod tests {
         assert_eq!(msg.message, "hello world");
         assert_eq!(msg.id, "abc-123");
         assert_eq!(msg.color, Some("#1E90FF".to_owned()));
+        assert_eq!(msg.custom_reward_id, None);
+        assert_eq!(msg.msg_id, None);
+    }
+
+    #[test]
+    fn parses_privmsg_with_custom_reward_id() {
+        // Arrange
+        let line = "@badge-info=;badges=;color=#FF4500;custom-reward-id=1679e703-a1d3-483c-bdb5-fccb55e4edc6;display-name=RewardUser;emotes=;id=reward-123;tmi-sent-ts=1700000000000 :rewarduser!rewarduser@rewarduser.tmi.twitch.tv PRIVMSG #streamer :Playing with points!";
+
+        // Act
+        let msg = parse_privmsg(line).expect("should parse successfully");
+
+        // Assert
+        assert_eq!(msg.channel, "streamer");
+        assert_eq!(msg.display_name, "RewardUser");
+        assert_eq!(msg.message, "Playing with points!");
+        assert_eq!(
+            msg.custom_reward_id,
+            Some("1679e703-a1d3-483c-bdb5-fccb55e4edc6".to_owned())
+        );
+        assert_eq!(msg.msg_id, None);
+    }
+
+    #[test]
+    fn parses_privmsg_with_highlighted_msg_id() {
+        // Arrange
+        let line = "@badge-info=;badges=;color=#9146FF;display-name=HighlightUser;emotes=;id=high-123;msg-id=highlighted-message;tmi-sent-ts=1700000000000 :highuser!highuser@highuser.tmi.twitch.tv PRIVMSG #streamer :Look at me!";
+
+        // Act
+        let msg = parse_privmsg(line).expect("should parse successfully");
+
+        // Assert
+        assert_eq!(msg.channel, "streamer");
+        assert_eq!(msg.display_name, "HighlightUser");
+        assert_eq!(msg.message, "Look at me!");
+        assert_eq!(msg.custom_reward_id, None);
+        assert_eq!(msg.msg_id, Some("highlighted-message".to_owned()));
     }
 
     #[test]
