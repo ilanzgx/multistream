@@ -6,6 +6,14 @@ use serde::{Deserialize, Serialize};
 
 pub const MAX_MESSAGES: usize = 1_000;
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ReplyInfo {
+    pub parent_msg_id: String,
+    pub parent_username: String,
+    pub parent_display_name: String,
+    pub parent_message: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnifiedChatMessage {
     pub id: String,
@@ -17,6 +25,8 @@ pub struct UnifiedChatMessage {
     pub color: Option<String>,
     pub badges: Vec<String>,
     pub emotes: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reply: Option<ReplyInfo>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -49,6 +59,7 @@ pub struct TwitchAuthInfo {
 pub struct OutboundIrcMessage {
     pub channel: String,
     pub text: String,
+    pub reply_parent_msg_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -163,6 +174,7 @@ mod tests {
             color: Some("#1E90FF".to_string()),
             badges: vec!["moderator/1".to_string(), "subscriber/12".to_string()],
             emotes: Some("123:0-4".to_string()),
+            reply: None,
         };
 
         let json = serde_json::to_string(&msg).unwrap();
@@ -191,6 +203,7 @@ mod tests {
             color: None,
             badges: vec![],
             emotes: None,
+            reply: None,
         };
 
         let json = serde_json::to_string(&msg).unwrap();
@@ -256,6 +269,7 @@ mod tests {
         let msg = OutboundIrcMessage {
             channel: "gaules".to_string(),
             text: "Hello world!".to_string(),
+            reply_parent_msg_id: None,
         };
 
         assert_eq!(msg.channel, "gaules");
@@ -267,6 +281,7 @@ mod tests {
         let msg = OutboundIrcMessage {
             channel: "gaules".to_string(),
             text: "Hello!".to_string(),
+            reply_parent_msg_id: None,
         };
 
         let cloned = msg.clone();
@@ -279,6 +294,7 @@ mod tests {
         let msg = OutboundIrcMessage {
             channel: "gaules".to_string(),
             text: "Hello!".to_string(),
+            reply_parent_msg_id: None,
         };
 
         let debug_str = format!("{:?}", msg);

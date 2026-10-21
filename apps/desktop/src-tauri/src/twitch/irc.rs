@@ -8,8 +8,8 @@ use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 use super::error::TwitchError;
 use super::state::{
-    ConnectionState, ConnectionStateEvent, OutboundIrcMessage, TwitchState, UnifiedChatMessage,
-    MAX_MESSAGES,
+    ConnectionState, ConnectionStateEvent, OutboundIrcMessage, ReplyInfo, TwitchState,
+    UnifiedChatMessage, MAX_MESSAGES,
 };
 
 const IRC_URL: &str = "wss://irc-ws.chat.twitch.tv:443";
@@ -27,6 +27,51 @@ fn parse_tags(raw: &str) -> HashMap<String, String> {
             Some((key, value))
         })
         .collect()
+}
+
+fn unescape_tag_value(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut chars = raw.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            out.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('s') => out.push(' '),
+            Some(':') => out.push(';'),
+            Some('r') => out.push('\r'),
+            Some('n') => out.push('\n'),
+            Some(other) => out.push(other),
+            None => {}
+        }
+    }
+    out
+}
+
+fn parse_reply(tags: &HashMap<String, String>) -> Option<ReplyInfo> {
+    let parent_msg_id = tags.get("reply-parent-msg-id").filter(|s| !s.is_empty())?;
+    let tag = |key: &str| {
+        tags.get(key)
+            .map(|v| unescape_tag_value(v))
+            .unwrap_or_default()
+    };
+    Some(ReplyInfo {
+        parent_msg_id: parent_msg_id.clone(),
+        parent_username: tag("reply-parent-user-login"),
+        parent_display_name: tag("reply-parent-display-name"),
+        parent_message: tag("reply-parent-msg-body"),
+    })
+}
+
+pub fn build_privmsg_line(out: &OutboundIrcMessage) -> String {
+    match &out.reply_parent_msg_id {
+        Some(id) => format!(
+            "@reply-parent-msg-id={id} PRIVMSG #{} :{}",
+            out.channel, out.text
+        ),
+        None => format!("PRIVMSG #{} :{}", out.channel, out.text),
+    }
 }
 
 pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
@@ -75,6 +120,8 @@ pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
         .map(|s| s.split(',').map(str::to_owned).collect())
         .unwrap_or_default();
 
+    let reply = parse_reply(&tags);
+
     Some(UnifiedChatMessage {
         id,
         channel,
@@ -85,6 +132,7 @@ pub fn parse_privmsg(line: &str) -> Option<UnifiedChatMessage> {
         color,
         badges,
         emotes,
+        reply,
     })
 }
 
@@ -531,7 +579,7 @@ async fn connect_irc(
                              msgs_rx={total_messages_received})",
                             out_msg.channel
                         );
-                        let line = format!("PRIVMSG #{} :{}", out_msg.channel, out_msg.text);
+                        let line = build_privmsg_line(&out_msg);
                         if let Err(e) = write.send(Message::Text(line)).await {
                             log::error!(
                                 "[twitch-irc] outbound write failed at iteration={loop_iteration}, \
@@ -1011,5 +1059,82 @@ mod tests {
     #[test]
     fn join_delay_constant() {
         assert_eq!(JOIN_DELAY_MS, 350);
+    }
+}
+
+#[cfg(test)]
+mod reply_tests {
+    use super::*;
+
+    #[test]
+    fn should_parse_reply_tags_with_unescaped_body() {
+        // Arrange
+        let line = "@id=abc;reply-parent-msg-id=parent-1;reply-parent-user-login=bob;reply-parent-display-name=Bob;reply-parent-msg-body=hello\\sthere\\:\\\\ok :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :@Bob hi";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        let reply = msg.reply.unwrap();
+        assert_eq!(reply.parent_msg_id, "parent-1");
+        assert_eq!(reply.parent_username, "bob");
+        assert_eq!(reply.parent_display_name, "Bob");
+        assert_eq!(reply.parent_message, "hello there;\\ok");
+    }
+
+    #[test]
+    fn should_have_no_reply_without_reply_tags() {
+        // Arrange
+        let line = "@id=abc :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert!(msg.reply.is_none());
+    }
+
+    #[test]
+    fn should_ignore_empty_reply_parent_id() {
+        // Arrange
+        let line = "@id=abc;reply-parent-msg-id= :testuser!testuser@testuser.tmi.twitch.tv PRIVMSG #gaules :hello";
+
+        // Act
+        let msg = parse_privmsg(line).unwrap();
+
+        // Assert
+        assert!(msg.reply.is_none());
+    }
+
+    #[test]
+    fn should_build_plain_privmsg_line_without_reply() {
+        // Arrange
+        let out = OutboundIrcMessage {
+            channel: "gaules".to_owned(),
+            text: "hi".to_owned(),
+            reply_parent_msg_id: None,
+        };
+
+        // Act
+        let line = build_privmsg_line(&out);
+
+        // Assert
+        assert_eq!(line, "PRIVMSG #gaules :hi");
+    }
+
+    #[test]
+    fn should_prefix_reply_tag_when_replying() {
+        // Arrange
+        let out = OutboundIrcMessage {
+            channel: "gaules".to_owned(),
+            text: "hi".to_owned(),
+            reply_parent_msg_id: Some("abc-123".to_owned()),
+        };
+
+        // Act
+        let line = build_privmsg_line(&out);
+
+        // Assert
+        assert_eq!(line, "@reply-parent-msg-id=abc-123 PRIVMSG #gaules :hi");
     }
 }
