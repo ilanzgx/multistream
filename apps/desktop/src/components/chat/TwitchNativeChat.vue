@@ -88,9 +88,9 @@ function cancelReply() {
   activeReply.value = null;
 }
 
-function handleMention(displayName: string) {
-  const tag = `@${displayName} `;
-  if (!newMessage.value.includes(`@${displayName}`)) {
+function handleMention(username: string) {
+  const tag = `@${username} `;
+  if (!newMessage.value.includes(`@${username}`)) {
     if (!newMessage.value) {
       newMessage.value = tag;
     } else if (newMessage.value.endsWith(" ")) {
@@ -127,7 +127,9 @@ onMounted(async () => {
             if (lastText) {
               toast.error(message, { position: "bottom-right" });
               newMessage.value = lastText;
-              activeReply.value = lastSentReply;
+              if (!activeReply.value) {
+                activeReply.value = lastSentReply;
+              }
             }
           }
         }

@@ -110,9 +110,9 @@ const newMessage = ref("");
 const isSending = ref(false);
 const inputRef = ref<InstanceType<typeof ChatRichInput> | null>(null);
 
-function handleMention(displayName: string) {
-  const tag = `@${displayName} `;
-  if (!newMessage.value.includes(`@${displayName}`)) {
+function handleMention(username: string) {
+  const tag = `@${username} `;
+  if (!newMessage.value.includes(`@${username}`)) {
     if (!newMessage.value) {
       newMessage.value = tag;
     } else if (newMessage.value.endsWith(" ")) {
@@ -148,9 +148,11 @@ async function handleSend() {
 
   isSending.value = true;
   try {
-    const reply = activeReply.value ?? undefined;
-    await sendKickMessage(props.channel, text, reply);
-    activeReply.value = null;
+    const reply = activeReply.value;
+    await sendKickMessage(props.channel, text, reply ?? undefined);
+    if (activeReply.value === reply) {
+      activeReply.value = null;
+    }
     newMessage.value = "";
   } catch (error) {
     console.error("Failed to send message", error);

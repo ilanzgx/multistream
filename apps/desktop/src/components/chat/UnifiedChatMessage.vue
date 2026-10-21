@@ -36,7 +36,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   reply: [message: UnifiedChatMessage | KickChatMessage];
-  mention: [displayName: string];
+  mention: [username: string];
 }>();
 
 const { username: twitchUsername } = useTwitchAuth();
@@ -278,7 +278,7 @@ const handleLinkClick = async (url: string) => {
           :class="{ 'cursor-pointer hover:underline': props.canMention }"
           :style="{ color: nameColor }"
           :title="props.canMention ? t('chat.mention') : undefined"
-          @click="props.canMention ? emit('mention', props.message.display_name) : undefined"
+          @click="props.canMention ? emit('mention', props.message.username) : undefined"
         >
           {{ props.message.display_name }}<span class="text-gray-400">:</span>
         </span>
