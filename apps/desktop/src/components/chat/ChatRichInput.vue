@@ -321,6 +321,18 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener("selectionchange", handleSelectionChange);
 });
+
+function focus() {
+  if (editorRef.value) {
+    editorRef.value.focus();
+    const len = extractPlainText(editorRef.value).length;
+    setCaretPosition(editorRef.value, len);
+  }
+}
+
+defineExpose({
+  focus,
+});
 </script>
 
 <script lang="ts">
