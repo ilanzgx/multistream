@@ -1,7 +1,10 @@
 <script lang="ts" setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { Send, WifiOff, RefreshCw, ArrowDown } from "@lucide/vue";
-import { useUnifiedChat } from "@/composables/useUnifiedChat";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
+import { Send, WifiOff, RefreshCw, ArrowDown, X, CornerDownRight } from "@lucide/vue";
+import {
+  useUnifiedChat,
+  type UnifiedChatMessage as ChatMessage,
+} from "@/composables/useUnifiedChat";
 import { useEmotes } from "@/composables/useEmotes";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +13,7 @@ import UnifiedChatMessage from "./UnifiedChatMessage.vue";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { toast } from "@/composables/useToast";
 import { useTwitchAuth } from "@/composables/useTwitchAuth";
-import { useI18n } from "vue-i18n";
+import { useI18n, I18nT } from "vue-i18n";
 import { TwitchIcon } from "@/components/icons";
 import { useNetworkStatus } from "@/composables/useNetworkStatus";
 
@@ -35,7 +38,10 @@ const channelEmotes = computed(() => getEmoteDictionary(props.channel, "twitch")
 
 const newMessage = ref("");
 const isSending = ref(false);
+const activeReply = ref<ChatMessage | null>(null);
+let lastSentReply: ChatMessage | null = null;
 const isInitializing = ref(true);
+const inputRef = ref<InstanceType<typeof ChatRichInput> | null>(null);
 
 const scrollContainer = ref<HTMLElement | null>(null);
 const isScrolledUp = ref(false);
@@ -59,13 +65,43 @@ async function handleSend() {
 
   isSending.value = true;
   try {
-    await sendMessage(props.channel, text);
+    const reply = activeReply.value;
+    await sendMessage(props.channel, text, reply?.id);
+    lastSentReply = reply;
+    activeReply.value = null;
     newMessage.value = "";
   } catch (error) {
     console.error("Failed to send message", error);
   } finally {
     isSending.value = false;
   }
+}
+
+function startReply(msg: any) {
+  activeReply.value = msg as ChatMessage;
+  nextTick(() => {
+    inputRef.value?.focus();
+  });
+}
+
+function cancelReply() {
+  activeReply.value = null;
+}
+
+function handleMention(displayName: string) {
+  const tag = `@${displayName} `;
+  if (!newMessage.value.includes(`@${displayName}`)) {
+    if (!newMessage.value) {
+      newMessage.value = tag;
+    } else if (newMessage.value.endsWith(" ")) {
+      newMessage.value += tag;
+    } else {
+      newMessage.value += " " + tag;
+    }
+  }
+  nextTick(() => {
+    inputRef.value?.focus();
+  });
 }
 
 let isDisposed = false;
@@ -91,6 +127,7 @@ onMounted(async () => {
             if (lastText) {
               toast.error(message, { position: "bottom-right" });
               newMessage.value = lastText;
+              activeReply.value = lastSentReply;
             }
           }
         }
@@ -178,7 +215,12 @@ onUnmounted(() => {
           :is-pending="msg.isPending"
           :channel-color="channelColor(msg.channel)"
           :channel-avatar="channelAvatars[msg.channel]"
+          :current-username="username"
           compact
+          can-reply
+          can-mention
+          @reply="startReply"
+          @mention="handleMention"
         />
       </div>
 
@@ -199,8 +241,32 @@ onUnmounted(() => {
 
     <!-- Message Input Area -->
     <div class="p-3 border-t border-[#2a2d33] bg-[#0f1115] shrink-0">
-      <form class="flex items-end gap-2" @submit.prevent="handleSend">
+      <div
+        v-if="activeReply"
+        class="flex items-center gap-2 mb-2 px-2 py-1 rounded bg-[#14161a] border border-[#2a2d33] text-[11px] text-gray-400 min-w-0"
+        data-testid="chat-reply-bar"
+      >
+        <CornerDownRight class="w-3 h-3 shrink-0" />
+        <I18nT keypath="chat.replyingTo" tag="span" class="shrink-0">
+          <template #name>
+            <span class="text-white font-medium">{{ activeReply.display_name }}</span>
+          </template>
+        </I18nT>
+        <span class="truncate text-gray-500">{{ activeReply.message }}</span>
+        <button
+          type="button"
+          class="ml-auto shrink-0 text-gray-500 hover:text-gray-200 transition-colors"
+          :aria-label="t('chat.cancelReply')"
+          :title="t('chat.cancelReply')"
+          data-testid="chat-reply-cancel"
+          @click="cancelReply"
+        >
+          <X class="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <form class="flex items-end gap-2" @submit.prevent="handleSend" @keydown.esc="cancelReply">
         <ChatRichInput
+          ref="inputRef"
           v-model="newMessage"
           :emotes="channelEmotes"
           :placeholder="!isOnline ? t('network.offline') : t('chat.sendPlaceholder')"

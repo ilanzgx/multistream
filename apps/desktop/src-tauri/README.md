@@ -68,7 +68,7 @@ Outbound messages (`twitch_send_message`) are sent via an `mpsc` channel to the 
 | `twitch_set_channels` | `channels: string[]` | Sets IRC channels (validates/refreshes token first) |
 | `twitch_get_messages` | — | Returns the message buffer (max 1,000) |
 | `twitch_get_connection_state` | — | Returns the current connection state |
-| `twitch_send_message` | `channel: string, message: string` | Sends a message via the IRC channel |
+| `twitch_send_message` | `channel: string, message: string, replyParentMsgId?: string` | Sends a message via the IRC channel; when `replyParentMsgId` is set, prefixes `@reply-parent-msg-id` to make it a threaded reply |
 | `twitch_get_followed_streams` | — | Fetches followed channels currently live with viewer count, game, thumbnail, and avatar |
 | `twitch_get_hls_url` | `channel: string` | Obtains raw HLS (`.m3u8`) playback URL via Twitch GQL playback access token |
 

@@ -204,7 +204,7 @@ Tauri 2 strictly gates IPC commands through capabilities (`capabilities/default.
 | **Twitch Channels** | `twitch_set_channels` | `channels: Vec<String>` | `Result<(), TwitchError>` | `unified-chat-message`, `twitch-chat-error` |
 | **Twitch Chat** | `twitch_get_messages` | None | `Result<Vec<UnifiedChatMessage>, TwitchError>` | None |
 | **Twitch Chat** | `twitch_get_connection_state` | None | `Result<ConnectionStateEvent, TwitchError>` | `twitch-connection-state` |
-| **Twitch Chat** | `twitch_send_message` | `channel: String, text: String` | `Result<(), TwitchError>` | `unified-chat-message` |
+| **Twitch Chat** | `twitch_send_message` | `channel: String, text: String, reply_parent_msg_id: Option<String>` | `Result<(), TwitchError>` | `unified-chat-message` |
 | **Twitch HLS** | `twitch_get_hls_url` | `channel: String` | `Result<String, TwitchError>` | None |
 | **Twitch Follows** | `twitch_get_followed_streams` | None | `Result<Vec<FollowedChannel>, TwitchError>` | None |
 | **Kick Auth** | `kick_login` | `locale: Option<String>` | `Result<(), KickError>` | `kick-auth-changed`, `kick-auth-error` |
