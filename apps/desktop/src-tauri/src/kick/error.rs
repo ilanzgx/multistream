@@ -8,6 +8,9 @@ pub enum KickError {
     #[error("OAuth error: {0}")]
     OAuth(String),
 
+    #[error("Validation error: {0}")]
+    Validation(String),
+
     #[error("Token storage error: {0}")]
     Storage(String),
 

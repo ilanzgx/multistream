@@ -9,7 +9,7 @@ use tokio::sync::oneshot;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 
 use super::error::KickError;
-use super::state::{KickPusherConfig, KickState};
+use super::state::{KickPusherConfig, KickState, ReplyInfo};
 
 pub const DEFAULT_PUSHER_APP_KEY: &str = "32cbd69e4b950bf97679";
 pub const DEFAULT_PUSHER_CLUSTER: &str = "us2";
@@ -72,6 +72,8 @@ pub struct KickChatMessage {
     pub color: Option<String>,
     pub badges: Vec<String>,
     pub emotes: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reply: Option<ReplyInfo>,
 }
 
 #[derive(Deserialize)]
@@ -437,6 +439,38 @@ async fn connect_pusher(
     }
 }
 
+pub fn parse_kick_reply(payload: &Value) -> Option<ReplyInfo> {
+    let metadata = payload.get("metadata")?;
+    let orig_msg = metadata.get("original_message")?;
+    let parent_msg_id = orig_msg.get("id").and_then(|v| v.as_str())?;
+    if parent_msg_id.is_empty() {
+        return None;
+    }
+    let parent_message = orig_msg
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let parent_username = metadata
+        .get("original_sender")
+        .and_then(|s| s.get("username").and_then(|v| v.as_str()))
+        .or_else(|| {
+            orig_msg
+                .get("sender")
+                .and_then(|s| s.get("username").and_then(|v| v.as_str()))
+        })
+        .unwrap_or("")
+        .to_string();
+
+    Some(ReplyInfo {
+        parent_msg_id: parent_msg_id.to_string(),
+        parent_username: parent_username.clone(),
+        parent_display_name: parent_username,
+        parent_message,
+    })
+}
+
 pub fn parse_chat_message(
     pusher_event: &PusherEvent,
     channels: &HashSet<(String, u64)>,
@@ -494,6 +528,7 @@ pub fn parse_chat_message(
         color,
         badges,
         emotes: None,
+        reply: parse_kick_reply(&payload),
     })
 }
 
@@ -536,6 +571,31 @@ mod tests {
         assert_eq!(parsed.message, "Hello world");
         assert_eq!(parsed.color, Some("#FF0000".to_string()));
         assert_eq!(parsed.badges, vec!["broadcaster"]);
+        assert!(parsed.reply.is_none());
+    }
+
+    #[test]
+    fn should_parse_chat_message_with_reply() {
+        let raw_json = "{
+            \"event\": \"App\\\\Events\\\\ChatMessageEvent\",
+            \"data\": \"{\\\"id\\\":\\\"reply_123\\\",\\\"content\\\":\\\"My response\\\",\\\"type\\\":\\\"reply\\\",\\\"metadata\\\":{\\\"original_message\\\":{\\\"id\\\":\\\"parent_456\\\",\\\"content\\\":\\\"Original text\\\"},\\\"original_sender\\\":{\\\"id\\\":101,\\\"username\\\":\\\"parent_user\\\"}},\\\"sender\\\":{\\\"username\\\":\\\"replying_user\\\",\\\"identity\\\":{\\\"color\\\":\\\"#00FF00\\\",\\\"badges\\\":[]}}}\",
+            \"channel\": \"chatrooms.999.v2\"
+        }";
+
+        let pusher_event: PusherEvent = serde_json::from_str(raw_json).unwrap();
+        let mut channels = HashSet::new();
+        channels.insert(("test_slug".to_string(), 999));
+
+        let parsed = parse_chat_message(&pusher_event, &channels).unwrap();
+
+        assert_eq!(parsed.id, "reply_123");
+        assert_eq!(parsed.message, "My response");
+        assert!(parsed.reply.is_some());
+        let reply = parsed.reply.unwrap();
+        assert_eq!(reply.parent_msg_id, "parent_456");
+        assert_eq!(reply.parent_username, "parent_user");
+        assert_eq!(reply.parent_display_name, "parent_user");
+        assert_eq!(reply.parent_message, "Original text");
     }
 
     #[test]
