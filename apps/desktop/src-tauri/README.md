@@ -145,7 +145,7 @@ Kick occasionally rotates its public Pusher credentials or migrates clusters (as
 | `kick_handle_callback` | `code: string, oauth_state: string` | Delivers the OAuth authorization code and state from deep link/gateway |
 | `kick_logout` | — | Disconnects Pusher, clears credentials |
 | `kick_get_auth_state` | — | Returns `{ authenticated, username }` |
-| `kick_send_message` | `chatroom_id: number, message: string` | Sends a message (with automatic retry after token refresh) |
+| `kick_send_message` | `broadcaster_user_id: number, message: string, reply_to_message_id?: string` | Sends a message (with automatic retry after token refresh) |
 | `kick_set_channels` | `channels: [string, number][]` | Sets Pusher channels: `[slug, chatroom_id][]` |
 
 ### Emitted Events

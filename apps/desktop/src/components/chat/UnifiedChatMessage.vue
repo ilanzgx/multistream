@@ -204,15 +204,16 @@ const handleLinkClick = async (url: string) => {
 
     <div
       v-if="props.message.reply"
-      class="flex items-center gap-1 mb-0.5 text-[11px] text-gray-500 min-w-0"
-      :class="{ 'pl-1': !props.compact }"
+      class="flex items-center gap-1 mb-0.5 text-[11px] min-w-0"
+      :class="{ 'pl-0.5': !props.compact }"
       data-testid="chat-reply-context"
     >
-      <CornerDownRight class="w-3 h-3 shrink-0" />
-      <span class="font-semibold text-gray-300 shrink-0">{{
-        props.message.reply.parent_display_name
-      }}</span>
-      <span class="truncate">{{ cleanParentMessage }}</span>
+      <CornerDownRight class="w-3 h-3 text-gray-400 shrink-0" />
+      <span class="font-semibold text-gray-300 shrink-0"
+        >{{ props.message.reply.parent_display_name
+        }}<span class="text-gray-500 font-normal">:</span></span
+      >
+      <span class="truncate text-gray-400">{{ cleanParentMessage }}</span>
     </div>
 
     <!-- Action Button (Reply) -->

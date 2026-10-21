@@ -212,7 +212,7 @@ Tauri 2 strictly gates IPC commands through capabilities (`capabilities/default.
 | **Kick Auth** | `kick_handle_callback` | `code: String, oauth_state: String` | `Result<(), KickError>` | `kick-auth-changed`, `kick-auth-error` |
 | **Kick Auth** | `kick_logout` | None | `Result<(), KickError>` | `kick-auth-changed` |
 | **Kick Auth** | `kick_get_auth_state` | None | `Result<KickAuthState, KickError>` | None |
-| **Kick Chat** | `kick_send_message` | `broadcaster_user_id: u64, message: String` | `Result<(), KickError>` | `kick-chat-message` |
+| **Kick Chat** | `kick_send_message` | `broadcaster_user_id: u64, message: String, reply_to_message_id: Option<String>` | `Result<(), KickError>` | `kick-chat-message` |
 | **Kick Channels** | `kick_set_channels` | `channels: Vec<(String, u64)>` | `Result<(), KickError>` | `kick-chat-message` |
 | **YouTube** | `youtube_check_channels_status` | `channels: Vec<String>` | `Result<Vec<YouTubeChannelStatus>, String>` | None |
 | **YouTube** | `youtube_resolve_live_id` | `channel_or_handle: String` | `Result<Option<String>, String>` | None |
