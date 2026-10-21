@@ -329,7 +329,11 @@
       "vip": "VIP",
       "subscriber": "Suscriptor"
     },
-    "sendError": "Error al enviar el mensaje"
+    "sendError": "Error al enviar el mensaje",
+    "reply": "Responder",
+    "replyingTo": "Respondiendo a {name}",
+    "cancelReply": "Cancelar respuesta",
+    "mention": "Mencionar"
   },
   "confirm": {
     "deleteOrphan": {

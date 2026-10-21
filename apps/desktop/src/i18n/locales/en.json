@@ -329,7 +329,11 @@
       "vip": "VIP",
       "subscriber": "Subscriber"
     },
-    "sendError": "Failed to send message"
+    "sendError": "Failed to send message",
+    "reply": "Reply",
+    "replyingTo": "Replying to {name}",
+    "cancelReply": "Cancel reply",
+    "mention": "Mention"
   },
   "confirm": {
     "deleteOrphan": {

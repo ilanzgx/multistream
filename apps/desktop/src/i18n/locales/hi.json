@@ -329,7 +329,11 @@
       "vip": "वीआईपी",
       "subscriber": "सब्सक्राइबर"
     },
-    "sendError": "संदेश भेजने में विफल"
+    "sendError": "संदेश भेजने में विफल",
+    "reply": "जवाब दें",
+    "replyingTo": "{name} को जवाब",
+    "cancelReply": "जवाब रद्द करें",
+    "mention": "उल्लेख करें"
   },
   "confirm": {
     "deleteOrphan": {

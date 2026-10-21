@@ -329,7 +329,11 @@
       "vip": "VIP",
       "subscriber": "Подписчик"
     },
-    "sendError": "Не удалось отправить сообщение"
+    "sendError": "Не удалось отправить сообщение",
+    "reply": "Ответить",
+    "replyingTo": "Ответ для {name}",
+    "cancelReply": "Отменить ответ",
+    "mention": "Упомянуть"
   },
   "confirm": {
     "deleteOrphan": {
