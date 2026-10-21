@@ -9,8 +9,8 @@ use super::error::TwitchError;
 use super::irc::update_subscriptions;
 use super::oauth;
 use super::state::{
-    AuthState, ConnectionState, ConnectionStateEvent, OutboundIrcMessage, TwitchAuthInfo,
-    TwitchState, UnifiedChatMessage,
+    AuthState, ConnectionState, ConnectionStateEvent, OutboundIrcMessage, ReplyInfo,
+    TwitchAuthInfo, TwitchState, UnifiedChatMessage,
 };
 
 #[tauri::command]
@@ -194,18 +194,48 @@ pub async fn twitch_get_connection_state(
     })
 }
 
+fn is_valid_reply_parent_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 128
+        && !id.starts_with("local-")
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
+fn reply_context(
+    buf: &std::collections::VecDeque<UnifiedChatMessage>,
+    parent_id: &str,
+) -> Option<ReplyInfo> {
+    let parent = buf.iter().rev().find(|m| m.id == parent_id)?;
+    Some(ReplyInfo {
+        parent_msg_id: parent.id.clone(),
+        parent_username: parent.username.clone(),
+        parent_display_name: parent.display_name.clone(),
+        parent_message: parent.message.clone(),
+    })
+}
+
 #[tauri::command]
 pub async fn twitch_send_message(
     app: AppHandle,
     state: State<'_, TwitchState>,
     channel: String,
     text: String,
+    reply_parent_msg_id: Option<String>,
 ) -> Result<(), TwitchError> {
+    if let Some(id) = reply_parent_msg_id.as_deref() {
+        if !is_valid_reply_parent_id(id) {
+            return Err(TwitchError::Internal("Invalid reply target".to_owned()));
+        }
+    }
+
     let tx = state.irc_outbound_tx.lock().await.clone();
     if let Some(tx) = tx {
         tx.send(OutboundIrcMessage {
             channel: channel.clone(),
             text: text.clone(),
+            reply_parent_msg_id: reply_parent_msg_id.clone(),
         })
         .await
         .map_err(|_| TwitchError::WebSocket("Failed to send message".to_owned()))?;
@@ -230,9 +260,14 @@ pub async fn twitch_send_message(
             color: None,
             badges: Vec::new(),
             emotes: None,
+            reply: None,
         };
 
         let mut buf = state.messages.lock().await;
+        let message = UnifiedChatMessage {
+            reply: reply_parent_msg_id.and_then(|id| reply_context(&buf, &id)),
+            ..message
+        };
         if buf.len() >= super::state::MAX_MESSAGES {
             buf.pop_front();
         }
@@ -949,6 +984,7 @@ mod tests {
         let msg = OutboundIrcMessage {
             channel: "gaules".to_string(),
             text: "Hello world!".to_string(),
+            reply_parent_msg_id: None,
         };
 
         assert_eq!(msg.channel, "gaules");
@@ -969,6 +1005,7 @@ mod tests {
             color: Some("#1E90FF".to_string()),
             badges: vec!["moderator/1".to_string(), "subscriber/12".to_string()],
             emotes: Some("123:0-4".to_string()),
+            reply: None,
         };
 
         let json = serde_json::to_string(&msg).unwrap();
@@ -997,6 +1034,7 @@ mod tests {
             color: None,
             badges: vec![],
             emotes: None,
+            reply: None,
         };
 
         let json = serde_json::to_string(&msg).unwrap();
@@ -1111,5 +1149,65 @@ mod tests {
             "https://id.twitch.tv/oauth2/validate"
         );
         assert_eq!(EXPECTED_STRONGHOLD_KEY, "twitch_auth");
+    }
+}
+
+#[cfg(test)]
+mod reply_tests {
+    use super::*;
+
+    #[test]
+    fn should_accept_uuid_reply_parent_id() {
+        // Arrange
+        let id = "885196de-cb67-427a-baa8-82f9b0fcd05f";
+
+        // Act
+        let valid = is_valid_reply_parent_id(id);
+
+        // Assert
+        assert!(valid);
+    }
+
+    #[test]
+    fn should_reject_malicious_or_malformed_reply_parent_id() {
+        // Arrange
+        let ids = [
+            "",
+            "abc def",
+            "abc\r\nJOIN #x",
+            "local-123",
+            &"a".repeat(129),
+        ];
+
+        // Act & Assert
+        for id in ids {
+            assert!(!is_valid_reply_parent_id(id), "{id:?} should be rejected");
+        }
+    }
+
+    #[test]
+    fn should_resolve_reply_context_from_buffer() {
+        // Arrange
+        let mut buf = std::collections::VecDeque::new();
+        buf.push_back(UnifiedChatMessage {
+            id: "abc-1".to_owned(),
+            channel: "gaules".to_owned(),
+            username: "bob".to_owned(),
+            display_name: "Bob".to_owned(),
+            message: "hello".to_owned(),
+            timestamp_ms: 0,
+            color: None,
+            badges: Vec::new(),
+            emotes: None,
+            reply: None,
+        });
+
+        // Act
+        let found = reply_context(&buf, "abc-1");
+        let missing = reply_context(&buf, "zzz");
+
+        // Assert
+        assert_eq!(found.unwrap().parent_display_name, "Bob");
+        assert!(missing.is_none());
     }
 }

@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub use crate::twitch::state::ReplyInfo;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FollowedChannel {
@@ -62,5 +64,19 @@ mod tests {
         assert_eq!(channel.display_name, "xQc");
         assert!(!channel.is_live);
         assert!(channel.viewer_count.is_none());
+    }
+
+    #[test]
+    fn should_serialize_reply_info_roundtrip() {
+        let reply = ReplyInfo {
+            parent_msg_id: "msg-123".to_string(),
+            parent_username: "user1".to_string(),
+            parent_display_name: "User1".to_string(),
+            parent_message: "Hello world".to_string(),
+        };
+
+        let json = serde_json::to_string(&reply).unwrap();
+        let deserialized: ReplyInfo = serde_json::from_str(&json).unwrap();
+        assert_eq!(reply, deserialized);
     }
 }

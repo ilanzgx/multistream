@@ -204,7 +204,7 @@ Tauri 2 strictly gates IPC commands through capabilities (`capabilities/default.
 | **Twitch Channels** | `twitch_set_channels` | `channels: Vec<String>` | `Result<(), TwitchError>` | `unified-chat-message`, `twitch-chat-error` |
 | **Twitch Chat** | `twitch_get_messages` | None | `Result<Vec<UnifiedChatMessage>, TwitchError>` | None |
 | **Twitch Chat** | `twitch_get_connection_state` | None | `Result<ConnectionStateEvent, TwitchError>` | `twitch-connection-state` |
-| **Twitch Chat** | `twitch_send_message` | `channel: String, text: String` | `Result<(), TwitchError>` | `unified-chat-message` |
+| **Twitch Chat** | `twitch_send_message` | `channel: String, text: String, reply_parent_msg_id: Option<String>` | `Result<(), TwitchError>` | `unified-chat-message` |
 | **Twitch HLS** | `twitch_get_hls_url` | `channel: String` | `Result<String, TwitchError>` | None |
 | **Twitch Follows** | `twitch_get_followed_streams` | None | `Result<Vec<FollowedChannel>, TwitchError>` | None |
 | **Kick Auth** | `kick_login` | `locale: Option<String>` | `Result<(), KickError>` | `kick-auth-changed`, `kick-auth-error` |
@@ -212,7 +212,7 @@ Tauri 2 strictly gates IPC commands through capabilities (`capabilities/default.
 | **Kick Auth** | `kick_handle_callback` | `code: String, oauth_state: String` | `Result<(), KickError>` | `kick-auth-changed`, `kick-auth-error` |
 | **Kick Auth** | `kick_logout` | None | `Result<(), KickError>` | `kick-auth-changed` |
 | **Kick Auth** | `kick_get_auth_state` | None | `Result<KickAuthState, KickError>` | None |
-| **Kick Chat** | `kick_send_message` | `broadcaster_user_id: u64, message: String` | `Result<(), KickError>` | `kick-chat-message` |
+| **Kick Chat** | `kick_send_message` | `broadcaster_user_id: u64, message: String, reply_to_message_id: Option<String>` | `Result<(), KickError>` | `kick-chat-message` |
 | **Kick Channels** | `kick_set_channels` | `channels: Vec<(String, u64)>` | `Result<(), KickError>` | `kick-chat-message` |
 | **YouTube** | `youtube_check_channels_status` | `channels: Vec<String>` | `Result<Vec<YouTubeChannelStatus>, String>` | None |
 | **YouTube** | `youtube_resolve_live_id` | `channel_or_handle: String` | `Result<Option<String>, String>` | None |

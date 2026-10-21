@@ -329,7 +329,11 @@
       "vip": "VIP",
       "subscriber": "Pelanggan"
     },
-    "sendError": "Gagal mengirim pesan"
+    "sendError": "Gagal mengirim pesan",
+    "reply": "Balas",
+    "replyingTo": "Membalas {name}",
+    "cancelReply": "Batalkan balasan",
+    "mention": "Sebutkan"
   },
   "confirm": {
     "deleteOrphan": {

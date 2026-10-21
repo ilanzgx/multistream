@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use tokio::sync::Mutex;
 
+pub use crate::models::ReplyInfo;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KickAuthInfo {
     pub access_token: String,

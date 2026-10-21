@@ -13,6 +13,8 @@ pub struct KickSendChatRequest {
     pub content: String,
     #[serde(rename = "type")]
     pub msg_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reply_to_message_id: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -37,12 +39,14 @@ pub async fn send_message(
     auth: &KickAuthInfo,
     broadcaster_user_id: u64,
     content: &str,
+    reply_to_message_id: Option<String>,
 ) -> Result<(), KickError> {
     let url = "https://api.kick.com/public/v1/chat";
     let payload = KickSendChatRequest {
         broadcaster_user_id,
         content: content.to_string(),
         msg_type: "user".to_string(),
+        reply_to_message_id,
     };
 
     let resp = http
@@ -136,6 +140,32 @@ pub(crate) fn map_api_status(status: reqwest::StatusCode) -> Result<(), KickErro
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn should_serialize_send_chat_request_with_and_without_reply() {
+        let req_without_reply = KickSendChatRequest {
+            broadcaster_user_id: 12345,
+            content: "Hello Kick".to_string(),
+            msg_type: "user".to_string(),
+            reply_to_message_id: None,
+        };
+        let json_without = serde_json::to_string(&req_without_reply).unwrap();
+        assert!(json_without.contains(r#""broadcaster_user_id":12345"#));
+        assert!(json_without.contains(r#""content":"Hello Kick""#));
+        assert!(json_without.contains(r#""type":"user""#));
+        assert!(!json_without.contains("reply_to_message_id"));
+
+        let req_with_reply = KickSendChatRequest {
+            broadcaster_user_id: 12345,
+            content: "Reply to Kick".to_string(),
+            msg_type: "user".to_string(),
+            reply_to_message_id: Some("828f83bb-e391-4c78-9e91-af35a172840e".to_string()),
+        };
+        let json_with = serde_json::to_string(&req_with_reply).unwrap();
+        assert!(
+            json_with.contains(r#""reply_to_message_id":"828f83bb-e391-4c78-9e91-af35a172840e""#)
+        );
+    }
 
     #[test]
     fn should_map_auth_errors() {

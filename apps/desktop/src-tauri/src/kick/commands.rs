@@ -154,13 +154,29 @@ async fn refresh_kick_token_locked(
     }
 }
 
+pub(crate) fn is_valid_kick_reply_id(id: &str) -> bool {
+    !id.is_empty()
+        && id.len() <= 128
+        && !id.starts_with("local-")
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+}
+
 #[tauri::command]
 pub async fn kick_send_message(
     app: AppHandle,
     broadcaster_user_id: u64,
     message: String,
+    reply_to_message_id: Option<String>,
     state: State<'_, KickState>,
 ) -> Result<(), KickError> {
+    if let Some(id) = reply_to_message_id.as_deref() {
+        if !is_valid_kick_reply_id(id) {
+            return Err(KickError::Validation("Invalid reply target".to_owned()));
+        }
+    }
+
     let auth = {
         let auth_guard = state.auth.lock().await;
         auth_guard.clone()
@@ -175,15 +191,29 @@ pub async fn kick_send_message(
         .build()
         .map_err(KickError::Http)?;
 
-    match super::api::send_message(&http, &auth, broadcaster_user_id, &message).await {
+    match super::api::send_message(
+        &http,
+        &auth,
+        broadcaster_user_id,
+        &message,
+        reply_to_message_id.clone(),
+    )
+    .await
+    {
         Ok(_) => Ok(()),
         Err(e) => {
             if let KickError::OAuth(msg) = &e {
                 if is_retryable_auth_error(msg) {
                     let new_auth =
                         refresh_kick_token_locked(&app, &state, &http, &auth.refresh_token).await?;
-                    super::api::send_message(&http, &new_auth, broadcaster_user_id, &message)
-                        .await?;
+                    super::api::send_message(
+                        &http,
+                        &new_auth,
+                        broadcaster_user_id,
+                        &message,
+                        reply_to_message_id,
+                    )
+                    .await?;
                     return Ok(());
                 }
             }
@@ -214,6 +244,21 @@ pub(crate) fn is_retryable_auth_error(msg: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn should_validate_kick_reply_ids() {
+        assert!(is_valid_kick_reply_id(
+            "828f83bb-e391-4c78-9e91-af35a172840e"
+        ));
+        assert!(is_valid_kick_reply_id("msg_12345"));
+        assert!(is_valid_kick_reply_id("ABC-DEF-123"));
+
+        assert!(!is_valid_kick_reply_id(""));
+        assert!(!is_valid_kick_reply_id("local-12345678"));
+        assert!(!is_valid_kick_reply_id("bad id with spaces"));
+        assert!(!is_valid_kick_reply_id("injection\r\nCRLF"));
+        assert!(!is_valid_kick_reply_id(&"a".repeat(129)));
+    }
 
     #[test]
     fn should_validate_auth_correctly() {

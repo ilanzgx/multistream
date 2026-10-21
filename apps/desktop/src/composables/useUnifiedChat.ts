@@ -20,6 +20,12 @@ export interface UnifiedChatMessage {
   color: string | null;
   badges: string[];
   emotes: string | null;
+  reply?: {
+    parent_msg_id: string;
+    parent_username: string;
+    parent_display_name: string;
+    parent_message: string;
+  };
   platform?: "twitch" | "kick";
   isPending?: boolean;
 }
@@ -121,17 +127,17 @@ const _useUnifiedChat = () => {
     }
   }
 
-  async function sendMessage(channel: string, text: string) {
+  async function sendMessage(channel: string, text: string, replyParentMsgId?: string) {
     if (!isTauri() || !authenticated.value) return;
     try {
-      await invoke("twitch_send_message", { channel, text });
+      await invoke("twitch_send_message", { channel, text, replyParentMsgId });
     } catch (e) {
       console.error("[useUnifiedChat] failed to send Twitch message", e);
       throw e;
     }
   }
 
-  async function sendKickMessage(channelSlug: string, text: string) {
+  async function sendKickMessage(channelSlug: string, text: string, replyToMessageId?: string) {
     if (!isTauri()) return;
     try {
       const res = await fetch(API_CONFIG.kick.apiV1Url(channelSlug));
@@ -139,7 +145,11 @@ const _useUnifiedChat = () => {
       const data = await res.json();
       const userId = data.user_id;
 
-      await invoke("kick_send_message", { broadcasterUserId: userId, message: text });
+      await invoke("kick_send_message", {
+        broadcasterUserId: userId,
+        message: text,
+        replyToMessageId: replyToMessageId ?? null,
+      });
     } catch (e) {
       console.error("[useUnifiedChat] failed to send Kick message", e);
       throw e;

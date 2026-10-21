@@ -329,7 +329,11 @@
       "vip": "VIP",
       "subscriber": "订阅者"
     },
-    "sendError": "发送消息失败"
+    "sendError": "发送消息失败",
+    "reply": "回复",
+    "replyingTo": "回复 {name}",
+    "cancelReply": "取消回复",
+    "mention": "提及"
   },
   "confirm": {
     "deleteOrphan": {

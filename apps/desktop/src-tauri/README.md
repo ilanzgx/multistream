@@ -68,7 +68,7 @@ Outbound messages (`twitch_send_message`) are sent via an `mpsc` channel to the 
 | `twitch_set_channels` | `channels: string[]` | Sets IRC channels (validates/refreshes token first) |
 | `twitch_get_messages` | — | Returns the message buffer (max 1,000) |
 | `twitch_get_connection_state` | — | Returns the current connection state |
-| `twitch_send_message` | `channel: string, message: string` | Sends a message via the IRC channel |
+| `twitch_send_message` | `channel: string, message: string, replyParentMsgId?: string` | Sends a message via the IRC channel; when `replyParentMsgId` is set, prefixes `@reply-parent-msg-id` to make it a threaded reply |
 | `twitch_get_followed_streams` | — | Fetches followed channels currently live with viewer count, game, thumbnail, and avatar |
 | `twitch_get_hls_url` | `channel: string` | Obtains raw HLS (`.m3u8`) playback URL via Twitch GQL playback access token |
 
@@ -145,7 +145,7 @@ Kick occasionally rotates its public Pusher credentials or migrates clusters (as
 | `kick_handle_callback` | `code: string, oauth_state: string` | Delivers the OAuth authorization code and state from deep link/gateway |
 | `kick_logout` | — | Disconnects Pusher, clears credentials |
 | `kick_get_auth_state` | — | Returns `{ authenticated, username }` |
-| `kick_send_message` | `chatroom_id: number, message: string` | Sends a message (with automatic retry after token refresh) |
+| `kick_send_message` | `broadcaster_user_id: number, message: string, reply_to_message_id?: string` | Sends a message (with automatic retry after token refresh) |
 | `kick_set_channels` | `channels: [string, number][]` | Sets Pusher channels: `[slug, chatroom_id][]` |
 
 ### Emitted Events
