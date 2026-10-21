@@ -333,7 +333,9 @@
     "reply": "Répondre",
     "replyingTo": "Réponse à {name}",
     "cancelReply": "Annuler la réponse",
-    "mention": "Mentionner"
+    "mention": "Mentionner",
+    "reward": "Récompense de points de chaîne",
+    "highlightedMessage": "Message mis en évidence"
   },
   "confirm": {
     "deleteOrphan": {

@@ -261,6 +261,8 @@ pub async fn twitch_send_message(
             badges: Vec::new(),
             emotes: None,
             reply: None,
+            custom_reward_id: None,
+            msg_id: None,
         };
 
         let mut buf = state.messages.lock().await;
@@ -1006,6 +1008,8 @@ mod tests {
             badges: vec!["moderator/1".to_string(), "subscriber/12".to_string()],
             emotes: Some("123:0-4".to_string()),
             reply: None,
+            custom_reward_id: Some("reward-uuid-123".to_string()),
+            msg_id: Some("highlighted-message".to_string()),
         };
 
         let json = serde_json::to_string(&msg).unwrap();
@@ -1020,6 +1024,8 @@ mod tests {
         assert_eq!(deserialized.color, msg.color);
         assert_eq!(deserialized.badges, msg.badges);
         assert_eq!(deserialized.emotes, msg.emotes);
+        assert_eq!(deserialized.custom_reward_id, msg.custom_reward_id);
+        assert_eq!(deserialized.msg_id, msg.msg_id);
     }
 
     #[test]
@@ -1035,6 +1041,8 @@ mod tests {
             badges: vec![],
             emotes: None,
             reply: None,
+            custom_reward_id: None,
+            msg_id: None,
         };
 
         let json = serde_json::to_string(&msg).unwrap();
@@ -1200,6 +1208,8 @@ mod reply_tests {
             badges: Vec::new(),
             emotes: None,
             reply: None,
+            custom_reward_id: None,
+            msg_id: None,
         });
 
         // Act

@@ -483,6 +483,41 @@ describe("useUnifiedChat", () => {
     expect(chat.messages.value[0]?.id).toBe("real-kick-100");
   });
 
+  it("handles incoming message with custom_reward_id and msg_id", async () => {
+    // Arrange
+    let chat!: ReturnType<typeof useUnifiedChat>;
+    scope.run(() => {
+      chat = useUnifiedChat();
+    });
+    await vi.runAllTimersAsync();
+
+    const listener = listenerCallbacks["unified-chat-message"];
+
+    // Act
+    listener?.({
+      payload: {
+        id: "reward-msg-1",
+        channel: "gaules",
+        username: "pointsuser",
+        display_name: "PointsUser",
+        message: "Redeemed with points",
+        timestamp_ms: 1000,
+        color: "#9146FF",
+        badges: [],
+        emotes: null,
+        custom_reward_id: "reward-uuid-999",
+        msg_id: "highlighted-message",
+      },
+    });
+    vi.advanceTimersByTime(60);
+
+    // Assert
+    const msg = chat.messages.value.find((m) => m.id === "reward-msg-1");
+    expect(msg).toBeDefined();
+    expect(msg?.custom_reward_id).toBe("reward-uuid-999");
+    expect(msg?.msg_id).toBe("highlighted-message");
+  });
+
   it("removeLastLocalMessage removes pending Twitch message and returns text", async () => {
     // Arrange
     let chat!: ReturnType<typeof useUnifiedChat>;

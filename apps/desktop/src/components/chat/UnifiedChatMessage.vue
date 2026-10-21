@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { UnifiedChatMessage } from "@/composables/useUnifiedChat";
 import type { KickChatMessage } from "@/composables/useKickChat";
 import { useEmotes, type ParsedToken } from "@/composables/useEmotes";
-import { Sword, Crown, Gem, Star, Reply, CornerDownRight } from "@lucide/vue";
+import { Sword, Crown, Gem, Star, Reply, CornerDownRight, Sparkles } from "@lucide/vue";
 import TwitchIcon from "@/components/icons/TwitchIcon.vue";
 import KickIcon from "@/components/icons/KickIcon.vue";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
@@ -73,6 +73,14 @@ const isMentionedOrReplied = computed(() => {
   const regex = new RegExp(`(^|\\s|[^a-zA-Z0-9_])@${escaped}(\\b|[^a-zA-Z0-9_]|$)`, "i");
   return regex.test(msgText);
 });
+
+const isHighlightedReward = computed(
+  () => (props.message as UnifiedChatMessage).msg_id === "highlighted-message"
+);
+
+const isCustomReward = computed(() =>
+  Boolean((props.message as UnifiedChatMessage).custom_reward_id)
+);
 
 // Own messages keep a `local-*` id (Twitch never echoes them), so they have no real parent id to reply to.
 const isReplyable = computed(
@@ -185,7 +193,9 @@ const handleLinkClick = async (url: string) => {
         ? props.message.platform === 'kick'
           ? 'bg-[#53fc18]/10 hover:bg-[#53fc18]/15'
           : 'bg-[#9146FF]/10 hover:bg-[#9146FF]/15'
-        : 'hover:bg-white/[0.03]',
+        : isHighlightedReward
+          ? 'bg-[#9146FF]/10 hover:bg-[#9146FF]/15'
+          : 'hover:bg-white/[0.03]',
       { 'opacity-60': props.isPending || props.message.isPending },
     ]"
   >
@@ -194,6 +204,12 @@ const handleLinkClick = async (url: string) => {
       v-if="isMentionedOrReplied"
       class="absolute left-0 top-0 bottom-0 w-[3px]"
       :class="props.message.platform === 'kick' ? 'bg-[#53fc18]' : 'bg-[#9146FF]'"
+    />
+    <!-- Highlighted Reward Left Indicator -->
+    <div
+      v-else-if="isHighlightedReward"
+      class="absolute left-0 top-0 bottom-0 w-[3px] bg-[#9146FF]"
+      data-testid="chat-highlighted-reward-indicator"
     />
     <!-- Channel Color Left Indicator -->
     <div
@@ -261,6 +277,17 @@ const handleLinkClick = async (url: string) => {
             :size="12"
             :style="{ color: '#53fc18' }"
           />
+        </span>
+
+        <!-- Channel Points Custom Reward Badge -->
+        <span
+          v-if="isCustomReward"
+          class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#9146FF]/20 text-[#bf94ff] border border-[#9146FF]/30 mr-1.5 align-middle select-none"
+          :title="t('chat.reward')"
+          data-testid="chat-custom-reward-badge"
+        >
+          <Sparkles class="w-2.5 h-2.5" aria-hidden="true" />
+          <span>{{ t("chat.reward") }}</span>
         </span>
 
         <!-- Badges -->
