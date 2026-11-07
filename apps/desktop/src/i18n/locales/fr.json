@@ -335,7 +335,8 @@
     "cancelReply": "Annuler la réponse",
     "mention": "Mentionner",
     "reward": "Récompense de points de chaîne",
-    "highlightedMessage": "Message mis en évidence"
+    "highlightedMessage": "Message mis en évidence",
+    "loadError": "Impossible de charger le chat. Rouvrez l'application."
   },
   "confirm": {
     "deleteOrphan": {

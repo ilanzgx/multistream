@@ -1,3 +1,4 @@
+import { flushPromises } from "@vue/test-utils";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -44,6 +45,223 @@ describe("useKickChat", () => {
     // Assert
     expect(listen).toHaveBeenCalledWith("kick-connection-state", expect.any(Function));
     expect(listen).toHaveBeenCalledWith("kick-chat-message", expect.any(Function));
+  });
+
+  it("waits for listeners before fetching and subscribing a restored channel", async () => {
+    // Arrange
+    const pending: Array<() => void> = [];
+    vi.mocked(listen).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => resolve(() => {}));
+        })
+    );
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({ chatroom: { id: 123 } }))
+    );
+    const chat = useKickChat("restored");
+
+    // Act
+    const joining = chat.joinChannel();
+    await Promise.resolve();
+
+    // Assert
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+
+    // Act
+    pending.shift()?.();
+    await Promise.resolve();
+    await Promise.resolve();
+    pending.shift()?.();
+    await joining;
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("kick_set_channels", { channels: [["restored", 123]] });
+  });
+
+  it("gives HTTP its full timeout after listeners take more than six seconds", async () => {
+    // Arrange
+    vi.useFakeTimers();
+    const pending: Array<() => void> = [];
+    vi.mocked(listen).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => resolve(() => {}));
+        })
+    );
+    let signal: AbortSignal | null | undefined;
+    vi.mocked(globalThis.fetch).mockImplementation((_url, init) => {
+      signal = init?.signal;
+      return new Promise((_resolve, reject) => {
+        signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")), {
+          once: true,
+        });
+      });
+    });
+    const chat = useKickChat("restored");
+
+    // Act
+    const joining = chat.joinChannel();
+    await vi.advanceTimersByTimeAsync(7000);
+    pending.shift()?.();
+    await flushPromises();
+    pending.shift()?.();
+    await flushPromises();
+
+    // Assert
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+    expect(signal?.aborted).toBe(false);
+
+    // Act
+    await vi.advanceTimersByTimeAsync(5999);
+
+    // Assert
+    expect(signal?.aborted).toBe(false);
+    expect(chat.isJoining.value).toBe(true);
+
+    // Act
+    await vi.advanceTimersByTimeAsync(1);
+    await joining;
+
+    // Assert
+    expect(signal?.aborted).toBe(true);
+    expect(chat.isJoining.value).toBe(false);
+  });
+
+  it("ends a join when listeners remain stalled without starting HTTP", async () => {
+    // Arrange
+    vi.useFakeTimers();
+    const pending: Array<() => void> = [];
+    vi.mocked(listen).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => resolve(() => {}));
+        })
+    );
+    const chat = useKickChat("restored");
+    const joining = chat.joinChannel();
+
+    // Act
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    // Assert
+    expect(chat.isJoining.value).toBe(false);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    await joining;
+
+    // Act
+    pending.shift()?.();
+    await flushPromises();
+    pending.shift()?.();
+    await flushPromises();
+
+    // Assert
+    expect(invoke).not.toHaveBeenCalledWith("kick_set_channels", expect.anything());
+
+    // Act
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({ chatroom: { id: 123 } }))
+    );
+    await chat.joinChannel();
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("kick_set_channels", { channels: [["restored", 123]] });
+  });
+
+  it("cleans up a partial listener failure and allows the next join to retry", async () => {
+    // Arrange
+    const unlisten = vi.fn<() => void>();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(listen)
+      .mockResolvedValue(unlisten)
+      .mockResolvedValueOnce(unlisten)
+      .mockRejectedValueOnce(new Error("IPC not ready"));
+    vi.mocked(globalThis.fetch).mockResolvedValue(
+      new Response(JSON.stringify({ chatroom: { id: 123 } }))
+    );
+    const chat = useKickChat("restored");
+    await flushPromises();
+
+    // Act
+    await chat.joinChannel();
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("kick_set_channels", { channels: [["restored", 123]] });
+    expect(listen).toHaveBeenCalledTimes(4);
+    expect(unlisten).toHaveBeenCalledTimes(1);
+    log.mockRestore();
+  });
+
+  it("cancels a join while listener setup is pending", async () => {
+    // Arrange
+    const pending: Array<() => void> = [];
+    vi.mocked(listen).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => resolve(() => {}));
+        })
+    );
+    const chat = useKickChat("restored");
+    const joining = chat.joinChannel();
+
+    // Act
+    await chat.leaveChannel();
+    await flushPromises();
+
+    // Assert
+    expect(chat.isJoining.value).toBe(false);
+
+    // Act
+    pending.shift()?.();
+    await flushPromises();
+    pending.shift()?.();
+    await joining;
+
+    // Assert
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(invoke).not.toHaveBeenCalledWith("kick_set_channels", expect.anything());
+    expect(chat.isJoining.value).toBe(false);
+  });
+
+  it("does not let a cancelled request clear the replacement join", async () => {
+    // Arrange
+    let finishOld: (response: Response) => void = () => {};
+    let finishNew: (response: Response) => void = () => {};
+    vi.mocked(globalThis.fetch)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishOld = resolve;
+          })
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            finishNew = resolve;
+          })
+      );
+    const oldChat = useKickChat("restored");
+    const oldJoin = oldChat.joinChannel();
+    await flushPromises();
+
+    // Act
+    await oldChat.leaveChannel();
+    const newChat = useKickChat("restored");
+    const newJoin = newChat.joinChannel();
+    await flushPromises();
+    finishOld(new Response("{}"));
+    await oldJoin;
+    await newChat.joinChannel();
+
+    // Assert
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+
+    // Act
+    finishNew(new Response(JSON.stringify({ chatroom: { id: 123 } })));
+    await newJoin;
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("kick_set_channels", { channels: [["restored", 123]] });
   });
 
   it("fetches chatroom id and joins channel", async () => {
@@ -118,6 +336,7 @@ describe("useKickChat", () => {
 
     // Act
     const joinPromise = joinChannel();
+    await flushPromises();
     await leaveChannel();
     await joinPromise;
 
@@ -474,6 +693,8 @@ describe("useKickChat", () => {
     // Act
     const joinPromise = joinChannel();
     expect(isJoining.value).toBe(true);
+
+    await flushPromises();
 
     // Fast-forward past 6000ms safety timeout
     vi.advanceTimersByTime(6100);

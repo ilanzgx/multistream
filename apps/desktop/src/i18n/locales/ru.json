@@ -335,7 +335,8 @@
     "cancelReply": "Отменить ответ",
     "mention": "Упомянуть",
     "reward": "Награда за баллы канала",
-    "highlightedMessage": "Выделенное сообщение"
+    "highlightedMessage": "Выделенное сообщение",
+    "loadError": "Не удалось загрузить чат. Перезапустите приложение."
   },
   "confirm": {
     "deleteOrphan": {

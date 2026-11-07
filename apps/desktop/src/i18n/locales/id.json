@@ -335,7 +335,8 @@
     "cancelReply": "Batalkan balasan",
     "mention": "Sebutkan",
     "reward": "Hadiah Poin Saluran",
-    "highlightedMessage": "Pesan yang disorot"
+    "highlightedMessage": "Pesan yang disorot",
+    "loadError": "Obrolan gagal dimuat. Buka kembali aplikasi."
   },
   "confirm": {
     "deleteOrphan": {

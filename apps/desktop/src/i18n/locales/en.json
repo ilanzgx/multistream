@@ -335,7 +335,8 @@
     "cancelReply": "Cancel reply",
     "mention": "Mention",
     "reward": "Channel Points Reward",
-    "highlightedMessage": "Highlighted Message"
+    "highlightedMessage": "Highlighted Message",
+    "loadError": "Unable to load chat. Please reopen the app."
   },
   "confirm": {
     "deleteOrphan": {

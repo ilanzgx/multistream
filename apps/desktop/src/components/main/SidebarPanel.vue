@@ -8,10 +8,12 @@ import { useUnifiedChatState } from "@/composables/useUnifiedChatState";
 import { useImmersiveMode } from "@/composables/useImmersiveMode";
 import { isTauri } from "@/composables/useUpdater";
 import { Button } from "@/components/ui/button";
-const KickChat = defineAsyncComponent(() => import("@/components/chat/KickChat.vue"));
-const TwitchChat = defineAsyncComponent(() => import("@/components/chat/TwitchChat.vue"));
-const YoutubeChat = defineAsyncComponent(() => import("@/components/chat/YoutubeChat.vue"));
-const UnifiedChat = defineAsyncComponent(() => import("@/components/chat/UnifiedChat.vue"));
+import { defineAsyncChat } from "@/lib/defineAsyncChat";
+
+const KickChat = defineAsyncChat(() => import("@/components/chat/KickChat.vue"));
+const TwitchChat = defineAsyncChat(() => import("@/components/chat/TwitchChat.vue"));
+const YoutubeChat = defineAsyncChat(() => import("@/components/chat/YoutubeChat.vue"));
+const UnifiedChat = defineAsyncChat(() => import("@/components/chat/UnifiedChat.vue"));
 const TranscriptView = defineAsyncComponent(() => import("@/components/chat/TranscriptView.vue"));
 
 const AddDialog = defineAsyncComponent(() => import("@/components/dialogs/AddDialog.vue"));
@@ -380,25 +382,33 @@ onUnmounted(() => {
       <!-- chat / transcript area -->
       <div id="chat-sidebar-bounds" class="relative flex-1 overflow-hidden flex flex-col">
         <div v-show="sidebarMode === 'chat'" class="absolute inset-0">
-          <KickChat
+          <div
             v-for="stream in streams.filter((s) => s.platform === 'kick')"
             v-show="isChatSelected(stream)"
             :key="`chat-${stream.id}`"
-            :channel="stream.channel"
-          />
-          <TwitchChat
+            class="absolute inset-0"
+          >
+            <KickChat :channel="stream.channel" />
+          </div>
+          <div
             v-for="stream in streams.filter((s) => s.platform === 'twitch')"
             v-show="isChatSelected(stream)"
             :key="`chat-${stream.id}`"
-            :channel="stream.channel"
-          />
-          <YoutubeChat
+            class="absolute inset-0"
+          >
+            <TwitchChat :channel="stream.channel" />
+          </div>
+          <div
             v-for="stream in streams.filter((s) => s.platform === 'youtube')"
             v-show="isChatSelected(stream)"
             :key="`chat-${stream.id}`"
-            :channel="stream.channel"
-          />
-          <UnifiedChat v-if="hasLoadedUnifiedChat" v-show="selectedChat === UNIFIED_CHAT_ID" />
+            class="absolute inset-0"
+          >
+            <YoutubeChat :channel="stream.channel" />
+          </div>
+          <div v-show="selectedChat === UNIFIED_CHAT_ID" class="absolute inset-0">
+            <UnifiedChat v-if="hasLoadedUnifiedChat" />
+          </div>
           <div
             v-if="streams.length === 0"
             class="absolute inset-0 flex items-center justify-center text-muted-foreground bg-[#0f1115]"

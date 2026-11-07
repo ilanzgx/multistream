@@ -335,7 +335,8 @@
     "cancelReply": "जवाब रद्द करें",
     "mention": "उल्लेख करें",
     "reward": "चैनल पॉइंट्स रिवॉर्ड",
-    "highlightedMessage": "हाइलाइट किया गया संदेश"
+    "highlightedMessage": "हाइलाइट किया गया संदेश",
+    "loadError": "चैट लोड नहीं हो सकी। कृपया ऐप दोबारा खोलें।"
   },
   "confirm": {
     "deleteOrphan": {

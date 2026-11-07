@@ -335,7 +335,8 @@
     "cancelReply": "Antwort abbrechen",
     "mention": "Erwähnen",
     "reward": "Kanalpunkte-Belohnung",
-    "highlightedMessage": "Hervorgehobene Nachricht"
+    "highlightedMessage": "Hervorgehobene Nachricht",
+    "loadError": "Der Chat konnte nicht geladen werden. Bitte starte die App neu."
   },
   "confirm": {
     "deleteOrphan": {

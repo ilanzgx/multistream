@@ -335,7 +335,8 @@
     "cancelReply": "取消回复",
     "mention": "提及",
     "reward": "频道积分奖励",
-    "highlightedMessage": "突出显示的消息"
+    "highlightedMessage": "突出显示的消息",
+    "loadError": "无法加载聊天。请重新打开应用。"
   },
   "confirm": {
     "deleteOrphan": {

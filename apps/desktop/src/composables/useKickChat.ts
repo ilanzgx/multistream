@@ -27,6 +27,8 @@ export interface KickChatMessage {
 
 const MAX_FRONTEND_MESSAGES = 500;
 const BATCH_FLUSH_INTERVAL_MS = 50;
+const LISTENER_SETUP_TIMEOUT_MS = 15_000;
+const CHATROOM_FETCH_TIMEOUT_MS = 6000;
 
 const activeKickChannels = new Map<string, number>(); // slug -> chatroom_id
 const activeBroadcasters = new Map<string, number>(); // slug -> broadcaster_user_id
@@ -38,7 +40,7 @@ let flushTimer: ReturnType<typeof setTimeout> | null = null;
 const channelMessagesMap = shallowRef<Record<string, KickChatMessage[]>>({});
 const connectionState = ref<"connected" | "disconnected" | "reconnecting">("disconnected");
 
-let isListening = false;
+let listenerSetup: Promise<void> | null = null;
 let unlistenState: (() => void) | null = null;
 let unlistenMessage: (() => void) | null = null;
 
@@ -115,32 +117,53 @@ export function __test_resetKickChatState() {
     unlistenMessage();
     unlistenMessage = null;
   }
-  isListening = false;
+  listenerSetup = null;
 }
 
-async function setupListeners() {
-  if (isListening) return;
-  isListening = true;
+function setupListeners(): Promise<void> {
+  if (listenerSetup) return listenerSetup;
+  listenerSetup = registerListeners().catch((error) => {
+    unlistenState?.();
+    unlistenState = null;
+    unlistenMessage?.();
+    unlistenMessage = null;
+    listenerSetup = null;
+    throw error;
+  });
+  return listenerSetup;
+}
+
+async function registerListeners() {
+  unlistenState = await listen<{ state: "connected" | "disconnected" | "reconnecting" }>(
+    "kick-connection-state",
+    (event) => {
+      connectionState.value = event.payload.state;
+    }
+  );
+
+  unlistenMessage = await listen<KickChatMessage>("kick-chat-message", (event) => {
+    const msg = event.payload;
+    msg.platform = "kick";
+    pendingMessages.push(msg);
+
+    if (!flushTimer) {
+      flushTimer = setTimeout(flushPendingKickMessages, BATCH_FLUSH_INTERVAL_MS);
+    }
+  });
+}
+
+async function waitForListeners(signal: AbortSignal): Promise<void> {
+  let onAbort: () => void = () => {};
+  const cancelled = new Promise<void>((_resolve, reject) => {
+    onAbort = () => reject(new DOMException("Chat join cancelled", "AbortError"));
+    signal.addEventListener("abort", onAbort, { once: true });
+    if (signal.aborted) onAbort();
+  });
 
   try {
-    unlistenState = await listen<{ state: "connected" | "disconnected" | "reconnecting" }>(
-      "kick-connection-state",
-      (event) => {
-        connectionState.value = event.payload.state;
-      }
-    );
-
-    unlistenMessage = await listen<KickChatMessage>("kick-chat-message", (event) => {
-      const msg = event.payload;
-      msg.platform = "kick";
-      pendingMessages.push(msg);
-
-      if (!flushTimer) {
-        flushTimer = setTimeout(flushPendingKickMessages, BATCH_FLUSH_INTERVAL_MS);
-      }
-    });
-  } catch (err) {
-    console.error("Failed to setup Kick chat listeners:", err);
+    await Promise.race([setupListeners(), cancelled]);
+  } finally {
+    signal.removeEventListener("abort", onAbort);
   }
 }
 
@@ -152,7 +175,7 @@ async function updateSubscriptions() {
 let isReconnectingSubscriptions = false;
 
 export function useKickChat(channelSlug: string) {
-  setupListeners();
+  setupListeners().catch((error) => console.error("Failed to setup Kick chat listeners:", error));
 
   const { onReconnect } = useNetworkStatus();
   onReconnect(async () => {
@@ -177,9 +200,13 @@ export function useKickChat(channelSlug: string) {
     isJoining.value = true;
     const controller = new AbortController();
     pendingJoinControllers.set(slug, controller);
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    let timeoutId = setTimeout(() => controller.abort(), LISTENER_SETUP_TIMEOUT_MS);
 
     try {
+      await waitForListeners(controller.signal);
+      clearTimeout(timeoutId);
+      if (controller.signal.aborted) return;
+      timeoutId = setTimeout(() => controller.abort(), CHATROOM_FETCH_TIMEOUT_MS);
       const res = await httpGet(API_CONFIG.kick.apiV1Url(slug), undefined, {
         signal: controller.signal,
       });
@@ -203,7 +230,9 @@ export function useKickChat(channelSlug: string) {
       console.error("Failed to fetch Kick chatroom ID for", slug, e);
     } finally {
       clearTimeout(timeoutId);
-      pendingJoinControllers.delete(slug);
+      if (pendingJoinControllers.get(slug) === controller) {
+        pendingJoinControllers.delete(slug);
+      }
       isJoining.value = false;
     }
   }

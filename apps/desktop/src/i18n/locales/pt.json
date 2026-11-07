@@ -335,7 +335,8 @@
     "cancelReply": "Cancelar resposta",
     "mention": "Mencionar",
     "reward": "Recompensa de Pontos do Canal",
-    "highlightedMessage": "Mensagem destacada"
+    "highlightedMessage": "Mensagem destacada",
+    "loadError": "Não foi possível carregar o chat. Reabra o aplicativo."
   },
   "confirm": {
     "deleteOrphan": {

@@ -134,6 +134,106 @@ describe("useUnifiedChat", () => {
     expect(UNIFIED_CHAT_ID.length).toBeGreaterThan(0);
   });
 
+  it("waits for all listeners before connecting restored channels", async () => {
+    // Arrange
+    const pending: Array<() => void> = [];
+    vi.mocked(listen).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => resolve(() => {}));
+        })
+    );
+
+    // Act
+    scope.run(() => useUnifiedChat());
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Assert
+    expect(invoke).not.toHaveBeenCalledWith("twitch_set_channels", expect.anything());
+
+    // Act
+    for (let i = 0; i < 4; i++) {
+      pending.shift()?.();
+      await vi.advanceTimersByTimeAsync(0);
+    }
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("twitch_set_channels", { channels: ["gaules", "cellbit"] });
+  });
+
+  it("subscribes only the latest channels when selection changes during initialization", async () => {
+    // Arrange
+    const pending: Array<() => void> = [];
+    vi.mocked(listen).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => resolve(() => {}));
+        })
+    );
+    scope.run(() => useUnifiedChat());
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Act
+    mockStreams.value = [{ id: "4", channel: "newchannel", platform: "twitch" }];
+    await vi.advanceTimersByTimeAsync(0);
+    for (let i = 0; i < 4; i++) {
+      pending.shift()?.();
+      await vi.advanceTimersByTimeAsync(0);
+    }
+
+    // Assert
+    expect(
+      vi.mocked(invoke).mock.calls.filter(([command]) => command === "twitch_set_channels")
+    ).toEqual([["twitch_set_channels", { channels: ["newchannel"] }]]);
+  });
+
+  it("does not subscribe if disposed while listeners are initializing", async () => {
+    // Arrange
+    const pending: Array<() => void> = [];
+    const unlisten = vi.fn<() => void>();
+    vi.mocked(listen).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          pending.push(() => resolve(unlisten));
+        })
+    );
+    scope.run(() => useUnifiedChat());
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Act
+    scope.stop();
+    for (let i = 0; i < 4; i++) {
+      pending.shift()?.();
+      await vi.advanceTimersByTimeAsync(0);
+    }
+
+    // Assert
+    expect(invoke).not.toHaveBeenCalledWith("twitch_set_channels", expect.anything());
+    expect(unlisten).toHaveBeenCalledTimes(4);
+  });
+
+  it("cleans up partial initialization and retries when channels change", async () => {
+    // Arrange
+    const unlisten = vi.fn<() => void>();
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.mocked(listen)
+      .mockResolvedValue(unlisten)
+      .mockResolvedValueOnce(unlisten)
+      .mockRejectedValueOnce(new Error("IPC unavailable"));
+    scope.run(() => useUnifiedChat());
+    await vi.runAllTimersAsync();
+    expect(unlisten).toHaveBeenCalledTimes(1);
+
+    // Act
+    mockStreams.value = [{ id: "4", channel: "newchannel", platform: "twitch" }];
+    await vi.runAllTimersAsync();
+
+    // Assert
+    expect(invoke).toHaveBeenCalledWith("twitch_set_channels", { channels: ["newchannel"] });
+    expect(listen).toHaveBeenCalledTimes(6);
+    log.mockRestore();
+  });
+
   it("initialises and hydrates messages from twitch_get_messages", async () => {
     // Arrange
     let chat!: ReturnType<typeof useUnifiedChat>;

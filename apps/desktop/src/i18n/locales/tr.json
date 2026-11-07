@@ -335,7 +335,8 @@
     "cancelReply": "Yanıtı iptal et",
     "mention": "Bahset",
     "reward": "Kanal Puanı Ödülü",
-    "highlightedMessage": "Öne Çıkarılan Mesaj"
+    "highlightedMessage": "Öne Çıkarılan Mesaj",
+    "loadError": "Sohbet yüklenemedi. Lütfen uygulamayı yeniden açın."
   },
   "confirm": {
     "deleteOrphan": {

@@ -1,7 +1,7 @@
 import { ref, shallowRef, computed, watch, onScopeDispose, reactive } from "vue";
 import { createSharedComposable } from "@vueuse/core";
 import { invoke } from "@tauri-apps/api/core";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn, type Event } from "@tauri-apps/api/event";
 import { isTauri } from "./useUpdater";
 import { useStreams } from "./useStreams";
 import { useTwitchAuth } from "./useTwitchAuth";
@@ -120,9 +120,25 @@ const _useUnifiedChat = () => {
     }
   }
 
+  let subscriptionGeneration = 0;
+  let initialization: Promise<void> | null = null;
+
+  function ensureInitialized(): Promise<void> {
+    if (!initialization) {
+      initialization = init().catch((error) => {
+        initialization = null;
+        throw error;
+      });
+    }
+    return initialization;
+  }
+
   async function syncChannels(channels: string[]) {
+    const generation = ++subscriptionGeneration;
     if (!isTauri() || !authenticated.value) return;
     try {
+      await ensureInitialized();
+      if (disposed || !authenticated.value || generation !== subscriptionGeneration) return;
       await invoke("twitch_set_channels", { channels });
     } catch (e) {
       console.error("[useUnifiedChat] failed to sync channels", e);
@@ -161,222 +177,237 @@ const _useUnifiedChat = () => {
   async function init() {
     if (!isTauri()) return;
 
-    let pendingMessages: UnifiedChatMessage[] = [];
-    let flushTimer: any = null;
+    const registered: UnlistenFn[] = [];
+    let completed = false;
+    async function register<T>(name: string, callback: (event: Event<T>) => void) {
+      const unlisten = await listen<T>(name, callback);
+      registered.push(unlisten);
+      return unlisten;
+    }
 
-    const state = await invoke<{ state: ConnectionState }>("twitch_get_connection_state").catch(
-      () => ({ state: "disconnected" as ConnectionState })
-    );
-    connectionState.value = state.state;
+    try {
+      let pendingMessages: UnifiedChatMessage[] = [];
+      let flushTimer: any = null;
 
-    await hydrateMessages();
+      const state = await invoke<{ state: ConnectionState }>("twitch_get_connection_state").catch(
+        () => ({ state: "disconnected" as ConnectionState })
+      );
+      connectionState.value = state.state;
 
-    const localUnlistenMessage = await listen<UnifiedChatMessage>(
-      "unified-chat-message",
-      (event) => {
-        const msg = event.payload;
-        msg.platform = "twitch";
+      await hydrateMessages();
 
-        if (msg.id.startsWith("local-")) {
-          msg.isPending = true;
-          setTimeout(() => {
-            const idx = messages.value.findIndex((m) => m && m.id === msg.id);
-            if (idx !== -1) {
-              const newMsgs = [...messages.value];
-              newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
-              messages.value = newMsgs;
-            }
+      const localUnlistenMessage = await register<UnifiedChatMessage>(
+        "unified-chat-message",
+        (event) => {
+          const msg = event.payload;
+          msg.platform = "twitch";
 
-            const chan = msg.channel.toLowerCase();
-            const cArr = channelMessagesMap.value[chan];
-            if (cArr) {
-              const cIdx = cArr.findIndex((m) => m && m.id === msg.id);
-              if (cIdx !== -1) {
-                const newMap = { ...channelMessagesMap.value };
-                const newArr = [...cArr];
-                newArr[cIdx] = { ...newArr[cIdx], isPending: false } as UnifiedChatMessage;
-                newMap[chan] = newArr;
-                channelMessagesMap.value = newMap;
+          if (msg.id.startsWith("local-")) {
+            msg.isPending = true;
+            setTimeout(() => {
+              const idx = messages.value.findIndex((m) => m && m.id === msg.id);
+              if (idx !== -1) {
+                const newMsgs = [...messages.value];
+                newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
+                messages.value = newMsgs;
               }
-            }
-          }, 1000);
-        }
 
-        pendingMessages.push(msg);
-        if (!flushTimer) {
-          flushTimer = setTimeout(() => {
-            if (pendingMessages.length > 0) {
-              const reversedPending = pendingMessages.toReversed();
-              const newMsgs = [...reversedPending, ...messages.value];
-              if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
-                newMsgs.length = MAX_FRONTEND_MESSAGES;
-              }
-              messages.value = newMsgs;
-
-              const newMap = { ...channelMessagesMap.value };
-              let mapChanged = false;
-              const byChannel = pendingMessages.reduce(
-                (acc, msg) => {
-                  const chan = msg.channel.toLowerCase();
-                  if (!acc[chan]) acc[chan] = [];
-                  acc[chan].push(msg);
-                  return acc;
-                },
-                {} as Record<string, UnifiedChatMessage[]>
-              );
-
-              for (const [chan, msgs] of Object.entries(byChannel)) {
-                const updated = [...msgs.toReversed(), ...(newMap[chan] || [])];
-                if (updated.length > MAX_FRONTEND_MESSAGES) {
-                  updated.length = MAX_FRONTEND_MESSAGES;
+              const chan = msg.channel.toLowerCase();
+              const cArr = channelMessagesMap.value[chan];
+              if (cArr) {
+                const cIdx = cArr.findIndex((m) => m && m.id === msg.id);
+                if (cIdx !== -1) {
+                  const newMap = { ...channelMessagesMap.value };
+                  const newArr = [...cArr];
+                  newArr[cIdx] = { ...newArr[cIdx], isPending: false } as UnifiedChatMessage;
+                  newMap[chan] = newArr;
+                  channelMessagesMap.value = newMap;
                 }
-                newMap[chan] = updated;
-                mapChanged = true;
               }
-
-              if (mapChanged) {
-                channelMessagesMap.value = newMap;
-              }
-
-              pendingMessages = [];
-            }
-            flushTimer = null;
-          }, 50);
-        }
-      }
-    );
-
-    const localUnlistenKickMessage = await listen<UnifiedChatMessage>(
-      "kick-chat-message",
-      (event) => {
-        const msg = event.payload;
-        msg.platform = "kick";
-
-        if (msg.id.startsWith("local-")) {
-          msg.isPending = true;
-          setTimeout(() => {
-            const idx = messages.value.findIndex((m) => m && m.id === msg.id);
-            if (idx !== -1) {
-              const newMsgs = [...messages.value];
-              newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
-              messages.value = newMsgs;
-            }
-
-            const chan = msg.channel.toLowerCase();
-            const cArr = channelMessagesMap.value[chan];
-            if (cArr) {
-              const cIdx = cArr.findIndex((m) => m && m.id === msg.id);
-              if (cIdx !== -1) {
-                const newMap = { ...channelMessagesMap.value };
-                const newArr = [...cArr];
-                newArr[cIdx] = { ...newArr[cIdx], isPending: false } as UnifiedChatMessage;
-                newMap[chan] = newArr;
-                channelMessagesMap.value = newMap;
-              }
-            }
-          }, 1000);
-        } else {
-          const pendingIdx = messages.value.findIndex(
-            (m) =>
-              m.isPending &&
-              m.platform === "kick" &&
-              m.channel === msg.channel &&
-              m.username.toLowerCase() === msg.username.toLowerCase() &&
-              m.message === msg.message
-          );
-          if (pendingIdx !== -1) {
-            const newMsgs = [...messages.value];
-            newMsgs.splice(pendingIdx, 1);
-            messages.value = newMsgs;
+            }, 1000);
           }
 
-          const chan = msg.channel.toLowerCase();
-          const cArr = channelMessagesMap.value[chan];
-          if (cArr) {
-            const pendingCIdx = cArr.findIndex(
+          pendingMessages.push(msg);
+          if (!flushTimer) {
+            flushTimer = setTimeout(() => {
+              if (pendingMessages.length > 0) {
+                const reversedPending = pendingMessages.toReversed();
+                const newMsgs = [...reversedPending, ...messages.value];
+                if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
+                  newMsgs.length = MAX_FRONTEND_MESSAGES;
+                }
+                messages.value = newMsgs;
+
+                const newMap = { ...channelMessagesMap.value };
+                let mapChanged = false;
+                const byChannel = pendingMessages.reduce(
+                  (acc, msg) => {
+                    const chan = msg.channel.toLowerCase();
+                    if (!acc[chan]) acc[chan] = [];
+                    acc[chan].push(msg);
+                    return acc;
+                  },
+                  {} as Record<string, UnifiedChatMessage[]>
+                );
+
+                for (const [chan, msgs] of Object.entries(byChannel)) {
+                  const updated = [...msgs.toReversed(), ...(newMap[chan] || [])];
+                  if (updated.length > MAX_FRONTEND_MESSAGES) {
+                    updated.length = MAX_FRONTEND_MESSAGES;
+                  }
+                  newMap[chan] = updated;
+                  mapChanged = true;
+                }
+
+                if (mapChanged) {
+                  channelMessagesMap.value = newMap;
+                }
+
+                pendingMessages = [];
+              }
+              flushTimer = null;
+            }, 50);
+          }
+        }
+      );
+
+      const localUnlistenKickMessage = await register<UnifiedChatMessage>(
+        "kick-chat-message",
+        (event) => {
+          const msg = event.payload;
+          msg.platform = "kick";
+
+          if (msg.id.startsWith("local-")) {
+            msg.isPending = true;
+            setTimeout(() => {
+              const idx = messages.value.findIndex((m) => m && m.id === msg.id);
+              if (idx !== -1) {
+                const newMsgs = [...messages.value];
+                newMsgs[idx] = { ...newMsgs[idx], isPending: false } as UnifiedChatMessage;
+                messages.value = newMsgs;
+              }
+
+              const chan = msg.channel.toLowerCase();
+              const cArr = channelMessagesMap.value[chan];
+              if (cArr) {
+                const cIdx = cArr.findIndex((m) => m && m.id === msg.id);
+                if (cIdx !== -1) {
+                  const newMap = { ...channelMessagesMap.value };
+                  const newArr = [...cArr];
+                  newArr[cIdx] = { ...newArr[cIdx], isPending: false } as UnifiedChatMessage;
+                  newMap[chan] = newArr;
+                  channelMessagesMap.value = newMap;
+                }
+              }
+            }, 1000);
+          } else {
+            const pendingIdx = messages.value.findIndex(
               (m) =>
                 m.isPending &&
                 m.platform === "kick" &&
+                m.channel === msg.channel &&
                 m.username.toLowerCase() === msg.username.toLowerCase() &&
                 m.message === msg.message
             );
-            if (pendingCIdx !== -1) {
-              const newMap = { ...channelMessagesMap.value };
-              const newArr = [...cArr];
-              newArr.splice(pendingCIdx, 1);
-              newMap[chan] = newArr;
-              channelMessagesMap.value = newMap;
-            }
-          }
-        }
-
-        pendingMessages.push(msg);
-        if (!flushTimer) {
-          flushTimer = setTimeout(() => {
-            if (pendingMessages.length > 0) {
-              const reversedPending = pendingMessages.toReversed();
-              const newMsgs = [...reversedPending, ...messages.value];
-              if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
-                newMsgs.length = MAX_FRONTEND_MESSAGES;
-              }
+            if (pendingIdx !== -1) {
+              const newMsgs = [...messages.value];
+              newMsgs.splice(pendingIdx, 1);
               messages.value = newMsgs;
+            }
 
-              const newMap = { ...channelMessagesMap.value };
-              let mapChanged = false;
-              const byChannel = pendingMessages.reduce(
-                (acc, msg) => {
-                  const chan = msg.channel.toLowerCase();
-                  if (!acc[chan]) acc[chan] = [];
-                  acc[chan].push(msg);
-                  return acc;
-                },
-                {} as Record<string, UnifiedChatMessage[]>
+            const chan = msg.channel.toLowerCase();
+            const cArr = channelMessagesMap.value[chan];
+            if (cArr) {
+              const pendingCIdx = cArr.findIndex(
+                (m) =>
+                  m.isPending &&
+                  m.platform === "kick" &&
+                  m.username.toLowerCase() === msg.username.toLowerCase() &&
+                  m.message === msg.message
               );
-
-              for (const [chan, msgs] of Object.entries(byChannel)) {
-                const updated = [...msgs.toReversed(), ...(newMap[chan] || [])];
-                if (updated.length > MAX_FRONTEND_MESSAGES) {
-                  updated.length = MAX_FRONTEND_MESSAGES;
-                }
-                newMap[chan] = updated;
-                mapChanged = true;
-              }
-
-              if (mapChanged) {
+              if (pendingCIdx !== -1) {
+                const newMap = { ...channelMessagesMap.value };
+                const newArr = [...cArr];
+                newArr.splice(pendingCIdx, 1);
+                newMap[chan] = newArr;
                 channelMessagesMap.value = newMap;
               }
-
-              pendingMessages = [];
             }
-            flushTimer = null;
-          }, 50);
+          }
+
+          pendingMessages.push(msg);
+          if (!flushTimer) {
+            flushTimer = setTimeout(() => {
+              if (pendingMessages.length > 0) {
+                const reversedPending = pendingMessages.toReversed();
+                const newMsgs = [...reversedPending, ...messages.value];
+                if (newMsgs.length > MAX_FRONTEND_MESSAGES) {
+                  newMsgs.length = MAX_FRONTEND_MESSAGES;
+                }
+                messages.value = newMsgs;
+
+                const newMap = { ...channelMessagesMap.value };
+                let mapChanged = false;
+                const byChannel = pendingMessages.reduce(
+                  (acc, msg) => {
+                    const chan = msg.channel.toLowerCase();
+                    if (!acc[chan]) acc[chan] = [];
+                    acc[chan].push(msg);
+                    return acc;
+                  },
+                  {} as Record<string, UnifiedChatMessage[]>
+                );
+
+                for (const [chan, msgs] of Object.entries(byChannel)) {
+                  const updated = [...msgs.toReversed(), ...(newMap[chan] || [])];
+                  if (updated.length > MAX_FRONTEND_MESSAGES) {
+                    updated.length = MAX_FRONTEND_MESSAGES;
+                  }
+                  newMap[chan] = updated;
+                  mapChanged = true;
+                }
+
+                if (mapChanged) {
+                  channelMessagesMap.value = newMap;
+                }
+
+                pendingMessages = [];
+              }
+              flushTimer = null;
+            }, 50);
+          }
         }
+      );
+
+      const localUnlistenState = await register<ConnectionStateEvent>(
+        "twitch-connection-state",
+        (event) => {
+          connectionState.value = event.payload.state;
+        }
+      );
+
+      const localUnlistenAuthExpired = await register("twitch-auth-expired", () => {
+        connectionState.value = "disconnected";
+      });
+
+      if (disposed) {
+        localUnlistenMessage();
+        localUnlistenKickMessage();
+        localUnlistenState();
+        localUnlistenAuthExpired();
+      } else {
+        unlistenMessage = localUnlistenMessage;
+        unlistenKickMessage = localUnlistenKickMessage;
+        unlistenState = localUnlistenState;
+        unlistenAuthExpired = localUnlistenAuthExpired;
       }
-    );
-
-    const localUnlistenState = await listen<ConnectionStateEvent>(
-      "twitch-connection-state",
-      (event) => {
-        connectionState.value = event.payload.state;
-      }
-    );
-
-    const localUnlistenAuthExpired = await listen("twitch-auth-expired", () => {
-      connectionState.value = "disconnected";
-    });
-
-    if (disposed) {
-      localUnlistenMessage();
-      localUnlistenKickMessage();
-      localUnlistenState();
-      localUnlistenAuthExpired();
-    } else {
-      unlistenMessage = localUnlistenMessage;
-      unlistenKickMessage = localUnlistenKickMessage;
-      unlistenState = localUnlistenState;
-      unlistenAuthExpired = localUnlistenAuthExpired;
+      completed = true;
+    } finally {
+      if (!completed) registered.forEach((unlisten) => unlisten());
     }
   }
+
+  if (isTauri()) ensureInitialized().catch(console.error);
 
   watch(
     twitchChannels,
@@ -431,15 +462,9 @@ const _useUnifiedChat = () => {
     unlistenAuthExpired?.();
   });
 
-  watch(authenticated, (isAuth) => {
-    if (isAuth) {
-      syncChannels(twitchChannels.value);
-    }
+  watch(authenticated, () => {
+    syncChannels(twitchChannels.value);
   });
-
-  if (isTauri()) {
-    init().catch(console.error);
-  }
 
   function removeLastLocalMessage(channel: string, currentUsername: string): string | null {
     let lastIdx = -1;
